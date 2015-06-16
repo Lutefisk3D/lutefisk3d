@@ -1,28 +1,83 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Output directories
+/bin/*
+!/bin/**/
+!/bin/*.bat
+!/bin/*.sh
+/bin/*.app/
+/bin/*.app.dSYM/
+/bin/jit/
+/bin/Screenshots/
+/bin/tool/
+/include/
+/lib*/
+generated/
 
-# Precompiled Headers
-*.gch
-*.pch
+# Output files
+/Source/**/*.a
+/Source/ThirdParty/LuaJIT/src/host/buildvm_arch.h
+/Source/Urho3D/Urho3D.h
+/Source/Urho3D/Urho3D.pc
+/Source/Urho3D/librevision.h
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# Compiled shaders
+*.vs2
+*.vs3
+*.ps2
+*.ps3
 
-# Fortran module files
-*.mod
+# Compiled AngelScript
+*.asc
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# Compiled Lua script
+*.luc
 
-# Executables
-*.exe
-*.out
-*.app
+# Generated documentation
+/Docs/html/
+/Docs/qch/
+/Docs/Doxyfile
+
+# Eclipse project settings
+/.*project
+/.settings
+
+# KDevelop project settings
+/*.kdev?
+
+# Qt Creator project settings
+/CMakeLists.txt.user
+
+# Android project settings
+/Android/project.properties
+/Android/local.properties
+/Android/proguard-project.txt
+
+# Android output directories
+/Android/Urho3D/
+/Android/ThirdParty/
+/Android/libs/
+
+# CMake generated build files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake
+CTestTestfile.cmake
+/Docs/**/*.cmake
+
+# Precompiled header files
+*.gch/
+*.pch/
+*.pch.*
+
+# Misc.
+configure*
+*~
+*.swp
+.DS_Store
+*.log
+*.bak
+Thumbs.db

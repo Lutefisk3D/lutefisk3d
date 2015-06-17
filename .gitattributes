@@ -1,4 +1,4 @@
-*           text=true eol=native whitespace=trailing-space,space-before-tab,-indent-with-non-tab,tab-in-indent,tabwidth=4
+*           text=auto eol=native whitespace=trailing-space,space-before-tab,-indent-with-non-tab,tab-in-indent,tabwidth=4
 .git*       text export-ignore
 Docs/* linguist-documentation
 Source/ThirdParty/* linguist-vendored

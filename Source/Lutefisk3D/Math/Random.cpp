@@ -20,23 +20,38 @@
 // THE SOFTWARE.
 //
 
-#pragma once
-
-#include <QtCore/QString>
-#include <QtCore/qhash.h>
+#include "Random.h"
 
 namespace Urho3D
 {
-static const int CONVERSION_BUFFER_LENGTH = 128;
-static const int MATRIX_CONVERSION_BUFFER_LENGTH = 256;
-extern const QString s_dummy;
+
+static unsigned randomSeed = 1;
+
+void SetRandomSeed(unsigned seed)
+{
+    randomSeed = seed;
 }
 
-namespace std {
-template<> struct hash<QString> {
-    inline size_t operator()(const QString & key) const
-    {
-        return qHash(key);
-    }
-};
+unsigned GetRandomSeed()
+{
+    return randomSeed;
+}
+
+int Rand()
+{
+    randomSeed = randomSeed * 214013 + 2531011;
+    return (randomSeed >> 16) & 32767;
+}
+
+float RandStandardNormal()
+{
+    float val = 0.0f;
+    for (int i = 0; i < 12; i++)
+        val += Rand() / 32768.0f;
+    val -= 6.0f;
+    
+    // Now val is approximatly standard normal distributed
+    return val;
+}
+
 }

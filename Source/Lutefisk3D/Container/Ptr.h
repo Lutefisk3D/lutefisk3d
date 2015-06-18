@@ -106,7 +106,7 @@ public:
     /// Point to the object.
     T* operator -> () const { assert(ptr_); return ptr_; }
     /// Dereference the object.
-    constexpr T& operator * () const { assert(ptr_); return *ptr_; }
+    constexpr T& operator * () const { return *ptr_; }
     /// Subscript the object if applicable.
     T& operator [] (const int index) { assert(ptr_); return ptr_[index]; }
     /// Test for less than with another shared pointer.

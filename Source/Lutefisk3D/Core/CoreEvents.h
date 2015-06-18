@@ -22,16 +22,45 @@
 
 #pragma once
 
-//#include <QtCore/QLinkedList>
-#include <list>
-#include <algorithm>
+#include "../Core/Object.h"
+
 namespace Urho3D
 {
-template<typename T>
-class List : public std::list<T> {
-public:
-    bool contains(const T &v) const { return std::find(this->begin(),this->end(),v)!=this->end();}
-};
-//template<typename T>
-//using List = QLinkedList<T> ;
+
+/// Frame begin event.
+EVENT(E_BEGINFRAME, BeginFrame)
+{
+    PARAM(P_FRAMENUMBER, FrameNumber);      // unsigned
+    PARAM(P_TIMESTEP, TimeStep);            // float
+}
+
+/// Application-wide logic update event.
+EVENT(E_UPDATE, Update)
+{
+    PARAM(P_TIMESTEP, TimeStep);            // float
+}
+
+/// Application-wide logic post-update event.
+EVENT(E_POSTUPDATE, PostUpdate)
+{
+    PARAM(P_TIMESTEP, TimeStep);            // float
+}
+
+/// Render update event.
+EVENT(E_RENDERUPDATE, RenderUpdate)
+{
+    PARAM(P_TIMESTEP, TimeStep);            // float
+}
+
+/// Post-render update event.
+EVENT(E_POSTRENDERUPDATE, PostRenderUpdate)
+{
+    PARAM(P_TIMESTEP, TimeStep);            // float
+}
+
+/// Frame end event.
+EVENT(E_ENDFRAME, EndFrame)
+{
+}
+
 }

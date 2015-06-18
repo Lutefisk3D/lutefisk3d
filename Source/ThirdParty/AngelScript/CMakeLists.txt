@@ -20,8 +20,6 @@
 # THE SOFTWARE.
 #
 
-include_directories(include)
-
 # Define source files
 set(SOURCE_FILES
   source/as_array.h

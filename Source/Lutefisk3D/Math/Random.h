@@ -22,21 +22,16 @@
 
 #pragma once
 
-#include <QtCore/QString>
-#include <QtCore/qhash.h>
-
 namespace Urho3D
 {
-static const int CONVERSION_BUFFER_LENGTH = 128;
-static const int MATRIX_CONVERSION_BUFFER_LENGTH = 256;
-extern const QString s_dummy;
-}
 
-namespace std {
-template<> struct hash<QString> {
-    inline size_t operator()(const QString & key) const
-    {
-        return qHash(key);
-    }
-};
+/// Set the random seed. The default seed is 1.
+void SetRandomSeed(unsigned seed);
+/// Return the current random seed.
+unsigned GetRandomSeed();
+/// Return a random number between 0-32767. Should operate similarly to MSVC rand().
+int Rand();
+/// Return a standard normal distributed number.
+float RandStandardNormal();
+
 }

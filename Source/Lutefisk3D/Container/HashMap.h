@@ -1,7 +1,7 @@
 #pragma once
-#include "../Container/Vector.h"
-//#include <mct/hash-map.hpp>
-#include "../ThirdParty/sherwood_map/sherwood_map.hpp"
+
+#include "sherwood_map.hpp"
+
 #ifdef USE_QT_HASHMAP
 #include <QtCore/QHash>
 #else
@@ -9,6 +9,10 @@
 #include <unordered_set>
 #include <set>
 #endif
+
+#include <vector>
+#include "SmallVector.h"
+
 namespace Urho3D {
 #ifdef USE_QT_HASHMAP
 #define MAP_VALUE(i) (i.value())
@@ -22,6 +26,27 @@ using HashMap = ::QHash<T,U> ;
 #define MAP_KEY(i) (i->first)
 #define ELEMENT_VALUE(e) e.second
 #define ELEMENT_KEY(e) e.first
+
+template <typename T,int N>
+class PODVectorN : public lls::SmallVector<T,N> {
+public:
+    typedef typename lls::SmallVector<T,N>::iterator iterator;
+    typedef typename lls::SmallVector<T,N>::const_iterator const_iterator;
+    PODVectorN() {}
+    PODVectorN(int sz) : lls::SmallVector<T,N>(sz) {}
+    constexpr bool contains(const T &v) const { return find(v)!=this->end();}
+    iterator find(const T &v) { return std::find(this->begin(),this->end(),v);}
+    const_iterator find(const T &v) const { return std::find(this->begin(),this->end(),v);}
+    /// Erase an element if found.
+    bool remove(const T& value)
+    {
+        iterator i = find(value);
+        if (i == this->end())
+            return false;
+        this->erase(i);
+        return true;
+    }
+};
 
 template <typename T,typename U>
 class HashMap : public std::unordered_map<T,U> {
@@ -42,16 +67,16 @@ public:
         return true;
     }
     constexpr bool isEmpty() const { return this->empty(); }
-    Vector<T> keys() const {
-        Vector<T> result;
+    std::vector<T> keys() const {
+        std::vector<T> result;
         result.reserve(this->size());
         for(const std::pair<const T,U> v : *this) {
             result.push_back(v.first);
         }
         return result;
     }
-    Vector<U> values() const {
-        Vector<U> result;
+    std::vector<U> values() const {
+        std::vector<U> result;
         result.reserve(this->size());
         for(const std::pair<const T,U> v : *this) {
             result.push_back(v.second);
@@ -78,16 +103,16 @@ public:
         return true;
     }
     constexpr bool isEmpty() const { return this->empty(); }
-    Vector<T> keys() const {
-        Vector<T> result;
+    std::vector<T> keys() const {
+        std::vector<T> result;
         result.reserve(this->size());
         for(const std::pair<const T,U> v : *this) {
             result.push_back(v.first);
         }
         return result;
     }
-    Vector<U> values() const {
-        Vector<U> result;
+    std::vector<U> values() const {
+        std::vector<U> result;
         result.reserve(this->size());
         for(const std::pair<const T,U> v : *this) {
             result.push_back(v.second);
@@ -118,7 +143,7 @@ template <typename T,int N>
 class SmallMembershipSet {
     PODVectorN<T,N> members;
 public:
-    constexpr bool contains(const T &v) const {
+    bool contains(const T &v) const {
         for(const T&elem : members)
             if(v==elem)
                 return true;

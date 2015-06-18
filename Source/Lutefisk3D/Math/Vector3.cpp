@@ -20,23 +20,29 @@
 // THE SOFTWARE.
 //
 
-#pragma once
+#include "../Math/Vector3.h"
+#include "../Container/Str.h"
 
-#include <QtCore/QString>
-#include <QtCore/qhash.h>
+#include <cstdio>
+
 
 namespace Urho3D
 {
-static const int CONVERSION_BUFFER_LENGTH = 128;
-static const int MATRIX_CONVERSION_BUFFER_LENGTH = 256;
-extern const QString s_dummy;
+
+const Vector3 Vector3::ZERO;
+const Vector3 Vector3::LEFT(-1.0f, 0.0f, 0.0f);
+const Vector3 Vector3::RIGHT(1.0f, 0.0f, 0.0f);
+const Vector3 Vector3::UP(0.0f, 1.0f, 0.0f);
+const Vector3 Vector3::DOWN(0.0f, -1.0f, 0.0f);
+const Vector3 Vector3::FORWARD(0.0f, 0.0f, 1.0f);
+const Vector3 Vector3::BACK(0.0f, 0.0f, -1.0f);
+const Vector3 Vector3::ONE(1.0f, 1.0f, 1.0f);
+
+QString Vector3::ToString() const
+{
+    char tempBuffer[CONVERSION_BUFFER_LENGTH];
+    sprintf(tempBuffer, "%g %g %g", x_, y_, z_);
+    return QString(tempBuffer);
 }
 
-namespace std {
-template<> struct hash<QString> {
-    inline size_t operator()(const QString & key) const
-    {
-        return qHash(key);
-    }
-};
 }

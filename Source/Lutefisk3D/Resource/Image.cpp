@@ -1820,6 +1820,9 @@ unsigned char* Image::GetImageData(Deserializer& source, int& width, int& height
         memcpy(ptr,img.constScanLine(i),img.bytesPerLine());
         ptr+=img.bytesPerLine();
     }
+    width= img.width();
+    height = img.height();
+    components = (img.depth()+7)/8;
     return res;
 }
 

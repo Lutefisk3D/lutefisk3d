@@ -134,8 +134,6 @@ public:
     bool SaveBMP(const QString& fileName) const;
     /// Save in PNG format. Return true if successful.
     bool SavePNG(const QString& fileName) const;
-    /// Save in TGA format. Return true if successful.
-    bool SaveTGA(const QString& fileName) const;
     /// Save in JPG format with compression quality. Return true if successful.
     bool SaveJPG(const QString& fileName, int quality) const;
 
@@ -181,6 +179,8 @@ public:
     void PrecalculateLevels();
 
 private:
+    /// saves the image with given encoding - \a format is a name like "bmp" "png" etc.
+    bool saveImageCommon(const QString &fileName, const char *format, int quality=-1) const;
     /// Decode an image using stb_image.
     static unsigned char* GetImageData(Deserializer& source, int& width, int& height, unsigned& components);
     /// Free an image file's pixel data.

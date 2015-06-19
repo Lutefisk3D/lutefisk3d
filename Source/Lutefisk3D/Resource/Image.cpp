@@ -30,10 +30,7 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <STB/stb_image.h>
-#include <STB/stb_image_write.h>
-#include <JO/jo_jpeg.h>
-//#include <SDL/SDL_surface.h>
+#include <QtGui/QImage>
 
 extern "C" unsigned char *stbi_write_png_to_mem(unsigned char *pixels, int stride_bytes, int x, int y, int n, int *out_len);
 
@@ -568,7 +565,7 @@ bool Image::BeginLoad(Deserializer& source)
     }
     else
     {
-        // Not DDS, KTX or PVR, use STBImage to load other image formats as uncompressed
+        // Not DDS, KTX or PVR, use QImage to load other image formats as uncompressed
         source.Seek(0);
         int width, height;
         unsigned components;
@@ -954,7 +951,26 @@ void Image::ClearInt(unsigned uintColor)
     for (unsigned i = 0; i < width_ * height_ * depth_ * components_; ++i)
         data_[i] = src[i % components_];
 }
-
+bool Image::saveImageCommon(const QString &fileName,const char *format,int quality) const {
+    QImage::Format targetfmt = QImage::Format_Invalid;
+    switch(components_) {
+    case 1:
+       targetfmt = QImage::Format_Grayscale8 ; break;
+    case 2:
+       targetfmt = QImage::Format_Grayscale8 ; break;
+    case 3:
+       targetfmt = QImage::Format_RGB888 ; break;
+    case 4:
+       targetfmt = QImage::Format_ARGB32 ; break;
+    default:
+        assert(false);
+    }
+    if (data_) {
+        QImage f(data_.Get(),width_,height_,targetfmt);
+        return f.save(fileName,format,quality);
+    }
+    return false;
+}
 bool Image::SaveBMP(const QString& fileName) const
 {
     PROFILE(SaveImageBMP);
@@ -971,11 +987,7 @@ bool Image::SaveBMP(const QString& fileName) const
         LOGERROR("Can not save compressed image to BMP");
         return false;
     }
-
-    if (data_)
-        return stbi_write_bmp(qPrintable(fileName), width_, height_, components_, data_.Get()) != 0;
-    else
-        return false;
+    return saveImageCommon(fileName,"bmp");
 }
 
 bool Image::SavePNG(const QString& fileName) const
@@ -995,33 +1007,7 @@ bool Image::SavePNG(const QString& fileName) const
         return false;
     }
 
-    if (data_)
-        return stbi_write_png(qPrintable(GetNativePath(fileName)), width_, height_, components_, data_.Get(), 0) != 0;
-    else
-        return false;
-}
-
-bool Image::SaveTGA(const QString& fileName) const
-{
-    PROFILE(SaveImageTGA);
-
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
-    if (fileSystem && !fileSystem->CheckAccess(GetPath(fileName)))
-    {
-        LOGERROR("Access denied to " + fileName);
-        return false;
-    }
-
-    if (IsCompressed())
-    {
-        LOGERROR("Can not save compressed image to TGA");
-        return false;
-    }
-
-    if (data_)
-        return stbi_write_tga(qPrintable(GetNativePath(fileName)), width_, height_, components_, data_.Get()) != 0;
-    else
-        return false;
+    return saveImageCommon(fileName,"png");
 }
 
 bool Image::SaveJPG(const QString & fileName, int quality) const
@@ -1041,10 +1027,7 @@ bool Image::SaveJPG(const QString & fileName, int quality) const
         return false;
     }
 
-    if (data_)
-        return jo_write_jpg(qPrintable(GetNativePath(fileName)), data_.Get(), width_, height_, components_, quality) != 0;
-    else
-        return false;
+    return saveImageCommon(fileName,"jpg",quality);
 }
 
 Color Image::GetPixel(int x, int y) const
@@ -1828,15 +1811,21 @@ unsigned char* Image::GetImageData(Deserializer& source, int& width, int& height
 
     SharedArrayPtr<unsigned char> buffer(new unsigned char[dataSize]);
     source.Read(buffer.Get(), dataSize);
-    return stbi_load_from_memory(buffer.Get(), dataSize, &width, &height, (int *)&components, 0);
+
+    QImage img(QImage::fromData(buffer.Get(),dataSize));
+    assert(img.width()>0 && img.height()>0);
+    uint8_t *res = new uint8_t[img.byteCount()];
+    uint8_t *ptr = res;
+    for(int i=0; i<img.height(); ++i) {
+        memcpy(ptr,img.constScanLine(i),img.bytesPerLine());
+        ptr+=img.bytesPerLine();
+    }
+    return res;
 }
 
 void Image::FreeImageData(unsigned char* pixelData)
 {
-    if (!pixelData)
-        return;
-
-    stbi_image_free(pixelData);
+    delete [] pixelData;
 }
 
 }

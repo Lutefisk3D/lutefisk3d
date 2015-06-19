@@ -18,7 +18,7 @@ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(Qt5Core 5.5.0)
 find_package(Qt5Xml  5.5.0)
-
+find_package(Qt5Gui  5.5.0)
 
 add_subdirectory(Source)
 

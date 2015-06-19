@@ -25,7 +25,7 @@
 #include "../Container/HashMap.h"
 #include "../Math/StringHash.h"
 #include "../Core/Variant.h"
-#include "cereal/cereal.hpp"
+
 namespace Urho3D
 {
 

@@ -1,9 +1,11 @@
 set(INCLUDES
     Color.h
+    MathDefs.h
     Matrix3.h
     Matrix3x4.h
     Matrix4.h
     Quaternion.h
+    Rect.h
     Random.h
     Spline.h
     StringHash.h

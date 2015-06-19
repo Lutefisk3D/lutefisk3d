@@ -20,7 +20,7 @@ add_library(Lutefisk3D STATIC
     $<TARGET_OBJECTS:Lutefisk3D_Resource>
     $<TARGET_OBJECTS:Lutefisk3D_Scene>
 )
-qt5_use_modules(Lutefisk3D Core)
+qt5_use_modules(Lutefisk3D Core Gui)
 
 #target_include_directories(Lutefisk3D_Core Qt5::Core)
 #target_compile_definitions(Lutefisk3D_Core Qt5::Core)

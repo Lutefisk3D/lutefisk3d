@@ -3,15 +3,27 @@ set(INCLUDES
     Image.h
     Resource.h
     ResourceCache.h
+    XMLElement.h
+    XMLFile.h
 )
 set(SOURCE
-    Image.cpp
+    BackgroundLoader.cpp
+    Decompress.cpp
     Resource.cpp
     ResourceCache.cpp
+
+    Image.cpp
+    JSONFile.cpp
+        JSONValue.cpp
+    PListFile.cpp
+    XMLFile.cpp
+        XMLElement.cpp
 )
 
 
 add_library(Lutefisk3D_Resource OBJECT ${SOURCE} ${INCLUDES})
+add_dependencies(Lutefisk3D_Resource PugiXml rapidjson)
+
 target_include_directories(Lutefisk3D_Resource PRIVATE
     $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:Qt5::Gui,INTERFACE_INCLUDE_DIRECTORIES>

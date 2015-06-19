@@ -28,11 +28,10 @@
 #include "../IO/Log.h"
 #include "../Core/Profiler.h"
 
+#include <QBuffer>
 #include <cstdlib>
 #include <cstring>
 #include <QtGui/QImage>
-
-extern "C" unsigned char *stbi_write_png_to_mem(unsigned char *pixels, int stride_bytes, int x, int y, int n, int *out_len);
 
 #ifndef MAKEFOURCC
 #define MAKEFOURCC(ch0, ch1, ch2, ch3) ((unsigned)(ch0) | ((unsigned)(ch1) << 8) | ((unsigned)(ch2) << 16) | ((unsigned)(ch3) << 24))
@@ -599,10 +598,25 @@ bool Image::Save(Serializer& dest) const
         return false;
     }
 
+    QImage::Format srcfmt = QImage::Format_Invalid;
+    switch(components_) {
+    case 1:
+       srcfmt = QImage::Format_Grayscale8 ; break;
+    case 3:
+       srcfmt = QImage::Format_RGB888 ; break;
+    case 4:
+       srcfmt = QImage::Format_ARGB32 ; break;
+    default:
+        assert(false);
+    }
+
     int len;
-    unsigned char *png = stbi_write_png_to_mem(data_.Get(), 0, width_, height_, components_, &len);
-    bool success = dest.Write(png, len) == (unsigned)len;
-    free(png);
+    QByteArray bytes;
+    QBuffer buffer(&bytes);
+    buffer.open(QIODevice::WriteOnly);
+    QImage im(data_.Get(), width_, height_, components_*width_,srcfmt);
+    im.save(&buffer,"png");
+    bool success = dest.Write(bytes.data(), bytes.size()) == (unsigned)len;
     return success;
 }
 
@@ -955,8 +969,6 @@ bool Image::saveImageCommon(const QString &fileName,const char *format,int quali
     QImage::Format targetfmt = QImage::Format_Invalid;
     switch(components_) {
     case 1:
-       targetfmt = QImage::Format_Grayscale8 ; break;
-    case 2:
        targetfmt = QImage::Format_Grayscale8 ; break;
     case 3:
        targetfmt = QImage::Format_RGB888 ; break;

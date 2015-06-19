@@ -15,10 +15,12 @@ sherwood_map.hpp
 )
 set(SOURCE
     Allocator.cpp
+    RefCounted.cpp
+    Str.cpp
 )
 
 add_library(Lutefisk3D_Containers OBJECT ${SOURCE} ${INCLUDES})
 
 target_include_directories(Lutefisk3D_Containers PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Containers PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
-set_property(TARGET Lutefisk3D_Containers PROPERTY POSITION_INDEPENDENT_CODE $<TARGET_PROPERTY:Qt5::Core,POSITION_INDEPENDENT_CODE>)
+set_property(TARGET Lutefisk3D_Containers PROPERTY POSITION_INDEPENDENT_CODE ON)

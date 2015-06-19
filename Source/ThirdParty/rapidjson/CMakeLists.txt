@@ -20,15 +20,25 @@
 # THE SOFTWARE.
 #
 
-# Setup target
-set(SOURCE_FILES
-    stb_image.c
-)
 set(INCLUDES
-    stb_image.h
+  allocators.h
+  document.h
+  encodedstream.h
+  encodings.h
+  filereadstream.h
+  filestream.h
+  filewritestream.h
+  prettywriter.h
+  reader.h
+  stringbuffer.h
+  writer.h
+  rapidjson.h
+  internal/pow10.h
+  internal/stack.h
+  internal/strfunc.h
 )
 
-add_library(STB OBJECT ${SOURCE_FILES} ${INCLUDES})
-# Install headers for building the Urho3D library
-#install_header_files (DIRECTORY ./ DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/STB FILES_MATCHING PATTERN *.h BUILD_TREE_ONLY)  # Note: the trailing slash is significant
-install (FILES ${INCLUDES} DESTINATION include/ThirdParty/LibCpuId)
+
+# Setup target
+add_custom_target (rapidjson ALL)   # Dummy target just so that its post-build step can install headers to the build tree
+install (FILES ${INCLUDES} DESTINATION include/ThirdParty/rapidjson)

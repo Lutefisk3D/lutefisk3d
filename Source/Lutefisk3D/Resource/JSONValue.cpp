@@ -19,14 +19,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "JSONValue.h"
 
+#include "JSONFile.h"
 #include "../Core/Context.h"
+#include "../Core/StringUtils.h"
 #include "../IO/Log.h"
-#include "../Resource/JSONFile.h"
 
 #include <rapidjson/document.h>
-
-#include "../DebugNew.h"
 
 using namespace rapidjson;
 
@@ -376,7 +376,7 @@ bool JSONValue::GetBuffer(const QString& name, void* dest, unsigned size) const
         return false;
 
     for (unsigned i = 0; i < bytes.size(); ++i)
-        destBytes[i] = ToInt(bytes[i]);
+        destBytes[i] = bytes[i].toInt();
     return true;
 }
 
@@ -723,7 +723,7 @@ bool JSONValue::GetBuffer(unsigned index, void* dest, unsigned size) const
         return false;
 
     for (unsigned i = 0; i < bytes.size(); ++i)
-        destBytes[i] = ToInt(bytes[i]);
+        destBytes[i] = bytes[i].toInt();
     return true;
 }
 

@@ -20,7 +20,6 @@
 // THE SOFTWARE.
 //
 
-#include "Precompiled.h"
 #include "../Container/ArrayPtr.h"
 #include "../Core/Context.h"
 #include "../Core/CoreEvents.h"
@@ -31,7 +30,7 @@
 #include "../IO/Log.h"
 #include "../Core/Thread.h"
 
-#include <SDL/SDL_filesystem.h>
+//#include <SDL/SDL_filesystem.h>
 #include <QtCore/QProcess>
 #include <QtCore/QDir>
 #include <QtCore/QDateTime>
@@ -65,16 +64,6 @@
 #include <mach-o/dyld.h>
 #endif
 
-#ifdef ANDROID
-extern "C" const char* SDL_Android_GetFilesDir();
-#endif
-#ifdef IOS
-extern "C" const char* SDL_IOS_GetResourceDir();
-extern "C" const char* SDL_IOS_GetDocumentsDir();
-#endif
-
-#include "../DebugNew.h"
-
 namespace Urho3D
 {
 
@@ -82,48 +71,11 @@ int DoSystemCommand(const QString& commandLine, bool redirectToLog, Context* con
 {
     if (!redirectToLog)
         return system(qPrintable(commandLine));
-
-    // Get a platform-agnostic temporary file name for stderr redirection
-    QString stderrFilename;
-    QString adjustedCommandLine(commandLine);
-    char* prefPath = SDL_GetPrefPath("urho3d", "temp");
-    if (prefPath)
-    {
-        stderrFilename = QString(prefPath) + "command-stderr";
-        adjustedCommandLine += " 2>" + stderrFilename;
-        SDL_free(prefPath);
-    }
-
-    #ifdef _MSC_VER
-    #define popen _popen
-    #define pclose _pclose
-    #endif
-
-    // Use popen/pclose to capture the stdout and stderr of the command
-    FILE *file = popen(qPrintable(adjustedCommandLine), "r");
-    if (!file)
-        return -1;
-
-    // Capture the standard output stream
-    char buffer[128];
-    while (!feof(file))
-    {
-        if (fgets(buffer, sizeof(buffer), file))
-            LOGRAW(QString(buffer));
-    }
-    int exitCode = pclose(file);
-
-    // Capture the standard error stream
-    if (!stderrFilename.isEmpty())
-    {
-        SharedPtr<File> errFile(new File(context, stderrFilename, FILE_READ));
-        while (!errFile->IsEof())
-        {
-            unsigned numRead = errFile->Read(buffer, sizeof(buffer));
-            if (numRead)
-                Log::WriteRaw(QString::fromLatin1(buffer, numRead), true);
-        }
-    }
+    QProcess pr;
+    pr.start(commandLine,QProcess::ReadOnly);
+    pr.waitForFinished(-1);
+    int exitCode = pr.exitCode();
+    Log::WriteRaw(pr.readAllStandardError(), true);
 
     return exitCode;
 }
@@ -563,18 +515,18 @@ QString FileSystem::GetUserDocumentsDir() const
 
 QString FileSystem::GetAppPreferencesDir(const QString& org, const QString& app) const
 {
-    //return AddTrailingSlash(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation));
-    QString dir;
-    char* prefPath = SDL_GetPrefPath(qPrintable(org), qPrintable(app));
-    if (prefPath)
-    {
-        dir = GetInternalPath(QString(prefPath));
-        SDL_free(prefPath);
-    }
-    else
-        LOGWARNING("Could not get application preferences directory");
+    return AddTrailingSlash(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation));
+//    QString dir;
+//    char* prefPath = SDL_GetPrefPath(qPrintable(org), qPrintable(app));
+//    if (prefPath)
+//    {
+//        dir = GetInternalPath(QString(prefPath));
+//        SDL_free(prefPath);
+//    }
+//    else
+//        LOGWARNING("Could not get application preferences directory");
 
-    return dir;
+//    return dir;
 }
 
 void FileSystem::RegisterPath(const QString& pathName)
@@ -691,7 +643,7 @@ void FileSystem::ScanDirInternal(QStringList& result, QString path, const QStrin
 void FileSystem::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
 {
     /// Go through the execution queue and post + remove completed requests
-    for (List<AsyncExecRequest*>::iterator i = asyncExecQueue_.begin(); i != asyncExecQueue_.end();)
+    for (std::list<AsyncExecRequest*>::iterator i = asyncExecQueue_.begin(); i != asyncExecQueue_.end();)
     {
         AsyncExecRequest* request = *i;
         if (request->IsCompleted())

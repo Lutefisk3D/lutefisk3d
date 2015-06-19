@@ -20,14 +20,13 @@
 // THE SOFTWARE.
 //
 
+#include "PListFile.h"
+
+#include "XMLFile.h"
 #include "../Core/Context.h"
 #include "../IO/Deserializer.h"
 #include "../IO/Log.h"
-#include "../Resource/PListFile.h"
-#include "../Resource/XMLFile.h"
 #include <stdio.h>
-
-#include "../DebugNew.h"
 
 namespace Urho3D
 {
@@ -382,9 +381,9 @@ bool PListFile::LoadValue(PListValue& value, XMLElement valueElem)
     if (valueType == "string")
         value.SetString(valueElem.GetValue());
     else if (valueType == "real")
-        value.SetFloat(ToFloat(valueElem.GetValue()));
+        value.SetFloat(valueElem.GetValue().toFloat());
     else if (valueType == "integer")
-        value.SetInt(ToInt(valueElem.GetValue()));
+        value.SetInt(valueElem.GetValue().toInt());
     else if (valueType == "true")
         value.SetBool(true);
     else if (valueType == "false")

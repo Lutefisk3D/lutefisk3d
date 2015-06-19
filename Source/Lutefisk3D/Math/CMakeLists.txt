@@ -20,7 +20,9 @@ set(SOURCE
     Matrix4.cpp
     Quaternion.cpp
     Random.cpp
+    Rect.cpp
     Spline.cpp
+    StringHash.cpp
     Vector2.cpp
     Vector3.cpp
     Vector4.cpp

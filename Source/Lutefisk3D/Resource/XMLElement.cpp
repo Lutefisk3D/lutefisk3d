@@ -21,12 +21,11 @@
 //
 
 #include "../Core/Context.h"
+#include "../Core/StringUtils.h"
 #include "../IO/Log.h"
-#include "../Resource/XMLFile.h"
+#include "XMLFile.h"
 
 #include <PugiXml/pugixml.hpp>
-
-#include "../DebugNew.h"
 
 namespace Urho3D
 {
@@ -692,7 +691,7 @@ bool XMLElement::GetBuffer(const QString& name, void* dest, unsigned size) const
         return false;
 
     for (unsigned i = 0; i < bytes.size(); ++i)
-        destBytes[i] = ToInt(bytes[i]);
+        destBytes[i] = bytes[i].toInt();
     return true;
 }
 
@@ -703,17 +702,17 @@ Color XMLElement::GetColor(const QString& name) const
 
 float XMLElement::GetFloat(const QString& name) const
 {
-    return ToFloat(GetAttribute(name));
+    return GetAttribute(name).toFloat();
 }
 
 unsigned XMLElement::GetUInt(const QString& name) const
 {
-    return ToUInt(GetAttribute(name));
+    return GetAttribute(name).toUInt();
 }
 
 int XMLElement::GetInt(const QString& name) const
 {
-    return ToInt(GetAttribute(name));
+    return GetAttribute(name).toInt();
 }
 
 IntRect XMLElement::GetIntRect(const QString& name) const

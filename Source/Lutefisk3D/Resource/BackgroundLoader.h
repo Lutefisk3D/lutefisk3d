@@ -36,10 +36,11 @@ namespace std {
 template<>
 struct hash< pair<Urho3D::StringHash,Urho3D::StringHash> > {
     size_t operator()(const std::pair<Urho3D::StringHash,Urho3D::StringHash> & key) const {
-        return key.first.ToHash() ^ (key.second.ToHash()<<16);
+        return key.first.ToHash() ^ (key.second.ToHash()<<15);
     }
 };
 }
+
 
 namespace Urho3D
 {
@@ -47,6 +48,10 @@ namespace Urho3D
 class Resource;
 class ResourceCache;
 
+inline uint qHash(const std::pair<Urho3D::StringHash,Urho3D::StringHash> &key, uint seed)
+{
+    return key.first.ToHash() ^ (key.second.ToHash()<<15) ^ seed;
+}
 /// Queue item for background loading of a resource.
 struct BackgroundLoadItem
 {

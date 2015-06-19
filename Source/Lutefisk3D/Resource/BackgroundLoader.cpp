@@ -20,15 +20,14 @@
 // THE SOFTWARE.
 //
 
-#include "../Resource/BackgroundLoader.h"
+#include "BackgroundLoader.h"
+
+#include "ResourceCache.h"
+#include "ResourceEvents.h"
 #include "../Core/Context.h"
 #include "../IO/Log.h"
 #include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/ResourceEvents.h"
 #include "../Core/Timer.h"
-
-#include "../DebugNew.h"
 
 namespace Urho3D
 {
@@ -78,11 +77,11 @@ void BackgroundLoader::ThreadFunction()
 
             // Process dependencies now
             // Need to lock the queue again when manipulating other entries
-            Pair<StringHash, StringHash> key = MakePair(resource->GetType(), resource->GetNameHash());
+            std::pair<StringHash, StringHash> key(resource->GetType(), resource->GetNameHash());
             backgroundLoadMutex_.Acquire();
             if (item.dependents_.size())
             {
-                for (const Pair<StringHash, StringHash> &dependent : item.dependents_)
+                for (const std::pair<StringHash, StringHash> &dependent : item.dependents_)
                 {
                     auto j = backgroundLoadQueue_.find(dependent);
                     if (j != backgroundLoadQueue_.end())
@@ -101,7 +100,7 @@ void BackgroundLoader::ThreadFunction()
 bool BackgroundLoader::QueueResource(StringHash type, const QString& name, bool sendEventOnFailure, Resource* caller)
 {
     StringHash nameHash(name);
-    Pair<StringHash, StringHash> key = MakePair(type, nameHash);
+    std::pair<StringHash, StringHash> key(type, nameHash);
 
     MutexLock lock(backgroundLoadMutex_);
 
@@ -139,7 +138,7 @@ bool BackgroundLoader::QueueResource(StringHash type, const QString& name, bool 
     // If this is a resource calling for the background load of more resources, mark the dependency as necessary
     if (caller)
     {
-        Pair<StringHash, StringHash> callerKey = MakePair(caller->GetType(), caller->GetNameHash());
+        std::pair<StringHash, StringHash> callerKey(caller->GetType(), caller->GetNameHash());
         auto j = backgroundLoadQueue_.find(callerKey);
         if (j != backgroundLoadQueue_.end())
         {
@@ -163,7 +162,7 @@ void BackgroundLoader::WaitForResource(StringHash type, StringHash nameHash)
     backgroundLoadMutex_.Acquire();
 
     // Check if the resource in question is being background loaded
-    Pair<StringHash, StringHash> key = MakePair(type, nameHash);
+    std::pair<StringHash, StringHash> key(type, nameHash);
     auto i = backgroundLoadQueue_.find(key);
     if (i != backgroundLoadQueue_.end())
     {

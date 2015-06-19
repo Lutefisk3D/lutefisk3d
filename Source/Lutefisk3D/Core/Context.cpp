@@ -126,7 +126,7 @@ void Context::RemoveSubsystem(StringHash objectType)
 void Context::RegisterAttribute(StringHash objectType, const AttributeInfo& attr)
 {
     // None or pointer types can not be supported
-    if (attr.type_ == QVariant::Invalid) // || attr.type_ == VAR_VOIDPTR || attr.type_ == VAR_PTR
+    if (attr.type_ == VAR_NONE) // || attr.type_ == VAR_VOIDPTR || attr.type_ == VAR_PTR
         return;
     attributes_[objectType].push_back(attr);
 
@@ -140,7 +140,7 @@ void Context::RemoveAttribute(StringHash objectType, const char* name)
     RemoveNamedAttribute(networkAttributes_, objectType, name);
 }
 
-void Context::UpdateAttributeDefaultValue(StringHash objectType, const char* name, const QVariant& defaultValue)
+void Context::UpdateAttributeDefaultValue(StringHash objectType, const char* name, const Variant& defaultValue)
 {
     AttributeInfo* info = GetAttribute(objectType, name);
     if (info)

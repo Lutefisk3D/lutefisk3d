@@ -1,13 +1,17 @@
 set(INCLUDES
+    Attribute.h
     CoreEvents.h
     Condition.h
+    Context.h
     Mutex.h
+    Main.h
     Object.h
     ProcessUtils.h
     Profiler.h
     Thread.h
     Timer.h
     Variant.h
+    WorkQueue.h
 )
 set(SOURCE
     Condition.cpp
@@ -18,6 +22,7 @@ set(SOURCE
     Profiler.cpp
     Thread.cpp
     Timer.cpp
+    WorkQueue.cpp
 )
 
 add_library(Lutefisk3D_Core OBJECT ${SOURCE} ${INCLUDES})

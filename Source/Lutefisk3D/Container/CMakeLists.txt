@@ -10,6 +10,8 @@ SmallOrig.h
 SmallVector.h
 Str.h
 Swap.h
+
+sherwood_map.hpp
 )
 set(SOURCE
     Allocator.cpp

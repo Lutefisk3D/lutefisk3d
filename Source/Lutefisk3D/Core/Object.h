@@ -26,16 +26,16 @@
 #include "../Container/HashMap.h"
 #include "../Container/Ptr.h"
 #include "../Container/Str.h"
+#include "../Core/Variant.h"
 #include "../Math/StringHash.h"
 
 #include <QtCore/QString>
-#include <QtCore/QVariant>
 #include <cassert>
 #include <deque>
 
 namespace Urho3D
 {
-typedef HashMap<StringHash, QVariant> VariantMap;
+typedef HashMap<StringHash, Variant> VariantMap;
 
 class Context;
 class EventHandler;

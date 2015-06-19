@@ -59,7 +59,7 @@ public:
     /// Remove object attribute.
     void RemoveAttribute(StringHash objectType, const char* name);
     /// Update object attribute's default value.
-    void UpdateAttributeDefaultValue(StringHash objectType, const char* name, const QVariant& defaultValue);
+    void UpdateAttributeDefaultValue(StringHash objectType, const char* name, const Variant& defaultValue);
     /// Return a preallocated map for event data. Used for optimization to avoid constant re-allocation of event data maps.
     VariantMap& GetEventDataMap();
 
@@ -78,7 +78,7 @@ public:
     /// Template version of copying base class attributes to derived class.
     template <class T, class U> void CopyBaseAttributes();
     /// Template version of updating an object attribute's default value.
-    template <class T> void UpdateAttributeDefaultValue(const char* name, const QVariant& defaultValue);
+    template <class T> void UpdateAttributeDefaultValue(const char* name, const Variant& defaultValue);
 
     /// Return subsystem by type.
     Object* GetSubsystem(StringHash type) const;
@@ -186,6 +186,6 @@ template <class T> void Context::RemoveAttribute(const char* name) { RemoveAttri
 template <class T, class U> void Context::CopyBaseAttributes() { CopyBaseAttributes(T::GetTypeStatic(), U::GetTypeStatic()); }
 template <class T> T* Context::GetSubsystem() const { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }
 template <class T> AttributeInfo* Context::GetAttribute(const char* name) { return GetAttribute(T::GetTypeStatic(), name); }
-template <class T> void Context::UpdateAttributeDefaultValue(const char* name, const QVariant& defaultValue) { UpdateAttributeDefaultValue(T::GetTypeStatic(), name, defaultValue); }
+template <class T> void Context::UpdateAttributeDefaultValue(const char* name, const Variant& defaultValue) { UpdateAttributeDefaultValue(T::GetTypeStatic(), name, defaultValue); }
 
 }

@@ -27,7 +27,8 @@
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
 #include "../IO/Log.h"
-#include <QtCore/QVariant>
+#include "../Core/Variant.h"
+
 
 namespace Urho3D
 {
@@ -41,7 +42,6 @@ enum InterpolationMode
 template<class T>
 class Spline
 {
-    Q_GADGET
 public:
     /// Default constructor.
     Spline() : interpolationMode_(BEZIER_CURVE) { }
@@ -82,9 +82,9 @@ public:
     /// Return the Knots of the Spline.
     const std::vector<T>& GetKnots() const { return knots_; }
     /// Return the Knot at the specific index.
-    QVariant GetKnot(unsigned index) const { return knots_[index]; }
+    Variant GetKnot(unsigned index) const { return knots_[index]; }
     /// Return the T of the point of the Spline at f from 0.f - 1.f.
-    QVariant GetPoint(float f) const
+    Variant GetPoint(float f) const
     {
         if (knots_.size() < 2)
             return knots_.size() == 1 ? knots_[0] : T();
@@ -107,7 +107,7 @@ public:
     /// Set the InterpolationMode of the Spline.
     void SetInterpolationMode(InterpolationMode interpolationMode) { interpolationMode_ = interpolationMode; }
     /// Set the Knots of the Spline.
-    void SetKnots(const std::vector<QVariant>& knots) { knots_ = knots; }
+    void SetKnots(const std::vector<Variant>& knots) { knots_ = knots; }
     /// Set the Knot value of an existing Knot.
     void SetKnot(const T& knot, unsigned index)
     {

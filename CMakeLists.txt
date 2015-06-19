@@ -13,6 +13,7 @@ ELSE()
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} "  ) #--coverage
 ENDIF()
 
+#set(CMAKE_AUTOMOC ON)
 SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(Qt5Core 5.5.0)
@@ -25,4 +26,3 @@ add_subdirectory(Source)
 #add_subdirectory(Client)
 #add_subdirectory(Common)
 #add_subdirectory(Server)
-

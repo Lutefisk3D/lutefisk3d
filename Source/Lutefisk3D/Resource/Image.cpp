@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <QtGui/QImage>
+#include <SDL2/SDL.h>
 
 #ifndef MAKEFOURCC
 #define MAKEFOURCC(ch0, ch1, ch2, ch3) ((unsigned)(ch0) | ((unsigned)(ch1) << 8) | ((unsigned)(ch2) << 16) | ((unsigned)(ch3) << 24))
@@ -188,8 +189,8 @@ bool CompressedLevel::Decompress(unsigned char* dest)
         return true;
 
     default:
-         // Unknown format
-         return false;
+        // Unknown format
+        return false;
     }
 }
 
@@ -241,7 +242,7 @@ bool Image::BeginLoad(Deserializer& source)
 
         case 0:
             if (ddsd.ddpfPixelFormat_.dwRGBBitCount_ != 32 && ddsd.ddpfPixelFormat_.dwRGBBitCount_ != 24 &&
-                ddsd.ddpfPixelFormat_.dwRGBBitCount_ != 16)
+                    ddsd.ddpfPixelFormat_.dwRGBBitCount_ != 16)
             {
                 LOGERROR("Unsupported DDS pixel byte size");
                 return false;
@@ -274,17 +275,17 @@ bool Image::BeginLoad(Deserializer& source)
             unsigned sourcePixelByteSize = ddsd.ddpfPixelFormat_.dwRGBBitCount_ >> 3;
             unsigned numPixels = dataSize / sourcePixelByteSize;
 
-            #define ADJUSTSHIFT(mask, l, r) \
-                if (mask && mask >= 0x100) \
-                { \
-                    while ((mask >> r) >= 0x100) \
-                        ++r; \
-                } \
-                else if (mask && mask < 0x80) \
-                { \
-                    while ((mask << l) < 0x80) \
-                        ++l; \
-                }
+#define ADJUSTSHIFT(mask, l, r) \
+    if (mask && mask >= 0x100) \
+            { \
+    while ((mask >> r) >= 0x100) \
+    ++r; \
+        } \
+    else if (mask && mask < 0x80) \
+            { \
+    while ((mask << l) < 0x80) \
+    ++l; \
+        }
 
             unsigned rShiftL = 0, gShiftL = 0, bShiftL = 0, aShiftL = 0;
             unsigned rShiftR = 0, gShiftR = 0, bShiftR = 0, aShiftR = 0;
@@ -293,62 +294,62 @@ bool Image::BeginLoad(Deserializer& source)
             unsigned bMask = ddsd.ddpfPixelFormat_.dwBBitMask_;
             unsigned aMask = ddsd.ddpfPixelFormat_.dwRGBAlphaBitMask_;
             ADJUSTSHIFT(rMask, rShiftL, rShiftR)
-            ADJUSTSHIFT(gMask, gShiftL, gShiftR)
-            ADJUSTSHIFT(bMask, bShiftL, bShiftR)
-            ADJUSTSHIFT(aMask, aShiftL, aShiftR)
+                    ADJUSTSHIFT(gMask, gShiftL, gShiftR)
+                    ADJUSTSHIFT(bMask, bShiftL, bShiftR)
+                    ADJUSTSHIFT(aMask, aShiftL, aShiftR)
 
-            SharedArrayPtr<unsigned char> rgbaData(new unsigned char[numPixels * 4]);
+                    SharedArrayPtr<unsigned char> rgbaData(new unsigned char[numPixels * 4]);
             SetMemoryUse(numPixels * 4);
 
             switch (sourcePixelByteSize)
             {
             case 4:
-                {
-                    unsigned* src = (unsigned*)data_.Get();
-                    unsigned char* dest = rgbaData.Get();
+            {
+                unsigned* src = (unsigned*)data_.Get();
+                unsigned char* dest = rgbaData.Get();
 
-                    while (numPixels--)
-                    {
-                        unsigned pixels = *src++;
-                        *dest++ = ((pixels & rMask) << rShiftL) >> rShiftR;
-                        *dest++ = ((pixels & gMask) << gShiftL) >> gShiftR;
-                        *dest++ = ((pixels & bMask) << bShiftL) >> bShiftR;
-                        *dest++ = ((pixels & aMask) << aShiftL) >> aShiftR;
-                    }
+                while (numPixels--)
+                {
+                    unsigned pixels = *src++;
+                    *dest++ = ((pixels & rMask) << rShiftL) >> rShiftR;
+                    *dest++ = ((pixels & gMask) << gShiftL) >> gShiftR;
+                    *dest++ = ((pixels & bMask) << bShiftL) >> bShiftR;
+                    *dest++ = ((pixels & aMask) << aShiftL) >> aShiftR;
                 }
+            }
                 break;
 
             case 3:
-                {
-                    unsigned char* src = data_.Get();
-                    unsigned char* dest = rgbaData.Get();
+            {
+                unsigned char* src = data_.Get();
+                unsigned char* dest = rgbaData.Get();
 
-                    while (numPixels--)
-                    {
-                        unsigned pixels = src[0] | (src[1] << 8) | (src[2] << 16);
-                        src += 3;
-                        *dest++ = ((pixels & rMask) << rShiftL) >> rShiftR;
-                        *dest++ = ((pixels & gMask) << gShiftL) >> gShiftR;
-                        *dest++ = ((pixels & bMask) << bShiftL) >> bShiftR;
-                        *dest++ = ((pixels & aMask) << aShiftL) >> aShiftR;
-                    }
+                while (numPixels--)
+                {
+                    unsigned pixels = src[0] | (src[1] << 8) | (src[2] << 16);
+                    src += 3;
+                    *dest++ = ((pixels & rMask) << rShiftL) >> rShiftR;
+                    *dest++ = ((pixels & gMask) << gShiftL) >> gShiftR;
+                    *dest++ = ((pixels & bMask) << bShiftL) >> bShiftR;
+                    *dest++ = ((pixels & aMask) << aShiftL) >> aShiftR;
                 }
+            }
                 break;
 
             default:
-                {
-                    unsigned short* src = (unsigned short*)data_.Get();
-                    unsigned char* dest = rgbaData.Get();
+            {
+                unsigned short* src = (unsigned short*)data_.Get();
+                unsigned char* dest = rgbaData.Get();
 
-                    while (numPixels--)
-                    {
-                        unsigned short pixels = *src++;
-                        *dest++ = ((pixels & rMask) << rShiftL) >> rShiftR;
-                        *dest++ = ((pixels & gMask) << gShiftL) >> gShiftR;
-                        *dest++ = ((pixels & bMask) << bShiftL) >> bShiftR;
-                        *dest++ = ((pixels & aMask) << aShiftL) >> aShiftR;
-                    }
+                while (numPixels--)
+                {
+                    unsigned short pixels = *src++;
+                    *dest++ = ((pixels & rMask) << rShiftL) >> rShiftR;
+                    *dest++ = ((pixels & gMask) << gShiftL) >> gShiftR;
+                    *dest++ = ((pixels & bMask) << bShiftL) >> bShiftR;
+                    *dest++ = ((pixels & aMask) << aShiftL) >> aShiftR;
                 }
+            }
                 break;
             }
 
@@ -571,7 +572,7 @@ bool Image::BeginLoad(Deserializer& source)
         unsigned char* pixelData = GetImageData(source, width, height, components);
         if (!pixelData)
         {
-            LOGERROR("Could not load image " + source.GetName() + ": " + QString(stbi_failure_reason()));
+            LOGERROR("Could not load image " + source.GetName() + ": ");
             return false;
         }
         SetSize(width, height, components);
@@ -601,22 +602,21 @@ bool Image::Save(Serializer& dest) const
     QImage::Format srcfmt = QImage::Format_Invalid;
     switch(components_) {
     case 1:
-       srcfmt = QImage::Format_Grayscale8 ; break;
+        srcfmt = QImage::Format_Grayscale8 ; break;
     case 3:
-       srcfmt = QImage::Format_RGB888 ; break;
+        srcfmt = QImage::Format_RGB888 ; break;
     case 4:
-       srcfmt = QImage::Format_ARGB32 ; break;
+        srcfmt = QImage::Format_ARGB32 ; break;
     default:
         assert(false);
     }
 
-    int len;
     QByteArray bytes;
     QBuffer buffer(&bytes);
     buffer.open(QIODevice::WriteOnly);
     QImage im(data_.Get(), width_, height_, components_*width_,srcfmt);
     im.save(&buffer,"png");
-    bool success = dest.Write(bytes.data(), bytes.size()) == (unsigned)len;
+    bool success = dest.Write(bytes.data(), bytes.size()) == (unsigned)bytes.size();
     return success;
 }
 
@@ -724,7 +724,7 @@ bool Image::LoadColorLUT(Deserializer& source)
     unsigned char* pixelDataIn = GetImageData(source, width, height, components);
     if (!pixelDataIn)
     {
-        LOGERROR("Could not load image " + source.GetName() + ": " + QString(stbi_failure_reason()));
+        LOGERROR("Could not load image " + source.GetName() + ": ");
         return false;
     }
     if (components != 3)
@@ -969,11 +969,11 @@ bool Image::saveImageCommon(const QString &fileName,const char *format,int quali
     QImage::Format targetfmt = QImage::Format_Invalid;
     switch(components_) {
     case 1:
-       targetfmt = QImage::Format_Grayscale8 ; break;
+        targetfmt = QImage::Format_Grayscale8 ; break;
     case 3:
-       targetfmt = QImage::Format_RGB888 ; break;
+        targetfmt = QImage::Format_RGB888 ; break;
     case 4:
-       targetfmt = QImage::Format_ARGB32 ; break;
+        targetfmt = QImage::Format_ARGB32 ; break;
     default:
         assert(false);
     }
@@ -1329,7 +1329,7 @@ SharedPtr<Image> Image::GetNextLevel() const
                     for (int x = 0; x < widthOut; ++x)
                     {
                         out[x] = ((unsigned)inOuterUpper[x*2] + inOuterUpper[x*2+1] + inOuterLower[x*2] + inOuterLower[x*2+1] +
-                            inInnerUpper[x*2] + inInnerUpper[x*2+1] + inInnerLower[x*2] + inInnerLower[x*2+1]) >> 3;
+                                inInnerUpper[x*2] + inInnerUpper[x*2+1] + inInnerLower[x*2] + inInnerLower[x*2+1]) >> 3;
                     }
                 }
             }
@@ -1352,9 +1352,9 @@ SharedPtr<Image> Image::GetNextLevel() const
                     for (int x = 0; x < widthOut*2; x += 2)
                     {
                         out[x] = ((unsigned)inOuterUpper[x*2] + inOuterUpper[x*2+2] + inOuterLower[x*2] + inOuterLower[x*2+2] +
-                            inInnerUpper[x*2] + inInnerUpper[x*2+2] + inInnerLower[x*2] + inInnerLower[x*2+2]) >> 3;
+                                inInnerUpper[x*2] + inInnerUpper[x*2+2] + inInnerLower[x*2] + inInnerLower[x*2+2]) >> 3;
                         out[x+1] = ((unsigned)inOuterUpper[x*2+1] + inOuterUpper[x*2+3] + inOuterLower[x*2+1] + inOuterLower[x*2+3] +
-                            inInnerUpper[x*2+1] + inInnerUpper[x*2+3] + inInnerLower[x*2+1] + inInnerLower[x*2+3]) >> 3;
+                                inInnerUpper[x*2+1] + inInnerUpper[x*2+3] + inInnerLower[x*2+1] + inInnerLower[x*2+3]) >> 3;
                     }
                 }
             }
@@ -1377,11 +1377,11 @@ SharedPtr<Image> Image::GetNextLevel() const
                     for (int x = 0; x < widthOut*3; x += 3)
                     {
                         out[x] = ((unsigned)inOuterUpper[x*2] + inOuterUpper[x*2+3] + inOuterLower[x*2] + inOuterLower[x*2+3] +
-                            inInnerUpper[x*2] + inInnerUpper[x*2+3] + inInnerLower[x*2] + inInnerLower[x*2+3]) >> 3;
+                                inInnerUpper[x*2] + inInnerUpper[x*2+3] + inInnerLower[x*2] + inInnerLower[x*2+3]) >> 3;
                         out[x+1] = ((unsigned)inOuterUpper[x*2+1] + inOuterUpper[x*2+4] + inOuterLower[x*2+1] + inOuterLower[x*2+4] +
-                            inInnerUpper[x*2+1] + inInnerUpper[x*2+4] + inInnerLower[x*2+1] + inInnerLower[x*2+4]) >> 3;
+                                inInnerUpper[x*2+1] + inInnerUpper[x*2+4] + inInnerLower[x*2+1] + inInnerLower[x*2+4]) >> 3;
                         out[x+2] = ((unsigned)inOuterUpper[x*2+2] + inOuterUpper[x*2+5] + inOuterLower[x*2+2] + inOuterLower[x*2+5] +
-                            inInnerUpper[x*2+2] + inInnerUpper[x*2+5] + inInnerLower[x*2+2] + inInnerLower[x*2+5]) >> 3;
+                                inInnerUpper[x*2+2] + inInnerUpper[x*2+5] + inInnerLower[x*2+2] + inInnerLower[x*2+5]) >> 3;
                     }
                 }
             }
@@ -1404,11 +1404,11 @@ SharedPtr<Image> Image::GetNextLevel() const
                     for (int x = 0; x < widthOut*4; x += 4)
                     {
                         out[x] = ((unsigned)inOuterUpper[x*2] + inOuterUpper[x*2+4] + inOuterLower[x*2] + inOuterLower[x*2+4] +
-                            inInnerUpper[x*2] + inInnerUpper[x*2+4] + inInnerLower[x*2] + inInnerLower[x*2+4]) >> 3;
+                                inInnerUpper[x*2] + inInnerUpper[x*2+4] + inInnerLower[x*2] + inInnerLower[x*2+4]) >> 3;
                         out[x+1] = ((unsigned)inOuterUpper[x*2+1] + inOuterUpper[x*2+5] + inOuterLower[x*2+1] + inOuterLower[x*2+5] +
-                            inInnerUpper[x*2+1] + inInnerUpper[x*2+5] + inInnerLower[x*2+1] + inInnerLower[x*2+5]) >> 3;
+                                inInnerUpper[x*2+1] + inInnerUpper[x*2+5] + inInnerLower[x*2+1] + inInnerLower[x*2+5]) >> 3;
                         out[x+2] = ((unsigned)inOuterUpper[x*2+2] + inOuterUpper[x*2+6] + inOuterLower[x*2+2] + inOuterLower[x*2+6] +
-                            inInnerUpper[x*2+2] + inInnerUpper[x*2+6] + inInnerLower[x*2+2] + inInnerLower[x*2+6]) >> 3;
+                                inInnerUpper[x*2+2] + inInnerUpper[x*2+6] + inInnerLower[x*2+2] + inInnerLower[x*2+6]) >> 3;
                     }
                 }
             }
@@ -1528,7 +1528,7 @@ CompressedLevel Image::GetCompressedLevel(unsigned index) const
             {
                 LOGERROR("Compressed level is outside image data. Offset: " +
                          QString::number(offset) + " Size: " + QString::number(level.dataSize_) +
-                    " Datasize: " + QString::number(GetMemoryUse()));
+                         " Datasize: " + QString::number(GetMemoryUse()));
                 level.data_ = nullptr;
                 return level;
             }
@@ -1567,7 +1567,7 @@ CompressedLevel Image::GetCompressedLevel(unsigned index) const
             {
                 LOGERROR("Compressed level is outside image data. Offset: " +
                          QString::number(offset) + " Size: " + QString::number(level.dataSize_) +
-                    " Datasize: " + QString::number(GetMemoryUse()));
+                         " Datasize: " + QString::number(GetMemoryUse()));
                 level.data_ = nullptr;
                 return level;
             }
@@ -1606,7 +1606,7 @@ CompressedLevel Image::GetCompressedLevel(unsigned index) const
             {
                 LOGERROR("Compressed level is outside image data. Offset: " +
                          QString::number(offset) + " Size: " + QString::number(level.dataSize_) +
-                    " Datasize: " + QString::number(GetMemoryUse()));
+                         " Datasize: " + QString::number(GetMemoryUse()));
                 level.data_ = nullptr;
                 return level;
             }
@@ -1730,71 +1730,71 @@ Image* Image::GetSubimage(const IntRect& rect) const
     }
 }
 
-//SDL_Surface* Image::GetSDLSurface(const IntRect& rect) const
-//{
-//    if (!data_)
-//        return nullptr;
+SDL_Surface* Image::GetSDLSurface(const IntRect& rect) const
+{
+    if (!data_)
+        return nullptr;
 
-//    if (depth_ > 1)
-//    {
-//        LOGERROR("Can not get SDL surface from 3D image");
-//        return nullptr;
-//    }
+    if (depth_ > 1)
+    {
+        LOGERROR("Can not get SDL surface from 3D image");
+        return nullptr;
+    }
 
-//    if (IsCompressed())
-//    {
-//        LOGERROR("Can not get SDL surface from compressed image " + GetName());
-//        return nullptr;
-//    }
+    if (IsCompressed())
+    {
+        LOGERROR("Can not get SDL surface from compressed image " + GetName());
+        return nullptr;
+    }
 
-//    if (components_ < 3)
-//    {
-//        LOGERROR("Can not get SDL surface from image " + GetName() + " with less than 3 components");
-//        return nullptr;
-//    }
+    if (components_ < 3)
+    {
+        LOGERROR("Can not get SDL surface from image " + GetName() + " with less than 3 components");
+        return nullptr;
+    }
 
-//    IntRect imageRect = rect;
-//    // Use full image if illegal rect
-//    if (imageRect.left_ < 0 || imageRect.top_ < 0 || imageRect.right_ > width_ || imageRect.bottom_ > height_ ||
-//        imageRect.left_ >= imageRect.right_ || imageRect.top_ >= imageRect.bottom_)
-//    {
-//        imageRect.left_ = 0;
-//        imageRect.top_ = 0;
-//        imageRect.right_ = width_;
-//        imageRect.bottom_ = height_;
-//    }
+    IntRect imageRect = rect;
+    //    // Use full image if illegal rect
+    if (imageRect.left_ < 0 || imageRect.top_ < 0 || imageRect.right_ > width_ || imageRect.bottom_ > height_ ||
+            imageRect.left_ >= imageRect.right_ || imageRect.top_ >= imageRect.bottom_)
+    {
+        imageRect.left_ = 0;
+        imageRect.top_ = 0;
+        imageRect.right_ = width_;
+        imageRect.bottom_ = height_;
+    }
 
-//    int imageWidth = width_;
-//    int width = imageRect.Width();
-//    int height = imageRect.Height();
+    int imageWidth = width_;
+    int width = imageRect.Width();
+    int height = imageRect.Height();
 
-//    // Assume little-endian for all the supported platforms
-//    unsigned rMask = 0x000000ff;
-//    unsigned gMask = 0x0000ff00;
-//    unsigned bMask = 0x00ff0000;
-//    unsigned aMask = 0xff000000;
+    //    // Assume little-endian for all the supported platforms
+    unsigned rMask = 0x000000ff;
+    unsigned gMask = 0x0000ff00;
+    unsigned bMask = 0x00ff0000;
+    unsigned aMask = 0xff000000;
 
-//    SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height, components_ * 8, rMask, gMask, bMask, aMask);
-//    if (surface)
-//    {
-//        SDL_LockSurface(surface);
+    SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height, components_ * 8, rMask, gMask, bMask, aMask);
+    if (surface)
+    {
+        SDL_LockSurface(surface);
 
-//        unsigned char* destination = reinterpret_cast<unsigned char*>(surface->pixels);
-//        unsigned char* source = data_ + components_ * (imageWidth * imageRect.top_ + imageRect.left_);
-//        for (int i = 0; i < height; ++i)
-//        {
-//            memcpy(destination, source, components_ * width);
-//            destination += surface->pitch;
-//            source += components_ * imageWidth;
-//        }
+        unsigned char* destination = reinterpret_cast<unsigned char*>(surface->pixels);
+        unsigned char* source = data_ + components_ * (imageWidth * imageRect.top_ + imageRect.left_);
+        for (int i = 0; i < height; ++i)
+        {
+            memcpy(destination, source, components_ * width);
+            destination += surface->pitch;
+            source += components_ * imageWidth;
+        }
 
-//        SDL_UnlockSurface(surface);
-//    }
-//    else
-//        LOGERROR("Failed to create SDL surface from image " + GetName());
+        SDL_UnlockSurface(surface);
+    }
+    else
+        LOGERROR("Failed to create SDL surface from image " + GetName());
 
-//    return surface;
-//}
+    return surface;
+}
 
 void Image::PrecalculateLevels()
 {
@@ -1826,15 +1826,24 @@ unsigned char* Image::GetImageData(Deserializer& source, int& width, int& height
 
     QImage img(QImage::fromData(buffer.Get(),dataSize));
     assert(img.width()>0 && img.height()>0);
-    uint8_t *res = new uint8_t[img.byteCount()];
-    uint8_t *ptr = res;
-    for(int i=0; i<img.height(); ++i) {
-        memcpy(ptr,img.constScanLine(i),img.bytesPerLine());
-        ptr+=img.bytesPerLine();
+    if(((img.depth()+7)/8)==4) {
+        if(not img.hasAlphaChannel()) {
+            img = img.convertToFormat(QImage::Format_RGB888);
+        }
+        else
+            img = img.convertToFormat(QImage::Format_RGBA8888);
     }
+    components = (img.depth()+7)/8;
     width= img.width();
     height = img.height();
-    components = (img.depth()+7)/8;
+
+    uint8_t *res = new uint8_t[img.width()*img.height()*components];
+    uint8_t *ptr = res;
+    int tgtLineSize = img.width()*components;
+    for(int i=0; i<img.height(); ++i) {
+        memcpy(ptr,img.constScanLine(i),tgtLineSize);
+        ptr+=tgtLineSize;
+    }
     return res;
 }
 

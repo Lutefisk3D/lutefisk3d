@@ -1,5 +1,42 @@
-add_subdirectory(ThirdParty) # add required third party libraries to the build
-
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(ThirdParty)
 INCLUDE_DIRECTORIES(ThirdParty/cereal/include)
+INCLUDE_DIRECTORIES(ThirdParty_Builds/include)
+LINK_DIRECTORIES(ThirdParty_Builds/lib)
+
+# list of OBJECT libraries will be collected here
+set(ThirdParty_requisites)
+
+add_definitions(-DLUTEFISK3D_LOGGING)
+option(LUTEFISK3D_HEADLESS "Build without renderer component" OFF)
+option(LUTEFISK3D_SOUNDLESS "Build without audio component" OFF)
+option(LUTEFISK3D_INPUTLESS "Build without input component" OFF)
+option(LUTEFISK3D_NAVIGATIONLESS "Build without navigation component" OFF)
+option(LUTEFISK3D_NETLESS "Build without kNet network component" OFF)
+option(LUTEFISK3D_UILESS "Build without old UI component" OFF)
+option(LUTEFISK3D_2DLESS "Build without 2D component" OFF)
+
+option(LUTEFISK3D_PROFILING_SUPPORT "Internal profiling subsystem" ON)
+if(LUTEFISK3D_PROFILING_SUPPORT)
+    add_definitions(-DLUTEFISK3D_PROFILING)
+endif()
+
+if(NOT LUTEFISK3D_INPUTLESS)
+    add_definitions(-DLUTEFISK3D_INPUT)
+endif()
+if(NOT LUTEFISK3D_NAVIGATIONLESS)
+    add_definitions(-DLUTEFISK3D_NAVIGATION)
+endif()
+if(NOT LUTEFISK3D_UILESS)
+    add_definitions(-DLUTEFISK3D_UI)
+endif()
+if(NOT LUTEFISK3D_NETLESS)
+    add_definitions(-DLUTEFISK3D_NETWORK)
+endif()
+if(NOT LUTEFISK3D_2DLESS)
+    add_definitions(-DLUTEFISK3D_2D)
+endif()
+
+add_subdirectory(ThirdParty) # add required third party libraries to the build
 add_subdirectory(Lutefisk3D)
+add_subdirectory(Samples)

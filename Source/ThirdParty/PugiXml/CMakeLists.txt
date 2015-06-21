@@ -33,5 +33,7 @@ set(INCLUDES
 
 add_library(PugiXml OBJECT ${SOURCE_FILES} ${INCLUDES})
 install (FILES ${INCLUDES} DESTINATION include/ThirdParty/PugiXml)
-# Install headers for building the Urho3D library
-#install_header_files (DIRECTORY src/ DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/PugiXml FILES_MATCHING PATTERN *.h BUILD_TREE_ONLY)  # Note: the trailing slash is significant
+
+######################### Add component to the project's list
+list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:PugiXml>)
+SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)

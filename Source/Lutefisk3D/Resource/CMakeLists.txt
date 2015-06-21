@@ -22,7 +22,7 @@ set(SOURCE
 
 
 add_library(Lutefisk3D_Resource OBJECT ${SOURCE} ${INCLUDES})
-add_dependencies(Lutefisk3D_Resource PugiXml rapidjson)
+add_dependencies(Lutefisk3D_Resource PugiXml rapidjson SDL2_LIB)
 
 target_include_directories(Lutefisk3D_Resource PRIVATE
     $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>

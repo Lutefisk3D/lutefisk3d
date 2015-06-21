@@ -156,7 +156,7 @@ bool File::Open(const QString& fileName, FileMode mode)
     }
 
     QFile *tmp = new QFile(fileName);
-    handle_==nullptr;
+    handle_=nullptr;
     if(!tmp->open(openMode[mode])) {
         qDebug() << tmp->errorString();
         delete tmp;
@@ -214,7 +214,7 @@ bool File::Open(PackageFile* package, const QString& fileName)
         return false;
 
     QFile *tmp = new QFile(package->GetName());
-    handle_==nullptr;
+    handle_=nullptr;
     if(!tmp->open(QFile::ReadOnly)) {
         delete tmp;
     }

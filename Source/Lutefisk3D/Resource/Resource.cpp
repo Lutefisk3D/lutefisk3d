@@ -39,9 +39,9 @@ bool Resource::Load(Deserializer& source)
 {
     // Because BeginLoad() / EndLoad() can be called from worker threads, where profiling would be a no-op,
     // create a type name -based profile block here
-#ifdef URHO3D_PROFILING
+#ifdef LUTEFISK3D_PROFILING
     QString profileBlockName("Load" + GetTypeName());
-    
+
     Profiler* profiler = GetSubsystem<Profiler>();
     if (profiler)
         profiler->BeginBlock(qPrintable(profileBlockName));
@@ -56,7 +56,7 @@ bool Resource::Load(Deserializer& source)
         success &= EndLoad();
     SetAsyncLoadState(ASYNC_DONE);
 
-#ifdef URHO3D_PROFILING
+#ifdef LUTEFISK3D_PROFILING
     if (profiler)
         profiler->EndBlock();
 #endif

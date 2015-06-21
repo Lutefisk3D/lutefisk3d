@@ -1,6 +1,8 @@
 
 ################# Engine Core ########################
 
+set(Lutefisk3D_components)
+
 add_subdirectory(Container)
 add_subdirectory(Core)
 add_subdirectory(Math)
@@ -10,6 +12,33 @@ add_subdirectory(Resource)
 
 add_subdirectory(Scene)
 
+add_subdirectory(Engine)
+
+if(NOT LUTEFISK3D_HEADLESS)
+    add_subdirectory(Graphics)
+    if(NOT LUTEFISK3D_UILESS)
+        add_subdirectory(UI)
+    endif()
+endif()
+
+if(NOT LUTEFISK3D_SOUNDLESS)
+    add_subdirectory(Audio)
+endif()
+
+if(NOT LUTEFISK3D_INPUTLESS)
+    add_subdirectory(Input)
+endif()
+
+if(NOT LUTEFISK3D_NAVIGATIONLESS)
+    add_subdirectory(Navigation)
+endif()
+if(NOT LUTEFISK3D_NETLESS)
+    add_subdirectory(Network)
+endif()
+if(NOT LUTEFISK3D_2DLESS)
+    add_subdirectory(Urho2D)
+endif()
+
 
 add_library(Lutefisk3D STATIC
     $<TARGET_OBJECTS:Lutefisk3D_Containers>
@@ -17,12 +46,19 @@ add_library(Lutefisk3D STATIC
     $<TARGET_OBJECTS:Lutefisk3D_IO>
     $<TARGET_OBJECTS:Lutefisk3D_Math>
     $<TARGET_OBJECTS:Lutefisk3D_Resource>
+    $<TARGET_OBJECTS:Lutefisk3D_Engine>
     $<TARGET_OBJECTS:Lutefisk3D_Scene>
-    $<TARGET_OBJECTS:PugiXml>
-    $<TARGET_OBJECTS:LibCpuId>
-    $<TARGET_OBJECTS:LZ4>
-
+    ${Lutefisk3D_components}
+    ${ThirdParty_requisites}
 )
+
 target_link_libraries(Lutefisk3D Threads::Threads)
+if(NOT LUTEFISK3D_HEADLESS)
+    target_link_libraries(Lutefisk3D SDL2_LIB dl) # add imported SDL target
+    target_link_libraries(Lutefisk3D glbinding_LIB) # add imported glbinding target
+endif()
+if(NOT LUTEFISK3D_NETLESS)
+    target_link_libraries(Lutefisk3D kNet_LIB) # add imported kNet target
+endif()
 qt5_use_modules(Lutefisk3D Core Gui)
 

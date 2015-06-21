@@ -45,15 +45,15 @@ typedef std::deque<EventHandler *>::const_iterator cilEventHandler;
 #define OBJECT(typeName) \
     public: \
         typedef typeName ClassName; \
-        virtual StringHash GetType() const override { return GetTypeStatic(); } \
-        virtual StringHash GetBaseType() const override { return GetBaseTypeStatic(); } \
+        virtual Urho3D::StringHash GetType() const override { return GetTypeStatic(); } \
+        virtual Urho3D::StringHash GetBaseType() const override { return GetBaseTypeStatic(); } \
         virtual const QString& GetTypeName() const override { return GetTypeNameStatic(); } \
-        static StringHash GetTypeStatic() { static const StringHash typeStatic(#typeName); return typeStatic; } \
+        static Urho3D::StringHash GetTypeStatic() { static const Urho3D::StringHash typeStatic(#typeName); return typeStatic; } \
         static const QString& GetTypeNameStatic() { static const QString typeNameStatic(#typeName); return typeNameStatic; } \
 
 #define BASEOBJECT(typeName) \
     public: \
-        static StringHash GetBaseTypeStatic() { static const StringHash baseTypeStatic(#typeName); return baseTypeStatic; } \
+        static Urho3D::StringHash GetBaseTypeStatic() { static const Urho3D::StringHash baseTypeStatic(#typeName); return baseTypeStatic; } \
 
 /// Base class for objects with type identification, subsystem access and event sending/receiving capability.
 class Object : public RefCounted

@@ -127,7 +127,7 @@ private:
     bool quiet_;
 };
 
-#ifdef URHO3D_LOGGING
+#ifdef LUTEFISK3D_LOGGING
 #define LOGDEBUG(message) Urho3D::Log::Write(Urho3D::LOG_DEBUG, message)
 #define LOGINFO(message) Urho3D::Log::Write(Urho3D::LOG_INFO, message)
 #define LOGWARNING(message) Urho3D::Log::Write(Urho3D::LOG_WARNING, message)
@@ -138,7 +138,7 @@ private:
 #define LOGINFO(message)
 #define LOGWARNING(message)
 #define LOGERROR(message)
-#define LOGRAW(message)
+#define LOGRAW(message) z
 #define LOGDEBUGF(...)
 #define LOGINFOF(...)
 #define LOGWARNINGF(...)

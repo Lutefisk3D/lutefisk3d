@@ -17,6 +17,7 @@ set(SOURCE
     Allocator.cpp
     RefCounted.cpp
     Str.cpp
+    sherwood_map.cpp
 )
 
 add_library(Lutefisk3D_Containers OBJECT ${SOURCE} ${INCLUDES})

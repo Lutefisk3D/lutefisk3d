@@ -249,7 +249,7 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
     // If BeginLoad() phase was successful, call EndLoad() and get the final success/failure result
     if (success)
     {
-#ifdef URHO3D_PROFILING
+#ifdef LUTEFISK3D_PROFILING
         QString profileBlockName("Finish" + resource->GetTypeName());
 
         Profiler* profiler = owner_->GetSubsystem<Profiler>();
@@ -259,7 +259,7 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
         LOGDEBUG("Finishing background loaded resource " + resource->GetName());
         success = resource->EndLoad();
 
-#ifdef URHO3D_PROFILING
+#ifdef LUTEFISK3D_PROFILING
         if (profiler)
             profiler->EndBlock();
 #endif

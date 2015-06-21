@@ -142,7 +142,7 @@ QString GetInternalPath(const QString& pathName);
 /// Convert a path to the format required by the operating system.
 QString GetNativePath(const QString& pathName);
 /// Convert a path to the format required by the operating system in wide characters.
-//URHO3D_API WString GetWideNativePath(const String& pathName);
+//WString GetWideNativePath(const String& pathName);
 /// Return whether a path is absolute.
 bool IsAbsolutePath(const QString& pathName);
 

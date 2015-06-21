@@ -1,10 +1,31 @@
 set(INCLUDES
-    Animatable.cpp
+    Animatable.h
+    AnimationDefs.h
+    Component.h
+    LogicComponent.h
+    Node.h
+    ObjectAnimation.h
+    Scene.h
+    SceneResolver.h
+    Serializable.h
+    SmoothedTransform.h
+    SplinePath.h
+    UnknownComponent.h
     ValueAnimation.h
     ValueAnimationInfo.h
 )
 set(SOURCE
-    Animatable.h
+    Animatable.cpp
+    Component.cpp
+    Node.cpp
+    LogicComponent.cpp
+    ObjectAnimation.cpp
+    Scene.cpp
+    SceneResolver.cpp
+    Serializable.cpp
+    SmoothedTransform.cpp
+    SplinePath.cpp
+    UnknownComponent.cpp
     ValueAnimation.cpp
     ValueAnimationInfo.cpp
 )

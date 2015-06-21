@@ -1,0 +1,132 @@
+set(INCLUDES
+    AnimatedModel.h
+    AnimationController.h
+    Animation.h
+    AnimationState.h
+    Batch.h
+    BillboardSet.h
+    Camera.h
+    ConstantBuffer.h
+    CustomGeometry.h
+    DebugRenderer.h
+    DecalSet.h
+    DrawableEvents.h
+    Drawable.h
+    Geometry.h
+    GPUObject.h
+    GraphicsDefs.h
+    GraphicsEvents.h
+    Graphics.h
+    GraphicsImpl.h
+    IndexBuffer.h
+    Light.h
+    Material.h
+    Model.h
+    OcclusionBuffer.h
+    Octree.h
+    OctreeQuery.h
+    ParticleEffect.h
+    ParticleEmitter.h
+    Renderer.h
+    RenderPath.h
+    RenderSurface.h
+    Shader.h
+    ShaderPrecache.h
+    ShaderProgram.h
+    ShaderVariation.h
+    Skeleton.h
+    Skybox.h
+    StaticModelGroup.h
+    StaticModel.h
+    Tangent.h
+    Technique.h
+    Terrain.h
+    TerrainPatch.h
+    Texture2D.h
+    Texture3D.h
+    TextureCube.h
+    Texture.h
+    VertexBuffer.h
+    VertexDeclaration.h
+    View.h
+    Viewport.h
+    Zone.h
+)
+set(SOURCE
+    AnimatedModel.cpp
+    AnimationController.cpp
+    Animation.cpp
+    AnimationState.cpp
+    Batch.cpp
+    BillboardSet.cpp
+    Camera.cpp
+    CustomGeometry.cpp
+    DebugRenderer.cpp
+    DecalSet.cpp
+    Drawable.cpp
+    Geometry.cpp
+    GraphicsDefs.cpp
+    Light.cpp
+    Material.cpp
+    Model.cpp
+    OcclusionBuffer.cpp
+    Octree.cpp
+    OctreeQuery.cpp
+    ParticleEffect.cpp
+    ParticleEmitter.cpp
+    Renderer.cpp
+    RenderPath.cpp
+    Shader.cpp
+    ShaderPrecache.cpp
+    Skeleton.cpp
+    Skybox.cpp
+    StaticModel.cpp
+    StaticModelGroup.cpp
+    Tangent.cpp
+    Technique.cpp
+    Terrain.cpp
+    TerrainPatch.cpp
+    View.cpp
+    Viewport.cpp
+    Zone.cpp
+)
+set(OPENGL2_3_RENDERER
+    OpenGL/OGLConstantBuffer.h
+    OpenGL/OGLGPUObject.h
+    OpenGL/OGLGraphics.h
+    OpenGL/OGLGraphicsImpl.h
+    OpenGL/OGLIndexBuffer.h
+    OpenGL/OGLRenderSurface.h
+    OpenGL/OGLShaderProgram.h
+    OpenGL/OGLShaderVariation.h
+    OpenGL/OGLTexture2D.h
+    OpenGL/OGLTexture3D.h
+    OpenGL/OGLTextureCube.h
+    OpenGL/OGLTexture.h
+    OpenGL/OGLVertexBuffer.h
+    OpenGL/OGLConstantBuffer.cpp
+    OpenGL/OGLGPUObject.cpp
+    OpenGL/OGLGraphics.cpp
+    OpenGL/OGLGraphicsImpl.cpp
+    OpenGL/OGLIndexBuffer.cpp
+    OpenGL/OGLRenderSurface.cpp
+    OpenGL/OGLShaderProgram.cpp
+    OpenGL/OGLShaderVariation.cpp
+    OpenGL/OGLTexture2D.cpp
+    OpenGL/OGLTexture3D.cpp
+    OpenGL/OGLTexture.cpp
+    OpenGL/OGLTextureCube.cpp
+    OpenGL/OGLVertexBuffer.cpp
+)
+
+add_library(Lutefisk3D_Graphics OBJECT ${SOURCE} ${INCLUDES} ${OPENGL2_3_RENDERER})
+add_dependencies(Lutefisk3D_Graphics SDL2 glbinding)
+target_include_directories(Lutefisk3D_Graphics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
+target_compile_definitions(Lutefisk3D_Graphics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
+set_property(TARGET Lutefisk3D_Graphics PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+######################### Add component to the project's list
+list(APPEND Lutefisk3D_components $<TARGET_OBJECTS:Lutefisk3D_Graphics>)
+SET(Lutefisk3D_components ${Lutefisk3D_components} PARENT_SCOPE)
+if(UNIT_TESTING)
+endif()

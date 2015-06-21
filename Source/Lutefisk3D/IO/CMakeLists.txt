@@ -8,6 +8,7 @@ set(INCLUDES
     FileWatcher.h
     IOEvents.h
 
+    RWOpsWrapper.h
     PackageFile.h
 
     MemoryBuffer.h

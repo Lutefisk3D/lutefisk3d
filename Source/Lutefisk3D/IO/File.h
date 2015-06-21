@@ -28,7 +28,7 @@
 #include "../Core/Object.h"
 
 #ifdef ANDROID
-#include <SDL/SDL_rwops.h>
+#include <SDL2/SDL_rwops.h>
 #endif
 
 namespace Urho3D
@@ -48,7 +48,7 @@ class PackageFile;
 class File : public Object, public Deserializer, public Serializer
 {
     OBJECT(File);
-    
+
 public:
     /// Construct.
     File(Context* context);
@@ -58,7 +58,7 @@ public:
     File(Context* context, PackageFile* package, const QString& fileName);
     /// Destruct. Close the file if open.
     virtual ~File();
-    
+
     /// Read bytes from the file. Return number of bytes actually read.
     virtual unsigned Read(void* dest, unsigned size) override;
     /// Set position from the beginning of the file.
@@ -69,7 +69,7 @@ public:
     virtual const QString& GetName() const override { return fileName_; }
     /// Return a checksum of the file contents using the SDBM hash algorithm.
     virtual unsigned GetChecksum() override;
-    
+
     /// Open a filesystem file. Return true if successful.
     bool Open(const QString& fileName, FileMode mode = FILE_READ);
     /// Open from within a package file. Return true if successful.
@@ -80,7 +80,7 @@ public:
     void Flush();
     /// Change the file name. Used by the resource system.
     void SetName(const QString& name);
-    
+
     /// Return the open mode.
     FileMode GetMode() const { return mode_; }
     /// Return whether is open.
@@ -89,7 +89,7 @@ public:
     void* GetHandle() const { return handle_; }
     /// Return whether the file originates from a package.
     bool IsPackaged() const { return offset_ != 0; }
-    
+
 private:
     /// File name.
     QString fileName_;

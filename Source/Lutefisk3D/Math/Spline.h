@@ -113,23 +113,16 @@ public:
     {
         if (index < knots_.size())
         {
-            if (knots_.size() > 0 && knots_[0].GetType() == knot.type())
+            if (knots_.size() > 0)
                 knots_[index] = knot;
-            else if (knots_.empty())
-                knots_.push_back(knot);
             else
-                LOGERROR(QString("Attempted to set a Spline's Knot value of type %1 where elements are already using %2").arg(knot.GetTypeName()).arg(knots_[0].GetTypeName()));
+                knots_.push_back(knot);
         }
     }
     /// Add a Knot to the end of the Spline.
     void AddKnot(const T& knot)
     {
-        if (!knots_.empty() && knots_[0].type() == knot.type())
-            knots_.push_back(knot);
-        else if (knots_.empty())
-            knots_.push_back(knot);
-        else
-            LOGERROR(QString("Attempted to add Knot to Spline of type %1 where elements are already using %2").arg(knot.GetTypeName()).arg(knots_[0].GetTypeName()));
+        knots_.push_back(knot);
     }
     /// Add a Knot to the Spline at a specific index.
     void AddKnot(const T& knot, unsigned index)
@@ -137,12 +130,10 @@ public:
         if (index > knots_.size())
             index = knots_.size();
 
-        if (knots_.size() > 0 && knots_[0].type() == knot.type())
+        if (knots_.size() > 0)
             knots_.insert(knots_.begin()+index, knot);
-        else if (knots_.empty())
-            knots_.push_back(knot);
         else
-            LOGERROR(QString("Attempted to add Knot to Spline of type %1 where elements are already using %2").arg(knot.GetTypeName()).arg(knots_[0].GetTypeName()));
+            knots_.push_back(knot);
     }
     /// Remove the last Knot on the Spline.
     void RemoveKnot() { knots_.pop_back(); }

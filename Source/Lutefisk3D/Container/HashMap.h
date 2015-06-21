@@ -13,6 +13,22 @@
 #include <vector>
 #include "SmallVector.h"
 
+namespace std {
+template<class T>
+struct hash< T *const > {
+    size_t operator()(const T *const key) const {
+        return hash<const void *>()((const void *)key);
+    }
+};
+
+template<class T,class U>
+struct hash< pair<T, U> > {
+    size_t operator()(const pair<T, U> & key) const {
+        return hash<T>()(key.first) ^ (hash<U>()(key.second)<<15);
+    }
+};
+}
+
 namespace Urho3D {
 #ifdef USE_QT_HASHMAP
 #define MAP_VALUE(i) (i.value())
@@ -26,6 +42,7 @@ using HashMap = ::QHash<T,U> ;
 #define MAP_KEY(i) (i->first)
 #define ELEMENT_VALUE(e) e.second
 #define ELEMENT_KEY(e) e.first
+
 
 template <typename T,int N>
 class PODVectorN : public lls::SmallVector<T,N> {

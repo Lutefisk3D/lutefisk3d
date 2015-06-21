@@ -24,5 +24,9 @@
 
 namespace Urho3D
 {
-
+const char* interpolationModeNames[] =
+{
+    "Bezier",
+    nullptr
+};
 }

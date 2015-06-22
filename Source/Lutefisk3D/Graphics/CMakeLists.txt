@@ -120,7 +120,7 @@ set(OPENGL2_3_RENDERER
 )
 
 add_library(Lutefisk3D_Graphics OBJECT ${SOURCE} ${INCLUDES} ${OPENGL2_3_RENDERER})
-add_dependencies(Lutefisk3D_Graphics SDL2 glbinding)
+add_dependencies(Lutefisk3D_Graphics SDL2_LIB glbinding)
 target_include_directories(Lutefisk3D_Graphics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Graphics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Graphics PROPERTY POSITION_INDEPENDENT_CODE ON)

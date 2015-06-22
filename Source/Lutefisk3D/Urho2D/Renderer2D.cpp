@@ -237,9 +237,6 @@ void Renderer2D::RemoveDrawable(Drawable2D* drawable)
 
 Material* Renderer2D::GetMaterial(Texture2D* texture, BlendMode blendMode)
 {
-    if (!material_)
-        return nullptr;
-
     if (!texture)
         return material_;
 

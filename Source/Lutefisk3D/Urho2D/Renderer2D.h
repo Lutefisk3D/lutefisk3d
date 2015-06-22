@@ -23,6 +23,7 @@
 #pragma once
 
 #include "../Graphics/Drawable.h"
+#include <vector>
 
 namespace Urho3D
 {
@@ -30,10 +31,11 @@ namespace Urho3D
 class Drawable2D;
 class IndexBuffer;
 class Material;
+class Technique;
 class VertexBuffer;
 struct FrameInfo;
 struct SourceBatch2D;
-
+class Texture2D;
 /// 2D view batch info.
 struct ViewBatchInfo2D
 {
@@ -60,7 +62,7 @@ struct ViewBatchInfo2D
     std::vector<SharedPtr<Geometry> > geometries_;
 };
 
-/// 2D renderer components.
+/// 2D renderer component.
 class Renderer2D : public Drawable
 {
     OBJECT(Renderer2D);
@@ -75,11 +77,11 @@ public:
     static void RegisterObject(Context* context);
 
     /// Process octree raycast. May be called from a worker thread.
-    virtual void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results);
+    virtual void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
     /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
-    virtual void UpdateBatches(const FrameInfo& frame);
+    virtual void UpdateBatches(const FrameInfo& frame) override;
     /// Prepare geometry for rendering. Called from a worker thread if possible (no GPU update.)
-    virtual void UpdateGeometry(const FrameInfo& frame);
+    virtual void UpdateGeometry(const FrameInfo& frame) override;
     /// Return whether a geometry update is necessary, and if it can happen in a worker thread.
     virtual UpdateGeometryType GetUpdateGeometryType();
 
@@ -122,6 +124,8 @@ private:
     BoundingBox frustumBoundingBox_;
     /// Cached materials.
     HashMap<Texture2D*, HashMap<int, SharedPtr<Material> > > cachedMaterials_;
+    /// Cached techniques per blend mode.
+    HashMap<int, SharedPtr<Technique> > cachedTechniques_;
 };
 
 }

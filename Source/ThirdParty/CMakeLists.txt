@@ -9,12 +9,12 @@ add_subdirectory(rapidjson)
 if(NOT UNIX)
         message(ERROR "TODO: Verify the lib paths for non UNIX builds")
 endif()
-
+set(ThirdParty_Install_Dir ${PROJECT_BINARY_DIR}/ThirdParty_Builds)
 if(NOT LUTEFISK3D_HEADLESS)
     if(UNIX)
-        set(SDL2_BuiltFile ${PROJECT_SOURCE_DIR}/Source/ThirdParty_Builds/lib/libSDL2.a)
+        set(SDL2_BuiltFile ${ThirdParty_Install_Dir}/lib/libSDL2.a)
     else()
-        set(SDL2_BuiltFile ${PROJECT_SOURCE_DIR}/Source/ThirdParty_Builds/lib/SDL2.lib)
+        set(SDL2_BuiltFile ${ThirdParty_Install_Dir}/lib/SDL2.lib)
     endif()
 
     ExternalProject_Add(
@@ -23,7 +23,7 @@ if(NOT LUTEFISK3D_HEADLESS)
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/SDL
         UPDATE_COMMAND ""
         CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSDL_SHARED:BOOL=OFF -DVIDEO_OPENGLES:BOOL=OFF -DSDL_FILESYSTEM:BOOL=OFF -DSDL_RENDERER:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-        INSTALL_DIR ${PROJECT_SOURCE_DIR}/Source/ThirdParty_Builds/
+        INSTALL_DIR ${ThirdParty_Install_Dir}/
         BUILD_BYPRODUCTS ${SDL2_BuiltFile}
     )
     ADD_LIBRARY(SDL2_LIB STATIC IMPORTED GLOBAL)
@@ -31,9 +31,9 @@ if(NOT LUTEFISK3D_HEADLESS)
     add_dependencies(SDL2_LIB SDL2)
 
     if(UNIX)
-        set(GLBINDING_BuiltFile ${PROJECT_SOURCE_DIR}/Source/ThirdParty_Builds/lib/libglbinding.a)
+        set(GLBINDING_BuiltFile ${ThirdParty_Install_Dir}/lib/libglbinding.a)
     else()
-        set(GLBINDING_BuiltFile ${PROJECT_SOURCE_DIR}/Source/ThirdParty_Builds/lib/glbinding.lib)
+        set(GLBINDING_BuiltFile ${ThirdParty_Install_Dir}/lib/glbinding.lib)
     endif()
     ExternalProject_Add(
         glbinding
@@ -41,7 +41,7 @@ if(NOT LUTEFISK3D_HEADLESS)
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glbinding
         UPDATE_COMMAND ""
         CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOPTION_BUILD_STATIC:BOOL=ON -DOPTION_BUILD_TESTS:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-        INSTALL_DIR ${PROJECT_SOURCE_DIR}/Source/ThirdParty_Builds/
+        INSTALL_DIR ${ThirdParty_Install_Dir}/
         BUILD_BYPRODUCTS ${GLBINDING_BuiltFile}
     )
     ADD_LIBRARY(glbinding_LIB STATIC IMPORTED GLOBAL)
@@ -65,9 +65,9 @@ endif()
 
 if(NOT LUTEFISK3D_NETLESS)
     if(UNIX)
-        set(KNET_BuiltFile ${PROJECT_SOURCE_DIR}/Source/ThirdParty_Builds/lib/libkNet.a)
+        set(KNET_BuiltFile ${ThirdParty_Install_Dir}/lib/libkNet.a)
     else()
-        set(KNET_BuiltFile ${PROJECT_SOURCE_DIR}/Source/ThirdParty_Builds/lib/kNet.lib)
+        set(KNET_BuiltFile ${ThirdParty_Install_Dir}/lib/kNet.lib)
     endif()
     ExternalProject_Add(
         kNet
@@ -75,7 +75,7 @@ if(NOT LUTEFISK3D_NETLESS)
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/kNet
         UPDATE_COMMAND ""
         CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-        INSTALL_DIR ${PROJECT_SOURCE_DIR}/Source/ThirdParty_Builds/
+        INSTALL_DIR ${ThirdParty_Install_Dir}/
         BUILD_BYPRODUCTS ${KNET_BuiltFile}
     )
     ADD_LIBRARY(kNet_LIB STATIC IMPORTED GLOBAL)

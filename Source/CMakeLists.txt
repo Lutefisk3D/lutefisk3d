@@ -1,8 +1,8 @@
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(ThirdParty)
 INCLUDE_DIRECTORIES(ThirdParty/cereal/include)
-INCLUDE_DIRECTORIES(ThirdParty_Builds/include)
-LINK_DIRECTORIES(ThirdParty_Builds/lib)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/ThirdParty_Builds/include)
+LINK_DIRECTORIES(${PROJECT_BINARY_DIR}/ThirdParty_Builds/lib)
 
 # list of OBJECT libraries will be collected here
 set(ThirdParty_requisites)

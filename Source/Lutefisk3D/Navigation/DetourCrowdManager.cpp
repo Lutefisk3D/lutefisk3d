@@ -35,7 +35,7 @@
 #include "../Scene/SceneEvents.h"
 #include <vector>
 
-#ifdef URHO3D_PHYSICS
+#ifdef LUTEFISK3D_PHYSICS
 #include "../Physics/PhysicsEvents.h"
 #endif
 

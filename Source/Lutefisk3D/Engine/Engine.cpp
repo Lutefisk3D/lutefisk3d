@@ -42,7 +42,7 @@
 #include "../Network/Network.h"
 #endif
 #include "../IO/PackageFile.h"
-#ifdef URHO3D_PHYSICS
+#ifdef LUTEFISK3D_PHYSICS
 #include "../Physics/PhysicsWorld.h"
 #endif
 #include "../Core/ProcessUtils.h"
@@ -137,7 +137,7 @@ Engine::Engine(Context* context) :
     // Register object factories for libraries which are not automatically registered along with subsystem creation
     RegisterSceneLibrary(context_);
 
-#ifdef URHO3D_PHYSICS
+#ifdef LUTEFISK3D_PHYSICS
     RegisterPhysicsLibrary(context_);
 #endif
 

@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <Urho3D/Physics/CollisionShape.h>
-#include <Urho3D/Physics/Constraint.h>
+#include <Lutefisk3D/Physics/CollisionShape.h>
+#include <Lutefisk3D/Physics/Constraint.h>
 
 using namespace Urho3D;
 
@@ -31,15 +31,15 @@ using namespace Urho3D;
 class CreateRagdoll : public Component
 {
     OBJECT(CreateRagdoll);
-    
+
 public:
     /// Construct.
     CreateRagdoll(Context* context);
-    
+
 protected:
     /// Handle node being assigned.
     virtual void OnNodeSet(Node* node) override;
-    
+
 private:
     /// Handle scene node's physics collision.
     void HandleNodeCollision(StringHash eventType, VariantMap& eventData);

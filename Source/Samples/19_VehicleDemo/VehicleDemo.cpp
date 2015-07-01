@@ -20,36 +20,34 @@
 // THE SOFTWARE.
 //
 
-#include <Urho3D/Urho3D.h>
-
-#include <Urho3D/Graphics/Camera.h>
-#include <Urho3D/Physics/CollisionShape.h>
-#include <Urho3D/Physics/Constraint.h>
-#include <Urho3D/Core/CoreEvents.h>
-#include <Urho3D/Engine/Engine.h>
-#include <Urho3D/IO/FileSystem.h>
-#include <Urho3D/UI/Font.h>
-#include <Urho3D/Input/Input.h>
-#include <Urho3D/Graphics/Light.h>
-#include <Urho3D/Graphics/Material.h>
-#include <Urho3D/Graphics/Model.h>
-#include <Urho3D/Graphics/Octree.h>
-#include <Urho3D/Physics/PhysicsWorld.h>
-#include <Urho3D/Core/ProcessUtils.h>
-#include <Urho3D/Graphics/Renderer.h>
-#include <Urho3D/Physics/RigidBody.h>
-#include <Urho3D/Resource/ResourceCache.h>
-#include <Urho3D/Scene/Scene.h>
-#include <Urho3D/Graphics/StaticModel.h>
-#include <Urho3D/Graphics/Terrain.h>
-#include <Urho3D/UI/Text.h>
-#include <Urho3D/UI/UI.h>
-#include <Urho3D/Graphics/Zone.h>
-
-#include "Vehicle.h"
 #include "VehicleDemo.h"
 
-#include <Urho3D/DebugNew.h>
+#include "Vehicle.h"
+
+#include <Lutefisk3D/Graphics/Camera.h>
+#include <Lutefisk3D/Physics/CollisionShape.h>
+#include <Lutefisk3D/Physics/Constraint.h>
+#include <Lutefisk3D/Core/CoreEvents.h>
+#include <Lutefisk3D/Engine/Engine.h>
+#include <Lutefisk3D/IO/FileSystem.h>
+#include <Lutefisk3D/UI/Font.h>
+#include <Lutefisk3D/Input/Input.h>
+#include <Lutefisk3D/Graphics/Light.h>
+#include <Lutefisk3D/Graphics/Material.h>
+#include <Lutefisk3D/Graphics/Model.h>
+#include <Lutefisk3D/Graphics/Octree.h>
+#include <Lutefisk3D/Physics/PhysicsWorld.h>
+#include <Lutefisk3D/Core/ProcessUtils.h>
+#include <Lutefisk3D/Graphics/Renderer.h>
+#include <Lutefisk3D/Physics/RigidBody.h>
+#include <Lutefisk3D/Resource/ResourceCache.h>
+#include <Lutefisk3D/Scene/Scene.h>
+#include <Lutefisk3D/Graphics/StaticModel.h>
+#include <Lutefisk3D/Graphics/Terrain.h>
+#include <Lutefisk3D/UI/Text.h>
+#include <Lutefisk3D/UI/UI.h>
+#include <Lutefisk3D/Graphics/Zone.h>
+
 
 const float CAMERA_DISTANCE = 10.0f;
 

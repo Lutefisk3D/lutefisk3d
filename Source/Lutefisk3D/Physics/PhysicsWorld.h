@@ -27,10 +27,10 @@
 #include "../Math/Sphere.h"
 #include "../Math/Vector3.h"
 #include "../IO/VectorBuffer.h"
-#include "../Container/Pair.h"
+
 #include "../Container/HashMap.h"
 
-#include <Bullet/LinearMath/btIDebugDraw.h>
+#include <bullet/LinearMath/btIDebugDraw.h>
 #include <QtCore/QSet>
 
 class btCollisionConfiguration;
@@ -59,7 +59,7 @@ class XMLElement;
 struct CollisionGeometryData;
 
 /// Physics raycast hit.
-struct URHO3D_API PhysicsRaycastResult
+struct PhysicsRaycastResult
 {
     /// Construct with defaults.
     PhysicsRaycastResult() :
@@ -96,7 +96,7 @@ struct DelayedWorldTransform
 static const float DEFAULT_MAX_NETWORK_ANGULAR_VELOCITY = 100.0f;
 
 /// Physics simulation world component. Should be added only to the root scene node.
-class URHO3D_API PhysicsWorld : public Component, public btIDebugDraw
+class PhysicsWorld : public Component, public btIDebugDraw
 {
     OBJECT(PhysicsWorld);
 
@@ -161,11 +161,11 @@ public:
     /// Invalidate cached collision geometry for a model.
     void RemoveCachedGeometry(Model* model);
     /// Return rigid bodies by a sphere query.
-    void GetRigidBodies(std::vector<RigidBody*>& result, const Sphere& sphere, unsigned collisionMask = M_MAX_UNSIGNED);
+    void GetRigidBodies(std::unordered_set<RigidBody*>& result, const Sphere& sphere, unsigned collisionMask = M_MAX_UNSIGNED);
     /// Return rigid bodies by a box query.
-    void GetRigidBodies(std::vector<RigidBody*>& result, const BoundingBox& box, unsigned collisionMask = M_MAX_UNSIGNED);
+    void GetRigidBodies(std::unordered_set<RigidBody *> &result, const BoundingBox& box, unsigned collisionMask = M_MAX_UNSIGNED);
     /// Return rigid bodies that have been in collision with a specific body on the last simulation step.
-    void GetRigidBodies(std::vector<RigidBody*>& result, const RigidBody* body);
+    void GetRigidBodies(std::unordered_set<RigidBody*>& result, const RigidBody* body);
 
     /// Return gravity.
     Vector3 GetGravity() const;
@@ -210,9 +210,9 @@ public:
     /// Clean up the geometry cache.
     void CleanupGeometryCache();
     /// Return trimesh collision geometry cache.
-    HashMap<Pair<Model*, unsigned>, SharedPtr<CollisionGeometryData> >& GetTriMeshCache() { return triMeshCache_; }
+    HashMap<std::pair<Model*, unsigned>, SharedPtr<CollisionGeometryData> >& GetTriMeshCache() { return triMeshCache_; }
     /// Return convex collision geometry cache.
-    HashMap<Pair<Model*, unsigned>, SharedPtr<CollisionGeometryData> >& GetConvexCache() { return convexCache_; }
+    HashMap<std::pair<Model*, unsigned>, SharedPtr<CollisionGeometryData> >& GetConvexCache() { return convexCache_; }
     /// Set node dirtying to be disregarded.
     void SetApplyingTransforms(bool enable) { applyingTransforms_ = enable; }
     /// Return whether node dirtying should be disregarded.
@@ -253,15 +253,15 @@ private:
     /// Constraints in the world.
     std::vector<Constraint*> constraints_;
     /// Collision pairs on this frame.
-    HashMap<Pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> >, btPersistentManifold* > currentCollisions_;
+    HashMap<std::pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> >, btPersistentManifold* > currentCollisions_;
     /// Collision pairs on the previous frame. Used to check if a collision is "new." Manifolds are not guaranteed to exist anymore.
-    HashMap<Pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> >, btPersistentManifold* > previousCollisions_;
+    HashMap<std::pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> >, btPersistentManifold* > previousCollisions_;
     /// Delayed (parented) world transform assignments.
     HashMap<RigidBody*, DelayedWorldTransform> delayedWorldTransforms_;
     /// Cache for trimesh geometry data by model and LOD level.
-    HashMap<Pair<Model*, unsigned>, SharedPtr<CollisionGeometryData> > triMeshCache_;
+    HashMap<std::pair<Model*, unsigned>, SharedPtr<CollisionGeometryData> > triMeshCache_;
     /// Cache for convex geometry data by model and LOD level.
-    HashMap<Pair<Model*, unsigned>, SharedPtr<CollisionGeometryData> > convexCache_;
+    HashMap<std::pair<Model*, unsigned>, SharedPtr<CollisionGeometryData> > convexCache_;
     /// Preallocated event data map for physics collision events.
     VariantMap physicsCollisionData_;
     /// Preallocated event data map for node collision events.
@@ -291,6 +291,6 @@ private:
 };
 
 /// Register Physics library objects.
-void URHO3D_API RegisterPhysicsLibrary(Context* context);
+void RegisterPhysicsLibrary(Context* context);
 
 }

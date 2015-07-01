@@ -22,7 +22,7 @@
 
 #include "NavigationMesh.h"
 
-#ifdef URHO3D_PHYSICS
+#ifdef LUTEFISK3D_PHYSICS
 #include "../Physics/CollisionShape.h"
 #endif
 #include "../Core/Context.h"
@@ -836,7 +836,7 @@ void NavigationMesh::CollectGeometries(std::vector<NavigationGeometryInfo>& geom
 
     Matrix3x4 inverse = node_->GetWorldTransform().Inverse();
 
-#ifdef URHO3D_PHYSICS
+#ifdef LUTEFISK3D_PHYSICS
     // Prefer compatible physics collision shapes (triangle mesh, convex hull, box) if found.
     // Then fallback to visible geometry
     std::vector<CollisionShape*> collisionShapes;
@@ -934,7 +934,7 @@ void NavigationMesh::GetTileGeometry(NavBuildData* build, std::vector<Navigation
                 continue;
             }
 
-#ifdef URHO3D_PHYSICS
+#ifdef LUTEFISK3D_PHYSICS
             CollisionShape* shape = dynamic_cast<CollisionShape*>(geometryList[i].component_);
             if (shape)
             {

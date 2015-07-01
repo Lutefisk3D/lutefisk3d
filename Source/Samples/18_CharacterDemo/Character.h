@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <Urho3D/Input/Controls.h>
-#include <Urho3D/Scene/LogicComponent.h>
+#include <Lutefisk3D/Input/Controls.h>
+#include <Lutefisk3D/Scene/LogicComponent.h>
 
 using namespace Urho3D;
 
@@ -48,22 +48,22 @@ class Character : public LogicComponent
 public:
     /// Construct.
     Character(Context* context);
-    
+
     /// Register object factory and attributes.
     static void RegisterObject(Context* context);
-    
+
     /// Handle startup. Called by LogicComponent base class.
     virtual void Start() override;
     /// Handle physics world update. Called by LogicComponent base class.
     virtual void FixedUpdate(float timeStep) override;
-    
+
     /// Movement controls. Assigned by the main program each frame.
     Controls controls_;
-    
+
 private:
     /// Handle physics collision event.
     void HandleNodeCollision(StringHash eventType, VariantMap& eventData);
-    
+
     /// Grounded flag for movement.
     bool onGround_;
     /// Jump flag.

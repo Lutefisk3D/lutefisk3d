@@ -25,7 +25,8 @@
 #include "../Scene/Component.h"
 #include "../IO/VectorBuffer.h"
 
-#include <Bullet/LinearMath/btMotionState.h>
+#include <bullet/LinearMath/btMotionState.h>
+#include <unordered_set>
 
 class btCompoundShape;
 class btRigidBody;
@@ -47,7 +48,7 @@ enum CollisionEventMode
 };
 
 /// Physics rigid body component.
-class URHO3D_API RigidBody : public Component, public btMotionState
+class RigidBody : public Component, public btMotionState
 {
     OBJECT(RigidBody);
 
@@ -212,7 +213,7 @@ public:
     /// Return collision event signaling mode.
     CollisionEventMode GetCollisionEventMode() const { return collisionEventMode_; }
     /// Return colliding rigid bodies from the last simulation step.
-    void GetCollidingBodies(std::vector<RigidBody*>& result) const;
+    void GetCollidingBodies(std::unordered_set<RigidBody *> &result) const;
 
     /// Apply new world transform after a simulation step. Called internally.
     void ApplyWorldTransform(const Vector3& newWorldPosition, const Quaternion& newWorldRotation);
@@ -256,7 +257,7 @@ private:
     /// Physics world.
     WeakPtr<PhysicsWorld> physicsWorld_;
     /// Constraints that refer to this rigid body.
-    std::vector<Constraint*> constraints_;
+    std::unordered_set<Constraint*> constraints_;
     /// Gravity override vector.
     Vector3 gravityOverride_;
     /// Center of mass offset.

@@ -39,19 +39,19 @@
 #include "../Graphics/Terrain.h"
 #include "../Graphics/VertexBuffer.h"
 
-#include <Bullet/BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
-#include <Bullet/BulletCollision/CollisionShapes/btBoxShape.h>
-#include <Bullet/BulletCollision/CollisionShapes/btCapsuleShape.h>
-#include <Bullet/BulletCollision/CollisionShapes/btCompoundShape.h>
-#include <Bullet/BulletCollision/CollisionShapes/btConeShape.h>
-#include <Bullet/BulletCollision/CollisionShapes/btConvexHullShape.h>
-#include <Bullet/BulletCollision/CollisionShapes/btCylinderShape.h>
-#include <Bullet/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h>
-#include <Bullet/BulletCollision/CollisionShapes/btScaledBvhTriangleMeshShape.h>
-#include <Bullet/BulletCollision/CollisionShapes/btSphereShape.h>
-#include <Bullet/BulletCollision/CollisionShapes/btTriangleIndexVertexArray.h>
-#include <Bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-#include <Bullet/BulletCollision/CollisionShapes/btStaticPlaneShape.h>
+#include <bullet/BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
+#include <bullet/BulletCollision/CollisionShapes/btBoxShape.h>
+#include <bullet/BulletCollision/CollisionShapes/btCapsuleShape.h>
+#include <bullet/BulletCollision/CollisionShapes/btCompoundShape.h>
+#include <bullet/BulletCollision/CollisionShapes/btConeShape.h>
+#include <bullet/BulletCollision/CollisionShapes/btConvexHullShape.h>
+#include <bullet/BulletCollision/CollisionShapes/btCylinderShape.h>
+#include <bullet/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h>
+#include <bullet/BulletCollision/CollisionShapes/btScaledBvhTriangleMeshShape.h>
+#include <bullet/BulletCollision/CollisionShapes/btSphereShape.h>
+#include <bullet/BulletCollision/CollisionShapes/btTriangleIndexVertexArray.h>
+#include <bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <bullet/BulletCollision/CollisionShapes/btStaticPlaneShape.h>
 #include <StanHull/hull.h>
 
 namespace Urho3D
@@ -1045,7 +1045,7 @@ void CollisionShape::UpdateShape()
             else if (model_ && model_->GetNumGeometries())
             {
                 // Check the geometry cache
-                Pair<Model*, unsigned> id = MakePair(model_.Get(), lodLevel_);
+                std::pair<Model*, unsigned> id = std::make_pair(model_.Get(), lodLevel_);
                 auto & cache = physicsWorld_->GetTriMeshCache();
                 auto j = cache.find(id);
                 if (j != cache.end())
@@ -1085,7 +1085,7 @@ void CollisionShape::UpdateShape()
             else if (model_ && model_->GetNumGeometries())
             {
                 // Check the geometry cache
-                Pair<Model*, unsigned> id = MakePair(model_.Get(), lodLevel_);
+                std::pair<Model*, unsigned> id = std::make_pair(model_.Get(), lodLevel_);
                 auto & cache = physicsWorld_->GetConvexCache();
                 auto j = cache.find(id);
                 if (j != cache.end())

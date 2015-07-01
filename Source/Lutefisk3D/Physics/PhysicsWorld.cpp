@@ -20,31 +20,33 @@
 // THE SOFTWARE.
 //
 
-#include "Precompiled.h"
-#include "../Physics/CollisionShape.h"
-#include "../Physics/Constraint.h"
+#include "PhysicsWorld.h"
+
+#include "CollisionShape.h"
+#include "Constraint.h"
 #include "../Core/Context.h"
 #include "../Graphics/DebugRenderer.h"
 #include "../IO/Log.h"
 #include "../Graphics/Model.h"
 #include "../Core/Mutex.h"
-#include "../Physics/PhysicsEvents.h"
-#include "../Physics/PhysicsUtils.h"
-#include "../Physics/PhysicsWorld.h"
+#include "PhysicsEvents.h"
+#include "PhysicsUtils.h"
 #include "../Core/Profiler.h"
 #include "../Math/Ray.h"
-#include "../Physics/RigidBody.h"
+#include "RigidBody.h"
 #include "../Scene/Scene.h"
 #include "../Scene/SceneEvents.h"
 
-#include <Bullet/BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
-#include <Bullet/BulletCollision/BroadphaseCollision/btBroadphaseProxy.h>
-#include <Bullet/BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
-#include <Bullet/BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
-#include <Bullet/BulletCollision/CollisionShapes/btBoxShape.h>
-#include <Bullet/BulletCollision/CollisionShapes/btSphereShape.h>
-#include <Bullet/BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
-#include <Bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <bullet/BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
+#include <bullet/BulletCollision/BroadphaseCollision/btBroadphaseProxy.h>
+#include <bullet/BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
+#include <bullet/BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
+#include <bullet/BulletCollision/CollisionShapes/btBoxShape.h>
+#include <bullet/BulletCollision/CollisionShapes/btSphereShape.h>
+#include <bullet/BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
+#include <bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+
+#include <unordered_set>
 
 extern ContactAddedCallback gContactAddedCallback;
 
@@ -87,7 +89,7 @@ static bool CustomMaterialCombinerCallback(btManifoldPoint& cp, const btCollisio
 struct PhysicsQueryCallback : public btCollisionWorld::ContactResultCallback
 {
     /// Construct.
-    PhysicsQueryCallback(std::vector<RigidBody*>& result, unsigned collisionMask) : result_(result),
+    PhysicsQueryCallback(std::unordered_set<RigidBody*>& result, unsigned collisionMask) : result_(result),
         collisionMask_(collisionMask)
     {
     }
@@ -96,16 +98,16 @@ struct PhysicsQueryCallback : public btCollisionWorld::ContactResultCallback
     virtual btScalar addSingleResult(btManifoldPoint &, const btCollisionObjectWrapper *colObj0Wrap, int, int, const btCollisionObjectWrapper *colObj1Wrap, int, int) override
     {
         RigidBody* body = reinterpret_cast<RigidBody*>(colObj0Wrap->getCollisionObject()->getUserPointer());
-        if (body && !result_.contains(body) && (body->GetCollisionLayer() & collisionMask_))
-            result_.push_back(body);
+        if (body && (body->GetCollisionLayer() & collisionMask_) )
+            result_.insert(body);
         body = reinterpret_cast<RigidBody*>(colObj1Wrap->getCollisionObject()->getUserPointer());
-        if (body && !result_.contains(body) && (body->GetCollisionLayer() & collisionMask_))
-            result_.push_back(body);
+        if (body && (body->GetCollisionLayer() & collisionMask_))
+            result_.insert(body);
         return 0.0f;
     }
 
     /// Found rigid bodies.
-    std::vector<RigidBody*>& result_;
+    std::unordered_set<RigidBody*>& result_;
     /// Collision mask for the query.
     unsigned collisionMask_;
 };
@@ -498,21 +500,21 @@ void PhysicsWorld::RemoveCachedGeometry(Model* model)
 {
     for (auto i = triMeshCache_.begin(), fin = triMeshCache_.end(); i!=fin; )
     {
-        if (MAP_KEY(i).first_ == model)
+        if (MAP_KEY(i).first == model)
             i=triMeshCache_.erase(i);
         else
             ++i;
     }
     for (auto i = convexCache_.begin(); i != convexCache_.end();)
     {
-        if (MAP_KEY(i).first_ == model)
+        if (MAP_KEY(i).first == model)
             i=convexCache_.erase(i);
         else
             ++i;
     }
 }
 
-void PhysicsWorld::GetRigidBodies(std::vector<RigidBody*>& result, const Sphere& sphere, unsigned collisionMask)
+void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const Sphere& sphere, unsigned collisionMask)
 {
     PROFILE(PhysicsSphereQuery);
 
@@ -532,7 +534,7 @@ void PhysicsWorld::GetRigidBodies(std::vector<RigidBody*>& result, const Sphere&
     delete tempRigidBody;
 }
 
-void PhysicsWorld::GetRigidBodies(std::vector<RigidBody*>& result, const BoundingBox& box, unsigned collisionMask)
+void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const BoundingBox& box, unsigned collisionMask)
 {
     PROFILE(PhysicsBoxQuery);
 
@@ -551,7 +553,7 @@ void PhysicsWorld::GetRigidBodies(std::vector<RigidBody*>& result, const Boundin
     delete tempRigidBody;
 }
 
-void PhysicsWorld::GetRigidBodies(std::vector<RigidBody*>& result, const RigidBody* body)
+void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const RigidBody* body)
 {
     PROFILE(GetCollidingBodies);
 
@@ -559,10 +561,10 @@ void PhysicsWorld::GetRigidBodies(std::vector<RigidBody*>& result, const RigidBo
 
     for (auto & elem : currentCollisions_.keys())
     {
-        if (elem.first_ == body)
-            result.push_back(elem.second_);
-        else if (elem.second_ == body)
-            result.push_back(elem.first_);
+        if (elem.first == body)
+            result.insert(elem.second);
+        else if (elem.second == body)
+            result.insert(elem.first);
     }
 }
 
@@ -588,7 +590,9 @@ void PhysicsWorld::AddRigidBody(RigidBody* body)
 
 void PhysicsWorld::RemoveRigidBody(RigidBody* body)
 {
-    rigidBodies_.remove(body);
+    auto iter = std::find(rigidBodies_.begin(),rigidBodies_.end(),body);
+    assert(iter!=rigidBodies_.end());
+    rigidBodies_.erase(iter);
     // Remove possible dangling pointer from the delayedWorldTransforms structure
     delayedWorldTransforms_.remove(body);
 }
@@ -600,7 +604,9 @@ void PhysicsWorld::AddCollisionShape(CollisionShape* shape)
 
 void PhysicsWorld::RemoveCollisionShape(CollisionShape* shape)
 {
-    collisionShapes_.remove(shape);
+    auto iter = std::find(collisionShapes_.begin(),collisionShapes_.end(),shape);
+    assert(iter!=collisionShapes_.end());
+    collisionShapes_.erase(iter);
 }
 
 void PhysicsWorld::AddConstraint(Constraint* constraint)
@@ -610,7 +616,9 @@ void PhysicsWorld::AddConstraint(Constraint* constraint)
 
 void PhysicsWorld::RemoveConstraint(Constraint* constraint)
 {
-    constraints_.remove(constraint);
+    auto iter = std::find(constraints_.begin(),constraints_.end(),constraint);
+    assert(iter!=constraints_.end());
+    constraints_.erase(iter);
 }
 
 void PhysicsWorld::AddDelayedWorldTransform(const DelayedWorldTransform& transform)
@@ -749,11 +757,11 @@ void PhysicsWorld::SendCollisionEvents()
             WeakPtr<RigidBody> bodyWeakA(bodyA);
             WeakPtr<RigidBody> bodyWeakB(bodyB);
 
-            Pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> > bodyPair;
+            std::pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> > bodyPair;
             if (bodyA < bodyB)
-                bodyPair = MakePair(bodyWeakA, bodyWeakB);
+                bodyPair = std::make_pair(bodyWeakA, bodyWeakB);
             else
-                bodyPair = MakePair(bodyWeakB, bodyWeakA);
+                bodyPair = std::make_pair(bodyWeakB, bodyWeakA);
 
             // First only store the collision pair as weak pointers and the manifold pointer, so user code can safely destroy
             // objects during collision event handling
@@ -762,8 +770,8 @@ void PhysicsWorld::SendCollisionEvents()
 
         for (auto elem = currentCollisions_.begin(),fin=currentCollisions_.end(); elem!=fin; ++elem)
         {
-            RigidBody* bodyA = MAP_KEY(elem).first_;
-            RigidBody* bodyB = MAP_KEY(elem).second_;
+            RigidBody* bodyA = MAP_KEY(elem).first;
+            RigidBody* bodyB = MAP_KEY(elem).second;
             if (!bodyA || !bodyB)
                 continue;
 
@@ -801,13 +809,13 @@ void PhysicsWorld::SendCollisionEvents()
             {
                 SendEvent(E_PHYSICSCOLLISIONSTART, physicsCollisionData_);
                 // Skip rest of processing if either of the nodes or bodies is removed as a response to the event
-                if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first_ || !MAP_KEY(elem).second_)
+                if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                     continue;
             }
 
             // Then send the ongoing collision event
             SendEvent(E_PHYSICSCOLLISION, physicsCollisionData_);
-            if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first_ || !MAP_KEY(elem).second_)
+            if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                 continue;
 
             nodeCollisionData_[NodeCollision::P_BODY] = bodyA;
@@ -819,12 +827,12 @@ void PhysicsWorld::SendCollisionEvents()
             if (newCollision)
             {
                 nodeA->SendEvent(E_NODECOLLISIONSTART, nodeCollisionData_);
-                if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first_ || !MAP_KEY(elem).second_)
+                if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                     continue;
             }
 
             nodeA->SendEvent(E_NODECOLLISION, nodeCollisionData_);
-            if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first_ || !MAP_KEY(elem).second_)
+            if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                 continue;
 
             contacts_.clear();
@@ -845,7 +853,7 @@ void PhysicsWorld::SendCollisionEvents()
             if (newCollision)
             {
                 nodeB->SendEvent(E_NODECOLLISIONSTART, nodeCollisionData_);
-                if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first_ || !MAP_KEY(elem).second_)
+                if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                     continue;
             }
 
@@ -861,8 +869,8 @@ void PhysicsWorld::SendCollisionEvents()
         {
             if (!currentCollisions_.contains(elem))
             {
-                RigidBody* bodyA = elem.first_;
-                RigidBody* bodyB = elem.second_;
+                RigidBody* bodyA = elem.first;
+                RigidBody* bodyB = elem.second;
                 if (!bodyA || !bodyB)
                     continue;
 
@@ -890,7 +898,7 @@ void PhysicsWorld::SendCollisionEvents()
 
                 SendEvent(E_PHYSICSCOLLISIONEND, physicsCollisionData_);
                 // Skip rest of processing if either of the nodes or bodies is removed as a response to the event
-                if (!nodeWeakA || !nodeWeakB || !elem.first_ || !elem.second_)
+                if (!nodeWeakA || !nodeWeakB || !elem.first || !elem.second)
                     continue;
 
                 nodeCollisionData_[NodeCollisionEnd::P_BODY] = bodyA;
@@ -899,7 +907,7 @@ void PhysicsWorld::SendCollisionEvents()
                 nodeCollisionData_[NodeCollisionEnd::P_TRIGGER] = trigger;
 
                 nodeA->SendEvent(E_NODECOLLISIONEND, nodeCollisionData_);
-                if (!nodeWeakA || !nodeWeakB || !elem.first_ || !elem.second_)
+                if (!nodeWeakA || !nodeWeakB || !elem.first || !elem.second)
                     continue;
 
                 nodeCollisionData_[NodeCollisionEnd::P_BODY] = bodyB;

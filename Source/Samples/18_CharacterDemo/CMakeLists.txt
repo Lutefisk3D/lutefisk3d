@@ -20,14 +20,5 @@
 # THE SOFTWARE.
 #
 
-# Define target name
-set (TARGET_NAME 18_CharacterDemo)
+add_sample(18_CharacterDemo CharacterDemo Character.cpp Character.h Touch.cpp Touch.h)
 
-# Define source files
-define_source_files (EXTRA_H_FILES ${COMMON_SAMPLE_H_FILES})
-
-# Setup target with resource copying
-setup_main_executable ()
-
-# Setup test cases
-setup_test ()

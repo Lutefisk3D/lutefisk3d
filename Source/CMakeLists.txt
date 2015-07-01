@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(ThirdParty)
 INCLUDE_DIRECTORIES(ThirdParty/cereal/include)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/ThirdParty_Builds/include)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/ThirdParty_Builds/include/bullet)
 LINK_DIRECTORIES(${PROJECT_BINARY_DIR}/ThirdParty_Builds/lib)
 
 # list of OBJECT libraries will be collected here
@@ -15,11 +16,13 @@ option(LUTEFISK3D_NAVIGATIONLESS "Build without navigation component" OFF)
 option(LUTEFISK3D_NETLESS "Build without kNet network component" OFF)
 option(LUTEFISK3D_UILESS "Build without old UI component" OFF)
 option(LUTEFISK3D_2DLESS "Build without 2D component" OFF)
+option(LUTEFISK3D_PHYSICLESS "Build without 3d physics component" OFF)
 
 option(LUTEFISK3D_PROFILING_SUPPORT "Internal profiling subsystem" ON)
 if(LUTEFISK3D_PROFILING_SUPPORT)
     add_definitions(-DLUTEFISK3D_PROFILING)
 endif()
+
 
 if(NOT LUTEFISK3D_INPUTLESS)
     add_definitions(-DLUTEFISK3D_INPUT)
@@ -35,6 +38,9 @@ if(NOT LUTEFISK3D_NETLESS)
 endif()
 if(NOT LUTEFISK3D_2DLESS)
     add_definitions(-DLUTEFISK3D_2D)
+endif()
+if(NOT LUTEFISK3D_PHYSICLESS)
+    add_definitions(-DLUTEFISK3D_PHYSICS)
 endif()
 
 add_subdirectory(ThirdParty) # add required third party libraries to the build

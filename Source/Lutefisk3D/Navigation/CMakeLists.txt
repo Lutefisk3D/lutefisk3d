@@ -22,7 +22,7 @@ set(SOURCE
     OffMeshConnection.cpp
 )
 add_library(Lutefisk3D_Navigation OBJECT ${SOURCE} ${INCLUDES})
-add_dependencies(Lutefisk3D_Navigation LibCpuId)
+
 target_include_directories(Lutefisk3D_Navigation PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Navigation PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Navigation PROPERTY POSITION_INDEPENDENT_CODE ON)

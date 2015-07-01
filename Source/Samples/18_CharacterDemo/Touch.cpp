@@ -19,16 +19,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-
-#include <Urho3D/Urho3D.h>
-
-#include <Urho3D/Input/Controls.h>
-#include <Urho3D/Graphics/Graphics.h>
-#include <Urho3D/Input/Input.h>
-#include <Urho3D/Graphics/Renderer.h>
+#include "Touch.h"
 
 #include "Character.h"
-#include "Touch.h"
+
+#include <Lutefisk3D/Input/Controls.h>
+#include <Lutefisk3D/Graphics/Graphics.h>
+#include <Lutefisk3D/Input/Input.h>
+#include <Lutefisk3D/Graphics/Renderer.h>
 
 const float GYROSCOPE_THRESHOLD = 0.1f;
 

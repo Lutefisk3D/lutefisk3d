@@ -83,7 +83,7 @@ private:
     void HandleSceneUpdate(StringHash eventType, VariantMap& eventData);
     /// Handle scene post-update event.
     void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
-#ifdef URHO3D_PHYSICS
+#ifdef LUTEFISK3D_PHYSICS
     /// Handle physics pre-step event.
     void HandlePhysicsPreStep(StringHash eventType, VariantMap& eventData);
     /// Handle physics post-step event.

@@ -38,6 +38,9 @@ endif()
 if(NOT LUTEFISK3D_2DLESS)
     add_subdirectory(Urho2D)
 endif()
+if(NOT LUTEFISK3D_PHYSICLESS)
+    add_subdirectory(Physics)
+endif()
 
 
 add_library(Lutefisk3D STATIC
@@ -60,5 +63,10 @@ endif()
 if(NOT LUTEFISK3D_NETLESS)
     target_link_libraries(Lutefisk3D kNet_LIB) # add imported kNet target
 endif()
+
+if(NOT LUTEFISK3D_PHYSICLESS)
+    target_link_libraries(Lutefisk3D Bullet_LIB) # add imported Bullet target
+endif()
+
 qt5_use_modules(Lutefisk3D Core Gui)
 

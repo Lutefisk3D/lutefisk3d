@@ -20,22 +20,22 @@
 // THE SOFTWARE.
 //
 
-#include "Precompiled.h"
+#include "Constraint.h"
+
 #include "../Core/Context.h"
 #include "../Graphics/DebugRenderer.h"
-#include "../Physics/Constraint.h"
 #include "../IO/Log.h"
-#include "../Physics/PhysicsUtils.h"
-#include "../Physics/PhysicsWorld.h"
+#include "PhysicsUtils.h"
+#include "PhysicsWorld.h"
 #include "../Core/Profiler.h"
-#include "../Physics/RigidBody.h"
+#include "RigidBody.h"
 #include "../Scene/Scene.h"
 
-#include <Bullet/BulletDynamics/ConstraintSolver/btConeTwistConstraint.h>
-#include <Bullet/BulletDynamics/ConstraintSolver/btHingeConstraint.h>
-#include <Bullet/BulletDynamics/ConstraintSolver/btPoint2PointConstraint.h>
-#include <Bullet/BulletDynamics/ConstraintSolver/btSliderConstraint.h>
-#include <Bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <bullet/BulletDynamics/ConstraintSolver/btConeTwistConstraint.h>
+#include <bullet/BulletDynamics/ConstraintSolver/btHingeConstraint.h>
+#include <bullet/BulletDynamics/ConstraintSolver/btPoint2PointConstraint.h>
+#include <bullet/BulletDynamics/ConstraintSolver/btSliderConstraint.h>
+#include <bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 namespace Urho3D
 {

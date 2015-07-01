@@ -90,4 +90,36 @@ if(NOT LUTEFISK3D_2DLESS)
     add_subdirectory(Box2D)
 endif()
 
+if(NOT LUTEFISK3D_PHYSICLESS)
+    if(UNIX)
+        set(BULLET_BuiltFile ${ThirdParty_Install_Dir}/lib/libBulletCollision.a)
+        set(BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletDynamics.a)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletSoftBody.a)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libLinearMath.a)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletCollision.a)
+    else()
+        set(BULLET_BuiltFile ${ThirdParty_Install_Dir}/lib/BulletCollision.lib)
+        set(BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletDynamics.lib)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletSoftBody.lib)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/LinearMath.lib)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletCollision.lib)
+    endif()
+
+    ExternalProject_Add(
+        Bullet
+        DOWNLOAD_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Bullet
+        UPDATE_COMMAND ""
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        INSTALL_DIR ${ThirdParty_Install_Dir}/
+        BUILD_BYPRODUCTS ${BULLET_BuiltFile} ${BULLET_AllLibs}
+    )
+    ADD_LIBRARY(Bullet_LIB STATIC IMPORTED GLOBAL)
+    add_dependencies(Bullet_LIB BULLET)
+    SET_TARGET_PROPERTIES(Bullet_LIB PROPERTIES IMPORTED_LOCATION ${BULLET_BuiltFile})
+    SET_TARGET_PROPERTIES(Bullet_LIB PROPERTIES INTERFACE_LINK_LIBRARIES "${BULLET_AllLibs}")
+
+    add_subdirectory(StanHull)
+endif()
+
 SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)

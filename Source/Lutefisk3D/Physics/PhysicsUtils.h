@@ -25,8 +25,8 @@
 #include "../Math/Quaternion.h"
 #include "../Math/Vector3.h"
 
-#include <Bullet/LinearMath/btVector3.h>
-#include <Bullet/LinearMath/btQuaternion.h>
+#include <bullet/LinearMath/btVector3.h>
+#include <bullet/LinearMath/btQuaternion.h>
 
 namespace Urho3D
 {

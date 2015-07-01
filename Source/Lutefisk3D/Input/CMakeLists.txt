@@ -8,7 +8,7 @@ set(SOURCE
     Input.cpp
 )
 add_library(Lutefisk3D_Input OBJECT ${SOURCE} ${INCLUDES})
-add_dependencies(Lutefisk3D_Input LibCpuId)
+
 target_include_directories(Lutefisk3D_Input PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Input PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Input PROPERTY POSITION_INDEPENDENT_CODE ON)

@@ -20,43 +20,40 @@
 // THE SOFTWARE.
 //
 
-#include <Urho3D/Urho3D.h>
-
-#include <Urho3D/UI/Button.h>
-#include <Urho3D/Graphics/Camera.h>
-#include <Urho3D/Physics/CollisionShape.h>
-#include <Urho3D/Network/Connection.h>
-#include <Urho3D/Input/Controls.h>
-#include <Urho3D/Core/CoreEvents.h>
-#include <Urho3D/UI/Cursor.h>
-#include <Urho3D/Engine/Engine.h>
-#include <Urho3D/UI/Font.h>
-#include <Urho3D/Graphics/Graphics.h>
-#include <Urho3D/Input/Input.h>
-#include <Urho3D/Graphics/Light.h>
-#include <Urho3D/UI/LineEdit.h>
-#include <Urho3D/IO/Log.h>
-#include <Urho3D/Graphics/Material.h>
-#include <Urho3D/Graphics/Model.h>
-#include <Urho3D/Network/Network.h>
-#include <Urho3D/Network/NetworkEvents.h>
-#include <Urho3D/Graphics/Octree.h>
-#include <Urho3D/Physics/PhysicsEvents.h>
-#include <Urho3D/Physics/PhysicsWorld.h>
-#include <Urho3D/Graphics/Renderer.h>
-#include <Urho3D/Physics/RigidBody.h>
-#include <Urho3D/Resource/ResourceCache.h>
-#include <Urho3D/Scene/Scene.h>
-#include <Urho3D/Graphics/StaticModel.h>
-#include <Urho3D/UI/Text.h>
-#include <Urho3D/UI/UI.h>
-#include <Urho3D/UI/UIEvents.h>
-#include <Urho3D/Resource/XMLFile.h>
-#include <Urho3D/Graphics/Zone.h>
-
 #include "SceneReplication.h"
 
-#include <Urho3D/DebugNew.h>
+#include <Lutefisk3D/UI/Button.h>
+#include <Lutefisk3D/Graphics/Camera.h>
+#include <Lutefisk3D/Physics/CollisionShape.h>
+#include <Lutefisk3D/Network/Connection.h>
+#include <Lutefisk3D/Input/Controls.h>
+#include <Lutefisk3D/Core/CoreEvents.h>
+#include <Lutefisk3D/UI/Cursor.h>
+#include <Lutefisk3D/Engine/Engine.h>
+#include <Lutefisk3D/Engine/Application.h>
+#include <Lutefisk3D/UI/Font.h>
+#include <Lutefisk3D/Graphics/Graphics.h>
+#include <Lutefisk3D/Input/Input.h>
+#include <Lutefisk3D/Graphics/Light.h>
+#include <Lutefisk3D/UI/LineEdit.h>
+#include <Lutefisk3D/IO/Log.h>
+#include <Lutefisk3D/Graphics/Material.h>
+#include <Lutefisk3D/Graphics/Model.h>
+#include <Lutefisk3D/Network/Network.h>
+#include <Lutefisk3D/Network/NetworkEvents.h>
+#include <Lutefisk3D/Graphics/Octree.h>
+#include <Lutefisk3D/Physics/PhysicsEvents.h>
+#include <Lutefisk3D/Physics/PhysicsWorld.h>
+#include <Lutefisk3D/Graphics/Renderer.h>
+#include <Lutefisk3D/Physics/RigidBody.h>
+#include <Lutefisk3D/Resource/ResourceCache.h>
+#include <Lutefisk3D/Scene/Scene.h>
+#include <Lutefisk3D/Graphics/StaticModel.h>
+#include <Lutefisk3D/UI/Text.h>
+#include <Lutefisk3D/UI/UI.h>
+#include <Lutefisk3D/UI/UIEvents.h>
+#include <Lutefisk3D/Resource/XMLFile.h>
+#include <Lutefisk3D/Graphics/Zone.h>
 
 // UDP port we will use
 static const unsigned short SERVER_PORT = 2345;
@@ -381,7 +378,7 @@ void SceneReplication::HandlePhysicsPreStep(StringHash eventType, VariantMap& ev
     // Server: apply controls to client objects
     else if (network->IsServerRunning())
     {
-        const Vector<SharedPtr<Connection> >& connections = network->GetClientConnections();
+        const std::vector<SharedPtr<Connection> >& connections(network->GetClientConnections());
 
         for (unsigned i = 0; i < connections.size(); ++i)
         {

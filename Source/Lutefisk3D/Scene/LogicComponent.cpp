@@ -22,7 +22,7 @@
 
 #include "../IO/Log.h"
 #include "LogicComponent.h"
-#ifdef URHO3D_PHYSICS
+#ifdef LUTEFISK3D_PHYSICS
 #include "../Physics/PhysicsEvents.h"
 #include "../Physics/PhysicsWorld.h"
 #endif
@@ -129,7 +129,7 @@ void LogicComponent::UpdateEventSubscription()
         currentEventMask_ &= ~USE_POSTUPDATE;
     }
 
-#ifdef URHO3D_PHYSICS
+#ifdef LUTEFISK3D_PHYSICS
     PhysicsWorld* world = scene->GetComponent<PhysicsWorld>();
     if (!world)
         return;
@@ -191,7 +191,7 @@ void LogicComponent::HandleScenePostUpdate(StringHash eventType, VariantMap& eve
     PostUpdate(eventData[P_TIMESTEP].GetFloat());
 }
 
-#ifdef URHO3D_PHYSICS
+#ifdef LUTEFISK3D_PHYSICS
 void LogicComponent::HandlePhysicsPreStep(StringHash eventType, VariantMap& eventData)
 {
     using namespace PhysicsPreStep;

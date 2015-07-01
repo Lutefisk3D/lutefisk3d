@@ -677,20 +677,20 @@ void Graphics::Clear(unsigned flags, const Color& color, float depth, unsigned s
     if (flags & CLEAR_STENCIL && stencilWriteMask_ != M_MAX_UNSIGNED)
         glStencilMask(M_MAX_UNSIGNED);
 
-    glbinding::SharedBitfield<AttribMask, ClearBufferMask> glFlags(ClearBufferMask::GL_NONE_BIT);
+    ClearBufferMask glFlags(ClearBufferMask::GL_NONE_BIT);
     if (flags & CLEAR_COLOR)
     {
-        glFlags = glFlags | GL_COLOR_BUFFER_BIT;
+        glFlags |= GL_COLOR_BUFFER_BIT;
         glClearColor(color.r_, color.g_, color.b_, color.a_);
     }
     if (flags & CLEAR_DEPTH)
     {
-        glFlags = glFlags | GL_DEPTH_BUFFER_BIT;
+        glFlags |= GL_DEPTH_BUFFER_BIT;
         glClearDepth(depth);
     }
     if (flags & CLEAR_STENCIL)
     {
-        glFlags = glFlags | GL_STENCIL_BUFFER_BIT;
+        glFlags |= GL_STENCIL_BUFFER_BIT;
         glClearStencil(stencil);
     }
 

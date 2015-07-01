@@ -35,9 +35,9 @@
 #include "../Scene/SceneEvents.h"
 #include "../Scene/SmoothedTransform.h"
 
-#include <Bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-#include <Bullet/BulletDynamics/Dynamics/btRigidBody.h>
-#include <Bullet/BulletCollision/CollisionShapes/btCompoundShape.h>
+#include <bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <bullet/BulletDynamics/Dynamics/btRigidBody.h>
+#include <bullet/BulletCollision/CollisionShapes/btCompoundShape.h>
 
 namespace Urho3D
 {
@@ -690,7 +690,7 @@ bool RigidBody::IsActive() const
     return body_ ? body_->isActive() : false;
 }
 
-void RigidBody::GetCollidingBodies(std::vector<RigidBody*>& result) const
+void RigidBody::GetCollidingBodies(std::unordered_set<RigidBody*>& result) const
 {
     if (physicsWorld_)
         physicsWorld_->GetRigidBodies(result, this);
@@ -846,12 +846,12 @@ const std::vector<unsigned char>& RigidBody::GetNetAngularVelocityAttr() const
 
 void RigidBody::AddConstraint(Constraint* constraint)
 {
-    constraints_.push_back(constraint);
+    constraints_.insert(constraint);
 }
 
 void RigidBody::RemoveConstraint(Constraint* constraint)
 {
-    constraints_.remove(constraint);
+    constraints_.erase(constraint);
     // A constraint being removed should possibly cause the object to eg. start falling, so activate
     Activate();
 }
@@ -862,7 +862,7 @@ void RigidBody::ReleaseBody()
     {
         // Release all constraints which refer to this body
         // Make a copy for iteration
-        std::vector<Constraint*> constraints = constraints_;
+        std::unordered_set<Constraint*> constraints(constraints_);
         for (Constraint* constraint : constraints)
             constraint->ReleaseConstraint();
 

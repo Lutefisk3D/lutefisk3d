@@ -73,7 +73,7 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource. Return true if successful.
-    virtual bool Load(Deserializer& source);
+    virtual bool BeginLoad(Deserializer& source) override;
     /// Save resource. Return true if successful.
     virtual bool Save(Serializer& dest) const override;
     /// Load from XML data. Return true if successful.

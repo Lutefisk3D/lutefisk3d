@@ -51,20 +51,20 @@ class Resource : public Object
 {
     OBJECT(Resource);
     BASEOBJECT(Resource);
-    
+
 public:
     /// Construct.
     Resource(Context* context);
-    
+
     /// Load resource synchronously. Call both BeginLoad() & EndLoad() and return true if both succeeded.
     bool Load(Deserializer& source);
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source);
+    virtual bool BeginLoad(Deserializer& source)=0;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
     virtual bool EndLoad();
     /// Save resource. Return true if successful.
     virtual bool Save(Serializer& dest) const;
-    
+
     /// Set name.
     void SetName(const QString& name);
     /// Set memory use in bytes, possibly approximate.
@@ -73,7 +73,7 @@ public:
     void ResetUseTimer();
     /// Set the asynchronous loading state. Called by ResourceCache. Resources in the middle of asynchronous loading are not normally returned to user.
     void SetAsyncLoadState(AsyncLoadState newState);
-    
+
     /// Return name.
     const QString& GetName() const { return name_; }
     /// Return name hash.
@@ -84,7 +84,7 @@ public:
     unsigned GetUseTimer();
     /// Return the asynchronous loading state.
     AsyncLoadState GetAsyncLoadState() const { return asyncLoadState_; }
-    
+
 private:
     /// Name.
     QString name_;
@@ -118,7 +118,7 @@ template <class T> QStringList GetResourceNames(const std::vector<SharedPtr<T> >
     QStringList ret(resources.size());
     for (unsigned i = 0; i < resources.size(); ++i)
         ret[i] = GetResourceName(resources[i]);
-    
+
     return ret;
 }
 

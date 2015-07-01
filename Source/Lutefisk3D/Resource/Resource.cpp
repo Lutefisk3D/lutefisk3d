@@ -64,12 +64,6 @@ bool Resource::Load(Deserializer& source)
     return success;
 }
 
-bool Resource::BeginLoad(Deserializer& source)
-{
-    // This always needs to be overridden by subclasses
-    return false;
-}
-
 bool Resource::EndLoad()
 {
     // If no GPU upload step is necessary, no override is necessary

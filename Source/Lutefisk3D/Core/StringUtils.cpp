@@ -82,19 +82,6 @@ unsigned ToUInt(const char* source)
     return strtoul(source, nullptr, 10);
 }
 
-float ToFloat(const QString& source)
-{
-    return source.toFloat();
-}
-
-float ToFloat(const char* source)
-{
-    if (!source)
-        return 0;
-
-    return (float)strtod(source, nullptr);
-}
-
 Color ToColor(const QString& source)
 {
     return ToColor(qPrintable(source));

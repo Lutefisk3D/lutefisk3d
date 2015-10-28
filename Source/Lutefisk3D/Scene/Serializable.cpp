@@ -96,6 +96,10 @@ void Serializable::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
         *(reinterpret_cast<float*>(dest)) = src.GetFloat();
         break;
 
+    case VAR_DOUBLE:
+        *(reinterpret_cast<double*>(dest)) = src.GetDouble();
+        break;
+
     case VAR_VECTOR2:
         *(reinterpret_cast<Vector2*>(dest)) = src.GetVector2();
         break;
@@ -186,6 +190,10 @@ void Serializable::OnGetAttribute(const AttributeInfo& attr, Variant& dest) cons
 
     case VAR_FLOAT:
         dest = *(reinterpret_cast<const float*>(src));
+        break;
+
+    case VAR_DOUBLE:
+        dest = *(reinterpret_cast<const double*>(src));
         break;
 
     case VAR_VECTOR2:

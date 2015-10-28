@@ -74,6 +74,11 @@ bool Serializer::WriteFloat(float value)
     return Write(&value, sizeof value) == sizeof value;
 }
 
+bool Serializer::WriteDouble(double value)
+{
+    return Write(&value, sizeof value) == sizeof value;
+}
+
 bool Serializer::WriteIntRect(const IntRect& value)
 {
     return Write(value.Data(), sizeof value) == sizeof value;
@@ -239,6 +244,9 @@ bool Serializer::WriteVariantData(const Variant& value)
 
     case VAR_FLOAT:
         return WriteFloat(value.GetFloat());
+
+    case VAR_DOUBLE:
+        return WriteDouble(value.GetDouble());
 
     case VAR_VECTOR2:
         return WriteVector2(value.GetVector2());

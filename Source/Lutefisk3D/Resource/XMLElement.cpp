@@ -302,6 +302,11 @@ bool XMLElement::SetFloat(const QString& name, float value)
     return SetAttribute(name, QString::number(value));
 }
 
+bool XMLElement::SetDouble(const QString& name, double value)
+{
+    return SetAttribute(name, QString::number(value));
+}
+
 bool XMLElement::SetUInt(const QString& name, unsigned value)
 {
     return SetAttribute(name, QString::number(value));
@@ -703,6 +708,11 @@ Color XMLElement::GetColor(const QString& name) const
 float XMLElement::GetFloat(const QString& name) const
 {
     return GetAttribute(name).toFloat();
+}
+
+double XMLElement::GetDouble(const QString& name) const
+{
+    return GetAttribute(name).toDouble();
 }
 
 unsigned XMLElement::GetUInt(const QString& name) const

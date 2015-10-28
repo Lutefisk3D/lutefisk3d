@@ -140,6 +140,13 @@ void JSONValue::SetFloat(const QString& name, float value)
     AddMember(name, jsonValue);
 }
 
+void JSONValue::SetDouble(const QString& name, double value)
+{
+    Value jsonValue;
+    jsonValue.SetDouble(value);
+    AddMember(name, jsonValue);
+}
+
 void JSONValue::SetVector2(const QString& name, const Vector2& value)
 {
     SetString(name, value.ToString());
@@ -319,6 +326,11 @@ bool JSONValue::GetBool(const QString& name) const
 float JSONValue::GetFloat(const QString& name) const
 {
     return (float)GetMember(name).GetDouble();
+}
+
+double JSONValue::GetDouble(const QString& name) const
+{
+    return GetMember(name).GetDouble();
 }
 
 Vector2 JSONValue::GetVector2(const QString& name) const
@@ -510,6 +522,13 @@ void JSONValue::AddFloat(float value)
     AddMember(jsonValue);
 }
 
+void JSONValue::AddDouble(double value)
+{
+    Value jsonValue;
+    jsonValue.SetDouble(value);
+    AddMember(jsonValue);
+}
+
 void JSONValue::AddVector2(const Vector2& value)
 {
     AddString(value.ToString());
@@ -666,6 +685,11 @@ bool JSONValue::GetBool(unsigned index) const
 float JSONValue::GetFloat(unsigned index) const
 {
     return (float)GetMember(index).GetDouble();
+}
+
+double JSONValue::GetDouble(unsigned index) const
+{
+    return GetMember(index).GetDouble();
 }
 
 Vector2 JSONValue::GetVector2(unsigned index) const

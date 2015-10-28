@@ -60,6 +60,7 @@ enum VariantType
     VAR_MATRIX3,
     VAR_MATRIX3X4,
     VAR_MATRIX4,
+    VAR_DOUBLE,
     MAX_VAR_TYPES
 };
 
@@ -71,6 +72,7 @@ struct VariantValue
         int int_;
         bool bool_;
         float float_;
+        double double_;
         void* ptr_;
     };
 
@@ -231,6 +233,13 @@ public:
 
     /// Construct from a float.
     Variant(float value) :
+        type_(VAR_NONE)
+    {
+        *this = value;
+    }
+
+    /// Construct from a double.
+    Variant(double value) :
         type_(VAR_NONE)
     {
         *this = value;
@@ -455,6 +464,14 @@ public:
     Variant& operator = (float rhs)
     {
         SetType(VAR_FLOAT);
+        value_.float_ = rhs;
+        return *this;
+    }
+
+    /// Assign from a float.
+    Variant& operator = (double rhs)
+    {
+        SetType(VAR_DOUBLE);
         value_.float_ = rhs;
         return *this;
     }
@@ -748,6 +765,8 @@ public:
     bool GetBool() const { return type_ == VAR_BOOL ? value_.bool_ : false; }
     /// Return float or zero on type mismatch.
     float GetFloat() const { return type_ == VAR_FLOAT ? value_.float_ : 0.0f; }
+    /// Return float or zero on type mismatch.
+    float GetDouble() const { return type_ == VAR_DOUBLE ? value_.double_ : 0.0; }
     /// Return Vector2 or zero on type mismatch.
     const Vector2& GetVector2() const { return type_ == VAR_VECTOR2 ? *reinterpret_cast<const Vector2*>(&value_) : Vector2::ZERO; }
     /// Return Vector3 or zero on type mismatch.
@@ -855,6 +874,7 @@ template<> inline VariantType GetVariantType<int>() { return VAR_INT; }
 template<> inline VariantType GetVariantType<unsigned>() { return VAR_INT; }
 template<> inline VariantType GetVariantType<bool>() { return VAR_BOOL; }
 template<> inline VariantType GetVariantType<float>() { return VAR_FLOAT; }
+template<> inline VariantType GetVariantType<double>() { return VAR_DOUBLE; }
 template<> inline VariantType GetVariantType<Vector2>() { return VAR_VECTOR2; }
 template<> inline VariantType GetVariantType<Vector3>() { return VAR_VECTOR3; }
 template<> inline VariantType GetVariantType<Vector4>() { return VAR_VECTOR4; }

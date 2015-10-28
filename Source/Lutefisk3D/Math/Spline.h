@@ -29,13 +29,21 @@
 #include "../IO/Log.h"
 #include "../Core/Variant.h"
 
+#include <cmath>
 
 namespace Urho3D
 {
 
 enum InterpolationMode
 {
-    BEZIER_CURVE = 0
+    /// Bezier interpolation.
+    BEZIER_CURVE = 0,
+    /// Catmull-Rom interpolation. The first and last knots control velocity and are not included on the path.
+    CATMULL_ROM_CURVE,
+    /// Linear interpolation.
+    LINEAR_CURVE,
+    /// Catmull-Rom full path interpolation. Start and end knots are duplicated or looped as necessary to move through the full path.
+    CATMULL_ROM_FULL_CURVE
 };
 
 /// Spline class to get a point on it based off the interpolation mode.
@@ -98,7 +106,33 @@ public:
         {
         case BEZIER_CURVE:
             return BezierInterpolation(knots_, f);
-
+        case CATMULL_ROM_CURVE:
+            return CatmullRomInterpolation(knots_, f);
+        case LINEAR_CURVE:
+            return LinearInterpolation(knots_, f);
+        case CATMULL_ROM_FULL_CURVE:
+            {
+                /// \todo Do not allocate a new vector each time
+                std::vector<Variant> fullKnots;
+                if (knots_.Size() > 1)
+                {
+                    // Non-cyclic case: duplicate start and end
+                    if (knots_.front() != knots_.bck())
+                    {
+                        fullKnots.push_back(knots_.front());
+                        fullKnots.push_back(knots_);
+                        fullKnots.push_back(knots_.back());
+                    }
+                    // Cyclic case: smooth the tangents
+                    else
+                    {
+                        fullKnots.push_back(knots_[knots_.size() - 2]);
+                        fullKnots.push_back(knots_);
+                        fullKnots.push_back(knots_[1]);
+                    }
+                }
+                return CatmullRomInterpolation(fullKnots, f);
+            }
         default:
             LOGERROR("Unsupported interpolation mode");
             return T();
@@ -146,6 +180,7 @@ private:
     /// Perform Bezier Interpolation on the Spline.
     T BezierInterpolation(const std::vector<T>& knots, float t) const
     {
+        assert(knots.size() >= 2);
         if (knots.size() == 2)
         {
             return LinearInterpolation(knots[0], knots[1], t);
@@ -161,7 +196,16 @@ private:
             return BezierInterpolation(interpolatedKnots, t);
         }
     }
+    T LinearInterpolation(const std::vector<T>& knots, float t) const
+    {
+        assert(knots.size() >= 2);
+        if (t >= 1.f)
+            return knots.back();
 
+        int originIndex = Clamp((int)(t * (knots.size() - 1)), 0, (int)(knots.size() - 2));
+        t = fmodf(t * (knots.size() - 1), 1.f);
+        return LinearInterpolation(knots[originIndex], knots[originIndex + 1], t);
+    }
     /// LinearInterpolation between two Variants based on underlying type.
     float LinearInterpolation(float lhs, float rhs, float t) const {
         return Lerp(lhs,rhs, t);
@@ -169,6 +213,27 @@ private:
     /// LinearInterpolation between two Variants based on underlying type.
     T LinearInterpolation(const T& lhs, const T& rhs, float t) const {
         return lhs.Lerp(rhs, t);
+    }
+    T CatmullRomInterpolation(const std::vector<T>& knots, float t) const
+    {
+        if (knots.size() < 4)
+            return T();
+        if (t >= 1.f)
+            return knots[knots.size() - 2];
+
+        int originIndex = static_cast<int>(t * (knots.size() - 3));
+        t = fmodf(t * (knots.size() - 3), 1.f);
+        float t2 = t * t;
+        float t3 = t2 * t;
+
+        return CalculateCatmullRom(knots[originIndex], knots[originIndex + 1],
+            knots[originIndex + 2], knots[originIndex + 3], t, t2, t3);
+    }
+    T CalculateCatmullRom(const T& p0, const T& p1, const T& p2, const T& p3, float t, float t2, float t3)
+    {
+        return T(0.5f * ((2.0f * p1) + (-p0 + p2) * t +
+                (2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) * t2 +
+                (-p0 + 3.0f * p1 - 3.0f * p2 + p3) * t3));
     }
     /// InterpolationMode.
     InterpolationMode interpolationMode_;

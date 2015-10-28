@@ -59,9 +59,9 @@ static const char* typeNames[] =
     "Matrix3",
     "Matrix3x4",
     "Matrix4",
+    "Double",
     nullptr
 };
-
 Variant& Variant::operator = (const Variant& rhs)
 {
     SetType(rhs.GetType());
@@ -108,6 +108,10 @@ Variant& Variant::operator = (const Variant& rhs)
         *(reinterpret_cast<Matrix4*>(value_.ptr_)) = *(reinterpret_cast<const Matrix4*>(rhs.value_.ptr_));
         break;
 
+    case VAR_DOUBLE:
+        *(reinterpret_cast<double*>(&value_)) = *(reinterpret_cast<const double*>(&rhs.value_));
+        break;
+
     default:
         value_ = rhs.value_;
         break;
@@ -133,6 +137,9 @@ bool Variant::operator == (const Variant& rhs) const
 
     case VAR_FLOAT:
         return value_.float_ == rhs.value_.float_;
+
+    case VAR_DOUBLE:
+        return value_.double_ == rhs.value_.double_;
 
     case VAR_VECTOR2:
         return *(reinterpret_cast<const Vector2*>(&value_)) == *(reinterpret_cast<const Vector2*>(&rhs.value_));
@@ -214,6 +221,10 @@ void Variant::FromString(VariantType type, const char* value)
 
     case VAR_FLOAT:
         *this = src.toFloat();
+        break;
+
+    case VAR_DOUBLE:
+        *this = src.toDouble();
         break;
 
     case VAR_VECTOR2:
@@ -341,6 +352,9 @@ QString Variant::ToString() const
     case VAR_FLOAT:
         return QString::number(value_.float_);
 
+    case VAR_DOUBLE:
+        return QString::number(value_.double_);
+
     case VAR_VECTOR2:
         return (reinterpret_cast<const Vector2*>(&value_))->ToString();
 
@@ -407,6 +421,9 @@ bool Variant::IsZero() const
 
     case VAR_FLOAT:
         return value_.float_ == 0.0f;
+
+    case VAR_DOUBLE:
+        return value_.double_ == 0.0;
 
     case VAR_VECTOR2:
         return *reinterpret_cast<const Vector2*>(&value_) == Vector2::ZERO;
@@ -606,7 +623,10 @@ template<> float Variant::Get<float>() const
 {
     return GetFloat();
 }
-
+template<> double Variant::Get<double>() const
+{
+    return GetDouble();
+}
 template<> const Vector2& Variant::Get<const Vector2&>() const
 {
     return GetVector2();

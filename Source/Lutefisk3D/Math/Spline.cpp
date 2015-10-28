@@ -27,6 +27,9 @@ namespace Urho3D
 const char* interpolationModeNames[] =
 {
     "Bezier",
+    "Catmull-Rom",
+    "Linear",
+    "Catmull-Rom Full",
     nullptr
 };
 }

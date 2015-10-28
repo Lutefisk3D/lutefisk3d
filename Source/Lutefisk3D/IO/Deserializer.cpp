@@ -110,6 +110,13 @@ float Deserializer::ReadFloat()
     return ret;
 }
 
+double Deserializer::ReadDouble()
+{
+    double ret;
+    Read(&ret, sizeof ret);
+    return ret;
+}
+
 IntRect Deserializer::ReadIntRect()
 {
     int data[4];
@@ -284,6 +291,9 @@ Variant Deserializer::ReadVariant(VariantType type)
 
     case VAR_FLOAT:
         return Variant(ReadFloat());
+
+    case VAR_DOUBLE:
+        return Variant(ReadDouble());
 
     case VAR_VECTOR2:
         return Variant(ReadVector2());

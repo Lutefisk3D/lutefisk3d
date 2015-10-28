@@ -112,6 +112,8 @@ public:
     bool SetColor(const QString& name, const Color& value);
     /// Set a float attribute.
     bool SetFloat(const QString& name, float value);
+    /// Set a double attribute.
+    bool SetDouble(const QString& name, double value);
     /// Set an unsigned integer attribute.
     bool SetUInt(const QString& name, unsigned value);
     /// Set an integer attribute.
@@ -211,6 +213,8 @@ public:
     Color GetColor(const QString& name) const;
     /// Return a float attribute, or zero if missing.
     float GetFloat(const QString& name) const;
+    /// Return a double attribute, or zero if missing.
+    double GetDouble(const QString& name) const;
     /// Return an unsigned integer attribute, or zero if missing.
     unsigned GetUInt(const QString& name) const;
     /// Return an integer attribute, or zero if missing.

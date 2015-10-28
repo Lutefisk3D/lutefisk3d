@@ -308,6 +308,9 @@ Variant ValueAnimation::LinearInterpolation(unsigned index1, unsigned index2, fl
     case VAR_FLOAT:
         return Lerp(value1.GetFloat(), value2.GetFloat(), t);
 
+    case VAR_DOUBLE:
+        return Lerp(value1.GetDouble(), value2.GetDouble(), t);
+
     case VAR_VECTOR2:
         return value1.GetVector2().Lerp(value2.GetVector2(), t);
 
@@ -373,6 +376,9 @@ Variant ValueAnimation::SplineInterpolation(unsigned index1, unsigned index2, fl
     case VAR_FLOAT:
         return v1.GetFloat() * h1 + v2.GetFloat() * h2 + t1.GetFloat() * h3 + t2.GetFloat() * h4;
 
+    case VAR_DOUBLE:
+        return v1.GetDouble() * h1 + v2.GetDouble() * h2 + t1.GetDouble() * h3 + t2.GetDouble() * h4;
+
     case VAR_VECTOR2:
         return v1.GetVector2() * h1 + v2.GetVector2() * h2 + t1.GetVector2() * h3 + t2.GetVector2() * h4;
 
@@ -422,6 +428,9 @@ Variant ValueAnimation::SubstractAndMultiply(const Variant& value1, const Varian
     {
     case VAR_FLOAT:
         return (value1.GetFloat() - value2.GetFloat()) * t;
+
+    case VAR_DOUBLE:
+        return (value1.GetDouble() - value2.GetDouble()) * t;
 
     case VAR_VECTOR2:
         return (value1.GetVector2() - value2.GetVector2()) * t;

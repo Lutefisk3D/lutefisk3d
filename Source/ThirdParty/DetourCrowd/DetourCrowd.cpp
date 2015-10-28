@@ -16,6 +16,8 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+// Modified by Lasse Oorni for Urho3D
+
 #define _USE_MATH_DEFINES
 #include "DetourCrowd.h"
 
@@ -562,6 +564,9 @@ int dtCrowd::addAgent(const float* pos, const dtCrowdAgentParams* params)
     ag->targetState = DT_CROWDAGENT_TARGET_NONE;
 
     ag->active = true;
+
+    // Urho3D: added to fix illegal memory access when ncorners is queried before the agent has updated
+    ag->ncorners = 0;
 
     return idx;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@
 #include <Lutefisk3D/Graphics/Zone.h>
 
 
-DEFINE_APPLICATION_MAIN(HugeObjectCount)
+URHO3D_DEFINE_APPLICATION_MAIN(HugeObjectCount)
 
 HugeObjectCount::HugeObjectCount(Context* context) :
     Sample(context),
@@ -190,7 +190,7 @@ void HugeObjectCount::SetupViewport()
 void HugeObjectCount::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(HugeObjectCount, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(HugeObjectCount, HandleUpdate));
 }
 
 void HugeObjectCount::MoveCamera(float timeStep)
@@ -228,7 +228,7 @@ void HugeObjectCount::MoveCamera(float timeStep)
 
 void HugeObjectCount::AnimateObjects(float timeStep)
 {
-    PROFILE(AnimateObjects);
+    URHO3D_PROFILE(AnimateObjects);
 
     const float ROTATE_SPEED = 15.0f;
     // Rotate about the Z axis (roll)

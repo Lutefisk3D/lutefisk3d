@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -88,7 +88,7 @@ UI::UI(Context* context) :
     maxFontTextureSize_(DEFAULT_FONT_TEXTURE_MAX_SIZE),
     initialized_(false),
     usingTouchInput_(false),
-    #ifdef WIN32
+    #ifdef _WIN32
     nonFocusedMouseWheel_(false),    // Default MS Windows behaviour
     #else
     nonFocusedMouseWheel_(true),     // Default Mac OS X and Linux behaviour
@@ -104,7 +104,8 @@ UI::UI(Context* context) :
     uiRendered_(false),
     nonModalBatchSize_(0),
     dragElementsCount_(0),
-    dragConfirmedCount_(0)
+    dragConfirmedCount_(0),
+    uiScale_(1.0f)
 {
     rootElement_->SetTraversalMode(TM_DEPTH_FIRST);
     rootModalElement_->SetTraversalMode(TM_DEPTH_FIRST);
@@ -112,17 +113,17 @@ UI::UI(Context* context) :
     // Register UI library object factories
     RegisterUILibrary(context_);
 
-    SubscribeToEvent(E_SCREENMODE, HANDLER(UI, HandleScreenMode));
-    SubscribeToEvent(E_MOUSEBUTTONDOWN, HANDLER(UI, HandleMouseButtonDown));
-    SubscribeToEvent(E_MOUSEBUTTONUP, HANDLER(UI, HandleMouseButtonUp));
-    SubscribeToEvent(E_MOUSEMOVE, HANDLER(UI, HandleMouseMove));
-    SubscribeToEvent(E_MOUSEWHEEL, HANDLER(UI, HandleMouseWheel));
-    SubscribeToEvent(E_TOUCHBEGIN, HANDLER(UI, HandleTouchBegin));
-    SubscribeToEvent(E_TOUCHEND, HANDLER(UI, HandleTouchEnd));
-    SubscribeToEvent(E_TOUCHMOVE, HANDLER(UI, HandleTouchMove));
-    SubscribeToEvent(E_KEYDOWN, HANDLER(UI, HandleKeyDown));
-    SubscribeToEvent(E_TEXTINPUT, HANDLER(UI, HandleTextInput));
-    SubscribeToEvent(E_DROPFILE, HANDLER(UI, HandleDropFile));
+    SubscribeToEvent(E_SCREENMODE, URHO3D_HANDLER(UI, HandleScreenMode));
+    SubscribeToEvent(E_MOUSEBUTTONDOWN, URHO3D_HANDLER(UI, HandleMouseButtonDown));
+    SubscribeToEvent(E_MOUSEBUTTONUP, URHO3D_HANDLER(UI, HandleMouseButtonUp));
+    SubscribeToEvent(E_MOUSEMOVE, URHO3D_HANDLER(UI, HandleMouseMove));
+    SubscribeToEvent(E_MOUSEWHEEL, URHO3D_HANDLER(UI, HandleMouseWheel));
+    SubscribeToEvent(E_TOUCHBEGIN, URHO3D_HANDLER(UI, HandleTouchBegin));
+    SubscribeToEvent(E_TOUCHEND, URHO3D_HANDLER(UI, HandleTouchEnd));
+    SubscribeToEvent(E_TOUCHMOVE, URHO3D_HANDLER(UI, HandleTouchMove));
+    SubscribeToEvent(E_KEYDOWN, URHO3D_HANDLER(UI, HandleKeyDown));
+    SubscribeToEvent(E_TEXTINPUT, URHO3D_HANDLER(UI, HandleTextInput));
+    SubscribeToEvent(E_DROPFILE, URHO3D_HANDLER(UI, HandleDropFile));
 
     // Try to initialize right now, but skip if screen mode is not yet set
     Initialize();
@@ -258,7 +259,7 @@ bool UI::SetModalElement(UIElement* modalElement, bool enable)
 
         // Revert back to original parent
         modalElement->SetParent(static_cast<UIElement*>(modalElement->GetVar(VAR_ORIGINAL_PARENT).GetPtr()),
-            modalElement->GetVar(VAR_ORIGINAL_CHILD_INDEX).GetUInt());
+                                modalElement->GetVar(VAR_ORIGINAL_CHILD_INDEX).GetUInt());
         VariantMap& vars = const_cast<VariantMap&>(modalElement->GetVars());
         vars.remove(VAR_ORIGINAL_PARENT);
         vars.remove(VAR_ORIGINAL_CHILD_INDEX);
@@ -272,7 +273,7 @@ bool UI::SetModalElement(UIElement* modalElement, bool enable)
             {
                 const_cast<VariantMap&>(originElement->GetVars()).remove(VAR_PARENT_CHANGED);
                 element->SetParent(static_cast<UIElement*>(element->GetVar(VAR_ORIGINAL_PARENT).GetPtr()),
-                    element->GetVar(VAR_ORIGINAL_CHILD_INDEX).GetUInt());
+                                   element->GetVar(VAR_ORIGINAL_CHILD_INDEX).GetUInt());
                 vars = const_cast<VariantMap&>(element->GetVars());
                 vars.remove(VAR_ORIGINAL_PARENT);
                 vars.remove(VAR_ORIGINAL_CHILD_INDEX);
@@ -295,7 +296,7 @@ void UI::Update(float timeStep)
 {
     assert(rootElement_ && rootModalElement_);
 
-    PROFILE(UpdateUI);
+    URHO3D_PROFILE(UpdateUI);
 
     // Expire hovers
     for (auto & elem : hoveredElements_)
@@ -318,7 +319,7 @@ void UI::Update(float timeStep)
 
             if (!dragElement)
             {
-                i = dragElementErase(i);
+                i = DragElementErase(i);
                 continue;
             }
 
@@ -357,7 +358,10 @@ void UI::Update(float timeStep)
     for (unsigned i = 0; i < numTouches; ++i)
     {
         TouchState* touch = input->GetTouch(i);
-        ProcessHover(touch->position_, TOUCHID_MASK(touch->touchID_), 0, nullptr);
+        IntVector2 touchPos = touch->position_;
+        touchPos.x_ = (int)(touchPos.x_ / uiScale_);
+        touchPos.y_ = (int)(touchPos.y_ / uiScale_);
+        ProcessHover(touchPos, TOUCHID_MASK(touch->touchID_), 0, nullptr);
     }
 
     // End hovers that expired without refreshing
@@ -388,7 +392,7 @@ void UI::RenderUpdate()
 {
     assert(rootElement_ && rootModalElement_ && graphics_);
 
-    PROFILE(GetUIBatches);
+    URHO3D_PROFILE(GetUIBatches);
     uiRendered_ = false;
 
     // If the OS cursor is visible, do not render the UI's own cursor
@@ -398,8 +402,10 @@ void UI::RenderUpdate()
     batches_.clear();
     vertexData_.clear();
     const IntVector2& rootSize = rootElement_->GetSize();
+    // Note: the scissors operate on unscaled coordinates. Scissor scaling is only performed during render
     IntRect currentScissor = IntRect(0, 0, rootSize.x_, rootSize.y_);
-    GetBatches(rootElement_, currentScissor);
+    if (rootElement_->IsVisible())
+        GetBatches(rootElement_, currentScissor);
 
     // Save the batch size of the non-modal batches for later use
     nonModalBatchSize_ = batches_.size();
@@ -421,7 +427,7 @@ void UI::Render(bool resetRenderTargets)
     // Perform the default render only if not rendered yet
     if (resetRenderTargets && uiRendered_)
         return;
-    PROFILE(RenderUI);
+    URHO3D_PROFILE(RenderUI);
 
     // If the OS cursor is visible, apply its shape now if changed
     bool osCursorVisible = GetSubsystem<Input>()->IsMouseVisible();
@@ -464,22 +470,22 @@ SharedPtr<UIElement> UI::LoadLayout(Deserializer& source, XMLFile* styleFile)
 
 SharedPtr<UIElement> UI::LoadLayout(XMLFile* file, XMLFile* styleFile)
 {
-    PROFILE(LoadUILayout);
+    URHO3D_PROFILE(LoadUILayout);
 
     SharedPtr<UIElement> root;
 
     if (!file)
     {
-        LOGERROR("Null UI layout XML file");
+        URHO3D_LOGERROR("Null UI layout XML file");
         return root;
     }
 
-    LOGDEBUG("Loading UI layout " + file->GetName());
+    URHO3D_LOGDEBUG("Loading UI layout " + file->GetName());
 
     XMLElement rootElem = file->GetRoot("element");
     if (!rootElem)
     {
-        LOGERROR("No root UI element in " + file->GetName());
+        URHO3D_LOGERROR("No root UI element in " + file->GetName());
         return root;
     }
 
@@ -490,7 +496,7 @@ SharedPtr<UIElement> UI::LoadLayout(XMLFile* file, XMLFile* styleFile)
     root = DynamicCast<UIElement>(context_->CreateObject(typeName));
     if (!root)
     {
-        LOGERROR("Could not create unknown UI element " + typeName);
+        URHO3D_LOGERROR("Could not create unknown UI element " + typeName);
         return root;
     }
 
@@ -507,7 +513,7 @@ SharedPtr<UIElement> UI::LoadLayout(XMLFile* file, XMLFile* styleFile)
 
 bool UI::SaveLayout(Serializer& dest, UIElement* element)
 {
-    PROFILE(SaveUILayout);
+    URHO3D_PROFILE(SaveUILayout);
 
     return element && element->SaveXML(dest);
 }
@@ -637,7 +643,7 @@ const std::vector<UIElement*> UI::GetDragElements()
 
         if (!dragElement)
         {
-            i = dragElementErase(i);
+            i = DragElementErase(i);
             continue;
         }
 
@@ -654,7 +660,7 @@ UIElement* UI::GetDragElement(unsigned index)
 {
     GetDragElements();
     if (index >= dragElementsConfirmed_.size())
-        return (UIElement*)nullptr;
+        return nullptr;
 
     return dragElementsConfirmed_[index];
 }
@@ -684,24 +690,24 @@ void UI::Initialize()
     if (!graphics || !graphics->IsInitialized())
         return;
 
-    PROFILE(InitUI);
+    URHO3D_PROFILE(InitUI);
 
     graphics_ = graphics;
     UIBatch::posAdjust = Vector3(Graphics::GetPixelUVOffset(), 0.0f);
 
-    rootElement_->SetSize(graphics->GetWidth(), graphics->GetHeight());
-    rootModalElement_->SetSize(rootElement_->GetSize());
+    // Apply initial UI scale to set the root elements size
+    SetScale(uiScale_);
 
     vertexBuffer_ = new VertexBuffer(context_);
     debugVertexBuffer_ = new VertexBuffer(context_);
 
     initialized_ = true;
 
-    SubscribeToEvent(E_BEGINFRAME, HANDLER(UI, HandleBeginFrame));
-    SubscribeToEvent(E_POSTUPDATE, HANDLER(UI, HandlePostUpdate));
-    SubscribeToEvent(E_RENDERUPDATE, HANDLER(UI, HandleRenderUpdate));
+    SubscribeToEvent(E_BEGINFRAME, URHO3D_HANDLER(UI, HandleBeginFrame));
+    SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(UI, HandlePostUpdate));
+    SubscribeToEvent(E_RENDERUPDATE, URHO3D_HANDLER(UI, HandleRenderUpdate));
 
-    LOGINFO("Initialized user interface");
+    URHO3D_LOGINFO("Initialized user interface");
 }
 
 void UI::Update(float timeStep, UIElement* element)
@@ -746,9 +752,9 @@ void UI::Render(bool resetRenderTargets, VertexBuffer* buffer, const std::vector
     Vector2 offset(-1.0f, 1.0f);
 
     Matrix4 projection(Matrix4::IDENTITY);
-    projection.m00_ = scale.x_;
+    projection.m00_ = scale.x_ * uiScale_;
     projection.m03_ = offset.x_;
-    projection.m11_ = scale.y_;
+    projection.m11_ = scale.y_ * uiScale_;
     projection.m13_ = offset.y_;
     projection.m22_ = 1.0f;
     projection.m23_ = 0.0f;
@@ -762,7 +768,7 @@ void UI::Render(bool resetRenderTargets, VertexBuffer* buffer, const std::vector
     graphics_->SetFillMode(FILL_SOLID);
     graphics_->SetStencilTest(false);
     if (resetRenderTargets)
-    graphics_->ResetRenderTargets();
+        graphics_->ResetRenderTargets();
     graphics_->SetVertexBuffer(buffer);
 
     ShaderVariation* noTextureVS = graphics_->GetShader(VS, "Basic", "VERTEXCOLOR");
@@ -809,11 +815,16 @@ void UI::Render(bool resetRenderTargets, VertexBuffer* buffer, const std::vector
         if (graphics_->NeedParameterUpdate(SP_MATERIAL, this))
             graphics_->SetShaderParameter(PSP_MATDIFFCOLOR, Color(1.0f, 1.0f, 1.0f, 1.0f));
 
+        IntRect scissor = batch.scissor_;
+        scissor.left_ = (int)(scissor.left_ * uiScale_);
+        scissor.top_ = (int)(scissor.top_ * uiScale_);
+        scissor.right_ = (int)(scissor.right_ * uiScale_);
+        scissor.bottom_ = (int)(scissor.bottom_ * uiScale_);
         graphics_->SetBlendMode(batch.blendMode_);
-        graphics_->SetScissorTest(true, batch.scissor_);
+        graphics_->SetScissorTest(true, scissor);
         graphics_->SetTexture(0, batch.texture_);
         graphics_->Draw(TRIANGLE_LIST, batch.vertexStart_ / UI_VERTEX_SIZE, (batch.vertexEnd_ - batch.vertexStart_) /
-            UI_VERTEX_SIZE);
+                        UI_VERTEX_SIZE);
     }
 }
 
@@ -913,12 +924,12 @@ void UI::GetElementAt(UIElement*& result, UIElement* current, const IntVector2& 
                     if (!i)
                     {
                         int screenPos = (parentLayoutMode == LM_HORIZONTAL) ? element->GetScreenPosition().x_ :
-                            element->GetScreenPosition().y_;
-                        int layoutMaxSize = current->GetLayoutMaxSize();
+                                                                              element->GetScreenPosition().y_;
+                        int layoutMaxSize = current->GetLayoutElementMaxSize();
 
                         if (screenPos < 0 && layoutMaxSize > 0)
                         {
-                            unsigned toSkip = -screenPos / layoutMaxSize;
+                            unsigned toSkip = (unsigned)(-screenPos / layoutMaxSize);
                             if (toSkip > 0)
                                 i += (toSkip - 1);
                         }
@@ -969,6 +980,8 @@ void UI::GetCursorPositionAndVisible(IntVector2& pos, bool& visible)
         if (!visible && cursor_)
             pos = cursor_->GetPosition();
     }
+    pos.x_ = (int)(pos.x_ / uiScale_);
+    pos.y_ = (int)(pos.y_ / uiScale_);
 }
 
 void UI::SetCursorShape(CursorShape shape)
@@ -979,7 +992,7 @@ void UI::SetCursorShape(CursorShape shape)
 
 void UI::ReleaseFontFaces()
 {
-    LOGDEBUG("Reloading font faces");
+    URHO3D_LOGDEBUG("Reloading font faces");
 
     std::vector<Font*> fonts;
     GetSubsystem<ResourceCache>()->GetResources<Font>(fonts);
@@ -999,7 +1012,7 @@ void UI::ProcessHover(const IntVector2& cursorPos, int buttons, int qualifiers, 
 
         if (!dragElement)
         {
-            i = dragElementErase(i);
+            i = DragElementErase(i);
             continue;
         }
 
@@ -1104,7 +1117,7 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
 
             // Fire double click event if element matches and is in time
             if (doubleClickElement_ && element == doubleClickElement_ && clickTimer_.GetMSec(true) <
-                (unsigned)(doubleClickInterval_ * 1000) && lastMouseButtons_ == buttons)
+                    (unsigned)(doubleClickInterval_ * 1000) && lastMouseButtons_ == buttons)
             {
                 element->OnDoubleClick(element->ScreenToElement(cursorPos), cursorPos, button, buttons, qualifiers, cursor);
                 doubleClickElement_.Reset();
@@ -1147,6 +1160,8 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
             if (!HasModalElement())
                 SetFocusElement(nullptr);
             SendClickEvent(E_UIMOUSECLICK, nullptr, element, cursorPos, button, buttons, qualifiers);
+            if (clickTimer_.GetMSec(true) < (unsigned)(doubleClickInterval_ * 1000) && lastMouseButtons_ == buttons)
+                SendClickEvent(E_UIMOUSEDOUBLECLICK, nullptr, element, cursorPos, button, buttons, qualifiers);
         }
 
         lastMouseButtons_ = buttons;
@@ -1155,65 +1170,64 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
 
 void UI::ProcessClickEnd(const IntVector2& cursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible)
 {
+    WeakPtr<UIElement> element;
     if (cursorVisible)
+        element = GetElementAt(cursorPos);
+
+    // Handle end of drag
+    for (auto i = dragElements_.begin(); i != dragElements_.end();)
     {
-        WeakPtr<UIElement> element(GetElementAt(cursorPos));
+        WeakPtr<UIElement> dragElement = MAP_KEY(i);
+        UI::DragData* dragData = MAP_VALUE(i);
 
-        // Handle end of drag
-        for (auto i = dragElements_.begin(); i != dragElements_.end();)
+        if (!dragElement || !cursorVisible)
         {
-            WeakPtr<UIElement> dragElement = MAP_KEY(i);
-            UI::DragData* dragData = MAP_VALUE(i);
+            i = DragElementErase(i);
+            continue;
+        }
 
-            if (!dragElement)
+        if (dragData->dragButtons & button)
+        {
+            // Handle end of click
+            if (element)
+                element->OnClickEnd(element->ScreenToElement(cursorPos), cursorPos, button, buttons, qualifiers, cursor, dragElement);
+
+            SendClickEvent(E_UIMOUSECLICKEND, dragElement, element, cursorPos, button, buttons, qualifiers);
+
+            if (dragElement && dragElement->IsEnabled() && dragElement->IsVisible() && !dragData->dragBeginPending)
             {
-                i = dragElementErase(i);
-                continue;
-            }
+                dragElement->OnDragEnd(dragElement->ScreenToElement(cursorPos), cursorPos, dragData->dragButtons, buttons, cursor);
+                SendDragOrHoverEvent(E_DRAGEND, dragElement, cursorPos, IntVector2::ZERO, dragData);
 
-            if (dragData->dragButtons & button)
-            {
-                // Handle end of click
-                if (element)
-                    element->OnClickEnd(element->ScreenToElement(cursorPos), cursorPos, button, buttons, qualifiers, cursor, dragElement);
-
-                SendClickEvent(E_UIMOUSECLICKEND, dragElement, element, cursorPos, button, buttons, qualifiers);
-
-                if (dragElement && dragElement->IsEnabled() && dragElement->IsVisible() && !dragData->dragBeginPending)
+                bool dragSource = dragElement && (dragElement->GetDragDropMode() & DD_SOURCE) != 0;
+                if (dragSource)
                 {
-                    dragElement->OnDragEnd(dragElement->ScreenToElement(cursorPos), cursorPos, dragData->dragButtons, buttons, cursor);
-                    SendDragOrHoverEvent(E_DRAGEND, dragElement, cursorPos, IntVector2::ZERO, dragData);
+                    bool dragTarget = element && (element->GetDragDropMode() & DD_TARGET) != 0;
+                    bool dragDropFinish = dragSource && dragTarget && element != dragElement;
 
-                    bool dragSource = dragElement && (dragElement->GetDragDropMode() & DD_SOURCE) != 0;
-                    if (dragSource)
+                    if (dragDropFinish)
                     {
-                        bool dragTarget = element && (element->GetDragDropMode() & DD_TARGET) != 0;
-                        bool dragDropFinish = dragSource && dragTarget && element != dragElement;
+                        bool accept = element->OnDragDropFinish(dragElement);
 
-                        if (dragDropFinish)
+                        // OnDragDropFinish() may have caused destruction of the elements, so check the pointers again
+                        if (accept && dragElement && element)
                         {
-                            bool accept = element->OnDragDropFinish(dragElement);
+                            using namespace DragDropFinish;
 
-                            // OnDragDropFinish() may have caused destruction of the elements, so check the pointers again
-                            if (accept && dragElement && element)
-                            {
-                                using namespace DragDropFinish;
-
-                                VariantMap& eventData = GetEventDataMap();
-                                eventData[P_SOURCE] = dragElement.Get();
-                                eventData[P_TARGET] = element.Get();
-                                eventData[P_ACCEPT] = accept;
-                                SendEvent(E_DRAGDROPFINISH, eventData);
-                            }
+                            VariantMap& eventData = GetEventDataMap();
+                            eventData[P_SOURCE] = dragElement.Get();
+                            eventData[P_TARGET] = element.Get();
+                            eventData[P_ACCEPT] = accept;
+                            SendEvent(E_DRAGDROPFINISH, eventData);
                         }
                     }
                 }
-
-                i = dragElementErase(i);
             }
-            else
-                ++i;
+
+            i = DragElementErase(i);
         }
+        else
+            ++i;
     }
 }
 
@@ -1230,7 +1244,7 @@ void UI::ProcessMove(const IntVector2& cursorPos, const IntVector2& cursorDeltaP
 
             if (!dragElement)
             {
-                i = dragElementErase(i);
+                i = DragElementErase(i);
                 continue;
             }
 
@@ -1348,8 +1362,8 @@ void UI::HandleScreenMode(StringHash eventType, VariantMap& eventData)
         Initialize();
     else
     {
-        rootElement_->SetSize(eventData[P_WIDTH].GetInt(), eventData[P_HEIGHT].GetInt());
-        rootModalElement_->SetSize(rootElement_->GetSize());
+        // Reapply UI scale to resize the root elements
+        SetScale(uiScale_);
     }
 }
 
@@ -1462,7 +1476,7 @@ void UI::HandleMouseWheel(StringHash eventType, VariantMap& eventData)
                 while (element)
                 {
                     if (element->GetType() == ListView::GetTypeStatic() ||
-                        element->GetType() == ScrollView::GetTypeStatic())
+                            element->GetType() == ScrollView::GetTypeStatic())
                         break;
                     element = element->GetParent();
                 }
@@ -1487,6 +1501,8 @@ void UI::HandleTouchBegin(StringHash eventType, VariantMap& eventData)
     using namespace TouchBegin;
 
     IntVector2 pos(eventData[P_X].GetInt(), eventData[P_Y].GetInt());
+    pos.x_ = int(pos.x_ / uiScale_);
+    pos.y_ = int(pos.y_ / uiScale_);
     usingTouchInput_ = true;
 
     int touchId = TOUCHID_MASK(eventData[P_TOUCHID].GetInt());
@@ -1506,6 +1522,8 @@ void UI::HandleTouchEnd(StringHash eventType, VariantMap& eventData)
     using namespace TouchEnd;
 
     IntVector2 pos(eventData[P_X].GetInt(), eventData[P_Y].GetInt());
+    pos.x_ = int(pos.x_ / uiScale_);
+    pos.y_ = int(pos.y_ / uiScale_);
 
     // Get the touch index
     int touchId = TOUCHID_MASK(eventData[P_TOUCHID].GetInt());
@@ -1535,6 +1553,10 @@ void UI::HandleTouchMove(StringHash eventType, VariantMap& eventData)
 
     IntVector2 pos(eventData[P_X].GetInt(), eventData[P_Y].GetInt());
     IntVector2 deltaPos(eventData[P_DX].GetInt(), eventData[P_DY].GetInt());
+    pos.x_ = int(pos.x_ / uiScale_);
+    pos.y_ = int(pos.y_ / uiScale_);
+    deltaPos.x_ = int(deltaPos.x_ / uiScale_);
+    deltaPos.y_ = int(deltaPos.y_ / uiScale_);
     usingTouchInput_ = true;
 
     int touchId = TOUCHID_MASK(eventData[P_TOUCHID].GetInt());
@@ -1657,6 +1679,8 @@ void UI::HandleDropFile(StringHash eventType, VariantMap& eventData)
     if (input->IsMouseVisible())
     {
         IntVector2 screenPos = input->GetMousePosition();
+        screenPos.x_ = int(screenPos.x_ / uiScale_);
+        screenPos.y_ = int(screenPos.y_ / uiScale_);
         UIElement* element = GetElementAt(screenPos);
 
         using namespace UIDropFile;
@@ -1678,14 +1702,13 @@ void UI::HandleDropFile(StringHash eventType, VariantMap& eventData)
     }
 }
 
-HashMap<WeakPtr<UIElement>, UI::DragData*>::iterator UI::dragElementErase(HashMap<WeakPtr<UIElement>, DragData*>::iterator i)
+HashMap<WeakPtr<UIElement>, UI::DragData*>::iterator UI::DragElementErase(HashMap<WeakPtr<UIElement>, DragData*>::iterator i)
 {
     // If running the engine frame in response to an event (re-entering UI frame logic) the dragElements_ may already be empty
     if (dragElements_.empty())
         return dragElements_.end();
     dragElementsConfirmed_.clear();
 
-    WeakPtr<UIElement> dragElement = MAP_KEY(i);
     DragData* dragData = MAP_VALUE(i);
 
     if (!dragData->dragBeginPending)
@@ -1716,7 +1739,7 @@ void UI::ProcessDragCancel()
         {
             dragElement->OnDragCancel(dragElement->ScreenToElement(cursorPos), cursorPos, dragData->dragButtons, mouseButtons_, cursor_);
             SendDragOrHoverEvent(E_DRAGCANCEL, dragElement, cursorPos, IntVector2::ZERO, dragData);
-            i = dragElementErase(i);
+            i = DragElementErase(i);
         }
         else
             ++i;
@@ -1739,14 +1762,40 @@ IntVector2 UI::SumTouchPositions(UI::DragData* dragData, const IntVector2& oldSe
                 if (!ts)
                     break;
                 IntVector2 pos = ts->position_;
-                dragData->sumPos.x_ += pos.x_;
-                dragData->sumPos.y_ += pos.y_;
+                dragData->sumPos.x_ += (int)(pos.x_ / uiScale_);
+                dragData->sumPos.y_ += (int)(pos.y_ / uiScale_);
             }
         }
         sendPos.x_ = dragData->sumPos.x_ / dragData->numDragButtons;
         sendPos.y_ = dragData->sumPos.y_ / dragData->numDragButtons;
     }
     return sendPos;
+}
+
+void UI::SetScale(float scale)
+{
+    uiScale_ = Max(scale, M_EPSILON);
+    Graphics* graphics = GetSubsystem<Graphics>();
+    if (graphics)
+    {
+        rootElement_->SetSize((int)((float)graphics->GetWidth() / uiScale_ + 0.5f), (int)((float)graphics_->GetHeight() /
+                                                                                          uiScale_ + 0.5));
+        rootModalElement_->SetSize(rootElement_->GetSize());
+    }
+}
+
+void UI::SetWidth(float size)
+{
+    Graphics* graphics = GetSubsystem<Graphics>();
+    if (graphics)
+        SetScale((float)graphics->GetWidth() / size);
+}
+
+void UI::SetHeight(float size)
+{
+    Graphics* graphics = GetSubsystem<Graphics>();
+    if (graphics)
+        SetScale((float)graphics->GetHeight() / size);
 }
 
 void RegisterUILibrary(Context* context)

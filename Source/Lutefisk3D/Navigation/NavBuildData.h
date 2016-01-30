@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,16 +27,16 @@
 #include <vector>
 
 class rcContext;
-struct rcHeightfield;
-struct rcCompactHeightfield;
-struct rcContourSet;
-struct rcPolyMesh;
-struct rcPolyMeshDetail;
-
-struct rcHeightfieldLayerSet;
 struct dtTileCacheContourSet;
 struct dtTileCachePolyMesh;
 struct dtTileCacheAlloc;
+struct rcCompactHeightfield;
+struct rcContourSet;
+struct rcHeightfield;
+struct rcHeightfieldLayerSet;
+struct rcPolyMesh;
+struct rcPolyMeshDetail;
+
 
 namespace Urho3D
 {

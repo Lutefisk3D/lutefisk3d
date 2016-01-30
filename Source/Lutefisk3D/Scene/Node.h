@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +22,9 @@
 
 #pragma once
 
+#include "../IO/VectorBuffer.h"
 #include "../Math/Matrix3x4.h"
 #include "../Scene/Animatable.h"
-#include "../IO/VectorBuffer.h"
 
 namespace Urho3D
 {
@@ -54,8 +54,7 @@ enum TransformSpace
 /// %Scene node that may contain components and child nodes.
 class Node : public Animatable
 {
-    OBJECT(Node);
-    BASEOBJECT(Node);
+    URHO3D_OBJECT(Node,Animatable);
 
     friend class Connection;
 
@@ -71,10 +70,14 @@ public:
     virtual bool Load(Deserializer& source, bool setInstanceDefault = false) override;
     /// Load from XML data. Return true if successful.
     virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    /// Load from JSON data. Return true if successful.
+    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
     /// Save as binary data. Return true if successful.
     virtual bool Save(Serializer& dest) const override;
     /// Save as XML data. Return true if successful.
     virtual bool SaveXML(XMLElement& dest) const override;
+    /// Save as JSON data. Return true if successful.
+    virtual bool SaveJSON(JSONValue& dest) const override;
     /// Apply attribute changes that can not be applied immediately recursively to child nodes and components.
     virtual void ApplyAttributes() override;
     /// Return whether should save default-valued attributes into XML. Always save node transforms for readability, even if identity.
@@ -86,8 +89,22 @@ public:
 
     /// Save to an XML file. Return true if successful.
     bool SaveXML(Serializer& dest, const QString& indentation = "\t") const;
+    /// Save to a JSON file. Return true if successful.
+    bool SaveJSON(Serializer& dest, const QString& indentation = "\t") const;
     /// Set name of the scene node. Names are not required to be unique.
     void SetName(const QString& name);
+    /// Set tags. Old tags are overwritten.
+    void SetTags(const QStringList& tags);
+    /// Add a tag.
+    void AddTag(const QString &tag);
+    /// Add tags with the specified separator, by default ;
+    void AddTags(const QString &tags, char separator = ';');
+    /// Add tags.
+    void AddTags(const QStringList& tags);
+    /// Remove tag. Return true if existed.
+    bool RemoveTag(const QString &tag);
+    /// Remove all tags.
+    void RemoveAllTags();
     /// Set position in parent space. If the scene node is on the root level (is child of the scene itself), this is same as world space.
     void SetPosition(const Vector3& position);
     /// Set position in parent space (for Urho2D).
@@ -212,10 +229,12 @@ public:
     void RemoveComponent(Component* component);
     /// Remove the first component of specific type from this node.
     void RemoveComponent(StringHash type);
-    /// Remove all components from this node.
-    void RemoveAllComponents();
     /// Remove components that match criteria.
     void RemoveComponents(bool removeReplicated, bool removeLocal);
+    /// Remove all components of specific type.
+    void RemoveComponents(StringHash type);
+    /// Remove all components from this node.
+    void RemoveAllComponents();
     /// Clone scene node, components and child nodes. Return the clone.
     Node* Clone(CreateMode mode = REPLICATED);
     /// Remove from the parent node. If no other shared pointer references exist, causes immediate deletion.
@@ -234,6 +253,8 @@ public:
     template <class T> T* GetOrCreateComponent(CreateMode mode = REPLICATED, unsigned id = 0);
     /// Template version of removing a component.
     template <class T> void RemoveComponent();
+    /// Template version of removing all components of specific type.
+    template <class T> void RemoveComponents();
 
     /// Return ID.
     unsigned GetID() const { return id_; }
@@ -241,6 +262,11 @@ public:
     const QString& GetName() const { return name_; }
     /// Return name hash.
     StringHash GetNameHash() const { return nameHash_; }
+    /// Return all tags.
+    const QStringList& GetTags() const { return tags_; }
+
+    /// Return whether has a specific tag.
+    bool HasTag(const QString &tag) const;
     /// Return parent scene node.
     Node* GetParent() const { return parent_; }
     /// Return scene.
@@ -378,6 +404,8 @@ public:
     void GetChildren(std::vector<Node*>& dest, bool recursive = false) const;
     /// Return child scene nodes with a specific component.
     void GetChildrenWithComponent(std::vector<Node*>& dest, StringHash type, bool recursive = false) const;
+    /// Return child scene nodes with a specific tag.
+    void GetChildrenWithTag(std::vector<Node *> &dest, const QString &tag, bool recursive = false) const;
     /// Return child scene node by index.
     Node* GetChild(unsigned index) const;
     /// Return child scene node by name.
@@ -395,7 +423,9 @@ public:
     /// Return all components of type. Optionally recursive.
     void GetComponents(std::vector<Component*>& dest, StringHash type, bool recursive = false) const;
     /// Return component by type. If there are several, returns the first.
-    Component* GetComponent(StringHash type) const;
+    Component* GetComponent(StringHash type, bool recursive = false) const;
+    /// Return component in parent node. If there are several, returns the first. May optional traverse up to the root node.
+    Component* GetParentComponent(StringHash type, bool fullTraversal = false) const;
     /// Return whether has a specific component.
     bool HasComponent(StringHash type) const;
     /// Return listener components.
@@ -405,13 +435,17 @@ public:
     /// Return all user variables.
     const VariantMap& GetVars() const { return vars_; }
     /// Return first component derived from class.
-    template <class T> T* GetDerivedComponent() const;
+    template <class T> T* GetDerivedComponent(bool recursive = false) const;
+    /// Return first component derived from class in the parent node, or if fully traversing then the first node up the tree with one.
+    template <class T> T* GetParentDerivedComponent(bool fullTraversal = false) const;
     /// Return components derived from class.
-    template <class T> void GetDerivedComponents(std::vector<T*>& dest) const;
+    template <class T> void GetDerivedComponents(std::vector<T*>& dest, bool recursive = false, bool clearVector = true) const;
     /// Template version of returning child nodes with a specific component.
     template <class T> void GetChildrenWithComponent(std::vector<Node*>& dest, bool recursive = false) const;
     /// Template version of returning a component by type.
-    template <class T> T* GetComponent() const;
+    template <class T> T* GetComponent(bool recursive = false) const;
+    /// Template version of returning a parent's component by type.
+    template <class T> T* GetParentComponent(bool fullTraversal = false) const;
     /// Template version of returning all components of type.
     template <class T> void GetComponents(std::vector<T*>& dest, bool recursive = false) const;
     /// Template version of checking whether has a specific component.
@@ -421,7 +455,7 @@ public:
     void SetID(unsigned id);
     /// Set scene. Called by Scene.
     void SetScene(Scene* scene);
-    /// Reset scene. Called by Scene.
+    /// Reset scene, ID and owner. Called by Scene.
     void ResetScene();
     /// Set network position attribute.
     void SetNetPositionAttr(const Vector3& value);
@@ -439,6 +473,8 @@ public:
     bool Load(Deserializer& source, SceneResolver& resolver, bool loadChildren = true, bool rewriteIDs = false, CreateMode mode = REPLICATED);
     /// Load components from XML data and optionally load child nodes.
     bool LoadXML(const XMLElement& source, SceneResolver& resolver, bool loadChildren = true, bool rewriteIDs = false, CreateMode mode = REPLICATED);
+    /// Load components from XML data and optionally load child nodes.
+    bool LoadJSON(const JSONValue& source, SceneResolver& resolver, bool loadChildren = true, bool rewriteIDs = false, CreateMode mode = REPLICATED);
     /// Return the depended on nodes to order network updates.
     const std::vector<Node*>& GetDependencyNodes() const { return dependencyNodes_; }
     /// Prepare network update by comparing attributes and marking replication states dirty as necessary.
@@ -469,8 +505,8 @@ protected:
     virtual void OnAttributeAnimationAdded() override;
     /// Handle attribute animation removed.
     virtual void OnAttributeAnimationRemoved() override;
-    /// Set object attribute animation internal.
-    virtual void SetObjectAttributeAnimation(const QString& name, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed) override;
+    /// Find target of an attribute animation from object hierarchy by name.
+    virtual Animatable* FindAttributeAnimationTarget(const QString& name, QString& outName);
 
     /// Network update queued flag.
     bool networkUpdate_;
@@ -490,6 +526,8 @@ private:
     void GetChildrenRecursive(std::vector<Node*>& dest) const;
     /// Return child nodes with a specific component recursively.
     void GetChildrenWithComponentRecursive(std::vector<Node*>& dest, StringHash type) const;
+    /// Return child nodes with a specific tag recursively.
+    void GetChildrenWithTagRecursive(std::vector<Node*>& dest, const QString &tag) const;
     /// Return specific components recursively.
     void GetComponentsRecursive(std::vector<Component*>& dest, StringHash type) const;
     /// Clone node recursively.
@@ -533,6 +571,8 @@ private:
     Connection* owner_;
     /// Name.
     QString name_;
+    /// Tag strings.
+    QStringList tags_;
     /// Name hash.
     StringHash nameHash_;
     /// Attribute buffer for network updates.
@@ -542,12 +582,16 @@ private:
 template <class T> T* Node::CreateComponent(CreateMode mode, unsigned id) { return static_cast<T*>(CreateComponent(T::GetTypeStatic(), mode, id)); }
 template <class T> T* Node::GetOrCreateComponent(CreateMode mode, unsigned id) { return static_cast<T*>(GetOrCreateComponent(T::GetTypeStatic(), mode, id)); }
 template <class T> void Node::RemoveComponent() { RemoveComponent(T::GetTypeStatic()); }
+template <class T> void Node::RemoveComponents() { RemoveComponents(T::GetTypeStatic()); }
+
 template <class T> void Node::GetChildrenWithComponent(std::vector<Node*>& dest, bool recursive) const { GetChildrenWithComponent(dest, T::GetTypeStatic(), recursive); }
-template <class T> T* Node::GetComponent() const { return static_cast<T*>(GetComponent(T::GetTypeStatic())); }
+template <class T> T* Node::GetComponent(bool recursive) const { return static_cast<T*>(GetComponent(T::GetTypeStatic(), recursive)); }
+
+template <class T> T* Node::GetParentComponent(bool fullTraversal) const { return static_cast<T*>(GetParentComponent(T::GetTypeStatic(), fullTraversal)); }
 template <class T> void Node::GetComponents(std::vector<T*>& dest, bool recursive) const { GetComponents(reinterpret_cast<std::vector<Component*>&>(dest), T::GetTypeStatic(), recursive); }
 template <class T> bool Node::HasComponent() const { return HasComponent(T::GetTypeStatic()); }
 
-template <class T> T* Node::GetDerivedComponent() const
+template <class T> T* Node::GetDerivedComponent(bool recursive) const
 {
     for (const SharedPtr<Component> & elem : components_)
     {
@@ -556,18 +600,49 @@ template <class T> T* Node::GetDerivedComponent() const
             return component;
     }
 
+    if (recursive)
+    {
+        for (const SharedPtr<Node> & elem : children_)
+        {
+            T* component = elem->GetDerivedComponent<T>(true);
+            if (component)
+                return component;
+        }
+    }
     return 0;
 }
 
-template <class T> void Node::GetDerivedComponents(std::vector<T*>& dest) const
+template <class T> T* Node::GetParentDerivedComponent(bool fullTraversal) const
 {
-    dest.clear();
+    Node* current = GetParent();
+    while (current)
+    {
+        T* soughtComponent = current->GetDerivedComponent<T>();
+        if (soughtComponent)
+            return soughtComponent;
 
+        if (fullTraversal)
+            current = current->GetParent();
+        else
+            break;
+    }
+    return 0;
+}
+
+template <class T> void Node::GetDerivedComponents(std::vector<T*>& dest, bool recursive, bool clearVector) const
+    {
+    if (clearVector)
+        dest.clear();
     for (const SharedPtr<Component> & elem : components_)
     {
         T* component = dynamic_cast<T*>(elem.Get());
         if (component)
             dest.push_back(component);
+    }
+    if (recursive)
+    {
+        for (const SharedPtr<Node> & elem : children_)
+            elem->GetDerivedComponents<T>(dest, true, false);
     }
 }
 

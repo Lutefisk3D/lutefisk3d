@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@
 
 #include "Rotator.h"
 
-DEFINE_APPLICATION_MAIN(RenderToTexture)
+URHO3D_DEFINE_APPLICATION_MAIN(RenderToTexture)
 
 RenderToTexture::RenderToTexture(Context* context) :
     Sample(context)
@@ -267,7 +267,7 @@ void RenderToTexture::MoveCamera(float timeStep)
 void RenderToTexture::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(RenderToTexture, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(RenderToTexture, HandleUpdate));
 }
 
 void RenderToTexture::HandleUpdate(StringHash eventType, VariantMap& eventData)

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@ class Viewport;
 /// %UI element which renders a 3D scene.
 class View3D : public Window
 {
-    OBJECT(View3D);
+    URHO3D_OBJECT(View3D,Window);
 
 public:
     /// Construct.

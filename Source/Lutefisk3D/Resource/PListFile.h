@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -139,7 +139,7 @@ public:
 /// Property list (plist).
 class PListFile : public Resource
 {
-    OBJECT(PListFile);
+    URHO3D_OBJECT(PListFile,Resource);
 
 public:
     /// Construct.
@@ -161,7 +161,7 @@ private:
     /// Load array.
     bool LoadArray(PListValueVector& array, const XMLElement& arrayElem);
     /// Load value.
-    bool LoadValue(PListValue& value, XMLElement valueElem);
+    bool LoadValue(PListValue& value, const XMLElement& valueElem);
 
     /// Root dictionary.
     PListValueMap root_;

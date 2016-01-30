@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
 #include "../Math/Vector3.h"
+#include "../Scene/Component.h"
 
 class btTypedConstraint;
 
@@ -45,7 +45,7 @@ class RigidBody;
 /// Physics constraint component. Connects two rigid bodies together, or one rigid body to a static point.
 class Constraint : public Component
 {
-    OBJECT(Constraint);
+    URHO3D_OBJECT(Constraint,Component);
 
     friend class RigidBody;
 
@@ -136,6 +136,8 @@ public:
 protected:
     /// Handle node being assigned.
     virtual void OnNodeSet(Node* node) override;
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene* scene) override;
     /// Handle node transform being dirtied.
     virtual void OnMarkedDirty(Node* node) override;
 
@@ -174,13 +176,15 @@ private:
     /// Constraint force mixing parameter.
     float cfm_;
     /// Other body node ID for pending constraint recreation.
-    int otherBodyNodeID_;
+    unsigned otherBodyNodeID_;
     /// Disable collision between connected bodies flag.
     bool disableCollision_;
     /// Recreate constraint flag.
     bool recreateConstraint_;
     /// Coordinate frames dirty flag.
     bool framesDirty_;
+    /// Constraint creation retry flag if attributes initially set without scene.
+    bool retryCreation_;
 };
 
 }

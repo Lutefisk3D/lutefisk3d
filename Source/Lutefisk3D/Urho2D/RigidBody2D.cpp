@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,18 +40,19 @@ static const BodyType2D DEFAULT_BODYTYPE = BT_STATIC;
 static const char* bodyTypeNames[] =
 {
     "Static",
-    "Dynamic",
     "Kinematic",
+    "Dynamic",
     nullptr
 };
 
 RigidBody2D::RigidBody2D(Context* context) :
     Component(context),
-    massData_(),    // b2MassData structure does not have a constructor so need to zero-initialize all its members
     useFixtureMass_(true),
     body_(nullptr)
 {
-    // Make sure the massData's center is zero-initialized as well
+    // Make sure the massData members are zero-initialized.
+    massData_.mass = 0.0f;
+    massData_.I = 0.0f;
     massData_.center.SetZero();
 }
 
@@ -69,21 +70,21 @@ void RigidBody2D::RegisterObject(Context* context)
 {
     context->RegisterFactory<RigidBody2D>(URHO2D_CATEGORY);
 
-    ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    ENUM_ACCESSOR_ATTRIBUTE("Body Type", GetBodyType, SetBodyType, BodyType2D, bodyTypeNames, DEFAULT_BODYTYPE, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Mass", GetMass, SetMass, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Inertia", GetInertia, SetInertia, float, 0.0f, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Mass Center", GetMassCenter, SetMassCenter, Vector2, Vector2::ZERO, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Use Fixture Mass", GetUseFixtureMass, SetUseFixtureMass, bool, true, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Linear Damping", GetLinearDamping, SetLinearDamping, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Angular Damping", GetAngularDamping, SetAngularDamping, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Allow Sleep", IsAllowSleep, SetAllowSleep, bool, true, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Fixed Rotation", IsFixedRotation, SetFixedRotation, bool, false, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Bullet", IsBullet, SetBullet, bool, false, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Gravity Scale", GetGravityScale, SetGravityScale, float, 1.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Awake", IsAwake, SetAwake, bool, true, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Linear Velocity", GetLinearVelocity, SetLinearVelocity, Vector2, Vector2::ZERO, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Angular Velocity", GetAngularVelocity, SetAngularVelocity, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
+    URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Body Type", GetBodyType, SetBodyType, BodyType2D, bodyTypeNames, DEFAULT_BODYTYPE, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Mass", GetMass, SetMass, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Inertia", GetInertia, SetInertia, float, 0.0f, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Mass Center", GetMassCenter, SetMassCenter, Vector2, Vector2::ZERO, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Use Fixture Mass", GetUseFixtureMass, SetUseFixtureMass, bool, true, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Linear Damping", GetLinearDamping, SetLinearDamping, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Angular Damping", GetAngularDamping, SetAngularDamping, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Allow Sleep", IsAllowSleep, SetAllowSleep, bool, true, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Fixed Rotation", IsFixedRotation, SetFixedRotation, bool, false, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Bullet", IsBullet, SetBullet, bool, false, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Gravity Scale", GetGravityScale, SetGravityScale, float, 1.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Awake", IsAwake, SetAwake, bool, true, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Linear Velocity", GetLinearVelocity, SetLinearVelocity, Vector2, Vector2::ZERO, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Angular Velocity", GetAngularVelocity, SetAngularVelocity, float, 0.0f, AM_DEFAULT);
 }
 
 
@@ -108,7 +109,13 @@ void RigidBody2D::SetBodyType(BodyType2D type)
     bodyDef_.type = bodyType;
 
     if (body_)
+    {
         body_->SetType(bodyType);
+        // Mass data was reset to keep it legal (e.g. static body should have mass 0.)
+        // If not using fixture mass, reassign our mass data now
+        if (!useFixtureMass_)
+            body_->SetMassData(&massData_);
+    }
 
     MarkNetworkUpdate();
 }
@@ -121,7 +128,7 @@ void RigidBody2D::SetMass(float mass)
 
     massData_.mass = mass;
 
-    if (useFixtureMass_ && body_)
+    if (!useFixtureMass_ && body_)
         body_->SetMassData(&massData_);
 
     MarkNetworkUpdate();
@@ -135,7 +142,7 @@ void RigidBody2D::SetInertia(float inertia)
 
     massData_.I = inertia;
 
-    if (useFixtureMass_ && body_)
+    if (!useFixtureMass_ && body_)
         body_->SetMassData(&massData_);
 
     MarkNetworkUpdate();
@@ -149,7 +156,7 @@ void RigidBody2D::SetMassCenter(const Vector2& center)
 
     massData_.center = b2Center;
 
-    if (useFixtureMass_ && body_)
+    if (!useFixtureMass_ && body_)
         body_->SetMassData(&massData_);
 
     MarkNetworkUpdate();
@@ -164,6 +171,7 @@ void RigidBody2D::SetUseFixtureMass(bool useFixtureMass)
 
     if (body_)
     {
+        body_->m_useFixtureMass = useFixtureMass;
         if (useFixtureMass_)
             body_->ResetMassData();
         else
@@ -220,7 +228,13 @@ void RigidBody2D::SetFixedRotation(bool fixedRotation)
     bodyDef_.fixedRotation = fixedRotation;
 
     if (body_)
+    {
         body_->SetFixedRotation(fixedRotation);
+        // Mass data was reset to keep it legal (e.g. non-rotating body should have inertia 0.)
+        // If not using fixture mass, reassign our mass data now
+        if (!useFixtureMass_)
+            body_->SetMassData(&massData_);
+    }
 
     MarkNetworkUpdate();
 }
@@ -335,7 +349,7 @@ void RigidBody2D::CreateBody()
     body_ = physicsWorld_->GetWorld()->CreateBody(&bodyDef_);
     body_->SetUserData(this);
 
-    for (WeakPtr<CollisionShape2D> shp : collisionShapes_)
+    for (const WeakPtr<CollisionShape2D> &shp : collisionShapes_)
     {
         if (shp)
             shp->CreateFixture();
@@ -344,7 +358,7 @@ void RigidBody2D::CreateBody()
     if (!useFixtureMass_)
         body_->SetMassData(&massData_);
 
-    for (WeakPtr<Constraint2D> cn : constraints_)
+    for (const WeakPtr<Constraint2D> &cn : constraints_)
     {
         if (cn)
             cn->CreateJoint();
@@ -359,7 +373,7 @@ void RigidBody2D::ReleaseBody()
     if (!physicsWorld_ || !physicsWorld_->GetWorld())
         return;
 
-    for (WeakPtr<Constraint2D> cn : constraints_)
+    for (const WeakPtr<Constraint2D> &cn : constraints_)
     {
         if (cn)
             cn->ReleaseJoint();
@@ -377,15 +391,16 @@ void RigidBody2D::ReleaseBody()
 
 void RigidBody2D::ApplyWorldTransform()
 {
-    if (!body_)
+    if (!body_ || !body_->IsActive() || body_->GetType() == b2_staticBody || !body_->IsAwake())
         return;
-
     physicsWorld_->SetApplyingTransforms(true);
 
-    Node* node = GetNode();
     const b2Transform& transform = body_->GetTransform();
-    node->SetWorldPosition(ToVector3(transform.p));
-    node->SetWorldRotation(Quaternion(transform.q.GetAngle() * M_RADTODEG, Vector3::FORWARD));
+    Vector3 worldPos = node_->GetWorldPosition();
+    worldPos.x_ = transform.p.x;
+    worldPos.y_ = transform.p.y;
+    node_->SetWorldPosition(worldPos);
+    node_->SetWorldRotation(Quaternion(transform.q.GetAngle() * M_RADTODEG, Vector3::FORWARD));
 
     physicsWorld_->SetApplyingTransforms(false);
 }
@@ -397,10 +412,6 @@ void RigidBody2D::AddCollisionShape2D(CollisionShape2D* collisionShape)
 
     WeakPtr<CollisionShape2D> collisionShapePtr(collisionShape);
     collisionShapes_.insert(collisionShapePtr);
-    //    if (std::find(collisionShapes_.begin(),collisionShapes_.end(),collisionShapePtr)==collisionShapes_.end())
-    //        return;
-
-    //    collisionShapes_.push_back(collisionShapePtr);
 }
 
 void RigidBody2D::RemoveCollisionShape2D(CollisionShape2D* collisionShape)
@@ -409,8 +420,6 @@ void RigidBody2D::RemoveCollisionShape2D(CollisionShape2D* collisionShape)
         return;
     collisionShapes_.erase(WeakPtr<CollisionShape2D>(collisionShape));
 
-    //    WeakPtr<CollisionShape2D> collisionShapePtr(collisionShape);
-    //    collisionShapes_.remove(collisionShapePtr);
 }
 
 void RigidBody2D::AddConstraint2D(Constraint2D* constraint)
@@ -420,9 +429,6 @@ void RigidBody2D::AddConstraint2D(Constraint2D* constraint)
 
     WeakPtr<Constraint2D> constraintPtr(constraint);
     constraints_.insert(constraintPtr);
-    //    if (constraints_.contains(constraintPtr))
-    //        return;
-    //    constraints_.push_back(constraintPtr);
 }
 
 void RigidBody2D::RemoveConstraint2D(Constraint2D* constraint)
@@ -476,16 +482,37 @@ float RigidBody2D::GetAngularVelocity() const
 
 void RigidBody2D::OnNodeSet(Node* node)
 {
-    Component::OnNodeSet(node);
-
     if (node)
     {
         node->AddListener(this);
-        Scene* scene = GetScene();
+
+        std::vector<CollisionShape2D*> shapes;
+        node_->GetDerivedComponents<CollisionShape2D>(shapes);
+        for (CollisionShape2D* shp : shapes)
+        {
+            shp->CreateFixture();
+            AddCollisionShape2D(shp);
+        }
+    }
+}
+
+void RigidBody2D::OnSceneSet(Scene *scene)
+{
+    if (scene)
+    {
         physicsWorld_ = scene->GetOrCreateComponent<PhysicsWorld2D>();
 
         CreateBody();
         physicsWorld_->AddRigidBody(this);
+    }
+    else
+    {
+        if(physicsWorld_)
+        {
+            ReleaseBody();
+            physicsWorld_->RemoveRigidBody(this);
+            physicsWorld_.Reset();
+        }
     }
 }
 

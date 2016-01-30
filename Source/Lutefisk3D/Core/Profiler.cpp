@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -77,27 +77,27 @@ void Profiler::BeginInterval()
     intervalFrames_ = 0;
 }
 
-QString Profiler::GetData(bool showUnused, bool showTotal, unsigned maxDepth) const
+QString Profiler::PrintData(bool showUnused, bool showTotal, unsigned maxDepth) const
 {
     QString output;
 
     if (!showTotal)
-        output += QString("Block                            Cnt     Avg      Max     Frame     Total\n\n");
+        output += "Block                            Cnt     Avg      Max     Frame     Total\n\n";
     else
     {
-        output += QString("Block                                       Last frame                       Whole execution time\n\n");
-        output += QString("                                 Cnt     Avg      Max      Total      Cnt      Avg       Max        Total\n\n");
+        output += "Block                                       Last frame                       Whole execution time\n\n";
+        output += "                                 Cnt     Avg      Max      Total      Cnt      Avg       Max        Total\n\n";
     }
 
     if (!maxDepth)
         maxDepth = 1;
 
-    GetData(root_, output, 0, maxDepth, showUnused, showTotal);
+    PrintData(root_, output, 0, maxDepth, showUnused, showTotal);
 
     return output;
 }
 
-void Profiler::GetData(ProfilerBlock* block, QString& output, unsigned depth, unsigned maxDepth, bool showUnused, bool showTotal) const
+void Profiler::PrintData(ProfilerBlock* block, QString& output, unsigned depth, unsigned maxDepth, bool showUnused, bool showTotal) const
 {
     char line[LINE_MAX_LENGTH];
     char indentedName[LINE_MAX_LENGTH];
@@ -149,7 +149,7 @@ void Profiler::GetData(ProfilerBlock* block, QString& output, unsigned depth, un
     }
 
     for (ProfilerBlock* i : block->children_)
-        GetData(i, output, depth, maxDepth, showUnused, showTotal);
+        PrintData(i, output, depth, maxDepth, showUnused, showTotal);
 }
 
 }

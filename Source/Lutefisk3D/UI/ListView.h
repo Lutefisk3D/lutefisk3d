@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,13 +41,13 @@ enum HighlightMode
 /// Scrollable list %UI element.
 class ListView : public ScrollView
 {
-    OBJECT(ListView);
+    URHO3D_OBJECT(ListView,ScrollView);
 
 public:
     /// Construct.
     ListView(Context* context);
     /// Destruct.
-    virtual ~ListView();
+    virtual ~ListView() = default;
     /// Register object factory.
     static void RegisterObject(Context* context);
 

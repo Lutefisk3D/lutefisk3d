@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -80,30 +80,12 @@ void RenderSurface::SetLinkedDepthStencil(RenderSurface* depthStencil)
 
 void RenderSurface::QueueUpdate()
 {
-    if (!updateQueued_)
-    {
-        bool hasValidView = false;
-
-        // Verify that there is at least 1 non-null viewport, as otherwise Renderer will not accept the surface and the update flag
-        // will be left on
-        for (unsigned i = 0; i < viewports_.size(); ++i)
-        {
-            if (viewports_[i])
-            {
-                hasValidView = true;
-                break;
-            }
+    updateQueued_ = true;
         }
 
-        if (hasValidView)
-        {
-            Renderer* renderer = parentTexture_->GetSubsystem<Renderer>();
-            if (renderer)
-                renderer->QueueRenderSurface(this);
-
-            updateQueued_ = true;
-        }
-    }
+void RenderSurface::ResetUpdateQueued()
+{
+    updateQueued_ = false;
 }
 
 bool RenderSurface::CreateRenderBuffer(unsigned width, unsigned height, GLenum format)
@@ -192,11 +174,6 @@ Viewport* RenderSurface::GetViewport(unsigned index) const
 void RenderSurface::SetTarget(GLenum target)
 {
     target_ = target;
-}
-
-void RenderSurface::WasUpdated()
-{
-    updateQueued_ = false;
 }
 
 }

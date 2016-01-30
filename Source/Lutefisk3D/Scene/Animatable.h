@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,13 @@
 
 #include "../Scene/Serializable.h"
 #include "../Scene/ValueAnimationInfo.h"
+#include "../Scene/ObjectAnimation.h"
 #include "../Container/HashMap.h"
-
 #include "../Core/Variant.h"
 
 namespace Urho3D
 {
-
+class JSONValue;
 class Animatable;
 class ValueAnimation;
 class AttributeAnimationInfo;
@@ -43,9 +43,9 @@ public:
     /// Construct.
     AttributeAnimationInfo(Animatable* animatable, const AttributeInfo& attributeInfo, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed);
     /// Copy construct.
-    AttributeAnimationInfo(const AttributeAnimationInfo& other);
+    AttributeAnimationInfo(const AttributeAnimationInfo& other) = default;
     /// Destruct.
-    ~AttributeAnimationInfo();
+    ~AttributeAnimationInfo() = default;
 
     /// Return attribute infomation.
     const AttributeInfo& GetAttributeInfo() const { return attributeInfo_; }
@@ -62,13 +62,13 @@ private:
 /// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an object animation to it.
 class Animatable : public Serializable
 {
-    OBJECT(Animatable);
+    URHO3D_OBJECT(Animatable,Serializable);
 
 public:
     /// Construct.
     Animatable(Context* context);
     /// Destruct.
-    virtual ~Animatable();
+    virtual ~Animatable() = default;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -76,9 +76,15 @@ public:
     virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
     /// Save as XML data. Return true if successful.
     virtual bool SaveXML(XMLElement& dest) const override;
+    /// Load from JSON data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
+    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
+    /// Save as JSON data. Return true if successful.
+    virtual bool SaveJSON(JSONValue& dest) const override;
 
-    /// Set animation enabled.
-    void SetAnimationEnabled(bool enable) { animationEnabled_ = enable; }
+    /// Set automatic update of animation, default true.
+    void SetAnimationEnabled(bool enable);
+    /// Set time position of all attribute animations or an object animation manually. Automatic update should be disabled in this case.
+    void SetAnimationTime(float time);
     /// Set object animation.
     void SetObjectAnimation(ObjectAnimation* objectAnimation);
     /// Set attribute animation.
@@ -87,6 +93,12 @@ public:
     void SetAttributeAnimationWrapMode(const QString& name, WrapMode wrapMode);
     /// Set attribute animation speed.
     void SetAttributeAnimationSpeed(const QString& name, float speed);
+    /// Set attribute animation time position manually. Automatic update should be disabled in this case.
+    void SetAttributeAnimationTime(const QString& name, float time);
+    /// Remove object animation. Same as calling SetObjectAnimation with a null pointer.
+    void RemoveObjectAnimation();
+    /// Remove attribute animation. Same as calling SetAttributeAnimation with a null pointer.
+    void RemoveAttributeAnimation(const QString& name);
 
     /// Return animation enabled.
     bool GetAnimationEnabled() const { return animationEnabled_; }
@@ -98,6 +110,8 @@ public:
     WrapMode GetAttributeAnimationWrapMode(const QString& name) const;
     /// Return attribute animation speed.
     float GetAttributeAnimationSpeed(const QString& name) const;
+    /// Return attribute animation time position.
+    float GetAttributeAnimationTime(const QString& name) const;
 
     /// Set object animation attribute.
     void SetObjectAnimationAttr(const ResourceRef& value);
@@ -109,8 +123,10 @@ protected:
     virtual void OnAttributeAnimationAdded() = 0;
     /// Handle attribute animation removed.
     virtual void OnAttributeAnimationRemoved() = 0;
+    /// Find target of an attribute animation from object hierarchy by name.
+    virtual Animatable* FindAttributeAnimationTarget(const QString& name, QString& outName);
     /// Set object attribute animation internal.
-    virtual void SetObjectAttributeAnimation(const QString& name, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed);
+    void SetObjectAttributeAnimation(const QString& name, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed);
     /// Handle object animation added.
     void OnObjectAnimationAdded(ObjectAnimation* objectAnimation);
     /// Handle object animation removed.

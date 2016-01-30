@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,10 +21,10 @@
 //
 
 #include "Log.h"
-#include "../Core/Context.h"
-#include "../Core/CoreEvents.h"
 #include "File.h"
 #include "IOEvents.h"
+#include "../Core/Context.h"
+#include "../Core/CoreEvents.h"
 #include "../Core/Mutex.h"
 #include "../Core/ProcessUtils.h"
 #include "../Core/Thread.h"
@@ -67,7 +67,7 @@ Log::Log(Context* context) :
 {
     logInstance = this;
 
-    SubscribeToEvent(E_ENDFRAME, HANDLER(Log, HandleEndFrame));
+    SubscribeToEvent(E_ENDFRAME, URHO3D_HANDLER(Log, HandleEndFrame));
 }
 
 Log::~Log()

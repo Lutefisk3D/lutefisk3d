@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,18 @@
 
 #include "AnimatedSprite2D.h"
 
-#include "Animation2D.h"
 #include "AnimationSet2D.h"
 #include "../Core/Context.h"
+#include "../IO/Log.h"
 #include "../Resource/ResourceCache.h"
 #include "../Scene/Scene.h"
 #include "../Scene/SceneEvents.h"
 #include "Sprite2D.h"
-#include "StaticSprite2D.h"
+#include "SpriterInstance2D.h"
+
+#ifdef LUTEFISK3D_SPINE
+#include <spine/spine.h>
+#endif 
 
 namespace Urho3D
 {
@@ -47,28 +51,33 @@ const char* loopModeNames[] =
 
 AnimatedSprite2D::AnimatedSprite2D(Context* context) :
     StaticSprite2D(context),
+#ifdef URHO3D_SPINE
+    skeleton_(0),
+    animationStateData_(0),
+    animationState_(0),
+#endif
+    spriterInstance_(0),
     speed_(1.0f),
-    loopMode_(LM_DEFAULT),
-    looped_(false),
-    currentTime_(0.0f),
-    numTracks_(0)
+    loopMode_(LM_DEFAULT)
 {
 }
 
 AnimatedSprite2D::~AnimatedSprite2D()
 {
+    Dispose();
 }
 
 void AnimatedSprite2D::RegisterObject(Context* context)
 {
     context->RegisterFactory<AnimatedSprite2D>(URHO2D_CATEGORY);
 
-    COPY_BASE_ATTRIBUTES(StaticSprite2D);
-    REMOVE_ATTRIBUTE("Sprite");
-    ACCESSOR_ATTRIBUTE("Speed", GetSpeed, SetSpeed, float, 1.0f, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Animation Set", GetAnimationSetAttr, SetAnimationSetAttr, ResourceRef, ResourceRef(AnimatedSprite2D::GetTypeStatic()), AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Animation", GetAnimation, SetAnimationAttr, QString, QString(), AM_DEFAULT);
-    ENUM_ACCESSOR_ATTRIBUTE("Loop Mode", GetLoopMode, SetLoopMode, LoopMode2D, loopModeNames, LM_DEFAULT, AM_DEFAULT);
+    URHO3D_COPY_BASE_ATTRIBUTES(StaticSprite2D);
+    URHO3D_REMOVE_ATTRIBUTE("Sprite");
+    URHO3D_ACCESSOR_ATTRIBUTE("Speed", GetSpeed, SetSpeed, float, 1.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Entity", GetEntity, SetEntity, QString, QString(), AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Animation Set", GetAnimationSetAttr, SetAnimationSetAttr, ResourceRef, ResourceRef(AnimatedSprite2D::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Animation", GetAnimation, SetAnimationAttr, QString, QString(), AM_DEFAULT);
+    URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Loop Mode", GetLoopMode, SetLoopMode, LoopMode2D, loopModeNames, LM_DEFAULT, AM_DEFAULT);
 }
 
 void AnimatedSprite2D::OnSetEnabled()
@@ -80,20 +89,98 @@ void AnimatedSprite2D::OnSetEnabled()
     if (scene)
     {
         if (enabled)
-            SubscribeToEvent(scene, E_SCENEPOSTUPDATE, HANDLER(AnimatedSprite2D, HandleScenePostUpdate));
+            SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(AnimatedSprite2D, HandleScenePostUpdate));
         else
             UnsubscribeFromEvent(scene, E_SCENEPOSTUPDATE);
     }
+}
 
-    for (unsigned i = 0; i < trackNodes_.size(); ++i)
+void AnimatedSprite2D::SetAnimationSet(AnimationSet2D* animationSet)
     {
-        if (!trackNodes_[i])
-            continue;
+    if (animationSet == animationSet_) 
+        return;
 
-        StaticSprite2D* staticSprite = trackNodes_[i]->GetComponent<StaticSprite2D>();
-        if (staticSprite)
-            staticSprite->SetEnabled(enabled);
+    Dispose();
+
+    animationSet_ = animationSet;    
+    if (!animationSet_)
+        return;
+
+    SetSprite(animationSet_->GetSprite());
+
+#ifdef LUTEFISK3D_SPINE
+    if (animationSet_->GetSkeletonData())
+{
+        spSkeletonData* skeletonData = animationSet->GetSkeletonData();
+
+        // Create skeleton
+        skeleton_ = spSkeleton_create(skeletonData);
+        skeleton_->flipX = flipX_;
+        skeleton_->flipY = flipY_;
+
+        if (skeleton_->data->skinsCount > 0)
+{
+            // If entity is empty use first skin in spine
+            if (entity_.Empty())
+                entity_ = skeleton_->data->skins[0]->name;
+            spSkeleton_setSkinByName(skeleton_, qPrintable(entity_));
+        }
+
+        spSkeleton_updateWorldTransform(skeleton_);
+}
+#endif
+    if (animationSet_->GetSpriterData())
+    {
+        spriterInstance_ = new Spriter::SpriterInstance(animationSet_->GetSpriterData());
+
+        if (animationSet_->GetSpriterData()->entities_.empty())
+{
+            // If entity is empty use first entity in spriter
+            if (entity_.isEmpty())
+                entity_ = animationSet_->GetSpriterData()->entities_[0]->name_;
+            spriterInstance_->SetEntity(qPrintable(entity_));
+        }
     }
+
+    // Clear animation name
+    animationName_.clear();
+    loopMode_ = LM_DEFAULT;
+}
+
+void AnimatedSprite2D::SetEntity(const QString& entity)
+{
+    if (entity == entity_)
+        return;
+
+    entity_ = entity;
+
+#ifdef LUTEFISK3D_SPINE
+    if (skeleton_)
+        spSkeleton_setSkinByName(skeleton_, qPrintable(entity_));
+#endif
+    if (spriterInstance_)
+        spriterInstance_->SetEntity(entity_);
+}
+
+void AnimatedSprite2D::SetAnimation(const QString& name, LoopMode2D loopMode)
+{
+    animationName_ = name;
+    loopMode_ = loopMode;
+
+    if (!animationSet_ || !animationSet_->HasAnimation(animationName_))
+        return;
+
+#ifdef LUTEFISK3D_SPINE
+    if (skeleton_)
+        SetSpineAnimation();    
+#endif
+    if (spriterInstance_)
+        SetSpriterAnimation();
+}
+
+void AnimatedSprite2D::SetLoopMode(LoopMode2D loopMode)
+    {
+    loopMode_ = loopMode;
 }
 
 void AnimatedSprite2D::SetSpeed(float speed)
@@ -102,63 +189,11 @@ void AnimatedSprite2D::SetSpeed(float speed)
     MarkNetworkUpdate();
 }
 
-void AnimatedSprite2D::SetAnimation(AnimationSet2D* animationSet, const QString& name, LoopMode2D loopMode)
-{
-    animationSet_ = animationSet;
-
-    SetAnimation(name, loopMode);
-}
-
-void AnimatedSprite2D::SetAnimation(const QString& name, LoopMode2D loopMode)
-{
-    animationName_ = name;
-
-    if (animationSet_)
-        SetAnimation(animationSet_->GetAnimation(animationName_), loopMode);
-}
-
-void AnimatedSprite2D::SetAnimationSet(AnimationSet2D* animationSet)
-{
-    if (animationSet == animationSet_)
-        return;
-
-    animationSet_ = animationSet;
-
-    SetAnimation(animationName_, loopMode_);
-}
-
-void AnimatedSprite2D::SetLoopMode(LoopMode2D loopMode)
-{
-    if (!animation_)
-        return;
-
-    loopMode_ = loopMode;
-
-    switch (loopMode_)
-    {
-    case LM_FORCE_LOOPED:
-        looped_ = true;
-        break;
-
-    case LM_FORCE_CLAMPED:
-        looped_ = false;
-        break;
-
-    default:
-        looped_ = animation_->IsLooped();
-        break;
-    }
-}
-
 AnimationSet2D* AnimatedSprite2D::GetAnimationSet() const
 {
     return animationSet_;
 }
 
-Node* AnimatedSprite2D::GetRootNode() const
-{
-    return rootNode_;
-}
 
 void AnimatedSprite2D::SetAnimationSetAttr(const ResourceRef& value)
 {
@@ -171,310 +206,38 @@ ResourceRef AnimatedSprite2D::GetAnimationSetAttr() const
     return GetResourceRef(animationSet_, AnimationSet2D::GetTypeStatic());
 }
 
-void AnimatedSprite2D::OnNodeSet(Node* node)
+void AnimatedSprite2D::OnSceneSet(Scene* scene)
 {
-    StaticSprite2D::OnNodeSet(node);
+    StaticSprite2D::OnSceneSet(scene);
 
-    if (node)
+    if (scene)
     {
-        Scene* scene = GetScene();
-        if (scene && IsEnabledEffective())
-            SubscribeToEvent(scene, E_SCENEPOSTUPDATE, HANDLER(AnimatedSprite2D, HandleScenePostUpdate));
+        if (scene == node_)
+            URHO3D_LOGWARNING(GetTypeName() + " should not be created to the root scene node");
+        if (IsEnabledEffective())
+            SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(AnimatedSprite2D, HandleScenePostUpdate));
     }
     else
-    {
-        if (rootNode_)
-            rootNode_->Remove();
-
-        rootNode_ = nullptr;
-        numTracks_ = 0;
-        trackNodes_.clear();
-        trackNodeInfos_.clear();
-    }
+        UnsubscribeFromEvent(E_SCENEPOSTUPDATE);
 }
 
 void AnimatedSprite2D::SetAnimationAttr(const QString& name)
 {
     animationName_ = name;
 
-    if (animationSet_)
-        SetAnimation(animationSet_->GetAnimation(animationName_), loopMode_);
-}
-
-void AnimatedSprite2D::OnWorldBoundingBoxUpdate()
-{
-    boundingBox_.Clear();
-    worldBoundingBox_.Clear();
-
-    for (unsigned i = 0; i < numTracks_; ++i)
-    {
-        if (!trackNodes_[i])
-            continue;
-
-        StaticSprite2D* staticSprite = trackNodes_[i]->GetComponent<StaticSprite2D>();
-        if (staticSprite)
-            worldBoundingBox_.Merge(staticSprite->GetWorldBoundingBox());
-    }
-
-    boundingBox_ = worldBoundingBox_.Transformed(node_->GetWorldTransform().Inverse());
-}
-
-void AnimatedSprite2D::OnDrawOrderChanged()
-{
-    for (unsigned i = 0; i < numTracks_; ++i)
-    {
-        if (!trackNodes_[i])
-            continue;
-
-        StaticSprite2D* staticSprite = trackNodes_[i]->GetComponent<StaticSprite2D>();
-        if (staticSprite)
-        staticSprite->SetLayer(layer_);
-    }
-}
-
-
-void AnimatedSprite2D::OnFlipChanged()
-{
-    for (unsigned i = 0; i < numTracks_; ++i)
-    {
-        if (!trackNodes_[i])
-            continue;
-
-        StaticSprite2D* staticSprite = trackNodes_[i]->GetComponent<StaticSprite2D>();
-        if (staticSprite)
-        staticSprite->SetFlip(flipX_, flipY_);
-    }
-
-    // For editor paused mode
-    UpdateAnimation(0.0f);
+    SetAnimation(animationName_, loopMode_);
 }
 
 void AnimatedSprite2D::UpdateSourceBatches()
 {
-    sourceBatchesDirty_ = false;
-}
+#ifdef LUTEFISK3D_SPINE
+    if (skeleton_ && animationState_)
+        UpdateSourceBatchesSpine();
+#endif
+    if (spriterInstance_ && spriterInstance_->GetAnimation())
+        UpdateSourceBatchesSpriter();
 
-void AnimatedSprite2D::SetAnimation(Animation2D* animation, LoopMode2D loopMode)
-{
-    if (animation == animation_)
-    {
-        SetLoopMode(loopMode_);
-
-        currentTime_ = 0.0f;
-        UpdateAnimation(0.0f);
-        return;
-    }
-
-    for (unsigned i = 0; i < numTracks_; ++i)
-    {
-        if (trackNodes_[i])
-            trackNodes_[i]->SetEnabled(false);
-    }
-
-    numTracks_ = 0;
-    trackNodes_.clear();
-    trackNodeInfos_.clear();
-
-    animation_ = animation;
-
-    if (!animation_)
-        return;
-
-    currentTime_ = 0.0f;
-
-    if (!rootNode_)
-    {
-        rootNode_ = GetNode()->CreateChild("_root_", LOCAL);
-        rootNode_->SetTemporary(true);
-    }
-
-    numTracks_ = animation_->GetNumTracks();
-    trackNodes_.resize(numTracks_);
-    trackNodeInfos_.resize(numTracks_);
-
-    for (unsigned i = 0; i < numTracks_; ++i)
-    {
-        const AnimationTrack2D& track = animation->GetTrack(i);
-        SharedPtr<Node> trackNode(rootNode_->GetChild(track.name_));
-
-        StaticSprite2D* staticSprite = nullptr;
-        if (trackNode)
-        {
-            // Enable track node
-            trackNode->SetEnabled(true);
-
-            // Get StaticSprite2D component
-            if (track.hasSprite_)
-                staticSprite = trackNode->GetComponent<StaticSprite2D>();
-        }
-        else
-        {
-            // Create new track node
-            trackNode = rootNode_->CreateChild(track.name_, LOCAL);
-            trackNode->SetTemporary(true);
-
-            // Create StaticSprite2D component
-            if (track.hasSprite_)
-            {
-                staticSprite = trackNode->CreateComponent<StaticSprite2D>();
-                staticSprite->SetEnabled(IsEnabledEffective());
-            }
-        }
-
-        if (staticSprite)
-        {
-            staticSprite->SetLayer(layer_);
-            staticSprite->SetBlendMode(blendMode_);
-            staticSprite->SetFlip(flipX_, flipY_);
-            staticSprite->SetUseHotSpot(true);
-        }
-
-        trackNodes_[i] = trackNode;
-
-        trackNodeInfos_[i].hasSprite = track.hasSprite_;
-    }
-
-    SetLoopMode(loopMode);
-    UpdateAnimation(0.0f);
-
-    MarkNetworkUpdate();
-}
-
-void AnimatedSprite2D::UpdateAnimation(float timeStep)
-{
-    if (!animation_)
-        return;
-
-    currentTime_ += timeStep * speed_;
-
-    float time;
-    float animationLength = animation_->GetLength();
-
-    if (looped_)
-    {
-        time = fmodf(currentTime_, animationLength);
-        if (time < 0.0f)
-            time += animation_->GetLength();
-    }
-    else
-        time = Clamp(currentTime_, 0.0f, animationLength);
-
-    for (unsigned i = 0; i < numTracks_; ++i)
-    {
-        trackNodeInfos_[i].worldSpace = false;
-
-        const AnimationTrack2D& track = animation_->GetTrack(i);
-        const std::vector<AnimationKeyFrame2D>& keyFrames = track.keyFrames_;
-
-        // Time out of range
-        if (time < keyFrames[0].time_ || time > keyFrames.back().time_)
-            trackNodeInfos_[i].value.enabled_ = false;
-        else
-        {
-            unsigned index = keyFrames.size() - 1;
-            for (unsigned j = 0; j < keyFrames.size() - 1; ++j)
-            {
-                if (time <= keyFrames[j + 1].time_)
-                {
-                    index = j;
-                    break;
-                }
-            }
-
-            const AnimationKeyFrame2D& currKey = keyFrames[index];
-            AnimationKeyFrame2D& value = trackNodeInfos_[i].value;
-
-            value.enabled_ = currKey.enabled_;
-            value.parent_ = currKey.parent_;
-
-            if (index < keyFrames.size() - 1)
-            {
-                const AnimationKeyFrame2D& nextKey = keyFrames[index + 1];
-                float t = (time - currKey.time_)  / (nextKey.time_ - currKey.time_);
-                value.transform_ = currKey.transform_.Lerp(nextKey.transform_, t, currKey.spin_);
-
-                if (trackNodeInfos_[i].hasSprite)
-                    value.alpha_ = Urho3D::Lerp(currKey.alpha_, nextKey.alpha_, t);
-            }
-            else
-            {
-                value.transform_ = currKey.transform_;
-
-                if (trackNodeInfos_[i].hasSprite)
-                    value.alpha_ = currKey.alpha_;
-            }
-
-            if (trackNodeInfos_[i].hasSprite)
-            {
-                value.zIndex_ = currKey.zIndex_;
-                value.sprite_ = currKey.sprite_;
-                value.useHotSpot_ = currKey.useHotSpot_;
-                value.hotSpot_ = currKey.hotSpot_;
-            }
-        }
-    }
-
-    for (unsigned i = 0; i < numTracks_; ++i)
-    {
-        Node* node = trackNodes_[i];
-        if (!node)
-            continue;
-        TrackNodeInfo& nodeInfo = trackNodeInfos_[i];
-
-        if (!nodeInfo.value.enabled_)
-            node->SetEnabled(false);
-        else
-        {
-            node->SetEnabled(true);
-
-            // Calculate world transform.
-            CalculateTimelineWorldTransform(i);
-
-            // Update node's transform
-            Vector2 position = nodeInfo.value.transform_.position_ * PIXEL_SIZE;
-            if (flipX_)
-                position.x_ = -position.x_;
-            if (flipY_)
-                position.y_ = -position.y_;
-            node->SetPosition(position);
-
-            float angle = nodeInfo.value.transform_.angle_;
-            if (flipX_ != flipY_)
-                angle = -angle;
-            node->SetRotation(angle);
-            node->SetScale(nodeInfo.value.transform_.scale_);
-
-            if (nodeInfo.hasSprite)
-            {
-                StaticSprite2D* staticSprite = node->GetComponent<StaticSprite2D>();
-                if (staticSprite)
-                {
-                    staticSprite->SetOrderInLayer(orderInLayer_ + nodeInfo.value.zIndex_);
-                    staticSprite->SetSprite(nodeInfo.value.sprite_);
-                    staticSprite->SetAlpha(nodeInfo.value.alpha_);
-                    staticSprite->SetUseHotSpot(nodeInfo.value.useHotSpot_);
-                    staticSprite->SetHotSpot(nodeInfo.value.hotSpot_);
-                }
-            }
-        }
-    }
-
-}
-
-void AnimatedSprite2D::CalculateTimelineWorldTransform(unsigned index)
-{
-    TrackNodeInfo& info = trackNodeInfos_[index];
-    if (info.worldSpace)
-        return;
-
-    info.worldSpace = true;
-
-    int parent = info.value.parent_;
-    if (parent != -1)
-    {
-        CalculateTimelineWorldTransform(parent);
-        info.value.transform_ = trackNodeInfos_[parent].value.transform_ * info.value.transform_;
-    }
+    sourceBatchesDirty_ = false;   
 }
 
 void AnimatedSprite2D::HandleScenePostUpdate(StringHash eventType, VariantMap& eventData)
@@ -482,6 +245,290 @@ void AnimatedSprite2D::HandleScenePostUpdate(StringHash eventType, VariantMap& e
     using namespace ScenePostUpdate;
     float timeStep = eventData[P_TIMESTEP].GetFloat();
     UpdateAnimation(timeStep);
+    }
+
+void AnimatedSprite2D::UpdateAnimation(float timeStep)
+{
+#ifdef LUTEFISK3D_SPINE
+    if (skeleton_ && animationState_)
+        UpdateSpineAnimation(timeStep);
+#endif
+    if (spriterInstance_ && spriterInstance_->GetAnimation())
+        UpdateSpriterAnimation(timeStep);
+}
+
+#ifdef LUTEFISK3D_SPINE
+void AnimatedSprite2D::SetSpineAnimation()
+{
+    if (!animationStateData_)
+    {
+        animationStateData_ = spAnimationStateData_create(animationSet_->GetSkeletonData());
+        if (!animationStateData_)
+        {
+            URHO3D_LOGERROR("Create animation state data failed");
+            return;
+    }
+}
+
+
+    if (!animationState_)
+{
+        animationState_ = spAnimationState_create(animationStateData_);
+        if (!animationState_)
+    {
+            URHO3D_LOGERROR("Create animation state failed");
+            return;
+        }
+    }
+
+    // Reset slots to setup pose, fix issue #932
+    spSkeleton_setSlotsToSetupPose(skeleton_);
+    spAnimationState_setAnimationByName(animationState_, 0, qPrintable(animationName_), loopMode_ != LM_FORCE_CLAMPED ? true : false);
+    UpdateAnimation(0.0f);
+    MarkNetworkUpdate();
+}
+
+void AnimatedSprite2D::UpdateSpineAnimation(float timeStep)
+{
+    timeStep *= speed_;
+
+    skeleton_->flipX = flipX_;
+    skeleton_->flipY = flipY_;
+
+    spSkeleton_update(skeleton_, timeStep); 
+    spAnimationState_update(animationState_, timeStep);
+    spAnimationState_apply(animationState_, skeleton_);
+    spSkeleton_updateWorldTransform(skeleton_);
+
+    sourceBatchesDirty_ = true;
+    worldBoundingBoxDirty_ = true;
+    }
+
+void AnimatedSprite2D::UpdateSourceBatchesSpine()
+    {
+    const Matrix3x4& worldTransform = GetNode()->GetWorldTransform();
+
+    SourceBatch2D& sourceBatch = sourceBatches_[0];
+    sourceBatches_[0].vertices_.clear();
+
+    const constexpr int SLOT_VERTEX_COUNT_MAX = 1024;
+    static float slotVertices[SLOT_VERTEX_COUNT_MAX];
+
+    for (int i = 0; i < skeleton_->slotsCount; ++i)
+    {
+        spSlot* slot = skeleton_->drawOrder[i];
+        spAttachment* attachment = slot->attachment;
+        if (!attachment)
+            continue;
+
+        unsigned color = Color(color_.r_ * slot->r, 
+            color_.g_ * slot->g, 
+            color_.b_ * slot->b, 
+            color_.a_ * slot->a).ToUInt();
+
+        if (attachment->type == SP_ATTACHMENT_REGION)
+    {
+            spRegionAttachment* region = (spRegionAttachment*)attachment;
+            spRegionAttachment_computeWorldVertices(region, slot->bone, slotVertices);
+
+            Vertex2D vertices[4];
+            vertices[0].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X1], slotVertices[SP_VERTEX_Y1]);
+            vertices[1].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X2], slotVertices[SP_VERTEX_Y2]);
+            vertices[2].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X3], slotVertices[SP_VERTEX_Y3]);
+            vertices[3].position_ = worldTransform * Vector3(slotVertices[SP_VERTEX_X4], slotVertices[SP_VERTEX_Y4]);
+
+            vertices[0].color_ = color;
+            vertices[1].color_ = color;
+            vertices[2].color_ = color;
+            vertices[3].color_ = color;
+
+            vertices[0].uv_ = Vector2(region->uvs[SP_VERTEX_X1], region->uvs[SP_VERTEX_Y1]);
+            vertices[1].uv_ = Vector2(region->uvs[SP_VERTEX_X2], region->uvs[SP_VERTEX_Y2]);
+            vertices[2].uv_ = Vector2(region->uvs[SP_VERTEX_X3], region->uvs[SP_VERTEX_Y3]);
+            vertices[3].uv_ = Vector2(region->uvs[SP_VERTEX_X4], region->uvs[SP_VERTEX_Y4]);
+
+            sourceBatches_[0].vertices_.Push(vertices[0]);
+            sourceBatches_[0].vertices_.Push(vertices[1]);
+            sourceBatches_[0].vertices_.Push(vertices[2]);
+            sourceBatches_[0].vertices_.Push(vertices[3]);
+        }
+        else if (attachment->type == SP_ATTACHMENT_MESH)
+        {
+            spMeshAttachment* mesh = (spMeshAttachment*)attachment;
+            if (mesh->verticesCount > SLOT_VERTEX_COUNT_MAX)
+                continue;
+
+            spMeshAttachment_computeWorldVertices(mesh, slot, slotVertices);
+
+            Vertex2D vertex;
+            vertex.color_ = color;
+            for (int j = 0; j < mesh->trianglesCount; ++j)
+            {
+                int index = mesh->triangles[j] << 1;
+                vertex.position_ = worldTransform * Vector3(slotVertices[index], slotVertices[index + 1]);
+                vertex.uv_ = Vector2(mesh->uvs[index], mesh->uvs[index + 1]);
+
+                sourceBatches_[0].vertices_.Push(vertex);
+                // Add padding vertex
+                if (j % 3 == 2)
+                    sourceBatches_[0].vertices_.Push(vertex);
+            }
+        }
+
+        else if (attachment->type == SP_ATTACHMENT_SKINNED_MESH)
+        {
+            spSkinnedMeshAttachment* skinnedMesh = (spSkinnedMeshAttachment*)attachment;
+            if (skinnedMesh->uvsCount > SLOT_VERTEX_COUNT_MAX)
+                continue;
+
+            spSkinnedMeshAttachment_computeWorldVertices(skinnedMesh, slot, slotVertices);
+
+            Vertex2D vertex;
+            vertex.color_ = color;
+            for (int j = 0; j < skinnedMesh->trianglesCount; ++j)
+            {
+                int index = skinnedMesh->triangles[j] << 1;
+                vertex.position_ = worldTransform * Vector3(slotVertices[index], slotVertices[index + 1]);
+                vertex.uv_ = Vector2(skinnedMesh->uvs[index], skinnedMesh->uvs[index + 1]);
+
+                sourceBatches_[0].vertices_.push_back(vertex);
+                // Add padding vertex
+                if (j % 3 == 2)
+                    sourceBatches_[0].vertices_.push_back(vertex);
+}
+        }
+    }
+}
+#endif
+
+void AnimatedSprite2D::SetSpriterAnimation()
+{
+    if (!spriterInstance_)
+        spriterInstance_ = new Spriter::SpriterInstance(animationSet_->GetSpriterData());
+
+    // Use entity is empty first entity
+    if (entity_.isEmpty())
+        entity_ = animationSet_->GetSpriterData()->entities_[0]->name_;
+
+    if (!spriterInstance_->SetEntity(qPrintable(entity_)))
+    {
+        URHO3D_LOGERROR("Set entity failed");
+        return;
+    }
+
+    if (!spriterInstance_->SetAnimation(qPrintable(animationName_), (Spriter::LoopMode)loopMode_))
+    {
+        URHO3D_LOGERROR("Set animation failed");
+        return;
+    }
+
+    UpdateAnimation(0.0f);
+    MarkNetworkUpdate();
+}
+
+void AnimatedSprite2D::UpdateSpriterAnimation(float timeStep)
+        {
+    spriterInstance_->Update(timeStep * speed_);
+    sourceBatchesDirty_ = true;
+    worldBoundingBoxDirty_ = true;
+            }
+
+void AnimatedSprite2D::UpdateSourceBatchesSpriter()
+            {
+    const Matrix3x4& nodeWorldTransform = GetNode()->GetWorldTransform();
+
+    std::vector<Vertex2D>& vertices = sourceBatches_[0].vertices_;
+    vertices.clear();
+
+    Rect drawRect;
+    Rect textureRect;
+    unsigned color = color_.ToUInt();
+
+    Vertex2D vertex0;
+    Vertex2D vertex1;
+    Vertex2D vertex2;
+    Vertex2D vertex3;
+
+    const std::vector<Spriter::SpatialTimelineKey*>& timelineKeys = spriterInstance_->GetTimelineKeys();
+    for (size_t i = 0; i < timelineKeys.size(); ++i)
+    {
+        if (timelineKeys[i]->GetObjectType() != Spriter::SPRITE)
+            continue;
+
+        Spriter::SpriteTimelineKey* timelineKey = (Spriter::SpriteTimelineKey*)timelineKeys[i];
+
+        Spriter::SpatialInfo& info = timelineKey->info_;        
+        Vector3 position(info.x_, info.y_, 0.0f);
+            if (flipX_)
+                position.x_ = -position.x_;
+            if (flipY_)
+                position.y_ = -position.y_;
+
+        float angle = info.angle_;
+            if (flipX_ != flipY_)
+                angle = -angle;
+
+        Matrix3x4 localTransform(position * PIXEL_SIZE, 
+            Quaternion(angle), 
+            Vector3(info.scaleX_, info.scaleY_, 1.0f));
+
+        Matrix3x4 worldTransform = nodeWorldTransform * localTransform;
+        Sprite2D* sprite = animationSet_->GetSpriterFileSprite(timelineKey->folderId_, timelineKey->fileId_);
+        if (!sprite)
+            return;
+
+        if (timelineKey->useDefaultPivot_)
+            sprite->GetDrawRectangle(drawRect, flipX_, flipY_);
+        else
+            sprite->GetDrawRectangle(drawRect, Vector2(timelineKey->pivotX_, timelineKey->pivotY_), flipX_, flipY_);
+
+        if (!sprite->GetTextureRectangle(textureRect, flipX_, flipY_))
+        return;
+
+        vertex0.position_ = worldTransform * Vector3(drawRect.min_.x_, drawRect.min_.y_, 0.0f);
+        vertex1.position_ = worldTransform * Vector3(drawRect.min_.x_, drawRect.max_.y_, 0.0f);
+        vertex2.position_ = worldTransform * Vector3(drawRect.max_.x_, drawRect.max_.y_, 0.0f);
+        vertex3.position_ = worldTransform * Vector3(drawRect.max_.x_, drawRect.min_.y_, 0.0f);
+
+        vertex0.uv_ = textureRect.min_;
+        vertex1.uv_ = Vector2(textureRect.min_.x_, textureRect.max_.y_);
+        vertex2.uv_ = textureRect.max_;
+        vertex3.uv_ = Vector2(textureRect.max_.x_, textureRect.min_.y_);
+
+        vertex0.color_ = vertex1.color_ = vertex2.color_ = vertex3.color_ = color;
+
+        vertices.push_back(vertex0);
+        vertices.push_back(vertex1);
+        vertices.push_back(vertex2);
+        vertices.push_back(vertex3);
+    }
+}
+
+void AnimatedSprite2D::Dispose()
+    {
+#ifdef LUTEFISK3D_SPINE
+    if (animationState_)
+    {
+        spAnimationState_dispose(animationState_);
+        animationState_ = 0;
+    }
+    if (animationStateData_)
+    {
+        spAnimationStateData_dispose(animationStateData_);
+        animationStateData_ = 0;
+}
+
+    if (skeleton_)
+{
+        spSkeleton_dispose(skeleton_);
+        skeleton_ = 0;
+    }
+#endif
+    if (spriterInstance_)
+    {
+        delete spriterInstance_;
+        spriterInstance_ = 0;
+    }
 }
 
 }

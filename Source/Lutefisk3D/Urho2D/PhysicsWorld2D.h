@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,10 @@ struct PhysicsRaycastResult2D
     }
 
     /// Test for inequality, added to prevent GCC from complaining.
-    bool operator != (const PhysicsRaycastResult2D& rhs) const { return position_ != rhs.position_ || normal_ != rhs.normal_ || distance_ != rhs.distance_ || body_ != rhs.body_; }
+    bool operator !=(const PhysicsRaycastResult2D& rhs) const
+    {
+        return position_ != rhs.position_ || normal_ != rhs.normal_ || distance_ != rhs.distance_ || body_ != rhs.body_;
+    }
 
     /// Hit worldspace position.
     Vector2 position_;
@@ -55,7 +58,7 @@ struct PhysicsRaycastResult2D
 /// 2D physics simulation world component. Should be added only to the root scene node.
 class PhysicsWorld2D : public Component, public b2ContactListener, public b2Draw
 {
-    OBJECT(PhysicsWorld2D);
+    URHO3D_OBJECT(PhysicsWorld2D,Component);
 
 public:
     /// Construct.
@@ -66,32 +69,34 @@ public:
     static void RegisterObject(Context* context);
 
     /// Visualize the component as debug geometry.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest);
+    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
     // Implement b2ContactListener.
     /// Called when two fixtures begin to touch.
-    virtual void BeginContact(b2Contact* contact);
+    virtual void BeginContact(b2Contact* contact) override;
     /// Called when two fixtures cease to touch.
-    virtual void EndContact(b2Contact* contact);
+    virtual void EndContact(b2Contact* contact) override;
 
     // Implement b2Draw.
     /// Draw a closed polygon provided in CCW order.
-    virtual void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
+    virtual void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) override;
     /// Draw a solid closed polygon provided in CCW order.
-    virtual void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
+    virtual void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) override;
     /// Draw a circle.
-    virtual void DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color);
+    virtual void DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color) override;
     /// Draw a solid circle.
-    virtual void DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color);
+    virtual void DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color) override;
     /// Draw a line segment.
-    virtual void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color);
+    virtual void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) override;
     /// Draw a transform. Choose your own length scale.
-    virtual void DrawTransform(const b2Transform& xf);
+    virtual void DrawTransform(const b2Transform& xf) override;
 
     /// Step the simulation forward.
     void Update(float timeStep);
     /// Add debug geometry to the debug renderer.
     void DrawDebugGeometry();
+    /// Enable or disable automatic physics simulation during scene update. Enabled by default.
+    void SetUpdateEnabled(bool enable);
     /// Set draw shape.
     void SetDrawShape(bool drawShape);
     /// Set draw joint.
@@ -134,6 +139,9 @@ public:
     /// Return rigid bodies by a box query.
     void GetRigidBodies(std::vector<RigidBody2D*>& result, const Rect& aabb, unsigned collisionMask = M_MAX_UNSIGNED);
 
+    /// Return whether physics world will automatically simulate during scene update.
+    bool IsUpdateEnabled() const { return updateEnabled_; }
+
     /// Return draw shape.
     bool GetDrawShape() const { return (m_drawFlags & e_shapeBit) != 0; }
     /// Return draw joint.
@@ -169,8 +177,8 @@ public:
     bool IsApplyingTransforms() const { return applyingTransforms_; }
 
 protected:
-    /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node);
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene *scene) override;
 
 private:
     /// Handle the scene subsystem update event, step simulation here.
@@ -196,8 +204,10 @@ private:
     /// Debug draw depth test mode.
     bool debugDepthTest_;
 
-    /// Physics steping.
-    bool physicsSteping_;
+    /// Automatic simulation update enabled flag.
+    bool updateEnabled_;
+    /// Whether is currently stepping the world. Used internally.
+    bool physicsStepping_;
     /// Applying transforms.
     bool applyingTransforms_;
     /// Rigid bodies.

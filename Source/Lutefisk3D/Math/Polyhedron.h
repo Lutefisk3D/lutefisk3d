@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -68,6 +68,12 @@ public:
 
     /// Destruct.
     ~Polyhedron();
+    /// Assign from another polyhedron.
+    Polyhedron& operator =(const Polyhedron& rhs)
+    {
+        faces_ = rhs.faces_;
+        return *this;
+    }
 
     /// Define from a bounding box.
     void Define(const BoundingBox& box);

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ Audio::Audio(Context* context) :
     // Register Audio library object factories
     RegisterAudioLibrary(context_);
 
-    SubscribeToEvent(E_RENDERUPDATE, HANDLER(Audio, HandleRenderUpdate));
+    SubscribeToEvent(E_RENDERUPDATE, URHO3D_HANDLER(Audio, HandleRenderUpdate));
 }
 
 Audio::~Audio()
@@ -70,15 +70,15 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
 {
     Release();
 
-    bufferLengthMSec = Max(bufferLengthMSec, MIN_BUFFERLENGTH);
+    bufferLengthMSec = std::max(bufferLengthMSec, MIN_BUFFERLENGTH);
     mixRate = Clamp(mixRate, MIN_MIXRATE, MAX_MIXRATE);
 
     SDL_AudioSpec desired;
     SDL_AudioSpec obtained;
 
     desired.freq = mixRate;
-// The concept behind the emspcripten audio port is to treat it as 16 bit until the final acumulation form the clip buffer
-#ifdef EMSCRIPTEN
+// The concept behind the emscripten audio port is to treat it as 16 bit until the final accumulation form the clip buffer
+#ifdef __EMSCRIPTEN__
     desired.format = AUDIO_F32LSB;
 #else
     desired.format = AUDIO_S16;
@@ -96,14 +96,14 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
     deviceID_ = SDL_OpenAudioDevice(nullptr, SDL_FALSE, &desired, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
     if (!deviceID_)
     {
-        LOGERROR("Could not initialize audio output");
+        URHO3D_LOGERROR("Could not initialize audio output");
         return false;
     }
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
     if (obtained.format != AUDIO_F32LSB && obtained.format != AUDIO_F32MSB && obtained.format != AUDIO_F32SYS)
     {
-        LOGERROR("Could not initialize audio output, 32-bit float buffer format not supported");
+        URHO3D_LOGERROR("Could not initialize audio output, 32-bit float buffer format not supported");
         SDL_CloseAudioDevice(deviceID_);
         deviceID_ = 0;
         return false;
@@ -111,7 +111,7 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
 #else
     if (obtained.format != AUDIO_S16SYS && obtained.format != AUDIO_S16LSB && obtained.format != AUDIO_S16MSB)
     {
-        LOGERROR("Could not initialize audio output, 16-bit buffer format not supported");
+        URHO3D_LOGERROR("Could not initialize audio output, 16-bit buffer format not supported");
         SDL_CloseAudioDevice(deviceID_);
         deviceID_ = 0;
         return false;
@@ -126,7 +126,7 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
     interpolation_ = interpolation;
     clipBuffer_ = new int[stereo ? fragmentSize_ << 1 : fragmentSize_];
 
-    LOGINFO("Set audio mode " + QString::number(mixRate_) + " Hz " + (stereo_ ? "stereo" : "mono") + " " +
+    URHO3D_LOGINFO("Set audio mode " + QString::number(mixRate_) + " Hz " + (stereo_ ? "stereo" : "mono") + " " +
         (interpolation_ ? "interpolated" : ""));
 
     return Play();
@@ -134,7 +134,7 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
 
 void Audio::Update(float timeStep)
 {
-    PROFILE(UpdateAudio);
+    URHO3D_PROFILE(UpdateAudio);
     if(playing_ && deviceID_ && soundSources_.empty())
         SDL_PauseAudioDevice(deviceID_, 1);
     // Update in reverse order, because sound sources might remove themselves
@@ -149,7 +149,7 @@ bool Audio::Play()
 
     if (!deviceID_)
     {
-        LOGERROR("No audio mode set, can not start playback");
+        URHO3D_LOGERROR("No audio mode set, can not start playback");
         return false;
     }
 
@@ -272,7 +272,7 @@ void Audio::MixOutput(void *dest, unsigned samples)
             elem->Mix(clipPtr, workSamples, mixRate_, stereo_, interpolation_);
 
         // Copy output from clip buffer to destination
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
         float* destPtr = (float*)dest;
         while (clipSamples--)
             *destPtr++ = (float)Clamp(*clipPtr++, -32768, 32767) / 32768.0f;

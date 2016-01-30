@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ struct PackageEntry
 /// Stores files of a directory tree sequentially for convenient access.
 class PackageFile : public Object
 {
-    OBJECT(PackageFile);
+    URHO3D_OBJECT(PackageFile, Object);
 
 public:
     /// Construct.
@@ -53,9 +53,9 @@ public:
 
     /// Open the package file. Return true if successful.
     bool Open(const QString& fileName, unsigned startOffset = 0);
-    /// Check if a file exists within the package file.
+    /// Check if a file exists within the package file. This will be case-insensitive on Windows and case-sensitive on other platforms.
     bool Exists(const QString& fileName) const;
-    /// Return the file entry corresponding to the name, or null if not found.
+    /// Return the file entry corresponding to the name, or null if not found. This will be case-insensitive on Windows and case-sensitive on other platforms.
     const PackageEntry* GetEntry(const QString& fileName) const;
     /// Return all file entries.
     const HashMap<QString, PackageEntry>& GetEntries() const { return entries_; }
@@ -71,7 +71,7 @@ public:
     unsigned GetChecksum() const { return checksum_; }
     /// Return whether the files are compressed.
     bool IsCompressed() const { return compressed_; }
-    /// Return list of entry names
+    /// Return list of file names in the package.
     const std::vector<QString> GetEntryNames() const { return entries_.keys(); }
 
 private:

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,14 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
 #include "../Math/BoundingBox.h"
+#include "../Scene/Component.h"
 
 namespace Urho3D
 {
     class NavArea : public Component
     {
-        OBJECT(NavArea);
+        URHO3D_OBJECT(NavArea,Component);
 
     public:
         /// Construct.
@@ -58,8 +58,6 @@ namespace Urho3D
     private:
         /// Bounds of area to mark.
         BoundingBox boundingBox_;
-        /// Flags to assign to the marked area of the navigation map.
-        unsigned flags_;
         /// Area id to assign to the marked area.
         unsigned char areaID_;
     };

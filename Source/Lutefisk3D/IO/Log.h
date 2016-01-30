@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,7 @@ struct StoredLogMessage
 /// Logging subsystem.
 class Log : public Object
 {
-    OBJECT(Log);
+    URHO3D_OBJECT(Log, Object);
 
 public:
     /// Construct.
@@ -128,21 +128,21 @@ private:
 };
 
 #ifdef LUTEFISK3D_LOGGING
-#define LOGDEBUG(message) Urho3D::Log::Write(Urho3D::LOG_DEBUG, message)
-#define LOGINFO(message) Urho3D::Log::Write(Urho3D::LOG_INFO, message)
-#define LOGWARNING(message) Urho3D::Log::Write(Urho3D::LOG_WARNING, message)
-#define LOGERROR(message) Urho3D::Log::Write(Urho3D::LOG_ERROR, message)
-#define LOGRAW(message) Urho3D::Log::WriteRaw(message)
+#define URHO3D_LOGDEBUG(message) Urho3D::Log::Write(Urho3D::LOG_DEBUG, message)
+#define URHO3D_LOGINFO(message) Urho3D::Log::Write(Urho3D::LOG_INFO, message)
+#define URHO3D_LOGWARNING(message) Urho3D::Log::Write(Urho3D::LOG_WARNING, message)
+#define URHO3D_LOGERROR(message) Urho3D::Log::Write(Urho3D::LOG_ERROR, message)
+#define URHO3D_LOGRAW(message) Urho3D::Log::WriteRaw(message)
 #else
-#define LOGDEBUG(message)
-#define LOGINFO(message)
-#define LOGWARNING(message)
-#define LOGERROR(message)
-#define LOGRAW(message) z
-#define LOGDEBUGF(...)
-#define LOGINFOF(...)
-#define LOGWARNINGF(...)
-#define LOGERRORF(...)
-#define LOGRAWF(...)
+#define URHO3D_LOGDEBUG(message) ((void)0)
+#define URHO3D_LOGINFO(message) ((void)0)
+#define URHO3D_LOGWARNING(message) ((void)0)
+#define URHO3D_LOGERROR(message) ((void)0)
+#define URHO3D_LOGRAW(message) ((void)0)
+#define URHO3D_LOGDEBUGF(...) ((void)0)
+#define URHO3D_LOGINFOF(...) ((void)0)
+#define URHO3D_LOGWARNINGF(...) ((void)0)
+#define URHO3D_LOGERRORF(...) ((void)0)
+#define URHO3D_LOGRAWF(...) ((void)0)
 #endif
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -134,10 +134,12 @@ public:
     bool SetVariantValue(const Variant& value);
     /// Set a resource reference attribute.
     bool SetResourceRef(const ResourceRef& value);
-    /// Set a resource referene list attribute.
+    /// Set a resource reference list attribute.
     bool SetResourceRefList(const ResourceRefList& value);
     /// Set a variant vector attribute. Creates child elements as necessary.
     bool SetVariantVector(const VariantVector& value);
+    /// Set a string vector attribute. Creates child elements as necessary.
+    bool SetStringVector(const QStringList& value);
     /// Set a variant map attribute. Creates child elements as necessary.
     bool SetVariantMap(const VariantMap& value);
     /// Set a Vector2 attribute.
@@ -237,6 +239,8 @@ public:
     ResourceRefList GetResourceRefList() const;
     /// Return a variant vector attribute, or empty if missing.
     VariantVector GetVariantVector() const;
+    /// Return a string vector attribute, or empty if missing.
+    QStringList GetStringVector() const;
     /// Return a variant map attribute, or empty if missing.
     VariantMap GetVariantMap() const;
     /// Return a Vector2 attribute, or zero vector if missing.

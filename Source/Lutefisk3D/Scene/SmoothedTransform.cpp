@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,10 +38,6 @@ SmoothedTransform::SmoothedTransform(Context* context) :
 {
 }
 
-SmoothedTransform::~SmoothedTransform()
-{
-}
-
 void SmoothedTransform::RegisterObject(Context* context)
 {
     context->RegisterFactory<SmoothedTransform>();
@@ -49,12 +45,12 @@ void SmoothedTransform::RegisterObject(Context* context)
 
 void SmoothedTransform::Update(float constant, float squaredSnapThreshold)
 {
-    if (smoothingMask_ && node_)
+    if ((smoothingMask_ != 0u) && (node_ != nullptr))
     {
         Vector3 position = node_->GetPosition();
         Quaternion rotation = node_->GetRotation();
 
-        if (smoothingMask_ & SMOOTH_POSITION)
+        if ((smoothingMask_ & SMOOTH_POSITION) != 0u)
         {
             // If position snaps, snap everything to the end
             float delta = (position - targetPosition_).LengthSquared();
@@ -72,7 +68,7 @@ void SmoothedTransform::Update(float constant, float squaredSnapThreshold)
             node_->SetPosition(position);
         }
 
-        if (smoothingMask_ & SMOOTH_ROTATION)
+        if ((smoothingMask_ & SMOOTH_ROTATION) != 0u)
         {
             float delta = (rotation - targetRotation_).LengthSquared();
             if (delta < M_EPSILON || constant >= 1.0f)
@@ -88,7 +84,7 @@ void SmoothedTransform::Update(float constant, float squaredSnapThreshold)
     }
 
     // If smoothing has completed, unsubscribe from the update event
-    if (!smoothingMask_)
+    if (smoothingMask_ == 0u)
     {
         UnsubscribeFromEvent(GetScene(), E_UPDATESMOOTHING);
         subscribed_ = false;
@@ -103,7 +99,7 @@ void SmoothedTransform::SetTargetPosition(const Vector3& position)
     // Subscribe to smoothing update if not yet subscribed
     if (!subscribed_)
     {
-        SubscribeToEvent(GetScene(), E_UPDATESMOOTHING, HANDLER(SmoothedTransform, HandleUpdateSmoothing));
+        SubscribeToEvent(GetScene(), E_UPDATESMOOTHING, URHO3D_HANDLER(SmoothedTransform, HandleUpdateSmoothing));
         subscribed_ = true;
     }
 
@@ -117,7 +113,7 @@ void SmoothedTransform::SetTargetRotation(const Quaternion& rotation)
 
     if (!subscribed_)
     {
-        SubscribeToEvent(GetScene(), E_UPDATESMOOTHING, HANDLER(SmoothedTransform, HandleUpdateSmoothing));
+        SubscribeToEvent(GetScene(), E_UPDATESMOOTHING, URHO3D_HANDLER(SmoothedTransform, HandleUpdateSmoothing));
         subscribed_ = true;
     }
 
@@ -126,7 +122,7 @@ void SmoothedTransform::SetTargetRotation(const Quaternion& rotation)
 
 void SmoothedTransform::SetTargetWorldPosition(const Vector3& position)
 {
-    if (node_ && node_->GetParent())
+    if ((node_ != nullptr) && (node_->GetParent() != nullptr))
         SetTargetPosition(node_->GetParent()->GetWorldTransform().Inverse() * position);
     else
         SetTargetPosition(position);
@@ -134,7 +130,7 @@ void SmoothedTransform::SetTargetWorldPosition(const Vector3& position)
 
 void SmoothedTransform::SetTargetWorldRotation(const Quaternion& rotation)
 {
-    if (node_ && node_->GetParent())
+    if ((node_ != nullptr) && (node_->GetParent() != nullptr))
         SetTargetRotation(node_->GetParent()->GetWorldRotation().Inverse() * rotation);
     else
         SetTargetRotation(rotation);
@@ -142,23 +138,23 @@ void SmoothedTransform::SetTargetWorldRotation(const Quaternion& rotation)
 
 Vector3 SmoothedTransform::GetTargetWorldPosition() const
 {
-    if (node_ && node_->GetParent())
+    if ((node_ != nullptr) && (node_->GetParent() != nullptr))
         return node_->GetParent()->GetWorldTransform() * targetPosition_;
-    else
+
         return targetPosition_;
 }
 
 Quaternion SmoothedTransform::GetTargetWorldRotation() const
 {
-    if (node_ && node_->GetParent())
+    if ((node_ != nullptr) && (node_->GetParent() != nullptr))
         return node_->GetParent()->GetWorldRotation() * targetRotation_;
-    else
+
         return targetRotation_;
 }
 
 void SmoothedTransform::OnNodeSet(Node* node)
 {
-    if (node)
+    if (node != nullptr)
     {
         // Copy initial target transform
         targetPosition_ = node->GetPosition();

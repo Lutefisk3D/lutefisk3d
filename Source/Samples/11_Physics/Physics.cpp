@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +49,7 @@
 #include <Lutefisk3D/Graphics/Zone.h>
 
 using namespace Urho3D;
-DEFINE_APPLICATION_MAIN(Physics)
+URHO3D_DEFINE_APPLICATION_MAIN(Physics)
 
 Physics::Physics(Context* context) :
     Sample(context),
@@ -206,11 +206,11 @@ void Physics::SetupViewport()
 void Physics::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(Physics, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Physics, HandleUpdate));
 
     // Subscribe HandlePostRenderUpdate() function for processing the post-render update event, during which we request
     // debug geometry
-    SubscribeToEvent(E_POSTRENDERUPDATE, HANDLER(Physics, HandlePostRenderUpdate));
+    SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(Physics, HandlePostRenderUpdate));
 }
 
 void Physics::MoveCamera(float timeStep)

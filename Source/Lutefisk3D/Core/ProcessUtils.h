@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,5 +61,9 @@ QString GetPlatform();
 unsigned GetNumPhysicalCPUs();
 /// Return the number of logical CPUs (different from physical if hyperthreading is used.)
 unsigned GetNumLogicalCPUs();
+/// Set minidump write location as an absolute path. If empty, uses default (UserProfile/AppData/Roaming/urho3D/crashdumps) Minidumps are only supported on MSVC compiler.
+void SetMiniDumpDir(const QString& pathName);
+/// Return minidump write location.
+QString GetMiniDumpDir();
 
 }

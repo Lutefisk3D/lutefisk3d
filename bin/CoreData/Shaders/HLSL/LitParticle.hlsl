@@ -21,8 +21,11 @@ void VS(float4 iPos : POSITION,
     #ifdef INSTANCED
         float4x3 iModelInstance : TEXCOORD2,
     #endif
-    #ifdef BILLBOARD
+    #if defined(BILLBOARD) || defined(DIRBILLBOARD)
         float2 iSize : TEXCOORD1,
+    #endif
+    #ifdef DIRBILLBOARD
+        float4 iTangent : TANGENT,
     #endif
     out float2 oTexCoord : TEXCOORD0,
     out float4 oWorldPos : TEXCOORD3,
@@ -103,7 +106,7 @@ void PS(float2 iTexCoord : TEXCOORD0,
         #ifdef SPOTLIGHT
             float4 iSpotPos : TEXCOORD5,
         #endif
-        #ifdef CUBEMASK
+        #ifdef POINTLIGHT
             float3 iCubeMaskVec : TEXCOORD5,
         #endif
     #else

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,11 +36,11 @@ namespace Urho3D
 /// Hardware vertex buffer.
 class VertexBuffer : public Object, public GPUObject
 {
-    OBJECT(VertexBuffer);
+    URHO3D_OBJECT(VertexBuffer,Object);
 
 public:
     /// Construct.
-    VertexBuffer(Context* context);
+    VertexBuffer(Context* context, bool forceHeadless = false);
     /// Destruct.
     virtual ~VertexBuffer();
 

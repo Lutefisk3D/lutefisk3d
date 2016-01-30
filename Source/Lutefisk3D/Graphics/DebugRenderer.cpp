@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +49,7 @@ DebugRenderer::DebugRenderer(Context* context) :
 {
     vertexBuffer_ = new VertexBuffer(context_);
 
-    SubscribeToEvent(E_ENDFRAME, HANDLER(DebugRenderer, HandleEndFrame));
+    SubscribeToEvent(E_ENDFRAME, URHO3D_HANDLER(DebugRenderer, HandleEndFrame));
 }
 
 DebugRenderer::~DebugRenderer()
@@ -336,6 +336,54 @@ void DebugRenderer::AddTriangleMesh(const void* vertexData, unsigned vertexSize,
     }
 }
 
+void DebugRenderer::AddCircle(const Vector3& center, const Vector3& normal, float radius, const Color& color, int steps, bool depthTest)
+{
+    Quaternion orientation;
+    orientation.FromRotationTo(Vector3::UP, normal.Normalized());
+    Vector3 p = orientation * Vector3(radius, 0, 0) + center;
+    unsigned uintColor = color.ToUInt();
+
+    for(int i = 1; i <= steps; ++i)
+    {
+        const float angle = (float)i / (float)steps * 360.0f;
+        Vector3 v(radius * Cos(angle), 0, radius * Sin(angle));
+        Vector3 c = orientation * v + center;
+        AddLine(p, c, uintColor, depthTest);
+        p = c;
+    }
+
+    p = center + normal * (radius / 4.0f);
+    AddLine(center, p, uintColor, depthTest);
+}
+
+void DebugRenderer::AddCross(const Vector3& center, float size, const Color& color, bool depthTest)
+{
+    unsigned uintColor = color.ToUInt();
+
+    float halfSize = size / 2.0f;
+    for (int i = 0; i < 3; ++i)
+    {
+        float start[3] = { center.x_, center.y_, center.z_ };
+        float end[3] = { center.x_, center.y_, center.z_ };
+        start[i] -= halfSize;
+        end[i] += halfSize;
+        AddLine(Vector3(start), Vector3(end), uintColor, depthTest);
+    }
+}
+
+void DebugRenderer::AddQuad(const Vector3& center, float width, float height, const Color& color, bool depthTest)
+{
+    unsigned uintColor = color.ToUInt();
+
+    Vector3 v0(center.x_ - width / 2, center.y_, center.z_ - height / 2);
+    Vector3 v1(center.x_ + width / 2, center.y_, center.z_ - height / 2);
+    Vector3 v2(center.x_ + width / 2, center.y_, center.z_ + height / 2);
+    Vector3 v3(center.x_ - width / 2, center.y_, center.z_ + height / 2);
+    AddLine(v0, v1, uintColor, depthTest);
+    AddLine(v1, v2, uintColor, depthTest);
+    AddLine(v2, v3, uintColor, depthTest);
+    AddLine(v3, v0, uintColor, depthTest);
+}
 void DebugRenderer::Render()
 {
     if (!HasContent())
@@ -345,7 +393,7 @@ void DebugRenderer::Render()
     // Engine does not render when window is closed or device is lost
     assert(graphics && graphics->IsInitialized() && !graphics->IsDeviceLost());
 
-    PROFILE(RenderDebugGeometry);
+    URHO3D_PROFILE(RenderDebugGeometry);
 
     ShaderVariation* vs = graphics->GetShader(VS, "Basic", "VERTEXCOLOR");
     ShaderVariation* ps = graphics->GetShader(PS, "Basic", "VERTEXCOLOR");
@@ -363,9 +411,13 @@ void DebugRenderer::Render()
     {
         const DebugLine& line = lines_[i];
 
-        dest[0] = line.start_.x_; dest[1] = line.start_.y_; dest[2] = line.start_.z_;
+        dest[0] = line.start_.x_;
+        dest[1] = line.start_.y_;
+        dest[2] = line.start_.z_;
         ((unsigned&)dest[3]) = line.color_;
-        dest[4] = line.end_.x_; dest[5] = line.end_.y_; dest[6] = line.end_.z_;
+        dest[4] = line.end_.x_;
+        dest[5] = line.end_.y_;
+        dest[6] = line.end_.z_;
         ((unsigned&)dest[7]) = line.color_;
 
         dest += 8;
@@ -375,9 +427,13 @@ void DebugRenderer::Render()
     {
         const DebugLine& line = noDepthLines_[i];
 
-        dest[0] = line.start_.x_; dest[1] = line.start_.y_; dest[2] = line.start_.z_;
+        dest[0] = line.start_.x_;
+        dest[1] = line.start_.y_;
+        dest[2] = line.start_.z_;
         ((unsigned&)dest[3]) = line.color_;
-        dest[4] = line.end_.x_; dest[5] = line.end_.y_; dest[6] = line.end_.z_;
+        dest[4] = line.end_.x_;
+        dest[5] = line.end_.y_;
+        dest[6] = line.end_.z_;
         ((unsigned&)dest[7]) = line.color_;
 
         dest += 8;
@@ -387,13 +443,19 @@ void DebugRenderer::Render()
     {
         const DebugTriangle& triangle = triangles_[i];
 
-        dest[0] = triangle.v1_.x_; dest[1] = triangle.v1_.y_; dest[2] = triangle.v1_.z_;
+        dest[0] = triangle.v1_.x_;
+        dest[1] = triangle.v1_.y_;
+        dest[2] = triangle.v1_.z_;
         ((unsigned&)dest[3]) = triangle.color_;
 
-        dest[4] = triangle.v2_.x_; dest[5] = triangle.v2_.y_; dest[6] = triangle.v2_.z_;
+        dest[4] = triangle.v2_.x_;
+        dest[5] = triangle.v2_.y_;
+        dest[6] = triangle.v2_.z_;
         ((unsigned&)dest[7]) = triangle.color_;
 
-        dest[8] = triangle.v3_.x_; dest[9] = triangle.v3_.y_; dest[10] = triangle.v3_.z_;
+        dest[8] = triangle.v3_.x_;
+        dest[9] = triangle.v3_.y_;
+        dest[10] = triangle.v3_.z_;
         ((unsigned&)dest[11]) = triangle.color_;
 
         dest += 12;
@@ -403,13 +465,19 @@ void DebugRenderer::Render()
     {
         const DebugTriangle& triangle = noDepthTriangles_[i];
 
-        dest[0] = triangle.v1_.x_; dest[1] = triangle.v1_.y_; dest[2] = triangle.v1_.z_;
+        dest[0] = triangle.v1_.x_;
+        dest[1] = triangle.v1_.y_;
+        dest[2] = triangle.v1_.z_;
         ((unsigned&)dest[3]) = triangle.color_;
 
-        dest[4] = triangle.v2_.x_; dest[5] = triangle.v2_.y_; dest[6] = triangle.v2_.z_;
+        dest[4] = triangle.v2_.x_;
+        dest[5] = triangle.v2_.y_;
+        dest[6] = triangle.v2_.z_;
         ((unsigned&)dest[7]) = triangle.color_;
 
-        dest[8] = triangle.v3_.x_; dest[9] = triangle.v3_.y_; dest[10] = triangle.v3_.z_;
+        dest[8] = triangle.v3_.x_;
+        dest[9] = triangle.v3_.y_;
+        dest[10] = triangle.v3_.z_;
         ((unsigned&)dest[11]) = triangle.color_;
 
         dest += 12;
@@ -425,20 +493,22 @@ void DebugRenderer::Render()
     graphics->SetStencilTest(false);
     graphics->SetShaders(vs, ps);
     graphics->SetShaderParameter(VSP_MODEL, Matrix3x4::IDENTITY);
+    graphics->SetShaderParameter(VSP_VIEW, view_);
+    graphics->SetShaderParameter(VSP_VIEWINV, view_.Inverse());
     graphics->SetShaderParameter(VSP_VIEWPROJ, projection_ * view_);
     graphics->SetShaderParameter(PSP_MATDIFFCOLOR, Color(1.0f, 1.0f, 1.0f, 1.0f));
     graphics->SetVertexBuffer(vertexBuffer_);
 
     unsigned start = 0;
     unsigned count = 0;
-    if (lines_.size())
+    if (!lines_.empty())
     {
         count = lines_.size() * 2;
         graphics->SetDepthTest(CMP_LESSEQUAL);
         graphics->Draw(LINE_LIST, start, count);
         start += count;
     }
-    if (noDepthLines_.size())
+    if (!noDepthLines_.empty())
     {
         count = noDepthLines_.size() * 2;
         graphics->SetDepthTest(CMP_ALWAYS);
@@ -448,14 +518,14 @@ void DebugRenderer::Render()
 
     graphics->SetBlendMode(BLEND_ALPHA);
 
-    if (triangles_.size())
+    if (!triangles_.empty())
     {
         count = triangles_.size() * 3;
         graphics->SetDepthTest(CMP_LESSEQUAL);
         graphics->Draw(TRIANGLE_LIST, start, count);
         start += count;
     }
-    if (noDepthTriangles_.size())
+    if (!noDepthTriangles_.empty())
     {
         count = noDepthTriangles_.size() * 3;
         graphics->SetDepthTest(CMP_ALWAYS);
@@ -470,7 +540,7 @@ bool DebugRenderer::IsInside(const BoundingBox& box) const
 
 bool DebugRenderer::HasContent() const
 {
-    return (lines_.empty() && noDepthLines_.empty() && triangles_.empty() && noDepthTriangles_.empty()) ? false : true;
+    return !(lines_.empty() && noDepthLines_.empty() && triangles_.empty() && noDepthTriangles_.empty());
 }
 void DebugRenderer::HandleEndFrame(StringHash eventType, VariantMap& eventData)
 {

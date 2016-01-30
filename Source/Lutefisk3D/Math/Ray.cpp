@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,7 @@ float Ray::HitDistance(const Plane& plane) const
 float Ray::HitDistance(const BoundingBox& box) const
 {
     // If undefined, no hit (infinite distance)
-    if (!box.defined_)
+    if (!box.Defined())
         return M_INFINITY;
     
     // Check for ray origin being inside the box
@@ -201,11 +201,6 @@ float Ray::HitDistance(const Sphere& sphere) const
         return (-b + dSqrt) / (2.0f * a);
 }
 
-float Ray::HitDistance(const Vector3& v0, const Vector3& v1, const Vector3& v2) const
-{
-    return HitDistance(v0, v1, v2, nullptr,nullptr);
-}
-
 float Ray::HitDistance(const Vector3& v0, const Vector3& v1, const Vector3& v2, Vector3* outNormal,Vector3 *outBary) const
 {
     // Based on Fast, Minimum Storage Ray/Triangle Intersection by Möller & Trumbore
@@ -235,9 +230,8 @@ float Ray::HitDistance(const Vector3& v0, const Vector3& v1, const Vector3& v2, 
                     // There is an intersection, so calculate distance & optional normal
                     if (outNormal)
                         *outNormal = edge1.CrossProduct(edge2);
-                    if (outBary) {
+                    if (outBary)
                         *outBary = Vector3(1-(u/det)-(v/det),u/det,v/det);
-                    }
                     return distance;
                 }
             }
@@ -247,46 +241,39 @@ float Ray::HitDistance(const Vector3& v0, const Vector3& v1, const Vector3& v2, 
     return M_INFINITY;
 }
 
-float Ray::HitDistance(const void* vertexData, unsigned vertexStride, unsigned vertexStart, unsigned vertexCount, Vector3* outNormal, Vector2 * outUV1, unsigned uvOffset) const
+float Ray::HitDistance(const void* vertexData, unsigned vertexStride, unsigned vertexStart, unsigned vertexCount,
+                       Vector3* outNormal, Vector2* outUV, unsigned uvOffset) const
 {
     float nearest = M_INFINITY;
     const unsigned char* vertices = ((const unsigned char*)vertexData) + vertexStart * vertexStride;
-    unsigned index = 0;
-    if(outUV1) {
-        unsigned nearestIdx = -1;
-        Vector3 barycentric;
-        while (index + 2 < vertexCount)
+    unsigned index = 0, nearestIdx = M_MAX_UNSIGNED;
+    Vector3 barycentric;
+    Vector3* outBary = outUV ? &barycentric : 0;
+    while (index + 2 < vertexCount)
+    {
+        const Vector3& v0 = *((const Vector3*)(&vertices[index * vertexStride]));
+        const Vector3& v1 = *((const Vector3*)(&vertices[(index + 1) * vertexStride]));
+        const Vector3& v2 = *((const Vector3*)(&vertices[(index + 2) * vertexStride]));
+        float distance = HitDistance(v0, v1, v2, outNormal, outBary);
+        if (distance < nearest)
         {
-            const Vector3& v0 = *((const Vector3*)(&vertices[index * vertexStride]));
-            const Vector3& v1 = *((const Vector3*)(&vertices[(index + 1) * vertexStride]));
-            const Vector3& v2 = *((const Vector3*)(&vertices[(index + 2) * vertexStride]));
-            float interesectDist = HitDistance(v0, v1, v2, outNormal,&barycentric);
-            if(interesectDist<nearest) {
-                nearestIdx = index;
-                nearest = interesectDist;
-            }
-            index += 3;
+            nearestIdx = index;
+            nearest = distance;
         }
-        if(nearestIdx!=-1) {
+        index += 3;
+    }
+    if (outUV)
+    {
+        if (nearestIdx == M_MAX_UNSIGNED)
+            *outUV = Vector2::ZERO;
+        else
+        {
+            // Interpolate the UV coordinate using barycentric coordinate
             const Vector2& uv0 = *((const Vector2*)(&vertices[uvOffset + nearestIdx * vertexStride]));
             const Vector2& uv1 = *((const Vector2*)(&vertices[uvOffset + (nearestIdx + 1) * vertexStride]));
             const Vector2& uv2 = *((const Vector2*)(&vertices[uvOffset + (nearestIdx + 2) * vertexStride]));
-            // get the uv value from barycentric coordinates
-
-            *outUV1 = Vector2(uv0.x_ * barycentric.x_ + uv1.x_ * barycentric.y_ + uv2.x_ * barycentric.z_,
-                              uv0.y_ * barycentric.x_ + uv1.y_ * barycentric.y_ + uv2.y_ * barycentric.z_
-                              );
-        }
-
-    }
-    else {
-        while (index + 2 < vertexCount)
-        {
-            const Vector3& v0 = *((const Vector3*)(&vertices[index * vertexStride]));
-            const Vector3& v1 = *((const Vector3*)(&vertices[(index + 1) * vertexStride]));
-            const Vector3& v2 = *((const Vector3*)(&vertices[(index + 2) * vertexStride]));
-            nearest = Min(nearest, HitDistance(v0, v1, v2, outNormal,nullptr));
-            index += 3;
+            *outUV = Vector2(uv0.x_ * barycentric.x_ + uv1.x_ * barycentric.y_ + uv2.x_ * barycentric.z_,
+                             uv0.y_ * barycentric.x_ + uv1.y_ * barycentric.y_ + uv2.y_ * barycentric.z_);
         }
     }
     
@@ -294,98 +281,82 @@ float Ray::HitDistance(const void* vertexData, unsigned vertexStride, unsigned v
 }
 
 float Ray::HitDistance(const void* vertexData, unsigned vertexStride, const void* indexData, unsigned indexSize,
-    unsigned indexStart, unsigned indexCount, Vector3* outNormal, Vector2 *outUV, unsigned uvOffset) const
+                       unsigned indexStart, unsigned indexCount, Vector3* outNormal, Vector2 *outUV, unsigned uvOffset) const
 {
     float nearest = M_INFINITY;
     const unsigned char* vertices = (const unsigned char*)vertexData;
     
-    if(outUV) {
-        int nearestIdx[3] = {-1,-1,-1};
-        Vector3 barycentric;
-        // 16-bit indices
-        if (indexSize == sizeof(unsigned short))
-        {
-            const unsigned short* indices = ((const unsigned short*)indexData) + indexStart;
-            const unsigned short* indicesEnd = indices + indexCount;
+    Vector3 barycentric;
+    Vector3* outBary = outUV ? &barycentric : 0;
+    // 16-bit indices
+    if (indexSize == sizeof(unsigned short))
+    {
+        const unsigned short* indices = ((const unsigned short*)indexData) + indexStart;
+        const unsigned short* indicesEnd = indices + indexCount;
+        const unsigned short* nearestIndices = 0;
 
-            while (indices < indicesEnd)
+        while (indices < indicesEnd)
+        {
+            const Vector3& v0 = *((const Vector3*)(&vertices[indices[0] * vertexStride]));
+            const Vector3& v1 = *((const Vector3*)(&vertices[indices[1] * vertexStride]));
+            const Vector3& v2 = *((const Vector3*)(&vertices[indices[2] * vertexStride]));
+            float distance = HitDistance(v0, v1, v2, outNormal, outBary);
+            if (distance < nearest)
             {
-                const Vector3& v0 = *((const Vector3*)(&vertices[indices[0] * vertexStride]));
-                const Vector3& v1 = *((const Vector3*)(&vertices[indices[1] * vertexStride]));
-                const Vector3& v2 = *((const Vector3*)(&vertices[indices[2] * vertexStride]));
-                float interesectDist = HitDistance(v0, v1, v2, outNormal,&barycentric);
-                if(interesectDist<nearest) {
-                    nearestIdx[0] = indices[0];
-                    nearestIdx[1] = indices[1];
-                    nearestIdx[2] = indices[2];
-                    nearest = interesectDist;
-                }
-                indices += 3;
+                nearestIndices = indices;
+                nearest = distance;
+            }
+            indices += 3;
+        }
+
+        if (outUV)
+        {
+            if (nearestIndices == 0)
+                *outUV = Vector2::ZERO;
+            else
+            {
+                // Interpolate the UV coordinate using barycentric coordinate
+                const Vector2& uv0 = *((const Vector2*)(&vertices[uvOffset + nearestIndices[0] * vertexStride]));
+                const Vector2& uv1 = *((const Vector2*)(&vertices[uvOffset + nearestIndices[1] * vertexStride]));
+                const Vector2& uv2 = *((const Vector2*)(&vertices[uvOffset + nearestIndices[2] * vertexStride]));
+                *outUV = Vector2(uv0.x_ * barycentric.x_ + uv1.x_ * barycentric.y_ + uv2.x_ * barycentric.z_,
+                                 uv0.y_ * barycentric.x_ + uv1.y_ * barycentric.y_ + uv2.y_ * barycentric.z_);
             }
         }
-        // 32-bit indices
-        else
-        {
-            const unsigned* indices = ((const unsigned*)indexData) + indexStart;
-            const unsigned* indicesEnd = indices + indexCount;
-
-            while (indices < indicesEnd)
-            {
-                const Vector3& v0 = *((const Vector3*)(&vertices[indices[0] * vertexStride]));
-                const Vector3& v1 = *((const Vector3*)(&vertices[indices[1] * vertexStride]));
-                const Vector3& v2 = *((const Vector3*)(&vertices[indices[2] * vertexStride]));
-                float interesectDist = HitDistance(v0, v1, v2, outNormal,&barycentric);
-                if(interesectDist<nearest) {
-                    nearestIdx[0] = indices[0];
-                    nearestIdx[1] = indices[1];
-                    nearestIdx[2] = indices[2];
-                    nearest = interesectDist;
-                }
-                indices += 3;
-            }
-        }
-
-        if(nearestIdx[0]!=-1) {
-            const Vector2& uv0 = *((const Vector2*)(&vertices[uvOffset + nearestIdx[0] * vertexStride]));
-            const Vector2& uv1 = *((const Vector2*)(&vertices[uvOffset + nearestIdx[1] * vertexStride]));
-            const Vector2& uv2 = *((const Vector2*)(&vertices[uvOffset + nearestIdx[2] * vertexStride]));
-            // get the uv value from barycentric coordinates
-
-            *outUV = Vector2(uv0.x_ * barycentric.x_ + uv1.x_ * barycentric.y_ + uv2.x_ * barycentric.z_,
-                              uv0.y_ * barycentric.x_ + uv1.y_ * barycentric.y_ + uv2.y_ * barycentric.z_
-                              );
-        }
-
     }
-    else {
-        // 16-bit indices
-        if (indexSize == sizeof(unsigned short))
-        {
-            const unsigned short* indices = ((const unsigned short*)indexData) + indexStart;
-            const unsigned short* indicesEnd = indices + indexCount;
+    // 32-bit indices
+    else
+    {
+        const unsigned* indices = ((const unsigned*)indexData) + indexStart;
+        const unsigned* indicesEnd = indices + indexCount;
+        const unsigned* nearestIndices = 0;
 
-            while (indices < indicesEnd)
+        while (indices < indicesEnd)
+        {
+            const Vector3& v0 = *((const Vector3*)(&vertices[indices[0] * vertexStride]));
+            const Vector3& v1 = *((const Vector3*)(&vertices[indices[1] * vertexStride]));
+            const Vector3& v2 = *((const Vector3*)(&vertices[indices[2] * vertexStride]));
+            float distance = HitDistance(v0, v1, v2, outNormal, outBary);
+            if (distance < nearest)
             {
-                const Vector3& v0 = *((const Vector3*)(&vertices[indices[0] * vertexStride]));
-                const Vector3& v1 = *((const Vector3*)(&vertices[indices[1] * vertexStride]));
-                const Vector3& v2 = *((const Vector3*)(&vertices[indices[2] * vertexStride]));
-                nearest = Min(nearest, HitDistance(v0, v1, v2, outNormal,nullptr));
-                indices += 3;
+                nearestIndices = indices;
+                nearest = distance;
             }
+            indices += 3;
         }
-        // 32-bit indices
-        else
-        {
-            const unsigned* indices = ((const unsigned*)indexData) + indexStart;
-            const unsigned* indicesEnd = indices + indexCount;
 
-            while (indices < indicesEnd)
+        if (outUV)
+        {
+            if (nearestIndices == 0)
+                *outUV = Vector2::ZERO;
+            else
             {
-                const Vector3& v0 = *((const Vector3*)(&vertices[indices[0] * vertexStride]));
-                const Vector3& v1 = *((const Vector3*)(&vertices[indices[1] * vertexStride]));
-                const Vector3& v2 = *((const Vector3*)(&vertices[indices[2] * vertexStride]));
-                nearest = Min(nearest, HitDistance(v0, v1, v2, outNormal,nullptr));
-                indices += 3;
+                // Interpolate the UV coordinate using barycentric coordinate
+                const Vector2& uv0 = *((const Vector2*)(&vertices[uvOffset + nearestIndices[0] * vertexStride]));
+                const Vector2& uv1 = *((const Vector2*)(&vertices[uvOffset + nearestIndices[1] * vertexStride]));
+                const Vector2& uv2 = *((const Vector2*)(&vertices[uvOffset + nearestIndices[2] * vertexStride]));
+                *outUV = Vector2(uv0.x_ * barycentric.x_ + uv1.x_ * barycentric.y_ + uv2.x_ * barycentric.z_,
+                                 uv0.y_ * barycentric.x_ + uv1.y_ * barycentric.y_ + uv2.y_ * barycentric.z_);
             }
         }
     }
@@ -425,7 +396,7 @@ bool Ray::InsideGeometry(const void* vertexData, unsigned vertexSize, unsigned v
 }
 
 bool Ray::InsideGeometry(const void* vertexData, unsigned vertexSize, const void* indexData, unsigned indexSize,
-    unsigned indexStart, unsigned indexCount) const
+                         unsigned indexStart, unsigned indexCount) const
 {
     float currentFrontFace = M_INFINITY;
     float currentBackFace = M_INFINITY;
@@ -468,13 +439,13 @@ bool Ray::InsideGeometry(const void* vertexData, unsigned vertexSize, const void
             // A backwards face is just a regular one, with the vertices in the opposite order. This essentially checks backfaces by
             // checking reversed frontfaces
             currentBackFace = Min(backFaceDistance > 0.0f ? backFaceDistance : M_INFINITY, currentBackFace);
-            indices += 3; 
+            indices += 3;
         }
     }
     
     // If the closest face is a backface, that means that the ray originates from the inside of the geometry
     // NOTE: there may be cases where both are equal, as in, no collision to either. This is prevented in the most likely case
-    // (ray doesnt hit either) by this conditional
+    // (ray doesn't hit either) by this conditional
     if (currentFrontFace != M_INFINITY || currentBackFace != M_INFINITY)
         return currentBackFace < currentFrontFace;
     

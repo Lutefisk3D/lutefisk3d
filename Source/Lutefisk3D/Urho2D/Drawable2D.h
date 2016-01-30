@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 namespace Urho3D
 {
 
+class Drawable2D; 
 class Renderer2D;
 class Texture2D;
 class VertexBuffer;
@@ -49,6 +50,10 @@ struct SourceBatch2D
     /// Construct.
     SourceBatch2D();
 
+    /// Owner.
+    WeakPtr<Drawable2D> owner_;
+    /// Distance to camera.
+    mutable float distance_;
     /// Draw order.
     int drawOrder_;
     /// Material.
@@ -63,7 +68,7 @@ extern const float PIXEL_SIZE;
 /// Base class for 2D visible components.
 class Drawable2D : public Drawable
 {
-    OBJECT(Drawable2D);
+    URHO3D_OBJECT(Drawable2D,Drawable);
 
 public:
     /// Construct.
@@ -74,7 +79,7 @@ public:
     static void RegisterObject(Context* context);
 
     /// Handle enabled/disabled state change.
-    virtual void OnSetEnabled();
+    virtual void OnSetEnabled() override;
 
     /// Set layer.
     void SetLayer(int layer);
@@ -90,10 +95,10 @@ public:
     const std::vector<SourceBatch2D>& GetSourceBatches();
 
 protected:
-    /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node);
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene* scene) override;
     /// Handle node transform being dirtied.
-    virtual void OnMarkedDirty(Node* node);
+    virtual void OnMarkedDirty(Node* node) override;
     /// Handle draw order changed.
     virtual void OnDrawOrderChanged() = 0;
     /// Update source batches.

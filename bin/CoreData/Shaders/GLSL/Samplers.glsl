@@ -15,7 +15,11 @@ uniform samplerCube sLightCubeMap;
     uniform sampler2D sNormalBuffer;
     uniform sampler2D sDepthBuffer;
     uniform sampler2D sLightBuffer;
-    uniform sampler2DShadow sShadowMap;
+    #ifdef VSM_SHADOW
+        uniform sampler2D sShadowMap;
+    #else
+        uniform sampler2DShadow sShadowMap;
+    #endif
     uniform samplerCube sFaceSelectCubeMap;
     uniform samplerCube sIndirectionCubeMap;
     uniform samplerCube sZoneCubeMap;
@@ -29,6 +33,8 @@ uniform samplerCube sLightCubeMap;
 #define texture2DProj textureProj
 #define texture3D texture
 #define textureCube texture
+#define texture2DLod textureLod
+#define texture2DLodOffset textureLodOffset
 #endif
 
 vec3 DecodeNormal(vec4 normalInput)

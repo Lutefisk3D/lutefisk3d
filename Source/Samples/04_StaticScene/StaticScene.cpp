@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@
 
 #include "StaticScene.h"
 
-DEFINE_APPLICATION_MAIN(StaticScene)
+URHO3D_DEFINE_APPLICATION_MAIN(StaticScene)
 
 StaticScene::StaticScene(Context* context) :
     Sample(context)
@@ -183,7 +183,7 @@ void StaticScene::MoveCamera(float timeStep)
 void StaticScene::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(StaticScene, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(StaticScene, HandleUpdate));
 }
 
 void StaticScene::HandleUpdate(StringHash eventType, VariantMap& eventData)

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ namespace Urho3D
 /// %UI element which allows sub-pixel positioning and size, as well as rotation. Only other Sprites should be added as child elements.
 class Sprite : public UIElement
 {
-    OBJECT(Sprite);
+    URHO3D_OBJECT(Sprite,UIElement);
 
 public:
     /// Construct.

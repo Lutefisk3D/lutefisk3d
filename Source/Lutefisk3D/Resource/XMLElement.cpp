@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -230,6 +230,15 @@ bool XMLElement::SetValue(const char* value)
         return false;
 
     const pugi::xml_node& node = xpathNode_ ? xpathNode_->node() : pugi::xml_node(node_);
+
+    // Search for existing value first
+    for (pugi::xml_node child = node.first_child(); child; child = child.next_sibling())
+    {
+        if (child.type() == pugi::node_pcdata)
+            return const_cast<pugi::xml_node&>(child).set_value(value);
+    }
+
+    // If no previous value found, append new
     return const_cast<pugi::xml_node&>(node).append_child(pugi::node_pcdata).set_value(value);
 }
 
@@ -363,6 +372,9 @@ bool XMLElement::SetVariantValue(const Variant& value)
     case VAR_VARIANTVECTOR:
         return SetVariantVector(value.GetVariantVector());
 
+    case VAR_STRINGVECTOR:
+        return SetStringVector(value.GetStringVector());
+
     case VAR_VARIANTMAP:
         return SetVariantMap(value.GetVariantMap());
 
@@ -416,7 +428,21 @@ bool XMLElement::SetVariantVector(const VariantVector& value)
 
     return true;
 }
+bool XMLElement::SetStringVector(const QStringList& value)
+{
+    if (!RemoveChildren("string"))
+        return false;
 
+    for (auto i = value.begin(); i != value.end(); ++i)
+    {
+        XMLElement stringElem = CreateChild("string");
+        if (!stringElem)
+            return false;
+        stringElem.SetAttribute("value", *i);
+    }
+
+    return true;
+}
 bool XMLElement::SetVariantMap(const VariantMap& value)
 {
     if (!RemoveChildren("variant"))
@@ -427,7 +453,7 @@ bool XMLElement::SetVariantMap(const VariantMap& value)
         XMLElement variantElem = CreateChild("variant");
         if (!variantElem)
             return false;
-        variantElem.SetInt("hash", MAP_KEY(iter).Value());
+        variantElem.SetUInt("hash", MAP_KEY(iter).Value());
         variantElem.SetVariant(MAP_VALUE(iter));
     }
 
@@ -453,7 +479,7 @@ bool XMLElement::SetVectorVariant(const QString& name, const Variant& value)
 {
     VariantType type = value.GetType();
     if (type == VAR_FLOAT || type == VAR_VECTOR2 || type == VAR_VECTOR3 || type == VAR_VECTOR4 || type == VAR_MATRIX3 ||
-        type == VAR_MATRIX3X4 || type == VAR_MATRIX4)
+            type == VAR_MATRIX3X4 || type == VAR_MATRIX4)
         return SetAttribute(name, value.ToString());
     else
         return false;
@@ -676,7 +702,6 @@ BoundingBox XMLElement::GetBoundingBox() const
 
     ret.min_ = GetVector3("min");
     ret.max_ = GetVector3("max");
-    ret.defined_ = true;
     return ret;
 }
 
@@ -761,6 +786,8 @@ Variant XMLElement::GetVariantValue(VariantType type) const
         ret = GetResourceRefList();
     else if (type == VAR_VARIANTVECTOR)
         ret = GetVariantVector();
+    else if (type == VAR_STRINGVECTOR)
+        ret = GetStringVector();
     else if (type == VAR_VARIANTMAP)
         ret = GetVariantMap();
     else
@@ -813,6 +840,19 @@ VariantVector XMLElement::GetVariantVector() const
     return ret;
 }
 
+QStringList XMLElement::GetStringVector() const
+{
+    QStringList ret;
+
+    XMLElement stringElem = GetChild("string");
+    while (stringElem)
+    {
+        ret.push_back(stringElem.GetAttributeCString("value"));
+        stringElem = stringElem.GetNext("string");
+    }
+
+    return ret;
+}
 VariantMap XMLElement::GetVariantMap() const
 {
     VariantMap ret;
@@ -820,7 +860,7 @@ VariantMap XMLElement::GetVariantMap() const
     XMLElement variantElem = GetChild("variant");
     while (variantElem)
     {
-        StringHash key(variantElem.GetInt("hash"));
+        StringHash key(variantElem.GetUInt("hash"));
         ret[key] = variantElem.GetVariant();
         variantElem = variantElem.GetNext("variant");
     }
@@ -917,13 +957,13 @@ XPathResultSet& XPathResultSet::operator = (const XPathResultSet& rhs)
 XMLElement XPathResultSet::operator[](unsigned index) const
 {
     if (!resultSet_)
-        LOGERROR(QString("Could not return result at index: %1. Most probably this is caused by the XPathResultSet not being stored in a lhs variable.").arg(index));
+        URHO3D_LOGERROR(QString("Could not return result at index: %1. Most probably this is caused by the XPathResultSet not being stored in a lhs variable.").arg(index));
 
     return resultSet_ && index < Size() ? XMLElement(file_, this, &resultSet_->operator [](index), index) : XMLElement();
-}
+    }
 
-XMLElement XPathResultSet::FirstResult()
-{
+    XMLElement XPathResultSet::FirstResult()
+    {
     return operator [](0);
 }
 

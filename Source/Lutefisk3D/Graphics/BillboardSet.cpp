@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,10 @@
 #include "../Graphics/Graphics.h"
 #include "../Graphics/IndexBuffer.h"
 #include "../Graphics/Material.h"
+#include "../Graphics/OctreeQuery.h"
+#include "../Graphics/VertexBuffer.h"
 #include "../IO/MemoryBuffer.h"
+#include "../Resource/ResourceCache.h"
 #include "../Scene/Node.h"
 #include "../Graphics/OctreeQuery.h"
 #include "../Core/Profiler.h"
@@ -49,7 +52,8 @@ const char* faceCameraModeNames[] =
     "Rotate Y",
     "LookAt XYZ",
     "LookAt Y",
-    nullptr
+    "Direction",
+    0
 };
 
 inline bool CompareBillboards(Billboard* lhs, Billboard* rhs)
@@ -71,10 +75,12 @@ BillboardSet::BillboardSet(Context* context) :
     bufferSizeDirty_(true),
     bufferDirty_(true),
     forceUpdate_(false),
+    geometryTypeUpdate_(false),
     sortThisFrame_(false),
     sortFrameNumber_(0),
     previousOffset_(Vector3::ZERO)
 {
+    // Vertex buffer doesn't have its format defined yet, so manually define the elements into Geometry now
     geometry_->SetVertexBuffer(0, vertexBuffer_, MASK_POSITION | MASK_COLOR | MASK_TEXCOORD1 | MASK_TEXCOORD2);
     geometry_->SetIndexBuffer(indexBuffer_);
 
@@ -92,20 +98,20 @@ void BillboardSet::RegisterObject(Context* context)
 {
     context->RegisterFactory<BillboardSet>(GEOMETRY_CATEGORY);
 
-    ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Material", GetMaterialAttr, SetMaterialAttr, ResourceRef, ResourceRef(Material::GetTypeStatic()), AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Relative Position", IsRelative, SetRelative, bool, true, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Relative Scale", IsScaled, SetScaled, bool, true, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Sort By Distance", IsSorted, SetSorted, bool, false, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
-    ATTRIBUTE("Cast Shadows", bool, castShadows_, false, AM_DEFAULT);
-    ENUM_ATTRIBUTE("Face Camera Mode", faceCameraMode_, faceCameraModeNames, FC_ROTATE_XYZ, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Draw Distance", GetDrawDistance, SetDrawDistance, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Shadow Distance", GetShadowDistance, SetShadowDistance, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Animation LOD Bias", GetAnimationLodBias, SetAnimationLodBias, float, 1.0f, AM_DEFAULT);
-    COPY_BASE_ATTRIBUTES(Drawable);
-    MIXED_ACCESSOR_ATTRIBUTE("Billboards", GetBillboardsAttr, SetBillboardsAttr, VariantVector, Variant::emptyVariantVector, AM_FILE);
-    ACCESSOR_ATTRIBUTE("Network Billboards", GetNetBillboardsAttr, SetNetBillboardsAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_NET | AM_NOEDIT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Material", GetMaterialAttr, SetMaterialAttr, ResourceRef, ResourceRef(Material::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Relative Position", IsRelative, SetRelative, bool, true, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Relative Scale", IsScaled, SetScaled, bool, true, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Sort By Distance", IsSorted, SetSorted, bool, false, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Cast Shadows", bool, castShadows_, false, AM_DEFAULT);
+    URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Face Camera Mode", GetFaceCameraMode, SetFaceCameraMode, FaceCameraMode, faceCameraModeNames, FC_ROTATE_XYZ, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Draw Distance", GetDrawDistance, SetDrawDistance, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Shadow Distance", GetShadowDistance, SetShadowDistance, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Animation LOD Bias", GetAnimationLodBias, SetAnimationLodBias, float, 1.0f, AM_DEFAULT);
+    URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Billboards", GetBillboardsAttr, SetBillboardsAttr, VariantVector, Variant::emptyVariantVector, AM_FILE);
+    URHO3D_ACCESSOR_ATTRIBUTE("Network Billboards", GetNetBillboardsAttr, SetNetBillboardsAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_NET | AM_NOEDIT);
 }
 
 void BillboardSet::ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results)
@@ -163,8 +169,13 @@ void BillboardSet::UpdateBatches(const FrameInfo& frame)
     Vector3 worldPos = node_->GetWorldPosition();
     Vector3 offset = (worldPos - frame.camera_->GetNode()->GetWorldPosition());
     // Sort if position relative to camera has changed
-    if (offset != previousOffset_ & sorted_)
+    if (offset != previousOffset_)
+    {
+        if(sorted_)
         sortThisFrame_ = true;
+        if(faceCameraMode_ == FC_DIRECTION)
+            bufferDirty_ = true;
+    }
 
     distance_ = frame.camera_->GetDistance(GetWorldBoundingBox().Center());
 
@@ -182,7 +193,7 @@ void BillboardSet::UpdateBatches(const FrameInfo& frame)
     transforms_[0] = relative_ ? node_->GetWorldTransform() : Matrix3x4::IDENTITY;
     // Billboard rotation
     transforms_[1] = Matrix3x4(Vector3::ZERO, faceCameraMode_ != FC_NONE ? frame.camera_->GetFaceCameraRotation(
-        node_->GetWorldPosition(), node_->GetWorldRotation(), faceCameraMode_) : node_->GetWorldRotation(), Vector3::ONE);
+                                                                               node_->GetWorldPosition(), node_->GetWorldRotation(), faceCameraMode_) : node_->GetWorldRotation(), Vector3::ONE);
 }
 
 void BillboardSet::UpdateGeometry(const FrameInfo& frame)
@@ -197,7 +208,7 @@ void BillboardSet::UpdateGeometry(const FrameInfo& frame)
     if (faceCameraMode_ != FC_NONE)
     {
         transforms_[1] = Matrix3x4(Vector3::ZERO, frame.camera_->GetFaceCameraRotation(node_->GetWorldPosition(),
-            node_->GetWorldRotation(), faceCameraMode_), Vector3::ONE);
+                                                                                       node_->GetWorldRotation(), faceCameraMode_), Vector3::ONE);
     }
 }
 
@@ -238,6 +249,7 @@ void BillboardSet::SetNumBillboards(unsigned num)
         billboards_[i].uv_ = Rect::POSITIVE;
         billboards_[i].color_ = Color(1.0f, 1.0f, 1.0f);
         billboards_[i].rotation_ = 0.0f;
+        billboards_[i].direction_ = Vector3::UP;
         billboards_[i].enabled_ = false;
     }
 
@@ -265,8 +277,22 @@ void BillboardSet::SetSorted(bool enable)
 
 void BillboardSet::SetFaceCameraMode(FaceCameraMode mode)
 {
-    faceCameraMode_ = mode;
-    MarkNetworkUpdate();
+    if ((faceCameraMode_ != FC_DIRECTION && mode == FC_DIRECTION) || (faceCameraMode_ == FC_DIRECTION && mode != FC_DIRECTION))
+    {
+        faceCameraMode_ = mode;
+        if (faceCameraMode_ == FC_DIRECTION)
+            batches_[0].geometryType_ = GEOM_DIRBILLBOARD;
+        else
+            batches_[0].geometryType_ = GEOM_BILLBOARD;
+        geometryTypeUpdate_ = true;
+        bufferSizeDirty_ = true;
+        Commit();
+    }
+    else
+    {
+        faceCameraMode_ = mode;
+        MarkNetworkUpdate();
+    }
 }
 
 void BillboardSet::SetAnimationLodBias(float bias)
@@ -288,7 +314,7 @@ Material* BillboardSet::GetMaterial() const
 
 Billboard* BillboardSet::GetBillboard(unsigned index)
 {
-    return index < billboards_.size() ? &billboards_[index] : (Billboard*)nullptr;
+    return index < billboards_.size() ? &billboards_[index] : (Billboard*)0;
 }
 
 void BillboardSet::SetMaterialAttr(const ResourceRef& value)
@@ -303,15 +329,34 @@ void BillboardSet::SetBillboardsAttr(const VariantVector& value)
     unsigned numBillboards = index < value.size() ? value[index++].GetUInt() : 0;
     SetNumBillboards(numBillboards);
 
-    for (std::vector<Billboard>::iterator i = billboards_.begin(); i != billboards_.end() && index < value.size(); ++i)
+    // Dealing with old billboard format
+    if (value.size() == billboards_.size() * 6 + 1)
     {
-        i->position_ = value[index++].GetVector3();
-        i->size_ = value[index++].GetVector2();
-        Vector4 uv = value[index++].GetVector4();
-        i->uv_ = Rect(uv.x_, uv.y_, uv.z_, uv.w_);
-        i->color_ = value[index++].GetColor();
-        i->rotation_ = value[index++].GetFloat();
-        i->enabled_ = value[index++].GetBool();
+        for (std::vector<Billboard>::iterator i = billboards_.begin(); i != billboards_.end() && index < value.size(); ++i)
+        {
+            i->position_ = value[index++].GetVector3();
+            i->size_ = value[index++].GetVector2();
+            Vector4 uv = value[index++].GetVector4();
+            i->uv_ = Rect(uv.x_, uv.y_, uv.z_, uv.w_);
+            i->color_ = value[index++].GetColor();
+            i->rotation_ = value[index++].GetFloat();
+            i->enabled_ = value[index++].GetBool();
+        }
+    }
+    // New billboard format
+    else
+    {
+        for (std::vector<Billboard>::iterator i = billboards_.begin(); i != billboards_.end() && index < value.size(); ++i)
+        {
+            i->position_ = value[index++].GetVector3();
+            i->size_ = value[index++].GetVector2();
+            Vector4 uv = value[index++].GetVector4();
+            i->uv_ = Rect(uv.x_, uv.y_, uv.z_, uv.w_);
+            i->color_ = value[index++].GetColor();
+            i->rotation_ = value[index++].GetFloat();
+            i->direction_ = value[index++].GetVector3();
+            i->enabled_ = value[index++].GetBool();
+        }
     }
 
     Commit();
@@ -330,6 +375,7 @@ void BillboardSet::SetNetBillboardsAttr(const std::vector<unsigned char>& value)
         elem.uv_ = buf.ReadRect();
         elem.color_ = buf.ReadColor();
         elem.rotation_ = buf.ReadFloat();
+        elem.direction_ = buf.ReadVector3();
         elem.enabled_ = buf.ReadBool();
     }
 
@@ -344,7 +390,7 @@ ResourceRef BillboardSet::GetMaterialAttr() const
 VariantVector BillboardSet::GetBillboardsAttr() const
 {
     VariantVector ret;
-    ret.reserve(billboards_.size() * 6 + 1);
+    ret.reserve(billboards_.size() * 7 + 1);
     ret.push_back(billboards_.size());
 
     for (const Billboard & elem : billboards_)
@@ -354,6 +400,7 @@ VariantVector BillboardSet::GetBillboardsAttr() const
         ret.push_back(Vector4(elem.uv_.min_.x_, elem.uv_.min_.y_, elem.uv_.max_.x_, elem.uv_.max_.y_));
         ret.push_back(elem.color_);
         ret.push_back(elem.rotation_);
+        ret.push_back(elem.direction_);
         ret.push_back(elem.enabled_);
     }
 
@@ -372,6 +419,7 @@ const std::vector<unsigned char>& BillboardSet::GetNetBillboardsAttr() const
         attrBuffer_.WriteRect(elem.uv_);
         attrBuffer_.WriteColor(elem.color_);
         attrBuffer_.WriteFloat(elem.rotation_);
+        attrBuffer_.WriteVector3(elem.direction_);
         attrBuffer_.WriteBool(elem.enabled_);
     }
 
@@ -409,8 +457,21 @@ void BillboardSet::UpdateBufferSize()
 {
     unsigned numBillboards = billboards_.size();
 
-    if (vertexBuffer_->GetVertexCount() != numBillboards * 4)
-        vertexBuffer_->SetSize(numBillboards * 4, MASK_POSITION | MASK_COLOR | MASK_TEXCOORD1 | MASK_TEXCOORD2, true);
+    if (vertexBuffer_->GetVertexCount() != numBillboards * 4 || geometryTypeUpdate_)
+    {
+        if (faceCameraMode_ == FC_DIRECTION)
+        {
+            vertexBuffer_->SetSize(numBillboards * 4, MASK_POSITION | MASK_NORMAL | MASK_COLOR | MASK_TEXCOORD1 | MASK_TEXCOORD2 | MASK_TANGENT, true);
+            geometry_->SetVertexBuffer(0, vertexBuffer_);
+
+        }
+        else
+        {
+            vertexBuffer_->SetSize(numBillboards * 4, MASK_POSITION | MASK_COLOR | MASK_TEXCOORD1 | MASK_TEXCOORD2, true);
+            geometry_->SetVertexBuffer(0, vertexBuffer_);
+        }
+        geometryTypeUpdate_ = false;
+    }
     if (indexBuffer_->GetIndexCount() != numBillboards * 6)
         indexBuffer_->SetSize(numBillboards * 6, false);
 
@@ -429,8 +490,12 @@ void BillboardSet::UpdateBufferSize()
     unsigned vertexIndex = 0;
     while (numBillboards--)
     {
-        dest[0] = vertexIndex; dest[1] = vertexIndex + 1; dest[2] = vertexIndex + 2;
-        dest[3] = vertexIndex + 2; dest[4] = vertexIndex + 3; dest[5] = vertexIndex;
+        dest[0] = (unsigned short)vertexIndex;
+        dest[1] = (unsigned short)(vertexIndex + 1);
+        dest[2] = (unsigned short)(vertexIndex + 2);
+        dest[3] = (unsigned short)(vertexIndex + 2);
+        dest[4] = (unsigned short)(vertexIndex + 3);
+        dest[5] = (unsigned short)vertexIndex;
 
         dest += 6;
         vertexIndex += 4;
@@ -503,44 +568,141 @@ void BillboardSet::UpdateVertexBuffer(const FrameInfo& frame)
     if (!dest)
         return;
 
-    for (unsigned i = 0; i < enabledBillboards; ++i)
+    if (faceCameraMode_ != FC_DIRECTION)
     {
-        Billboard& billboard = *sortedBillboards_[i];
+        for (unsigned i = 0; i < enabledBillboards; ++i)
+        {
+            Billboard& billboard = *sortedBillboards_[i];
 
-        Vector2 size(billboard.size_.x_ * billboardScale.x_, billboard.size_.y_ * billboardScale.y_);
-        unsigned color = billboard.color_.ToUInt();
+            Vector2 size(billboard.size_.x_ * billboardScale.x_, billboard.size_.y_ * billboardScale.y_);
+            unsigned color = billboard.color_.ToUInt();
 
-        float rotationMatrix[2][2];
-        rotationMatrix[0][0] = Cos(billboard.rotation_);
-        rotationMatrix[0][1] = Sin(billboard.rotation_);
-        rotationMatrix[1][0] = -rotationMatrix[0][1];
-        rotationMatrix[1][1] = rotationMatrix[0][0];
+            float rotationMatrix[2][2];
+            rotationMatrix[0][0] = Cos(billboard.rotation_);
+            rotationMatrix[0][1] = Sin(billboard.rotation_);
+            rotationMatrix[1][0] = -rotationMatrix[0][1];
+            rotationMatrix[1][1] = rotationMatrix[0][0];
 
-        dest[0] = billboard.position_.x_; dest[1] = billboard.position_.y_; dest[2] = billboard.position_.z_;
-        ((unsigned&)dest[3]) = color;
-        dest[4] = billboard.uv_.min_.x_; dest[5] = billboard.uv_.min_.y_;
-        dest[6] = -size.x_ * rotationMatrix[0][0] + size.y_ * rotationMatrix[0][1];
-        dest[7] = -size.x_ * rotationMatrix[1][0] + size.y_ * rotationMatrix[1][1];
+            dest[0] = billboard.position_.x_;
+            dest[1] = billboard.position_.y_;
+            dest[2] = billboard.position_.z_;
+            ((unsigned&)dest[3]) = color;
+            dest[4] = billboard.uv_.min_.x_;
+            dest[5] = billboard.uv_.min_.y_;
+            dest[6] = -size.x_ * rotationMatrix[0][0] + size.y_ * rotationMatrix[0][1];
+            dest[7] = -size.x_ * rotationMatrix[1][0] + size.y_ * rotationMatrix[1][1];
 
-        dest[8] = billboard.position_.x_; dest[9] = billboard.position_.y_; dest[10] = billboard.position_.z_;
-        ((unsigned&)dest[11]) = color;
-        dest[12] = billboard.uv_.max_.x_; dest[13] = billboard.uv_.min_.y_;
-        dest[14] = size.x_ * rotationMatrix[0][0] + size.y_ * rotationMatrix[0][1];
-        dest[15] = size.x_ * rotationMatrix[1][0] + size.y_ * rotationMatrix[1][1];
+            dest[8] = billboard.position_.x_;
+            dest[9] = billboard.position_.y_;
+            dest[10] = billboard.position_.z_;
+            ((unsigned&)dest[11]) = color;
+            dest[12] = billboard.uv_.max_.x_;
+            dest[13] = billboard.uv_.min_.y_;
+            dest[14] = size.x_ * rotationMatrix[0][0] + size.y_ * rotationMatrix[0][1];
+            dest[15] = size.x_ * rotationMatrix[1][0] + size.y_ * rotationMatrix[1][1];
 
-        dest[16] = billboard.position_.x_; dest[17] = billboard.position_.y_; dest[18] = billboard.position_.z_;
-        ((unsigned&)dest[19]) = color;
-        dest[20] = billboard.uv_.max_.x_; dest[21] = billboard.uv_.max_.y_;
-        dest[22] = size.x_ * rotationMatrix[0][0] - size.y_ * rotationMatrix[0][1];
-        dest[23] = size.x_ * rotationMatrix[1][0] - size.y_ * rotationMatrix[1][1];
+            dest[16] = billboard.position_.x_;
+            dest[17] = billboard.position_.y_;
+            dest[18] = billboard.position_.z_;
+            ((unsigned&)dest[19]) = color;
+            dest[20] = billboard.uv_.max_.x_;
+            dest[21] = billboard.uv_.max_.y_;
+            dest[22] = size.x_ * rotationMatrix[0][0] - size.y_ * rotationMatrix[0][1];
+            dest[23] = size.x_ * rotationMatrix[1][0] - size.y_ * rotationMatrix[1][1];
 
-        dest[24] = billboard.position_.x_; dest[25] = billboard.position_.y_; dest[26] = billboard.position_.z_;
-        ((unsigned&)dest[27]) = color;
-        dest[28] = billboard.uv_.min_.x_; dest[29] = billboard.uv_.max_.y_;
-        dest[30] = -size.x_ * rotationMatrix[0][0] - size.y_ * rotationMatrix[0][1];
-        dest[31] = -size.x_ * rotationMatrix[1][0] - size.y_ * rotationMatrix[1][1];
+            dest[24] = billboard.position_.x_;
+            dest[25] = billboard.position_.y_;
+            dest[26] = billboard.position_.z_;
+            ((unsigned&)dest[27]) = color;
+            dest[28] = billboard.uv_.min_.x_;
+            dest[29] = billboard.uv_.max_.y_;
+            dest[30] = -size.x_ * rotationMatrix[0][0] - size.y_ * rotationMatrix[0][1];
+            dest[31] = -size.x_ * rotationMatrix[1][0] - size.y_ * rotationMatrix[1][1];
 
-        dest += 32;
+            dest += 32;
+        }
+    }
+    else
+    {
+        for (unsigned i = 0; i < enabledBillboards; ++i)
+        {
+            Billboard& billboard = *sortedBillboards_[i];
+
+            Vector2 size(billboard.size_.x_ * billboardScale.x_, billboard.size_.y_ * billboardScale.y_);
+            unsigned color = billboard.color_.ToUInt();
+
+            float rot2D[2][2];
+            rot2D[0][0] = Cos(billboard.rotation_);
+            rot2D[0][1] = Sin(billboard.rotation_);
+            rot2D[1][0] = -rot2D[0][1];
+            rot2D[1][1] = rot2D[0][0];
+
+            dest[0] = billboard.position_.x_;
+            dest[1] = billboard.position_.y_;
+            dest[2] = billboard.position_.z_;
+            dest[3] = billboard.direction_.x_;
+            dest[4] = billboard.direction_.y_;
+            dest[5] = billboard.direction_.z_;
+            ((unsigned&)dest[6]) = color;
+            dest[7] = billboard.uv_.min_.x_;
+            dest[8] = billboard.uv_.min_.y_;
+            dest[9] = -size.x_ * rot2D[0][0] + size.y_ * rot2D[0][1];
+            dest[10] = -size.x_ * rot2D[1][0] + size.y_ * rot2D[1][1];
+            dest[11] = frame.camera_->GetNode()->GetWorldPosition().x_;
+            dest[12] = frame.camera_->GetNode()->GetWorldPosition().y_;
+            dest[13] = frame.camera_->GetNode()->GetWorldPosition().z_;
+            dest[14] = 1.0f;
+
+            dest[15] = billboard.position_.x_;
+            dest[16] = billboard.position_.y_;
+            dest[17] = billboard.position_.z_;
+            dest[18] = billboard.direction_.x_;
+            dest[19] = billboard.direction_.y_;
+            dest[20] = billboard.direction_.z_;
+            ((unsigned&)dest[21]) = color;
+            dest[22] = billboard.uv_.max_.x_;
+            dest[23] = billboard.uv_.min_.y_;
+            dest[24] = size.x_ * rot2D[0][0] + size.y_ * rot2D[0][1];
+            dest[25] = size.x_ * rot2D[1][0] + size.y_ * rot2D[1][1];
+            dest[26] = frame.camera_->GetNode()->GetWorldPosition().x_;
+            dest[27] = frame.camera_->GetNode()->GetWorldPosition().y_;
+            dest[28] = frame.camera_->GetNode()->GetWorldPosition().z_;
+            dest[29] = 1.0f;
+
+            dest[30] = billboard.position_.x_;
+            dest[31] = billboard.position_.y_;
+            dest[32] = billboard.position_.z_;
+            dest[33] = billboard.direction_.x_;
+            dest[34] = billboard.direction_.y_;
+            dest[35] = billboard.direction_.z_;
+            ((unsigned&)dest[36]) = color;
+            dest[37] = billboard.uv_.max_.x_;
+            dest[38] = billboard.uv_.max_.y_;
+            dest[39] = size.x_ * rot2D[0][0] - size.y_ * rot2D[0][1];
+            dest[40] = size.x_ * rot2D[1][0] - size.y_ * rot2D[1][1];
+            dest[41] = frame.camera_->GetNode()->GetWorldPosition().x_;
+            dest[42] = frame.camera_->GetNode()->GetWorldPosition().y_;
+            dest[43] = frame.camera_->GetNode()->GetWorldPosition().z_;
+            dest[44] = 1.0f;
+
+            dest[45] = billboard.position_.x_;
+            dest[46] = billboard.position_.y_;
+            dest[47] = billboard.position_.z_;
+            dest[48] = billboard.direction_.x_;
+            dest[49] = billboard.direction_.y_;
+            dest[50] = billboard.direction_.z_;
+            ((unsigned&)dest[51]) = color;
+            dest[52] = billboard.uv_.min_.x_;
+            dest[53] = billboard.uv_.max_.y_;
+            dest[54] = -size.x_ * rot2D[0][0] - size.y_ * rot2D[0][1];
+            dest[55] = -size.x_ * rot2D[1][0] - size.y_ * rot2D[1][1];
+            dest[56] = frame.camera_->GetNode()->GetWorldPosition().x_;
+            dest[57] = frame.camera_->GetNode()->GetWorldPosition().y_;
+            dest[58] = frame.camera_->GetNode()->GetWorldPosition().z_;
+            dest[59] = 1.0f;
+
+            dest += 60;
+        }
     }
 
     vertexBuffer_->Unlock();

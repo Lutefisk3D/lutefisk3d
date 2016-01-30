@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@
 #include <Lutefisk3D/UI/UI.h>
 #include <Lutefisk3D/Graphics/Zone.h>
 
-DEFINE_APPLICATION_MAIN(CharacterDemo)
+URHO3D_DEFINE_APPLICATION_MAIN(CharacterDemo)
 
 CharacterDemo::CharacterDemo(Context* context) :
     Sample(context),
@@ -242,10 +242,10 @@ void CharacterDemo::CreateInstructions()
 void CharacterDemo::SubscribeToEvents()
 {
     // Subscribe to Update event for setting the character controls before physics simulation
-    SubscribeToEvent(E_UPDATE, HANDLER(CharacterDemo, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(CharacterDemo, HandleUpdate));
 
     // Subscribe to PostUpdate event for updating the camera position after physics simulation
-    SubscribeToEvent(E_POSTUPDATE, HANDLER(CharacterDemo, HandlePostUpdate));
+    SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(CharacterDemo, HandlePostUpdate));
 
     // Unsubscribe the SceneUpdate event from base class as the camera node is being controlled in HandlePostUpdate() in this sample
     UnsubscribeFromEvent(E_SCENEUPDATE);

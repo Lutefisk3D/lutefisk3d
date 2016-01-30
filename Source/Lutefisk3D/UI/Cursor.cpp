@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,7 @@ static const char* shapeNames[] =
 #if !defined(ANDROID) && !defined(IOS)
 static const int osCursorLookup[CS_MAX_SHAPES] =
 {
-    SDL_SystemCursor::SDL_SYSTEM_CURSOR_ARROW,    // CS_NORMAL
+    SDL_SYSTEM_CURSOR_ARROW,    // CS_NORMAL
     SDL_SYSTEM_CURSOR_IBEAM,     // CS_IBEAM
     SDL_SYSTEM_CURSOR_CROSSHAIR, // CS_CROSS
     SDL_SYSTEM_CURSOR_SIZENS,   // CS_RESIZEVERTICAL
@@ -84,7 +84,7 @@ Cursor::Cursor(Context* context) :
         shapeInfos_[shapeNames[i]] = CursorShapeInfo(i);
 
     // Subscribe to OS mouse cursor visibility changes to be able to reapply the cursor shape
-    SubscribeToEvent(E_MOUSEVISIBLECHANGED, HANDLER(Cursor, HandleMouseVisibleChanged));
+    SubscribeToEvent(E_MOUSEVISIBLECHANGED, URHO3D_HANDLER(Cursor, HandleMouseVisibleChanged));
 }
 
 Cursor::~Cursor()
@@ -95,7 +95,7 @@ Cursor::~Cursor()
 
         if (info.osCursor_)
         {
-            SDL_FreeCursor(MAP_VALUE(iter).osCursor_);
+            SDL_FreeCursor(info.osCursor_);
             info.osCursor_ = nullptr;
         }
     }
@@ -105,10 +105,10 @@ void Cursor::RegisterObject(Context* context)
 {
     context->RegisterFactory<Cursor>(UI_CATEGORY);
 
-    COPY_BASE_ATTRIBUTES(BorderImage);
-    UPDATE_ATTRIBUTE_DEFAULT_VALUE("Priority", M_MAX_INT);
-    ACCESSOR_ATTRIBUTE("Use System Shapes", GetUseSystemShapes, SetUseSystemShapes, bool, false, AM_FILE);
-    MIXED_ACCESSOR_ATTRIBUTE("Shapes", GetShapesAttr, SetShapesAttr, VariantVector, Variant::emptyVariantVector, AM_FILE);
+    URHO3D_COPY_BASE_ATTRIBUTES(BorderImage);
+    URHO3D_UPDATE_ATTRIBUTE_DEFAULT_VALUE("Priority", M_MAX_INT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Use System Shapes", GetUseSystemShapes, SetUseSystemShapes, bool, false, AM_FILE);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Shapes", GetShapesAttr, SetShapesAttr, VariantVector, Variant::emptyVariantVector, AM_FILE);
 }
 
 void Cursor::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor)
@@ -129,7 +129,7 @@ void Cursor::DefineShape(CursorShape shape, Image* image, const IntRect& imageRe
 {
     if (shape < CS_NORMAL || shape >= CS_MAX_SHAPES)
     {
-        LOGERROR("Shape index out of bounds, can not define cursor shape");
+        URHO3D_LOGERROR("Shape index out of bounds, can not define cursor shape");
         return;
     }
 
@@ -283,7 +283,7 @@ void Cursor::ApplyOSCursorShape()
             info.osCursor_ = SDL_CreateSystemCursor((SDL_SystemCursor)osCursorLookup[info.systemCursor_]);
             info.systemDefined_ = true;
             if (!info.osCursor_)
-                LOGERROR("Could not create system cursor");
+                URHO3D_LOGERROR("Could not create system cursor");
         }
         // Create from image
         else if (info.image_)
@@ -295,7 +295,7 @@ void Cursor::ApplyOSCursorShape()
                 info.osCursor_ = SDL_CreateColorCursor(surface, info.hotSpot_.x_, info.hotSpot_.y_);
                 info.systemDefined_ = false;
                 if (!info.osCursor_)
-                    LOGERROR("Could not create cursor from image " + info.image_->GetName());
+                    URHO3D_LOGERROR("Could not create cursor from image " + info.image_->GetName());
                 SDL_FreeSurface(surface);
             }
         }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,13 +38,13 @@ namespace Urho3D
 /// Spline for creating smooth movement based on Speed along a set of Control Points modified by the Interpolation Mode.
 class SplinePath : public Component
 {
-    OBJECT(SplinePath)
+    URHO3D_OBJECT(SplinePath,Component)
 
-public:
-    /// Construct an Empty SplinePath.
-    SplinePath(Context* context);
+    public:
+        /// Construct an Empty SplinePath.
+        SplinePath(Context* context);
     /// Destructor.
-    virtual ~SplinePath() {};
+    virtual ~SplinePath() = default;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -73,6 +73,8 @@ public:
     InterpolationMode GetInterpolationMode() const { return spline_.GetInterpolationMode(); }
     /// Get the movement Speed.
     float GetSpeed() const { return speed_; }
+    /// Get the length of SplinePath;
+    float GetLength() const { return length_; }
     /// Get the parent Node's last position on the spline.
     Vector3 GetPosition() const { return GetPoint(traveled_); }
     /// Get the controlled Node.

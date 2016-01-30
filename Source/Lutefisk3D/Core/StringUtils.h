@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -95,4 +95,6 @@ unsigned GetStringListIndex(const QString& value, const QString* strings, unsign
 unsigned GetStringListIndex(const char* value, const QString* strings, unsigned defaultIndex, bool caseSensitive = false);
 /// Return an index to a C string list corresponding to the given C string, or a default value if not found. The string list must be empty-terminated.
 unsigned GetStringListIndex(const QString & value, const char** strings, unsigned defaultIndex, bool caseSensitive = false);
+/// Convert a memory size into a formatted size string, of the style "1.5 Mb".
+QString GetFileSizeString(uint64_t memorySize);
 }

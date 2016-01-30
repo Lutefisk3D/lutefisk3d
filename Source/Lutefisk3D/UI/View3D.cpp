@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,17 +21,16 @@
 //
 
 
+#include "View3D.h"
+#include "UI.h"
+#include "UIEvents.h"
 #include "../Core/Context.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/Graphics.h"
 #include "../Graphics/Octree.h"
-#include "../Scene/Scene.h"
 #include "../Graphics/Texture2D.h"
-#include "../Graphics/Viewport.h"
-#include "../UI/View3D.h"
-#include "../UI/UI.h"
-#include "../UI/UIEvents.h"
 #include "../Graphics/Zone.h"
+#include "../Scene/Scene.h"
 
 namespace Urho3D
 {
@@ -58,11 +57,11 @@ void View3D::RegisterObject(Context* context)
 {
     context->RegisterFactory<View3D>(UI_CATEGORY);
 
-    COPY_BASE_ATTRIBUTES(Window);
+    URHO3D_COPY_BASE_ATTRIBUTES(Window);
     // The texture format is API specific, so do not register it as a serializable attribute
-    ACCESSOR_ATTRIBUTE("Auto Update", GetAutoUpdate, SetAutoUpdate, bool, true, AM_FILE);
-    UPDATE_ATTRIBUTE_DEFAULT_VALUE("Clip Children", true);
-    UPDATE_ATTRIBUTE_DEFAULT_VALUE("Is Enabled", true);
+    URHO3D_ACCESSOR_ATTRIBUTE("Auto Update", GetAutoUpdate, SetAutoUpdate, bool, true, AM_FILE);
+    URHO3D_UPDATE_ATTRIBUTE_DEFAULT_VALUE("Clip Children", true);
+    URHO3D_UPDATE_ATTRIBUTE_DEFAULT_VALUE("Is Enabled", true);
 }
 
 void View3D::OnResize()

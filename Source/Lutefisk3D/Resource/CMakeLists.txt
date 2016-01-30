@@ -1,17 +1,20 @@
 set(INCLUDES
     BackgroundLoader.h
     Image.h
+    JSONFile.h
+    JSONValue.h
     Resource.h
     ResourceCache.h
     XMLElement.h
     XMLFile.h
+    Localization.h
 )
 set(SOURCE
     BackgroundLoader.cpp
     Decompress.cpp
     Resource.cpp
     ResourceCache.cpp
-
+    Localization.cpp
     Image.cpp
     JSONFile.cpp
         JSONValue.cpp

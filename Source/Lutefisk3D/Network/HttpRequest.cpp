@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ HttpRequest::HttpRequest(const QString& url, const QString& verb, const std::vec
     // to maximum value once the request is done, signaling end for Deserializer::IsEof().
     size_ = M_MAX_UNSIGNED;
 
-    LOGDEBUG("HTTP " + verb_ + " request to URL " + url_);
+    URHO3D_LOGDEBUG("HTTP " + verb_ + " request to URL " + url_);
 
     // Start the worker thread to actually create the connection and read the response data.
     Run();

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -92,10 +92,10 @@ void Quaternion::FromRotationTo(const Vector3& start, const Vector3& end)
 void Quaternion::FromAxes(const Vector3& xAxis, const Vector3& yAxis, const Vector3& zAxis)
 {
     Matrix3 matrix(
-        xAxis.x_, yAxis.x_, zAxis.x_,
-        xAxis.y_, yAxis.y_, zAxis.y_,
-        xAxis.z_, yAxis.z_, zAxis.z_
-    );
+                xAxis.x_, yAxis.x_, zAxis.x_,
+                xAxis.y_, yAxis.y_, zAxis.y_,
+                xAxis.z_, yAxis.z_, zAxis.z_
+                );
     
     FromRotationMatrix(matrix);
 }
@@ -147,13 +147,19 @@ void Quaternion::FromRotationMatrix(const Matrix3& matrix)
 
 bool Quaternion::FromLookRotation(const Vector3& direction, const Vector3& upDirection)
 {
-    Vector3 forward = direction.Normalized();
-    Vector3 v = forward.CrossProduct(upDirection).Normalized();
-    Vector3 up = v.CrossProduct(forward);
-    Vector3 right = up.CrossProduct(forward);
-
     Quaternion ret;
-    ret.FromAxes(right, up, forward);
+    Vector3 forward = direction.Normalized();
+    Vector3 v = forward.CrossProduct(upDirection);
+    // If direction & upDirection are parallel and crossproduct becomes zero, use FromRotationTo() fallback
+    if (v.LengthSquared() >= M_EPSILON)
+    {
+        v.Normalize();
+        Vector3 up = v.CrossProduct(forward);
+        Vector3 right = up.CrossProduct(forward);
+        ret.FromAxes(right, up, forward);
+    }
+    else
+        ret.FromRotationTo(Vector3::FORWARD, forward);
     
     if (!ret.IsNaN())
     {
@@ -173,26 +179,26 @@ Vector3 Quaternion::EulerAngles() const
     if (check < -0.995f)
     {
         return Vector3(
-            -90.0f,
-            0.0f,
-            -atan2f(2.0f * (x_ * z_ - w_ * y_), 1.0f - 2.0f * (y_ * y_ + z_ * z_)) * M_RADTODEG
-        );
+                    -90.0f,
+                    0.0f,
+                    -atan2f(2.0f * (x_ * z_ - w_ * y_), 1.0f - 2.0f * (y_ * y_ + z_ * z_)) * M_RADTODEG
+                    );
     }
     else if (check > 0.995f)
     {
         return Vector3(
-            90.0f,
-            0.0f,
-            atan2f(2.0f * (x_ * z_ - w_ * y_), 1.0f - 2.0f * (y_ * y_ + z_ * z_)) * M_RADTODEG
-        );
+                    90.0f,
+                    0.0f,
+                    atan2f(2.0f * (x_ * z_ - w_ * y_), 1.0f - 2.0f * (y_ * y_ + z_ * z_)) * M_RADTODEG
+                    );
     }
     else
     {
         return Vector3(
-            asinf(check) * M_RADTODEG,
-            atan2f(2.0f * (x_ * z_ + w_ * y_), 1.0f - 2.0f * (x_ * x_ + y_ * y_)) * M_RADTODEG,
-            atan2f(2.0f * (x_ * y_ + w_ * z_), 1.0f - 2.0f * (x_ * x_ + z_ * z_)) * M_RADTODEG
-        );
+                    asinf(check) * M_RADTODEG,
+                    atan2f(2.0f * (x_ * z_ + w_ * y_), 1.0f - 2.0f * (x_ * x_ + y_ * y_)) * M_RADTODEG,
+                    atan2f(2.0f * (x_ * y_ + w_ * z_), 1.0f - 2.0f * (x_ * x_ + z_ * z_)) * M_RADTODEG
+                    );
     }
 }
 
@@ -214,20 +220,21 @@ float Quaternion::RollAngle() const
 Matrix3 Quaternion::RotationMatrix() const
 {
     return Matrix3(
-        1.0f - 2.0f * y_ * y_ - 2.0f * z_ * z_,
-        2.0f * x_ * y_ - 2.0f * w_ * z_,
-        2.0f * x_ * z_ + 2.0f * w_ * y_,
-        2.0f * x_ * y_ + 2.0f * w_ * z_,
-        1.0f - 2.0f * x_ * x_ - 2.0f * z_ * z_,
-        2.0f * y_ * z_ - 2.0f * w_ * x_,
-        2.0f * x_ * z_ - 2.0f * w_ * y_,
-        2.0f * y_ * z_ + 2.0f * w_ * x_,
-        1.0f - 2.0f * x_ * x_ - 2.0f * y_ * y_
-    );
+                1.0f - 2.0f * y_ * y_ - 2.0f * z_ * z_,
+                2.0f * x_ * y_ - 2.0f * w_ * z_,
+                2.0f * x_ * z_ + 2.0f * w_ * y_,
+                2.0f * x_ * y_ + 2.0f * w_ * z_,
+                1.0f - 2.0f * x_ * x_ - 2.0f * z_ * z_,
+                2.0f * y_ * z_ - 2.0f * w_ * x_,
+                2.0f * x_ * z_ - 2.0f * w_ * y_,
+                2.0f * y_ * z_ + 2.0f * w_ * x_,
+                1.0f - 2.0f * x_ * x_ - 2.0f * y_ * y_
+                );
 }
 
 Quaternion Quaternion::Slerp(Quaternion rhs, float t) const
 {
+    // Favor accuracy for native code builds
     float cosAngle = DotProduct(rhs);
     // Enable shortest path rotation
     if (cosAngle < 0.0f)

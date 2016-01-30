@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -92,7 +92,7 @@ struct CursorShapeInfo
 /// Mouse cursor %UI element.
 class Cursor : public BorderImage
 {
-    OBJECT(Cursor);
+    URHO3D_OBJECT(Cursor,BorderImage);
 
 public:
     /// Construct.

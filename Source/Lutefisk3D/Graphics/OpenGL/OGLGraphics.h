@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -86,7 +86,7 @@ struct ScratchBuffer
 /// %Graphics subsystem. Manages the application window, rendering state and GPU resources.
 class Graphics : public Object
 {
-    OBJECT(Graphics);
+    URHO3D_OBJECT(Graphics,Object);
 
 public:
     /// Construct.
@@ -170,7 +170,7 @@ public:
     bool NeedParameterUpdate(ShaderParameterGroup group, const void* source);
     /// Check whether a shader parameter exists on the currently set shaders.
     bool HasShaderParameter(StringHash param);
-    /// Check whether the current pixel shader uses a texture unit.
+    /// Check whether the current shader program uses a texture unit.
     bool HasTextureUnit(TextureUnit unit);
     /// Clear remembered shader parameter source group.
     void ClearParameterSource(ShaderParameterGroup group);
@@ -297,7 +297,7 @@ public:
     bool GetSRGBSupport() const { return sRGBSupport_; }
     /// Return whether sRGB conversion on rendertarget writing is supported.
     bool GetSRGBWriteSupport() const { return sRGBWriteSupport_; }
-    /// Return supported fullscreen resolutions.
+    /// Return supported fullscreen resolutions. Will be empty if listing the resolutions is not supported on the platform (e.g. Web).
     std::vector<IntVector2> GetResolutions() const;
     /// Return supported multisampling levels.
     std::vector<int> GetMultiSampleLevels() const;

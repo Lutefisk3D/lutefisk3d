@@ -3,6 +3,8 @@ set(INCLUDES
     Deserializer.h
     Serializer.h
 
+    Compression.h
+
     File.h
     FileSystem.h
     FileWatcher.h
@@ -18,6 +20,8 @@ set(SOURCE
     Log.cpp
     Serializer.cpp
     Deserializer.cpp
+
+    Compression.cpp
 
     File.cpp
     FileSystem.cpp

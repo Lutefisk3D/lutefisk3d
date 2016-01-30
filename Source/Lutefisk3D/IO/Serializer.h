@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -116,6 +116,8 @@ public:
     bool WriteVariantData(const Variant& value);
     /// Write a variant vector.
     bool WriteVariantVector(const std::vector<Variant> & value);
+    /// Write a variant vector.
+    bool WriteStringVector(const QStringList& value);
     /// Write a variant map.
     bool WriteVariantMap(const VariantMap& value);
     /// Write a variable-length encoded unsigned integer, which can use 29 bits maximum.

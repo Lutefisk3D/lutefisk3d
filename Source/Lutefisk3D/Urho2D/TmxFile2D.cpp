@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -96,13 +96,13 @@ bool TmxTileLayer2D::Load(const XMLElement& element, const TileMapInfo2D& info)
     XMLElement dataElem = element.GetChild("data");
     if (!dataElem)
     {
-        LOGERROR("Could not find data in layer");
+        URHO3D_LOGERROR("Could not find data in layer");
         return false;
     }
 
     if (dataElem.HasAttribute("encoding") && dataElem.GetAttribute("encoding") != "xml")
     {
-        LOGERROR("Encoding not support now");
+        URHO3D_LOGERROR("Encoding not support now");
         return false;
     }
 
@@ -149,7 +149,7 @@ TmxObjectGroup2D::TmxObjectGroup2D(TmxFile2D* tmxFile) :
 {
 }
 
-bool TmxObjectGroup2D::Load(const XMLElement& element, const TileMapInfo2D& info)
+bool TmxObjectGroup2D::Load(const XMLElement &element, const TileMapInfo2D &info)
 {
     LoadInfo(element);
 
@@ -162,47 +162,53 @@ bool TmxObjectGroup2D::Load(const XMLElement& element, const TileMapInfo2D& info
         if (objectElem.HasAttribute("type"))
             object->type_ = objectElem.GetAttribute("type");
 
-        Vector2 position(objectElem.GetFloat("x"), objectElem.GetFloat("y"));
-
-        if (objectElem.HasAttribute("width") || objectElem.HasAttribute("height"))
-        {
-            if (!objectElem.HasChild("ellipse"))
-                object->objectType_ = OT_RECTANGLE;
-            else
-                object->objectType_ = OT_ELLIPSE;
-
-            Vector2 size(objectElem.GetFloat("width"), objectElem.GetFloat("height"));
-
-            object->position_ = info.ConvertPosition(Vector2(position.x_, position.y_ + size.y_));
-            object->size_ = Vector2(size.x_ * PIXEL_SIZE, size.y_ * PIXEL_SIZE);
-        }
-        else if (objectElem.HasAttribute("gid"))
-        {
+        if (objectElem.HasAttribute("gid"))
             object->objectType_ = OT_TILE;
-            object->position_ = info.ConvertPosition(position);
-            object->gid_ = objectElem.GetInt("gid");
-            object->sprite_ = tmxFile_->GetTileSprite(object->gid_);
-        }
+        else if (objectElem.HasChild("polygon"))
+            object->objectType_ = OT_POLYGON;
+        else if (objectElem.HasChild("polyline"))
+            object->objectType_ = OT_POLYLINE;
+        else if (objectElem.HasChild("ellipse"))
+            object->objectType_ = OT_ELLIPSE;
         else
+            object->objectType_ = OT_RECTANGLE;
+
+        const Vector2 position(objectElem.GetFloat("x"), objectElem.GetFloat("y"));
+        const Vector2 size(objectElem.GetFloat("width"), objectElem.GetFloat("height"));
+
+        switch (object->objectType_)
+        {
+        case OT_RECTANGLE:
+        case OT_ELLIPSE:
+            object->position_ = info.ConvertPosition(Vector2(position.x_, position.y_ + size.y_));
+            object->size_     = Vector2(size.x_ * PIXEL_SIZE, size.y_ * PIXEL_SIZE);
+            break;
+
+        case OT_TILE:
+            object->position_ = info.ConvertPosition(position);
+            object->gid_      = objectElem.GetInt("gid");
+            object->sprite_   = tmxFile_->GetTileSprite(object->gid_);
+
+            if (objectElem.HasAttribute("width") || objectElem.HasAttribute("height"))
+            {
+                object->size_ = Vector2(size.x_ * PIXEL_SIZE, size.y_ * PIXEL_SIZE);
+            }
+            else if (object->sprite_)
+            {
+                IntVector2 spriteSize = object->sprite_->GetRectangle().Size();
+                object->size_         = Vector2(spriteSize.x_, spriteSize.y_);
+            }
+
+            break;
+
+        case OT_POLYGON:
+        case OT_POLYLINE:
         {
             QStringList points;
 
-            if (objectElem.HasChild("polygon"))
-            {
-                object->objectType_ = OT_POLYGON;
-
-                XMLElement polygonElem = objectElem.GetChild("polygon");
-                points = polygonElem.GetAttribute("points").split(' ');
-            }
-            else if (objectElem.HasChild("polyline"))
-            {
-                object->objectType_ = OT_POLYLINE;
-
-                XMLElement polylineElem = objectElem.GetChild("polyline");
-                points = polylineElem.GetAttribute("points").split(' ');
-            }
-            else
-                return false;
+            const char *name        = object->objectType_ == OT_POLYGON ? "polygon" : "polyline";
+            XMLElement  polygonElem = objectElem.GetChild(name);
+            points                  = polygonElem.GetAttribute("points").split(' ');
 
             if (points.size() <= 1)
                 continue;
@@ -212,9 +218,13 @@ bool TmxObjectGroup2D::Load(const XMLElement& element, const TileMapInfo2D& info
             for (unsigned i = 0; i < points.size(); ++i)
             {
                 points[i].replace(',', ' ');
-                Vector2 point = position + ToVector2(points[i]);
+                Vector2 point      = position + ToVector2(points[i]);
                 object->points_[i] = info.ConvertPosition(point);
             }
+        }
+        break;
+
+        default: break;
         }
 
         if (objectElem.HasChild("properties"))
@@ -260,7 +270,7 @@ bool TmxImageLayer2D::Load(const XMLElement& element, const TileMapInfo2D& info)
     SharedPtr<Texture2D> texture(cache->GetResource<Texture2D>(textureFilePath));
     if (!texture)
     {
-        LOGERROR("Could not load texture " + textureFilePath);
+        URHO3D_LOGERROR("Could not load texture " + textureFilePath);
         return false;
     }
 
@@ -305,7 +315,7 @@ bool TmxFile2D::BeginLoad(Deserializer& source)
     loadXMLFile_ = new XMLFile(context_);
     if (!loadXMLFile_->Load(source))
     {
-        LOGERROR("Load XML failed " + source.GetName());
+        URHO3D_LOGERROR("Load XML failed " + source.GetName());
         loadXMLFile_.Reset();
         return false;
     }
@@ -313,7 +323,7 @@ bool TmxFile2D::BeginLoad(Deserializer& source)
     XMLElement rootElem = loadXMLFile_->GetRoot("map");
     if (!rootElem)
     {
-        LOGERROR("Invalid tmx file " + source.GetName());
+        URHO3D_LOGERROR("Invalid tmx file " + source.GetName());
         loadXMLFile_.Reset();
         return false;
     }
@@ -343,7 +353,8 @@ bool TmxFile2D::BeginLoad(Deserializer& source)
             }
         }
 
-        for (XMLElement imageLayerElem = rootElem.GetChild("imagelayer"); imageLayerElem; imageLayerElem = imageLayerElem.GetNext("imagelayer"))
+        for (XMLElement imageLayerElem = rootElem.GetChild("imagelayer"); imageLayerElem;
+             imageLayerElem = imageLayerElem.GetNext("imagelayer"))
         {
             QString textureFilePath = GetParentPath(GetName()) + imageLayerElem.GetChild("image").GetAttribute("source");
             GetSubsystem<ResourceCache>()->BackgroundLoadResource<Texture2D>(textureFilePath, true, this);
@@ -362,7 +373,7 @@ bool TmxFile2D::EndLoad()
     QString version = rootElem.GetAttribute("version");
     if (version != "1.0")
     {
-        LOGERROR("Invalid version");
+        URHO3D_LOGERROR("Invalid version");
         return false;
     }
 
@@ -375,7 +386,7 @@ bool TmxFile2D::EndLoad()
         info_.orientation_ = O_STAGGERED;
     else
     {
-        LOGERROR("Unsupported orientation type " + orientation);
+        URHO3D_LOGERROR("Unsupported orientation type " + orientation);
         return false;
     }
 
@@ -463,7 +474,7 @@ SharedPtr<XMLFile> TmxFile2D::LoadTSXFile(const QString& source)
     SharedPtr<XMLFile> tsxXMLFile(new XMLFile(context_));
     if (!tsxFile || !tsxXMLFile->Load(*tsxFile))
     {
-        LOGERROR("Load TSX file failed " + tsxFilePath);
+        URHO3D_LOGERROR("Load TSX file failed " + tsxFilePath);
         return SharedPtr<XMLFile>();
     }
 
@@ -502,7 +513,7 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
     SharedPtr<Texture2D> texture(cache->GetResource<Texture2D>(textureFilePath));
     if (!texture)
     {
-        LOGERROR("Could not load texture " + textureFilePath);
+        URHO3D_LOGERROR("Could not load texture " + textureFilePath);
         return false;
     }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,17 +22,17 @@
 
 #include "FontFaceBitmap.h"
 
+#include "Font.h"
+#include "UI.h"
 #include "../Core/Context.h"
 #include "../IO/File.h"
 #include "../IO/FileSystem.h"
-#include "Font.h"
 #include "../Graphics/Graphics.h"
 #include "../Resource/Image.h"
 #include "../IO/Log.h"
 #include "../IO/MemoryBuffer.h"
 #include "../Resource/ResourceCache.h"
 #include "../Graphics/Texture2D.h"
-#include "UI.h"
 #include "../Resource/XMLFile.h"
 
 namespace Urho3D
@@ -55,21 +55,21 @@ bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, 
     MemoryBuffer memoryBuffer(fontData, fontDataSize);
     if (!xmlReader->Load(memoryBuffer))
     {
-        LOGERROR("Could not load XML file");
+        URHO3D_LOGERROR("Could not load XML file");
         return false;
     }
 
     XMLElement root = xmlReader->GetRoot("font");
     if (root.IsNull())
     {
-        LOGERROR("Could not find Font element");
+        URHO3D_LOGERROR("Could not find Font element");
         return false;
     }
 
     XMLElement pagesElem = root.GetChild("pages");
     if (pagesElem.IsNull())
     {
-        LOGERROR("Could not find Pages element");
+        URHO3D_LOGERROR("Could not find Pages element");
         return false;
     }
 
@@ -79,7 +79,7 @@ bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, 
 
     XMLElement commonElem = root.GetChild("common");
     rowHeight_ = commonElem.GetInt("lineHeight");
-    unsigned pages = commonElem.GetInt("pages");
+    unsigned pages = commonElem.GetUInt("pages");
     textures_.reserve(pages);
 
     ResourceCache* resourceCache = font_->GetSubsystem<ResourceCache>();
@@ -91,7 +91,7 @@ bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, 
     {
         if (pageElem.IsNull())
         {
-            LOGERROR("Could not find Page element for page: " + QString::number(i));
+            URHO3D_LOGERROR("Could not find Page element for page: " + QString::number(i));
             return 0;
         }
 
@@ -103,7 +103,7 @@ bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, 
         SharedPtr<Image> fontImage(new Image(context));
         if (!fontFile || !fontImage->Load(*fontFile))
         {
-            LOGERROR("Failed to load font image file");
+            URHO3D_LOGERROR("Failed to load font image file");
             return 0;
         }
         SharedPtr<Texture2D> texture = LoadFaceTexture(fontImage);
@@ -137,7 +137,7 @@ bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, 
         glyph.offsetX_ = charElem.GetInt("xoffset");
         glyph.offsetY_ = charElem.GetInt("yoffset");
         glyph.advanceX_ = charElem.GetInt("xadvance");
-        glyph.page_ = charElem.GetInt("page");
+        glyph.page_ = charElem.GetUInt("page");
 
         glyphMapping_[id] = glyph;
 
@@ -159,7 +159,7 @@ bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, 
         }
     }
 
-    LOGDEBUG(QString("Bitmap font face %1 has %2 glyphs").arg(GetFileName(font_->GetName())).arg(count));
+    URHO3D_LOGDEBUG(QString("Bitmap font face %1 has %2 glyphs").arg(GetFileName(font_->GetName())).arg(count));
 
     font_->SetMemoryUse(font_->GetMemoryUse() + totalTextureSize);
     return true;
@@ -278,7 +278,7 @@ bool FontFaceBitmap::Save(Serializer& dest, int pointSize, const QString& indent
     childElem = rootElem.CreateChild("common");
     childElem.SetInt("lineHeight", rowHeight_);
     unsigned pages = textures_.size();
-    childElem.SetInt("pages", pages);
+    childElem.SetUInt("pages", pages);
 
     // Construct the path to store the texture
     QString pathName;
@@ -322,7 +322,7 @@ bool FontFaceBitmap::Save(Serializer& dest, int pointSize, const QString& indent
         charElem.SetInt("xoffset", glyph.offsetX_);
         charElem.SetInt("yoffset", glyph.offsetY_);
         charElem.SetInt("xadvance", glyph.advanceX_);
-        charElem.SetInt("page", glyph.page_);
+        charElem.SetUInt("page", glyph.page_);
     }
 
     if (!kerningMapping_.empty())
@@ -356,10 +356,10 @@ SharedPtr<Image> FontFaceBitmap::SaveFaceTexture(Texture2D* texture)
 {
     Image* image = new Image(font_->GetContext());
     image->SetSize(texture->GetWidth(), texture->GetHeight(), ConvertFormatToNumComponents(texture->GetFormat()));
-    if (!static_cast<Texture2D*>(texture)->GetData(0, image->GetData()))
+    if (!texture->GetData(0, image->GetData()))
     {
         delete image;
-        LOGERROR("Could not save texture to image resource");
+        URHO3D_LOGERROR("Could not save texture to image resource");
         return SharedPtr<Image>();
     }
     return SharedPtr<Image>(image);

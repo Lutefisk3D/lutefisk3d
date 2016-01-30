@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@ AreaAllocator::AreaAllocator()
 
 AreaAllocator::AreaAllocator(int width, int height, bool fastMode)
 {
-    Reset(width, height, fastMode);
+    Reset(width, height, width, height, fastMode);
 }
 
 AreaAllocator::AreaAllocator(int width, int height, int maxWidth, int maxHeight, bool fastMode)
@@ -143,8 +143,8 @@ bool AreaAllocator::Allocate(int width, int height, int& x, int& y)
         // Remove the reserved area from all free areas
         for (unsigned i = 0; i < freeAreas_.size();)
         {
-            if (SplitRect(freeAreas_[i], reserved))
-                freeAreas_.erase(freeAreas_.begin()+i);
+            if (SplitRect(i, reserved))
+                freeAreas_.erase(freeAreas_.begin()+i); // TODO: looks like a possible error
             else
                 ++i;
         }
@@ -155,8 +155,11 @@ bool AreaAllocator::Allocate(int width, int height, int& x, int& y)
     return true;
 }
 
-bool AreaAllocator::SplitRect(IntRect original, const IntRect& reserve)
+bool AreaAllocator::SplitRect(unsigned freeAreaIndex, const IntRect &reserve)
 {
+    // Make a copy, as the vector will be modified
+    IntRect original = freeAreas_[freeAreaIndex];
+
     if (reserve.right_ > original.left_ && reserve.left_ < original.right_ && reserve.bottom_ > original.top_ &&
         reserve.top_ < original.bottom_)
     {

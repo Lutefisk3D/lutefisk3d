@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -77,7 +77,7 @@ bool Model::BeginLoad(Deserializer& source)
     // Check ID
     if (source.ReadFileID() != "UMDL")
     {
-        LOGERROR(source.GetName() + " is not a valid model file");
+        URHO3D_LOGERROR(source.GetName() + " is not a valid model file");
         return false;
     }
 
@@ -198,7 +198,7 @@ bool Model::BeginLoad(Deserializer& source)
 
             if (vbRef >= vertexBuffers_.size())
             {
-                LOGERROR("Vertex buffer index out of bounds");
+                URHO3D_LOGERROR("Vertex buffer index out of bounds");
                 loadVBData_.clear();
                 loadIBData_.clear();
                 loadGeometries_.clear();
@@ -206,7 +206,7 @@ bool Model::BeginLoad(Deserializer& source)
             }
             if (ibRef >= indexBuffers_.size())
             {
-                LOGERROR("Index buffer index out of bounds");
+                URHO3D_LOGERROR("Index buffer index out of bounds");
                 loadVBData_.clear();
                 loadIBData_.clear();
                 loadGeometries_.clear();
@@ -439,12 +439,12 @@ bool Model::SetVertexBuffers(const std::vector<SharedPtr<VertexBuffer> >& buffer
     {
         if (!buffers[i])
         {
-            LOGERROR("Null model vertex buffers specified");
+            URHO3D_LOGERROR("Null model vertex buffers specified");
             return false;
         }
         if (!buffers[i]->IsShadowed())
         {
-            LOGERROR("Model vertex buffers must be shadowed");
+            URHO3D_LOGERROR("Model vertex buffers must be shadowed");
             return false;
         }
     }
@@ -469,12 +469,12 @@ bool Model::SetIndexBuffers(const std::vector<SharedPtr<IndexBuffer> >& buffers)
     {
         if (!buffer)
         {
-            LOGERROR("Null model index buffers specified");
+            URHO3D_LOGERROR("Null model index buffers specified");
             return false;
         }
         if (!buffer->IsShadowed())
         {
-            LOGERROR("Model index buffers must be shadowed");
+            URHO3D_LOGERROR("Model index buffers must be shadowed");
             return false;
         }
     }
@@ -501,12 +501,12 @@ bool Model::SetNumGeometryLodLevels(unsigned index, unsigned num)
 {
     if (index >= geometries_.size())
     {
-        LOGERROR("Geometry index out of bounds");
+        URHO3D_LOGERROR("Geometry index out of bounds");
         return false;
     }
     if (!num)
     {
-        LOGERROR("Zero LOD levels not allowed");
+        URHO3D_LOGERROR("Zero LOD levels not allowed");
         return false;
     }
 
@@ -518,12 +518,12 @@ bool Model::SetGeometry(unsigned index, unsigned lodLevel, Geometry* geometry)
 {
     if (index >= geometries_.size())
     {
-        LOGERROR("Geometry index out of bounds");
+        URHO3D_LOGERROR("Geometry index out of bounds");
         return false;
     }
     if (lodLevel >= geometries_[index].size())
     {
-        LOGERROR("LOD level index out of bounds");
+        URHO3D_LOGERROR("LOD level index out of bounds");
         return false;
     }
 
@@ -535,7 +535,7 @@ bool Model::SetGeometryCenter(unsigned index, const Vector3& center)
 {
     if (index >= geometryCenters_.size())
     {
-        LOGERROR("Geometry index out of bounds");
+        URHO3D_LOGERROR("Geometry index out of bounds");
         return false;
     }
 
@@ -591,7 +591,7 @@ SharedPtr<Model> Model::Clone(const QString& cloneName) const
                 if (origData)
                     cloneBuffer->SetData(origData);
                 else
-                    LOGERROR("Failed to lock original vertex buffer for copying");
+                    URHO3D_LOGERROR("Failed to lock original vertex buffer for copying");
             }
             vbMapping[origBuffer] = cloneBuffer;
         }
@@ -618,7 +618,7 @@ SharedPtr<Model> Model::Clone(const QString& cloneName) const
                 if (origData)
                     cloneBuffer->SetData(origData);
                 else
-                    LOGERROR("Failed to lock original index buffer for copying");
+                    URHO3D_LOGERROR("Failed to lock original index buffer for copying");
             }
             ibMapping[origBuffer] = cloneBuffer;
         }

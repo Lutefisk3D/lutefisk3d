@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,14 +20,15 @@
 // THE SOFTWARE.
 //
 
-#include "../IO/Log.h"
 #include "LogicComponent.h"
-#ifdef LUTEFISK3D_PHYSICS
+#include "Scene.h"
+#include "SceneEvents.h"
+
+#include "../IO/Log.h"
+#if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
 #include "../Physics/PhysicsEvents.h"
 #include "../Physics/PhysicsWorld.h"
 #endif
-#include "Scene.h"
-#include "SceneEvents.h"
 
 namespace Urho3D
 {
@@ -37,10 +38,6 @@ LogicComponent::LogicComponent(Context* context) :
     updateEventMask_(USE_UPDATE | USE_POSTUPDATE | USE_FIXEDUPDATE | USE_FIXEDPOSTUPDATE),
     currentEventMask_(0),
     delayedStartCalled_(false)
-{
-}
-
-LogicComponent::~LogicComponent()
 {
 }
 
@@ -76,11 +73,9 @@ void LogicComponent::SetUpdateEventMask(unsigned char mask)
 
 void LogicComponent::OnNodeSet(Node* node)
 {
-    if (node)
+    if (node != nullptr)
     {
-        // We have been attached to a node. Set initial update event subscription state
-        UpdateEventSubscription();
-        // Then execute the user-defined start function
+        // Execute the user-defined start function
         Start();
     }
     else
@@ -90,69 +85,78 @@ void LogicComponent::OnNodeSet(Node* node)
     }
 }
 
+void LogicComponent::OnSceneSet(Scene* scene)
+{
+    if (scene != nullptr)
+        UpdateEventSubscription();
+    else
+    {
+        UnsubscribeFromEvent(E_SCENEUPDATE);
+        UnsubscribeFromEvent(E_SCENEPOSTUPDATE);
+#if defined(URHO3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
+        UnsubscribeFromEvent(E_PHYSICSPRESTEP);
+        UnsubscribeFromEvent(E_PHYSICSPOSTSTEP);
+#endif
+        currentEventMask_ = 0;
+    }
+}
+
 void LogicComponent::UpdateEventSubscription()
 {
-    // If scene node is not assigned yet, no need to update subscription
-    if (!node_)
-        return;
-
     Scene* scene = GetScene();
-    if (!scene)
-    {
-        LOGWARNING("Node is detached from scene, can not subscribe to update events");
+    if (scene == nullptr)
         return;
-    }
 
     bool enabled = IsEnabledEffective();
 
-    bool needUpdate = enabled && ((updateEventMask_ & USE_UPDATE) || !delayedStartCalled_);
-    if (needUpdate && !(currentEventMask_ & USE_UPDATE))
+    bool needUpdate = enabled && (((updateEventMask_ & USE_UPDATE) != 0) || !delayedStartCalled_);
+    if (needUpdate && ((currentEventMask_ & USE_UPDATE) == 0))
     {
-        SubscribeToEvent(scene, E_SCENEUPDATE, HANDLER(LogicComponent, HandleSceneUpdate));
+        SubscribeToEvent(scene, E_SCENEUPDATE, URHO3D_HANDLER(LogicComponent, HandleSceneUpdate));
         currentEventMask_ |= USE_UPDATE;
     }
-    else if (!needUpdate && (currentEventMask_ & USE_UPDATE))
+    else if (!needUpdate && ((currentEventMask_ & USE_UPDATE) != 0))
     {
         UnsubscribeFromEvent(scene, E_SCENEUPDATE);
         currentEventMask_ &= ~USE_UPDATE;
     }
 
-    bool needPostUpdate = enabled && (updateEventMask_ & USE_POSTUPDATE);
-    if (needPostUpdate && !(currentEventMask_ & USE_POSTUPDATE))
+    bool needPostUpdate = enabled && ((updateEventMask_ & USE_POSTUPDATE) != 0);
+    if (needPostUpdate && ((currentEventMask_ & USE_POSTUPDATE) == 0))
     {
-        SubscribeToEvent(scene, E_SCENEPOSTUPDATE, HANDLER(LogicComponent, HandleScenePostUpdate));
+        SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(LogicComponent, HandleScenePostUpdate));
         currentEventMask_ |= USE_POSTUPDATE;
     }
-    else if (!needUpdate && (currentEventMask_ & USE_POSTUPDATE))
+    else if (!needUpdate && ((currentEventMask_ & USE_POSTUPDATE) != 0))
     {
         UnsubscribeFromEvent(scene, E_SCENEPOSTUPDATE);
         currentEventMask_ &= ~USE_POSTUPDATE;
     }
 
-#ifdef LUTEFISK3D_PHYSICS
-    PhysicsWorld* world = scene->GetComponent<PhysicsWorld>();
-    if (!world)
+#if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
+    Component* world = GetFixedUpdateSource();
+    if (world == nullptr)
         return;
 
-    bool needFixedUpdate = enabled && (updateEventMask_ & USE_FIXEDUPDATE);
-    if (needFixedUpdate && !(currentEventMask_ & USE_FIXEDUPDATE))
+    bool needFixedUpdate = enabled && ((updateEventMask_ & USE_FIXEDUPDATE) != 0);
+    if (needFixedUpdate && ((currentEventMask_ & USE_FIXEDUPDATE) == 0))
     {
-        SubscribeToEvent(world, E_PHYSICSPRESTEP, HANDLER(LogicComponent, HandlePhysicsPreStep));
+        SubscribeToEvent(world, E_PHYSICSPRESTEP, URHO3D_HANDLER(LogicComponent, HandlePhysicsPreStep));
         currentEventMask_ |= USE_FIXEDUPDATE;
     }
-    else if (!needFixedUpdate && (currentEventMask_ & USE_FIXEDUPDATE))
+    else if (!needFixedUpdate && ((currentEventMask_ & USE_FIXEDUPDATE) != 0))
     {
         UnsubscribeFromEvent(world, E_PHYSICSPRESTEP);
         currentEventMask_ &= ~USE_FIXEDUPDATE;
     }
 
-    bool needFixedPostUpdate = enabled && (updateEventMask_ & USE_FIXEDPOSTUPDATE);
-    if (needFixedPostUpdate && !(currentEventMask_ & USE_FIXEDPOSTUPDATE))
+    bool needFixedPostUpdate = enabled && ((updateEventMask_ & USE_FIXEDPOSTUPDATE) != 0);
+    if (needFixedPostUpdate && ((currentEventMask_ & USE_FIXEDPOSTUPDATE) == 0))
     {
-        SubscribeToEvent(world, E_PHYSICSPOSTSTEP, HANDLER(LogicComponent, HandlePhysicsPostStep));
+        SubscribeToEvent(world, E_PHYSICSPOSTSTEP, URHO3D_HANDLER(LogicComponent, HandlePhysicsPostStep));
         currentEventMask_ |= USE_FIXEDPOSTUPDATE;
     }
-    else if (!needFixedPostUpdate && (currentEventMask_ & USE_FIXEDPOSTUPDATE))
+    else if (!needFixedPostUpdate && ((currentEventMask_ & USE_FIXEDPOSTUPDATE) != 0))
     {
         UnsubscribeFromEvent(world, E_PHYSICSPOSTSTEP);
         currentEventMask_ &= ~USE_FIXEDPOSTUPDATE;
@@ -171,7 +175,7 @@ void LogicComponent::HandleSceneUpdate(StringHash eventType, VariantMap& eventDa
         delayedStartCalled_ = true;
 
         // If did not need actual update events, unsubscribe now
-        if (!(updateEventMask_ & USE_UPDATE))
+        if ((updateEventMask_ & USE_UPDATE) == 0)
         {
             UnsubscribeFromEvent(GetScene(), E_SCENEUPDATE);
             currentEventMask_ &= ~USE_UPDATE;
@@ -191,7 +195,7 @@ void LogicComponent::HandleScenePostUpdate(StringHash eventType, VariantMap& eve
     PostUpdate(eventData[P_TIMESTEP].GetFloat());
 }
 
-#ifdef LUTEFISK3D_PHYSICS
+#if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
 void LogicComponent::HandlePhysicsPreStep(StringHash eventType, VariantMap& eventData)
 {
     using namespace PhysicsPreStep;

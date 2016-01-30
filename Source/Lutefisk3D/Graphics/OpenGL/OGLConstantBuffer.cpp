@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,11 +47,9 @@ void ConstantBuffer::Release()
         if (!graphics_)
             return;
 
-        #ifndef GL_ES_VERSION_2_0
         graphics_->SetUBO(0);
 
         gl::glDeleteBuffers(1, &object_);
-        #endif
         object_ = 0;
     }
 
@@ -69,7 +67,7 @@ bool ConstantBuffer::SetSize(unsigned size)
 {
     if (!size)
     {
-        LOGERROR("Can not create zero-sized constant buffer");
+        URHO3D_LOGERROR("Can not create zero-sized constant buffer");
         return false;
     }
 
@@ -125,10 +123,8 @@ void ConstantBuffer::Apply()
 {
     if (dirty_ && object_)
     {
-        #ifndef GL_ES_VERSION_2_0
         graphics_->SetUBO(object_);
         gl::glBufferData(gl::GL_UNIFORM_BUFFER, size_, shadowData_.Get(), gl::GL_DYNAMIC_DRAW);
-        #endif
         dirty_ = false;
     }
 }

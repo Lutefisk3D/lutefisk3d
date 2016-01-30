@@ -1,6 +1,6 @@
 /*
    AngelCode Scripting Library
-   Copyright (c) 2003-2014 Andreas Jonsson
+   Copyright (c) 2003-2015 Andreas Jonsson
 
    This software is provided 'as-is', without any express or implied 
    warranty. In no event will the authors be held liable for any 
@@ -108,7 +108,6 @@ struct asSEnumValue
 class asCScriptEngine;
 struct asSNameSpace;
 
-
 class asCObjectType : public asIObjectType
 {
 public:
@@ -192,6 +191,7 @@ public:
 #ifdef WIP_16BYTE_ALIGN
 	int                          alignment;
 #endif
+	mutable int                  typeId;
 	asCArray<asCObjectProperty*> properties;
 	asCArray<int>                methods;
 	asCArray<asCObjectType*>     interfaces;
@@ -214,6 +214,7 @@ public:
 	int                             scriptSectionIdx;
 	// Store the location where the function was declared (row in the lower 20 bits, and column in the upper 12)
 	int                             declaredAt;
+
 	asCScriptEngine  *engine;
 	asCModule        *module;
 	asCArray<asPWORD> userData;

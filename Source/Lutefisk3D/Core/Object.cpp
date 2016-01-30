@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,44 @@
 namespace Urho3D
 {
 
+TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo) :
+    type_(typeName),
+    typeName_(typeName),
+    baseTypeInfo_(baseTypeInfo)
+{
+}
+
+TypeInfo::~TypeInfo()
+{
+}
+
+bool TypeInfo::IsTypeOf(StringHash type) const
+{
+    const TypeInfo* current = this;
+    while (current)
+    {
+        if (current->GetType() == type)
+            return true;
+
+        current = current->GetBaseTypeInfo();
+    }
+
+    return false;
+}
+
+bool TypeInfo::IsTypeOf(const TypeInfo* typeInfo) const
+{
+    const TypeInfo* current = this;
+    while (current)
+    {
+        if (current == typeInfo)
+            return true;
+
+        current = current->GetBaseTypeInfo();
+    }
+
+    return false;
+}
 Object::Object(Context* context) :
     context_(context)
 {
@@ -77,6 +115,25 @@ void Object::OnEvent(Object* sender, StringHash eventType, VariantMap& eventData
     }
 }
 
+bool Object::IsTypeOf(StringHash type)
+{
+    return GetTypeInfoStatic()->IsTypeOf(type);
+}
+
+bool Object::IsTypeOf(const TypeInfo* typeInfo)
+{
+    return GetTypeInfoStatic()->IsTypeOf(typeInfo);
+}
+
+bool Object::IsInstanceOf(StringHash type) const
+{
+    return GetTypeInfo()->IsTypeOf(type);
+}
+
+bool Object::IsInstanceOf(const TypeInfo* typeInfo) const
+{
+    return GetTypeInfo()->IsTypeOf(typeInfo);
+}
 void Object::SubscribeToEvent(StringHash eventType, EventHandler* handler)
 {
     if (!handler)
@@ -156,9 +213,11 @@ void Object::UnsubscribeFromEvents(Object* sender)
     if (!sender)
         return;
 
-    while(not eventHandlers_.empty())
+    for (;;)
     {
         cilEventHandler handler = FindSpecificEventHandler(sender);
+        if(handler==eventHandlers_.end())
+            break;
         context_->RemoveEventReceiver(this, (*handler)->GetSender(), (*handler)->GetEventType());
         delete *handler;
         eventHandlers_.erase(handler);
@@ -211,7 +270,7 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
 {
     if (!Thread::IsMainThread())
     {
-        LOGERROR("Sending events is only supported from the main thread");
+        URHO3D_LOGERROR("Sending events is only supported from the main thread");
         return;
     }
 
@@ -362,7 +421,6 @@ const QString& Object::GetCategory() const
 cilEventHandler Object::FindEventHandler(StringHash eventType) const
 {
     cilEventHandler handler = eventHandlers_.begin();
-
     while (handler!=eventHandlers_.end())
     {
         if ((*handler)->GetEventType() == eventType)
@@ -387,14 +445,18 @@ Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender) const
     return eventHandlers_.cend();
 }
 
-Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender, StringHash eventType) const
+Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous) const
 {
     cilEventHandler handler = eventHandlers_.cbegin();
+    if(previous)
+        *previous = nullptr;
 
     while (handler!=eventHandlers_.cend())
     {
         if ((*handler)->GetSender() == sender && (*handler)->GetEventType() == eventType)
             return handler;
+        if (previous)
+            *previous = (EventHandler *)&(*handler);
         ++handler;
     }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@
 
 
 
-DEFINE_APPLICATION_MAIN(Urho2DParticle)
+URHO3D_DEFINE_APPLICATION_MAIN(Urho2DParticle)
 
 Urho2DParticle::Urho2DParticle(Context* context) :
     Sample(context)
@@ -133,9 +133,9 @@ void Urho2DParticle::SetupViewport()
 
 void Urho2DParticle::SubscribeToEvents()
 {
-    SubscribeToEvent(E_MOUSEMOVE, HANDLER(Urho2DParticle, HandleMouseMove));
+    SubscribeToEvent(E_MOUSEMOVE, URHO3D_HANDLER(Urho2DParticle, HandleMouseMove));
     if (touchEnabled_)
-        SubscribeToEvent(E_TOUCHMOVE, HANDLER(Urho2DParticle, HandleMouseMove));
+        SubscribeToEvent(E_TOUCHMOVE, URHO3D_HANDLER(Urho2DParticle, HandleMouseMove));
 
     // Unsubscribe the SceneUpdate event from base class to prevent camera pitch and yaw in 2D sample
     UnsubscribeFromEvent(E_SCENEUPDATE);

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,8 @@
 #pragma once
 
 #include "../../Container/ArrayPtr.h"
-#include "../../Graphics/GPUObject.h"
 #include "../../Core/Object.h"
+#include "../../Graphics/GPUObject.h"
 #include "../../Graphics/GraphicsDefs.h"
 
 namespace Urho3D
@@ -33,11 +33,11 @@ namespace Urho3D
 /// Hardware index buffer.
 class IndexBuffer : public Object, public GPUObject
 {
-    OBJECT(IndexBuffer);
+    URHO3D_OBJECT(IndexBuffer,Object);
 
 public:
     /// Construct.
-    IndexBuffer(Context* context);
+    IndexBuffer(Context* context, bool forceHeadless = false);
     /// Destruct.
     virtual ~IndexBuffer();
 

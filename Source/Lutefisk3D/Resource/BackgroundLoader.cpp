@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,12 @@ BackgroundLoader::BackgroundLoader(ResourceCache* owner) :
 {
 }
 
+BackgroundLoader::~BackgroundLoader()
+{
+    MutexLock lock(backgroundLoadMutex_);
+
+    backgroundLoadQueue_.clear();
+}
 void BackgroundLoader::ThreadFunction()
 {
     while (shouldRun_)
@@ -115,7 +121,7 @@ bool BackgroundLoader::QueueResource(StringHash type, const QString& name, bool 
     item.resource_ = DynamicCast<Resource>(owner_->GetContext()->CreateObject(type));
     if (!item.resource_)
     {
-        LOGERROR(QString("Could not load unknown resource type ") + type.ToString());
+        URHO3D_LOGERROR(QString("Could not load unknown resource type ") + type.ToString());
 
         if (sendEventOnFailure && Thread::IsMainThread())
         {
@@ -130,7 +136,7 @@ bool BackgroundLoader::QueueResource(StringHash type, const QString& name, bool 
         return false;
     }
 
-    LOGDEBUG("Background loading resource " + name);
+    URHO3D_LOGDEBUG("Background loading resource " + name);
 
     item.resource_->SetName(name);
     item.resource_->SetAsyncLoadState(ASYNC_QUEUED);
@@ -147,7 +153,7 @@ bool BackgroundLoader::QueueResource(StringHash type, const QString& name, bool 
             callerItem.dependencies_.insert(key);
         }
         else
-            LOGWARNING("Resource " + caller->GetName() + " requested for a background loaded resource but was not in the background load queue");
+            URHO3D_LOGWARNING("Resource " + caller->GetName() + " requested for a background loaded resource but was not in the background load queue");
     }
 
     // Start the background loader thread now
@@ -187,7 +193,7 @@ void BackgroundLoader::WaitForResource(StringHash type, StringHash nameHash)
             }
 
             if (didWait)
-                LOGDEBUG("Waited " + QString::number(waitTimer.GetUSecS() / 1000) + " ms for background loaded resource " + resource->GetName());
+                URHO3D_LOGDEBUG("Waited " + QString::number(waitTimer.GetUSecS() / 1000) + " ms for background loaded resource " + resource->GetName());
         }
 
         // This may take a long time and may potentially wait on other resources, so it is important we do not hold the mutex during this
@@ -256,7 +262,7 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
         if (profiler)
             profiler->BeginBlock(qPrintable(profileBlockName));
 #endif
-        LOGDEBUG("Finishing background loaded resource " + resource->GetName());
+        URHO3D_LOGDEBUG("Finishing background loaded resource " + resource->GetName());
         success = resource->EndLoad();
 
 #ifdef LUTEFISK3D_PROFILING

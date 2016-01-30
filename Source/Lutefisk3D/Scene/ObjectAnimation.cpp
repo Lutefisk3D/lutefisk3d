@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #include "ValueAnimation.h"
 #include "ValueAnimationInfo.h"
 #include "../Resource/XMLFile.h"
+#include "../Resource/JSONFile.h"
 
 namespace Urho3D
 {
@@ -41,10 +42,6 @@ const char* wrapModeNames[] =
 
 ObjectAnimation::ObjectAnimation(Context* context) :
     Resource(context)
-{
-}
-
-ObjectAnimation::~ObjectAnimation()
 {
 }
 
@@ -126,9 +123,70 @@ bool ObjectAnimation::SaveXML(XMLElement& dest) const
     return true;
 }
 
+bool ObjectAnimation::LoadJSON(const JSONValue& source)
+{
+    attributeAnimationInfos_.clear();
+
+    JSONValue attributeAnimationsValue = source.Get("attributeanimations");
+    if (attributeAnimationsValue.IsNull())
+        return true;
+    if (!attributeAnimationsValue.IsObject())
+        return true;
+
+    const JSONObject& attributeAnimationsObject = attributeAnimationsValue.GetObject();
+
+    for (const auto & ob : attributeAnimationsObject)
+    {
+        QString name = ELEMENT_KEY(ob);
+        JSONValue value = ELEMENT_VALUE(ob);
+        SharedPtr<ValueAnimation> animation(new ValueAnimation(context_));
+        if (!animation->LoadJSON(value))
+            return false;
+
+        QString wrapModeString = value.Get("wrapmode").GetString();
+        WrapMode wrapMode = WM_LOOP;
+        for (int i = 0; i <= WM_CLAMP; ++i)
+        {
+            if (wrapModeString == wrapModeNames[i])
+            {
+                wrapMode = (WrapMode)i;
+                break;
+            }
+        }
+
+        float speed = value.Get("speed").GetFloat();
+        AddAttributeAnimation(name, animation, wrapMode, speed);
+    }
+
+    return true;
+}
+
+bool ObjectAnimation::SaveJSON(JSONValue& dest) const
+{
+    JSONValue attributeAnimationsValue;
+
+    for (auto &elem : attributeAnimationInfos_)
+    {
+        JSONValue animValue;
+        animValue.Set("name", ELEMENT_KEY(elem));
+
+        const ValueAnimationInfo* info = ELEMENT_VALUE(elem);
+        if (!info->GetAnimation()->SaveJSON(animValue))
+            return false;
+
+        animValue.Set("wrapmode", wrapModeNames[info->GetWrapMode()]);
+        animValue.Set("speed", (float) info->GetSpeed());
+
+        attributeAnimationsValue.Set(ELEMENT_KEY(elem), animValue);
+    }
+
+    dest.Set("attributeanimations", attributeAnimationsValue);
+    return true;
+}
+
 void ObjectAnimation::AddAttributeAnimation(const QString& name, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed)
 {
-    if (!attributeAnimation)
+    if (attributeAnimation == nullptr)
         return;
 
     attributeAnimation->SetOwner(this);
@@ -150,7 +208,7 @@ void ObjectAnimation::RemoveAttributeAnimation(const QString& name)
 
 void ObjectAnimation::RemoveAttributeAnimation(ValueAnimation* attributeAnimation)
 {
-    if (!attributeAnimation)
+    if (attributeAnimation == nullptr)
         return;
 
     for (auto i = attributeAnimationInfos_.begin(); i != attributeAnimationInfos_.end(); ++i)
@@ -168,19 +226,19 @@ void ObjectAnimation::RemoveAttributeAnimation(ValueAnimation* attributeAnimatio
 ValueAnimation* ObjectAnimation::GetAttributeAnimation(const QString& name) const
 {
     ValueAnimationInfo* info = GetAttributeAnimationInfo(name);
-    return info ? info->GetAnimation() : nullptr;
+    return info != nullptr ? info->GetAnimation() : nullptr;
 }
 
 WrapMode ObjectAnimation::GetAttributeAnimationWrapMode(const QString& name) const
 {
     ValueAnimationInfo* info = GetAttributeAnimationInfo(name);
-    return info ? info->GetWrapMode() : WM_LOOP;
+    return info != nullptr ? info->GetWrapMode() : WM_LOOP;
 }
 
 float ObjectAnimation::GetAttributeAnimationSpeed(const QString& name) const
 {
     ValueAnimationInfo* info = GetAttributeAnimationInfo(name);
-    return info ? info->GetSpeed() : 1.0f;
+    return info != nullptr ? info->GetSpeed() : 1.0f;
 }
 
 ValueAnimationInfo* ObjectAnimation::GetAttributeAnimationInfo(const QString& name) const

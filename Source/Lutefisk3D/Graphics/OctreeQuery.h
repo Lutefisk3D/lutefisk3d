@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -186,9 +186,11 @@ enum RayQueryLevel
 struct RayQueryResult
 {
     /// Test for inequality, added to prevent GCC from complaining.
-    bool operator != (const RayQueryResult& rhs) const {
+    bool operator !=(const RayQueryResult& rhs) const
+    {
         return position_ != rhs.position_ ||
                 normal_ != rhs.normal_ ||
+               textureUV_ != rhs.textureUV_ ||
                 distance_ != rhs.distance_ ||
                 drawable_ != rhs.drawable_ ||
                 node_ != rhs.node_ ||
@@ -200,7 +202,7 @@ struct RayQueryResult
     /// Hit normal in world space. Negation of ray direction if per-triangle data not available.
     Vector3 normal_;
     /// Hit texture position
-    Vector2 texture_uv_;
+    Vector2 textureUV_;
     /// Distance from ray origin.
     float distance_;
     /// Drawable.
@@ -245,6 +247,21 @@ private:
     RayOctreeQuery(const RayOctreeQuery& rhs);
     /// Prevent assignment.
     RayOctreeQuery& operator = (const RayOctreeQuery& rhs);
+};
+
+class AllContentOctreeQuery : public OctreeQuery
+{
+public:
+    /// Construct.
+    AllContentOctreeQuery(std::vector<Drawable*>& result, unsigned char drawableFlags, unsigned viewMask) :
+        OctreeQuery(result, drawableFlags, viewMask)
+    {
+    }
+
+    /// Intersection test for an octant.
+    virtual Intersection TestOctant(const BoundingBox& box, bool inside);
+    /// Intersection test for drawables.
+    virtual void TestDrawables(Drawable** start, Drawable** end, bool inside);
 };
 
 }

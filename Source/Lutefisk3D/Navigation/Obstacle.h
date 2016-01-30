@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ class DynamicNavigationMesh;
 /// Obstacle for dynamic navigation mesh.
 class Obstacle : public Component
 {
-    OBJECT(Obstacle)
+    URHO3D_OBJECT(Obstacle,Component)
     friend class DynamicNavigationMesh;
 
 public:
@@ -66,8 +66,8 @@ public:
     void DrawDebugGeometry(bool depthTest);
 
 protected:
-    /// Handle node being assigned, identify our DynamicNavigationMesh.
-    virtual void OnNodeSet(Node* node) override;
+    /// Handle scene being assigned, identify our DynamicNavigationMesh.
+    virtual void OnSceneSet(Scene* scene) override;
 
 private:
     /// Radius of this obstacle.

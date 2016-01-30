@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ class XMLFile;
 /// %UI subsystem. Manages the graphical user interface.
 class UI : public Object
 {
-    OBJECT(UI);
+    URHO3D_OBJECT(UI,Object);
 
 public:
     /// Construct.
@@ -95,6 +95,12 @@ public:
     void SetUseMutableGlyphs(bool enable);
     /// Set whether to force font autohinting instead of using FreeType's TTF bytecode interpreter.
     void SetForceAutoHint(bool enable);
+    /// Set %UI scale. 1.0 is default (pixel perfect). Resize the root element to match.
+    void SetScale(float scale);
+    /// Scale %UI to the specified width in pixels.
+    void SetWidth(float size);
+    /// Scale %UI to the specified height in pixels.
+    void SetHeight(float size);
 
     /// Return root UI element.
     UIElement* GetRoot() const { return rootElement_; }
@@ -162,6 +168,9 @@ public:
         IntVector2 dragBeginSumPos;
     };
 
+    /// Return current UI scale.
+    float GetScale() const { return uiScale_; }
+
 private:
     /// Initialize when screen mode initially set.
     void Initialize();
@@ -224,7 +233,7 @@ private:
     /// Handle a file being drag-dropped into the application window.
     void HandleDropFile(StringHash eventType, VariantMap& eventData);
     /// Remove drag data and return next iterator.
-    HashMap<WeakPtr<UIElement>, DragData*>::iterator dragElementErase(HashMap<WeakPtr<UIElement>, DragData*>::iterator dragElement);
+    HashMap<WeakPtr<UIElement>, DragData*>::iterator DragElementErase(HashMap<WeakPtr<UIElement>, DragData*>::iterator dragElement);
     /// Handle clean up on a drag cancel.
     void ProcessDragCancel();
     /// Sum touch positions and return the begin position ready to send.
@@ -282,7 +291,7 @@ private:
     bool useSystemClipboard_;
     /// Flag for showing the on-screen keyboard on focusing a %LineEdit.
     bool useScreenKeyboard_;
-    /// Flag for using mutable (eraseable) font glyphs.
+    /// Flag for using mutable (erasable) font glyphs.
     bool useMutableGlyphs_;
     /// Flag for forcing FreeType autohinting.
     bool forceAutoHint_;
@@ -306,6 +315,8 @@ private:
     HashMap<WeakPtr<UIElement>, int> touchDragElements_;
     /// Confirmed drag elements cache.
     std::vector<UIElement*> dragElementsConfirmed_;
+    /// Current scale of UI
+    float uiScale_;
 };
 
 /// Register UI library objects.

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,7 @@ struct GlyphLocation
 /// %Text %UI element.
 class Text : public UIElement
 {
-    OBJECT(Text);
+    URHO3D_OBJECT(Text,UIElement);
 
     friend class Text3D;
 
@@ -105,6 +105,8 @@ public:
     void SetRowSpacing(float spacing);
     /// Set wordwrap. In wordwrap mode the text element will respect its current width. Otherwise it resizes itself freely.
     void SetWordwrap(bool enable);
+    /// The text will be automatically translated. The text value used as string identifier.
+    void SetAutoLocalizable(bool enable);
     /// Set selection. When length is not provided, select until the text ends.
     void SetSelection(unsigned start, unsigned length = M_MAX_UNSIGNED);
     /// Clear selection.
@@ -130,6 +132,8 @@ public:
     float GetRowSpacing() const { return rowSpacing_; }
     /// Return wordwrap mode.
     bool GetWordwrap() const { return wordWrap_; }
+    /// Return auto localizable mode.
+    bool GetAutoLocalizable() const { return autoLocalizable_; }
     /// Return selection start.
     unsigned GetSelectionStart() const { return selectionStart_; }
     /// Return selection length.
@@ -226,6 +230,14 @@ protected:
     std::vector<std::vector<GlyphLocation> > pageGlyphLocations_;
     /// Cached locations of each character in the text.
     std::vector<CharLocation> charLocations_;
+    /// The text will be automatically translated.
+    bool autoLocalizable_;
+    /// Storage string id. Used when enabled autoLocalizable.
+    QString stringId_;
+    /// Handle change Language.
+    void HandleChangeLanguage(StringHash eventType, VariantMap& eventData);
+    /// UTF8 to Unicode.
+    void DecodeToUnicode();
 };
 
 }

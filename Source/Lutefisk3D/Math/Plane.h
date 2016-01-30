@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -63,6 +63,14 @@ public:
         Define(plane);
     }
 
+    /// Assign from another plane.
+    Plane& operator =(const Plane& rhs)
+    {
+        normal_ = rhs.normal_;
+        absNormal_ = rhs.absNormal_;
+        d_ = rhs.d_;
+        return *this;
+    }
     /// Define from 3 vertices.
     void Define(const Vector3& v0, const Vector3& v1, const Vector3& v2)
     {

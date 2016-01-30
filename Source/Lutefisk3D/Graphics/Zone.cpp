@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,11 +24,11 @@
 
 #include "../Core/Context.h"
 #include "DebugRenderer.h"
-#include "../Scene/Node.h"
 #include "Octree.h"
-#include "../Resource/ResourceCache.h"
-#include "../Scene/Scene.h"
 #include "TextureCube.h"
+#include "../Resource/ResourceCache.h"
+#include "../Scene/Node.h"
+#include "../Scene/Scene.h"
 
 namespace Urho3D
 {
@@ -69,23 +69,23 @@ void Zone::RegisterObject(Context* context)
 {
     context->RegisterFactory<Zone>(SCENE_CATEGORY);
 
-    ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    ATTRIBUTE("Bounding Box Min", Vector3, boundingBox_.min_, DEFAULT_BOUNDING_BOX_MIN, AM_DEFAULT);
-    ATTRIBUTE("Bounding Box Max", Vector3, boundingBox_.max_, DEFAULT_BOUNDING_BOX_MAX, AM_DEFAULT);
-    ATTRIBUTE("Ambient Color", Color, ambientColor_, DEFAULT_AMBIENT_COLOR, AM_DEFAULT);
-    ATTRIBUTE("Fog Color", Color, fogColor_, DEFAULT_FOG_COLOR, AM_DEFAULT);
-    ATTRIBUTE("Fog Start", float, fogStart_, DEFAULT_FOG_START, AM_DEFAULT);
-    ATTRIBUTE("Fog End", float, fogEnd_, DEFAULT_FOG_END, AM_DEFAULT);
-    ATTRIBUTE("Fog Height", float, fogHeight_, DEFAULT_FOG_HEIGHT, AM_DEFAULT);
-    ATTRIBUTE("Fog Height Scale", float, fogHeightScale_, DEFAULT_FOG_HEIGHT_SCALE, AM_DEFAULT);
-    ATTRIBUTE("Height Fog Mode", bool, heightFog_, false, AM_DEFAULT);
-    ATTRIBUTE("Override Mode", bool, override_, false, AM_DEFAULT);
-    ATTRIBUTE("Ambient Gradient", bool, ambientGradient_, false, AM_DEFAULT);
-    ATTRIBUTE("Priority", int, priority_, 0, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Zone Texture", GetZoneTextureAttr, SetZoneTextureAttr, ResourceRef, ResourceRef(TextureCube::GetTypeStatic()), AM_DEFAULT);
-    ATTRIBUTE("Light Mask", int, lightMask_, DEFAULT_LIGHTMASK, AM_DEFAULT);
-    ATTRIBUTE("Shadow Mask", int, shadowMask_, DEFAULT_SHADOWMASK, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Zone Mask", GetZoneMask, SetZoneMask, unsigned, DEFAULT_ZONEMASK, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Bounding Box Min", Vector3, boundingBox_.min_, DEFAULT_BOUNDING_BOX_MIN, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Bounding Box Max", Vector3, boundingBox_.max_, DEFAULT_BOUNDING_BOX_MAX, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Ambient Color", Color, ambientColor_, DEFAULT_AMBIENT_COLOR, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Fog Color", Color, fogColor_, DEFAULT_FOG_COLOR, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Fog Start", float, fogStart_, DEFAULT_FOG_START, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Fog End", float, fogEnd_, DEFAULT_FOG_END, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Fog Height", float, fogHeight_, DEFAULT_FOG_HEIGHT, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Fog Height Scale", float, fogHeightScale_, DEFAULT_FOG_HEIGHT_SCALE, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Height Fog Mode", bool, heightFog_, false, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Override Mode", bool, override_, false, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Ambient Gradient", bool, ambientGradient_, false, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Priority", int, priority_, 0, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Zone Texture", GetZoneTextureAttr, SetZoneTextureAttr, ResourceRef, ResourceRef(TextureCube::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Light Mask", int, lightMask_, DEFAULT_LIGHTMASK, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Shadow Mask", int, shadowMask_, DEFAULT_SHADOWMASK, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Zone Mask", GetZoneMask, SetZoneMask, unsigned, DEFAULT_ZONEMASK, AM_DEFAULT);
 }
 
 void Zone::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
@@ -281,7 +281,7 @@ void Zone::UpdateAmbientGradient()
         // Gradient start position: get the highest priority zone that is not this zone
         int bestPriority = M_MIN_INT;
         Zone* bestZone = nullptr;
-        for (std::vector<Zone*>::const_iterator i = result.begin(); i != result.end(); ++i)
+        for (std::vector<Zone*>::const_iterator i = result.cbegin(); i != result.cend(); ++i)
         {
             Zone* zone = *i;
             int priority = zone->GetPriority();
@@ -306,7 +306,7 @@ void Zone::UpdateAmbientGradient()
         bestPriority = M_MIN_INT;
         bestZone = nullptr;
 
-        for (std::vector<Zone*>::const_iterator i = result.begin(); i != result.end(); ++i)
+        for (std::vector<Zone*>::const_iterator i = result.cbegin(); i != result.cend(); ++i)
         {
             Zone* zone = *i;
             int priority = zone->GetPriority();
@@ -332,7 +332,7 @@ void Zone::OnRemoveFromOctree()
 
 void Zone::ClearDrawablesZone()
 {
-    if (octant_ && lastWorldBoundingBox_.defined_)
+    if (octant_ && lastWorldBoundingBox_.Defined())
     {
         std::vector<Drawable*> result;
         BoxOctreeQuery query(result, lastWorldBoundingBox_, DRAWABLE_GEOMETRY | DRAWABLE_ZONE);
@@ -340,7 +340,6 @@ void Zone::ClearDrawablesZone()
 
         for (Drawable* drawable : result)
         {
-
             unsigned drawableFlags = drawable->GetDrawableFlags();
             if (drawableFlags & DRAWABLE_GEOMETRY)
                 drawable->SetZone(nullptr);

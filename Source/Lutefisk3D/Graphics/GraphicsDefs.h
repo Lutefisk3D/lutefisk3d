@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ namespace Urho3D
 
 class Vector3;
 
-/// Graphics capability support level. HTML5 (Emscripten) also uses OpenGL ES, but is considered a desktop platform capability-wise
+/// Graphics capability support level. Web platform (Emscripten) also uses OpenGL ES, but is considered a desktop platform capability-wise
 #define DESKTOP_GRAPHICS
 /// Primitive type.
 enum PrimitiveType
@@ -49,8 +49,9 @@ enum GeometryType
     GEOM_SKINNED = 1,
     GEOM_INSTANCED = 2,
     GEOM_BILLBOARD = 3,
-    GEOM_STATIC_NOINSTANCING = 4,
-    MAX_GEOMETRYTYPES = 4,
+    GEOM_DIRBILLBOARD = 4,
+    GEOM_STATIC_NOINSTANCING = 5,
+    MAX_GEOMETRYTYPES = 5,
 };
 
 /// Blending mode.
@@ -133,6 +134,8 @@ enum VertexElement
     ELEMENT_INSTANCEMATRIX1,
     ELEMENT_INSTANCEMATRIX2,
     ELEMENT_INSTANCEMATRIX3,
+    // Custom 32-bit integer object index. Due to API limitations, not supported on D3D9
+    ELEMENT_OBJECTINDEX,
     MAX_VERTEX_ELEMENTS
 };
 
@@ -265,7 +268,18 @@ enum FaceCameraMode
     FC_ROTATE_XYZ,
     FC_ROTATE_Y,
     FC_LOOKAT_XYZ,
-    FC_LOOKAT_Y
+    FC_LOOKAT_Y,
+    FC_DIRECTION
+};
+/// Shadow type
+enum ShadowQuality
+{
+    SHADOWQUALITY_SIMPLE_16BIT = 0,
+    SHADOWQUALITY_SIMPLE_24BIT,
+    SHADOWQUALITY_PCF_16BIT,
+    SHADOWQUALITY_PCF_24BIT,
+    SHADOWQUALITY_VSM,
+    SHADOWQUALITY_BLUR_VSM
 };
 
 // Inbuilt shader parameters.
@@ -285,6 +299,8 @@ extern const StringHash VSP_GBUFFEROFFSETS;
 extern const StringHash VSP_LIGHTDIR;
 extern const StringHash VSP_LIGHTPOS;
 extern const StringHash VSP_MODEL;
+extern const StringHash VSP_VIEW;
+extern const StringHash VSP_VIEWINV;
 extern const StringHash VSP_VIEWPROJ;
 extern const StringHash VSP_UOFFSET;
 extern const StringHash VSP_VOFFSET;
@@ -315,7 +331,7 @@ extern const StringHash PSP_SHADOWINTENSITY;
 extern const StringHash PSP_SHADOWMAPINVSIZE;
 extern const StringHash PSP_SHADOWSPLITS;
 extern const StringHash PSP_LIGHTMATRICES;
-
+extern const StringHash PSP_VSMSHADOWPARAMS;
 // Scale calculation from bounding box diagonal.
 extern const Vector3 DOT_SCALE;
 
@@ -323,11 +339,6 @@ static const int QUALITY_LOW = 0;
 static const int QUALITY_MEDIUM = 1;
 static const int QUALITY_HIGH = 2;
 static const int QUALITY_MAX = 15;
-
-static const int SHADOWQUALITY_LOW_16BIT = 0;
-static const int SHADOWQUALITY_LOW_24BIT = 1;
-static const int SHADOWQUALITY_HIGH_16BIT = 2;
-static const int SHADOWQUALITY_HIGH_24BIT = 3;
 
 static const unsigned CLEAR_COLOR = 0x1;
 static const unsigned CLEAR_DEPTH = 0x2;
@@ -347,6 +358,7 @@ static const unsigned MASK_BLENDINDICES = 0x200;
 static const unsigned MASK_INSTANCEMATRIX1 = 0x400;
 static const unsigned MASK_INSTANCEMATRIX2 = 0x800;
 static const unsigned MASK_INSTANCEMATRIX3 = 0x1000;
+static const unsigned MASK_OBJECTINDEX = 0x2000;
 static const unsigned MASK_DEFAULT = 0xffffffff;
 static const unsigned NO_ELEMENT = 0xffffffff;
 

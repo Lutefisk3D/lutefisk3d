@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -99,14 +99,12 @@ public:
     float HitDistance(const Frustum& frustum, bool solidInside = true) const;
     /// Return hit distance to a sphere, or infinity if no hit.
     float HitDistance(const Sphere& sphere) const;
-    /// Return hit distance to a triangle, or infinity if no hit.
-    float HitDistance(const Vector3& v0, const Vector3& v1, const Vector3& v2) const;
-    /// Return hit distance to a triangle and out normal, or infinity if no hit.
-    float HitDistance(const Vector3& v0, const Vector3& v1, const Vector3& v2, Vector3* outNormal, Vector3 * outBary) const;
-    /// Return hit distance to non-indexed geometry data, or infinity if no hit. Optionally return normal, and uv coordinates at intersect point
-    float HitDistance(const void* vertexData, unsigned vertexStride, unsigned vertexStart, unsigned vertexCount, Vector3* outNormal = nullptr, Vector2* outUV1 = nullptr, unsigned uvOffset=0) const;
-    /// Return hit distance to indexed geometry data, or infinity if no hit.
-    float HitDistance(const void* vertexData, unsigned vertexStride, const void* indexData, unsigned indexSize, unsigned indexStart, unsigned indexCount, Vector3* outNormal = nullptr, Vector2* outUV1 = nullptr, unsigned uvOffset=0) const;
+    /// Return hit distance to a triangle, or infinity if no hit. Optionally return hit normal and hit barycentric coordinate at intersect point.
+    float HitDistance(const Vector3& v0, const Vector3& v1, const Vector3& v2, Vector3* outNormal=nullptr, Vector3 * outBary=nullptr) const;
+    /// Return hit distance to non-indexed geometry data, or infinity if no hit. Optionally return hit normal and hit uv coordinates at intersect point.
+    float HitDistance(const void* vertexData, unsigned vertexStride, unsigned vertexStart, unsigned vertexCount, Vector3* outNormal = nullptr, Vector2* outUV = nullptr, unsigned uvOffset=0) const;
+    /// Return hit distance to indexed geometry data, or infinity if no hit. Optionally return hit normal and hit uv coordinates at intersect point.
+    float HitDistance(const void* vertexData, unsigned vertexStride, const void* indexData, unsigned indexSize, unsigned indexStart, unsigned indexCount, Vector3* outNormal = nullptr, Vector2* outUV = nullptr, unsigned uvOffset=0) const;
     /// Return whether ray is inside non-indexed geometry.
     bool InsideGeometry(const void* vertexData, unsigned vertexSize, unsigned vertexStart, unsigned vertexCount) const;
     /// Return whether ray is inside indexed geometry.

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,14 @@
 
 #pragma once
 
-#include "../Resource/Resource.h"
 #include "../Core/Variant.h"
+#include "../Resource/Resource.h"
 
 namespace Urho3D
 {
 
 class XMLElement;
+class JSONValue;
 
 /// Interpolation method.
 enum InterpMethod
@@ -62,17 +63,17 @@ struct VAnimEventFrame
 /// Value animation class.
 class ValueAnimation : public Resource
 {
-    OBJECT(ValueAnimation);
+    URHO3D_OBJECT(ValueAnimation,Resource);
 
 public:
     /// Construct.
     ValueAnimation(Context* context);
     /// Destruct.
-    virtual ~ValueAnimation();
+    virtual ~ValueAnimation() = default;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
-    /// Load resource. Return true if successful.
+    /// Load resource from stream. May be called from a worker thread. Return true if successful.
     virtual bool BeginLoad(Deserializer& source) override;
     /// Save resource. Return true if successful.
     virtual bool Save(Serializer& dest) const override;
@@ -80,6 +81,10 @@ public:
     bool LoadXML(const XMLElement& source);
     /// Save as XML data. Return true if successful.
     bool SaveXML(XMLElement& dest) const;
+    /// Load from JSON data. Return true if successful.
+    bool LoadJSON(const JSONValue& source);
+    /// Save as XML data. Return true if successful.
+    bool SaveJSON(JSONValue& dest) const;
 
     /// Set owner.
     void SetOwner(void* owner);

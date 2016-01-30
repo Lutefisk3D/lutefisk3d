@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,25 +43,9 @@ namespace Urho3D
 
 static const float DEFAULT_OCTREE_SIZE = 1000.0f;
 static const int DEFAULT_OCTREE_LEVELS = 8;
-static const int RAYCASTS_PER_WORK_ITEM = 4;
 
 extern const char* SUBSYSTEM_CATEGORY;
 
-void RaycastDrawablesWork(const WorkItem* item, unsigned threadIndex)
-{
-    Octree* octree = reinterpret_cast<Octree*>(item->aux_);
-    Drawable** start = reinterpret_cast<Drawable**>(item->start_);
-    Drawable** end = reinterpret_cast<Drawable**>(item->end_);
-    const RayOctreeQuery& query = *octree->rayQuery_;
-    std::vector<RayQueryResult>& results = octree->rayQueryResults_[threadIndex];
-
-    while (start != end)
-    {
-        Drawable* drawable = *start;
-        drawable->ProcessRayQuery(query, results);
-        ++start;
-    }
-}
 
 void UpdateDrawablesWork(const WorkItem* item, unsigned threadIndex)
 {
@@ -332,14 +316,11 @@ Octree::Octree(Context* context) :
     Octant(BoundingBox(-DEFAULT_OCTREE_SIZE, DEFAULT_OCTREE_SIZE), 0, nullptr, this),
     numLevels_(DEFAULT_OCTREE_LEVELS)
 {
-    // Resize threaded ray query intermediate result vector according to number of worker threads
-    WorkQueue* workQueue = GetSubsystem<WorkQueue>();
-    rayQueryResults_.resize(workQueue ? workQueue->GetNumThreads() + 1 : 1);
 
     // If the engine is running headless, subscribe to RenderUpdate events for manually updating the octree
     // to allow raycasts and animation update
     if (!GetSubsystem<Graphics>())
-        SubscribeToEvent(E_RENDERUPDATE, HANDLER(Octree, HandleRenderUpdate));
+        SubscribeToEvent(E_RENDERUPDATE, URHO3D_HANDLER(Octree, HandleRenderUpdate));
 }
 
 Octree::~Octree()
@@ -357,9 +338,9 @@ void Octree::RegisterObject(Context* context)
     Vector3 defaultBoundsMin = -Vector3::ONE * DEFAULT_OCTREE_SIZE;
     Vector3 defaultBoundsMax = Vector3::ONE * DEFAULT_OCTREE_SIZE;
 
-    ATTRIBUTE("Bounding Box Min", Vector3, worldBoundingBox_.min_, defaultBoundsMin, AM_DEFAULT);
-    ATTRIBUTE("Bounding Box Max", Vector3, worldBoundingBox_.max_, defaultBoundsMax, AM_DEFAULT);
-    ATTRIBUTE("Number of Levels", int, numLevels_, DEFAULT_OCTREE_LEVELS, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Bounding Box Min", Vector3, worldBoundingBox_.min_, defaultBoundsMin, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Bounding Box Max", Vector3, worldBoundingBox_.max_, defaultBoundsMax, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Number of Levels", int, numLevels_, DEFAULT_OCTREE_LEVELS, AM_DEFAULT);
 }
 
 void Octree::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
@@ -373,7 +354,7 @@ void Octree::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 {
     if (debug)
     {
-        PROFILE(OctreeDrawDebug);
+        URHO3D_PROFILE(OctreeDrawDebug);
 
         Octant::DrawDebugGeometry(debug, depthTest);
     }
@@ -381,7 +362,7 @@ void Octree::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 
 void Octree::SetSize(const BoundingBox& box, unsigned numLevels)
 {
-    PROFILE(ResizeOctree);
+    URHO3D_PROFILE(ResizeOctree);
 
     // If drawables exist, they are temporarily moved to the root
     for (unsigned i = 0; i < NUM_OCTANTS; ++i)
@@ -397,7 +378,7 @@ void Octree::Update(const FrameInfo& frame)
     // Let drawables update themselves before reinsertion. This can be used for animation
     if (!drawableUpdates_.empty())
     {
-        PROFILE(UpdateDrawables);
+        URHO3D_PROFILE(UpdateDrawables);
 
         // Perform updates in worker threads. Notify the scene that a threaded update is going on and components
         // (for example physics objects) should not perform non-threadsafe work when marked dirty
@@ -450,7 +431,7 @@ void Octree::Update(const FrameInfo& frame)
     // the proper octant yet
     if (!drawableUpdates_.empty())
     {
-        PROFILE(ReinsertToOctree);
+        URHO3D_PROFILE(ReinsertToOctree);
 
         for (Drawable* drawable : drawableUpdates_)
         {
@@ -473,7 +454,7 @@ void Octree::Update(const FrameInfo& frame)
             octant = drawable->GetOctant();
             if (octant != this && octant->GetCullingBox().IsInside(box) != INSIDE)
             {
-                LOGERROR("Drawable is not fully inside its octant's culling bounds: drawable box " + box.ToString() +
+                URHO3D_LOGERROR("Drawable is not fully inside its octant's culling bounds: drawable box " + box.ToString() +
                     " octant box " + octant->GetCullingBox().ToString());
             }
             #endif
@@ -509,65 +490,18 @@ void Octree::GetDrawables(OctreeQuery& query) const
 
 void Octree::Raycast(RayOctreeQuery& query) const
 {
-    PROFILE(Raycast);
+    URHO3D_PROFILE(Raycast);
 
     query.result_.clear();
 
-    WorkQueue* queue = GetSubsystem<WorkQueue>();
-
-    // If no worker threads or no triangle-level testing, do not create work items
-    if (!queue->GetNumThreads() || query.level_ < RAY_TRIANGLE)
         GetDrawablesInternal(query);
-    else
-    {
-        // Threaded ray query: first get the drawables
-        rayQuery_ = &query;
-        rayQueryDrawables_.clear();
-        GetDrawablesOnlyInternal(query, rayQueryDrawables_);
-
-        // Check that amount of drawables is large enough to justify threading
-        if (rayQueryDrawables_.size() >= RAYCASTS_PER_WORK_ITEM * 2)
-        {
-            for (unsigned i = 0; i < rayQueryResults_.size(); ++i)
-                rayQueryResults_[i].clear();
-
-            std::vector<Drawable*>::iterator start = rayQueryDrawables_.begin();
-            while (start != rayQueryDrawables_.end())
-            {
-                SharedPtr<WorkItem> item = queue->GetFreeItem();
-                item->priority_ = M_MAX_UNSIGNED;
-                item->workFunction_ = RaycastDrawablesWork;
-                item->aux_ = const_cast<Octree*>(this);
-
-                std::vector<Drawable*>::iterator end = rayQueryDrawables_.end();
-                if (end - start > RAYCASTS_PER_WORK_ITEM)
-                    end = start + RAYCASTS_PER_WORK_ITEM;
-
-                item->start_ = &(*start);
-                item->end_ = &(*end);
-                queue->AddWorkItem(item);
-
-                start = end;
-            }
-
-            // Merge per-thread results
-            queue->Complete(M_MAX_UNSIGNED);
-            for (unsigned i = 0; i < rayQueryResults_.size(); ++i)
-                query.result_.insert(query.result_.end(), rayQueryResults_[i].begin(), rayQueryResults_[i].end());
-        }
-        else
-        {
-            for (Drawable* elem : rayQueryDrawables_)
-                (elem)->ProcessRayQuery(query, query.result_);
-        }
-    }
 
     std::sort(query.result_.begin(), query.result_.end(), CompareRayQueryResults);
 }
 
 void Octree::RaycastSingle(RayOctreeQuery& query) const
 {
-    PROFILE(Raycast);
+    URHO3D_PROFILE(Raycast);
 
     query.result_.clear();
     rayQueryDrawables_.clear();

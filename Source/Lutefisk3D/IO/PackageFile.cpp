@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,9 +51,9 @@ PackageFile::~PackageFile()
 bool PackageFile::Open(const QString& fileName, unsigned startOffset)
 {
     #ifdef ANDROID
-    if (fileName.startsWith("/apk/"))
+    if (URHO3D_IS_ASSET(fileName))
     {
-        LOGERROR("Package files within the apk are not supported on Android");
+        URHO3D_LOGERROR("Package files within the apk are not supported on Android");
         return false;
     }
     #endif
@@ -84,7 +84,7 @@ bool PackageFile::Open(const QString& fileName, unsigned startOffset)
 
         if (id != "UPAK" && id != "ULZ4")
         {
-            LOGERROR(fileName + " is not a valid package file");
+            URHO3D_LOGERROR(fileName + " is not a valid package file");
             return false;
         }
     }
@@ -105,9 +105,12 @@ bool PackageFile::Open(const QString& fileName, unsigned startOffset)
         newEntry.size_ = file->ReadUInt();
         newEntry.checksum_ = file->ReadUInt();
         if (!compressed_ && newEntry.offset_ + newEntry.size_ > totalSize_)
-            LOGERROR("File entry " + entryName + " outside package file");
+        {
+            URHO3D_LOGERROR("File entry " + entryName + " outside package file");
+            return false;
+        }
         else
-            entries_[entryName.toLower()] = newEntry;
+            entries_[entryName] = newEntry;
     }
 
     return true;
@@ -123,8 +126,7 @@ const PackageEntry* PackageFile::GetEntry(const QString& fileName) const
     auto i = entries_.find(fileName.toLower());
     if (i != entries_.end())
         return &MAP_VALUE(i);
-    else
-        return nullptr;
+    return nullptr;
 }
 
 }

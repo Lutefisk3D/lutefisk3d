@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@
 #include "../Resource/ResourceEvents.h"
 #include "../Core/WorkQueue.h"
 #include "../Resource/XMLFile.h"
+#include "../Core/StringUtils.h"
 
 namespace Urho3D
 {
@@ -65,6 +66,7 @@ ResourceCache::ResourceCache(Context* context) :
     autoReloadResources_(false),
     returnFailedResources_(false),
     searchPackagesFirst_(true),
+    isRouting_(false),
     finishBackgroundResourcesMs_(5)
 {
     // Register Resource library object factories
@@ -74,7 +76,7 @@ ResourceCache::ResourceCache(Context* context) :
     backgroundLoader_ = new BackgroundLoader(this);
 
     // Subscribe BeginFrame for handling directory watchers and background loaded resource finalization
-    SubscribeToEvent(E_BEGINFRAME, HANDLER(ResourceCache, HandleBeginFrame));
+    SubscribeToEvent(E_BEGINFRAME, URHO3D_HANDLER(ResourceCache, HandleBeginFrame));
 }
 
 ResourceCache::~ResourceCache()
@@ -90,7 +92,7 @@ bool ResourceCache::AddResourceDir(const QString& pathName, unsigned priority)
     FileSystem* fileSystem = GetSubsystem<FileSystem>();
     if (!fileSystem || !fileSystem->DirExists(pathName))
     {
-        LOGERROR("Could not open directory " + pathName);
+        URHO3D_LOGERROR("Could not open directory " + pathName);
         return false;
     }
 
@@ -117,7 +119,7 @@ bool ResourceCache::AddResourceDir(const QString& pathName, unsigned priority)
         fileWatchers_.push_back(watcher);
     }
 
-    LOGINFO("Added resource path " + fixedPath);
+    URHO3D_LOGINFO("Added resource path " + fixedPath);
     return true;
 }
 
@@ -127,14 +129,17 @@ bool ResourceCache::AddPackageFile(PackageFile* package, unsigned priority)
 
     // Do not add packages that failed to load
     if (!package || !package->GetNumFiles())
+    {
+        URHO3D_LOGERROR(QString("Could not add package file %1 due to load failure").arg(package->GetName()));
         return false;
+    }
 
     if (priority < packages_.size())
         packages_.insert(packages_.begin()+priority, SharedPtr<PackageFile>(package));
     else
         packages_.push_back(SharedPtr<PackageFile>(package));
 
-    LOGINFO("Added resource package " + package->GetName());
+    URHO3D_LOGINFO("Added resource package " + package->GetName());
     return true;
 }
 
@@ -148,14 +153,14 @@ bool ResourceCache::AddManualResource(Resource* resource)
 {
     if (!resource)
     {
-        LOGERROR("Null manual resource");
+        URHO3D_LOGERROR("Null manual resource");
         return false;
     }
 
     const QString& name = resource->GetName();
     if (name.isEmpty())
     {
-        LOGERROR("Manual resource with empty name, can not add");
+        URHO3D_LOGERROR("Manual resource with empty name, can not add");
         return false;
     }
 
@@ -173,7 +178,7 @@ void ResourceCache::RemoveResourceDir(const QString& pathName)
     QStringList::iterator i = resourceDirs_.begin(),
             fin = resourceDirs_.end();
     std::vector<SharedPtr<FileWatcher> >::iterator j,fin_j = fileWatchers_.end();
-    while (i != fin)
+    for (;i != fin;++i)
     {
         if (!i->compare(fixedPath, Qt::CaseInsensitive)) {
             resourceDirs_.erase(i);
@@ -186,10 +191,9 @@ void ResourceCache::RemoveResourceDir(const QString& pathName)
                     break;
                 }
             }
-            LOGINFO("Removed resource path " + fixedPath);
+            URHO3D_LOGINFO("Removed resource path " + fixedPath);
             return;
         }
-        ++i;
     }
 }
 
@@ -203,7 +207,7 @@ void ResourceCache::RemovePackageFile(PackageFile* package, bool releaseResource
         {
             if (releaseResources)
                 ReleasePackageResources(*i, forceRelease);
-            LOGINFO("Removed resource package " + (*i)->GetName());
+            URHO3D_LOGINFO("Removed resource package " + (*i)->GetName());
             packages_.erase(i);
             return;
         }
@@ -223,7 +227,7 @@ void ResourceCache::RemovePackageFile(const QString& fileName, bool releaseResou
         {
             if (releaseResources)
                 ReleasePackageResources(*i, forceRelease);
-            LOGINFO("Removed resource package " + (*i)->GetName());
+            URHO3D_LOGINFO("Removed resource package " + (*i)->GetName());
             packages_.erase(i);
             return;
         }
@@ -254,7 +258,7 @@ void ResourceCache::ReleaseResources(StringHash type, bool force)
         return;
     HashMap<StringHash,SharedPtr<Resource> > &resources(MAP_VALUE(i).resources_);
     for (HashMap<StringHash, SharedPtr<Resource> >::iterator j = resources.begin();
-        j != resources.end();)
+         j != resources.end();)
     {
         // If other references exist, do not release, unless forced
         if ((MAP_VALUE(j)->Refs() == 1 && MAP_VALUE(j)->WeakRefs() == 0) || force)
@@ -344,7 +348,7 @@ void ResourceCache::ReleaseAllResources(bool force)
             bool released = false;
 
             for (HashMap<StringHash, SharedPtr<Resource> >::iterator j = elem.resources_.begin();
-                j != elem.resources_.end();)
+                 j != elem.resources_.end();)
             {
                 // If other references exist, do not release, unless forced
                 if ((MAP_VALUE(j).Refs() == 1 && MAP_VALUE(j).WeakRefs() == 0) || force)
@@ -394,7 +398,7 @@ void ResourceCache::ReloadResourceWithDependencies(const QString& fileName)
     const SharedPtr<Resource>& resource = FindResource(fileNameHash);
     if (resource)
     {
-        LOGDEBUG("Reloading changed resource " + fileName);
+        URHO3D_LOGDEBUG("Reloading changed resource " + fileName);
         ReloadResource(resource);
     }
     // Always perform dependency resource check for resource loaded from XML file as it could be used in inheritance
@@ -419,13 +423,13 @@ void ResourceCache::ReloadResourceWithDependencies(const QString& fileName)
 
         for (unsigned k = 0; k < dependents.size(); ++k)
         {
-            LOGDEBUG("Reloading resource " + dependents[k]->GetName() + " depending on " + fileName);
+            URHO3D_LOGDEBUG("Reloading resource " + dependents[k]->GetName() + " depending on " + fileName);
             ReloadResource(dependents[k]);
         }
     }
 }
 
-void ResourceCache::SetMemoryBudget(StringHash type, unsigned budget)
+void ResourceCache::SetMemoryBudget(StringHash type, uint64_t budget)
 {
     resourceGroups_[type].memoryBudget_ = budget;
 }
@@ -449,19 +453,46 @@ void ResourceCache::SetAutoReloadResources(bool enable)
         autoReloadResources_ = enable;
     }
 }
-
-void ResourceCache::SetReturnFailedResources(bool enable)
+void ResourceCache::AddResourceRouter(ResourceRouter* router, bool addAsFirst)
 {
-    returnFailedResources_ = enable;
+    // Check for duplicate
+    for (unsigned i = 0; i < resourceRouters_.size(); ++i)
+    {
+        if (resourceRouters_[i] == router)
+            return;
+    }
+
+    if (addAsFirst)
+        resourceRouters_.push_front(SharedPtr<ResourceRouter>(router));
+    else
+        resourceRouters_.push_back(SharedPtr<ResourceRouter>(router));
 }
+
+void ResourceCache::RemoveResourceRouter(ResourceRouter* router)
+{
+    for (auto iter = resourceRouters_.begin(),fin=resourceRouters_.end(); iter!=fin; ++iter)
+    {
+        if (*iter == router)
+        {
+            resourceRouters_.erase(iter);
+            return;
+        }
+    }
+}
+
 
 SharedPtr<File> ResourceCache::GetFile(const QString& nameIn, bool sendEventOnFailure)
 {
     MutexLock lock(resourceMutex_);
 
     QString name = SanitateResourceName(nameIn);
-    if (resourceRouter_)
-        resourceRouter_->Route(name, RESOURCE_GETFILE);
+    if (!isRouting_)
+    {
+        isRouting_ = true;
+        for (unsigned i = 0; i < resourceRouters_.size(); ++i)
+            resourceRouters_[i]->Route(name, RESOURCE_GETFILE);
+        isRouting_ = false;
+    }
 
     if (name.length())
     {
@@ -486,10 +517,10 @@ SharedPtr<File> ResourceCache::GetFile(const QString& nameIn, bool sendEventOnFa
 
     if (sendEventOnFailure)
     {
-        if (resourceRouter_ && name.isEmpty() && !nameIn.isEmpty())
-            LOGERROR("Resource request " + nameIn + " was blocked");
+        if (!resourceRouters_.empty() && name.isEmpty() && !nameIn.isEmpty())
+            URHO3D_LOGERROR("Resource request " + nameIn + " was blocked");
         else
-            LOGERROR("Could not find resource " + name);
+            URHO3D_LOGERROR("Could not find resource " + name);
 
         if (Thread::IsMainThread())
         {
@@ -510,7 +541,7 @@ Resource* ResourceCache::GetExistingResource(StringHash type, const QString& nam
 
     if (!Thread::IsMainThread())
     {
-        LOGERROR("Attempted to get resource " + name + " from outside the main thread");
+        URHO3D_LOGERROR("Attempted to get resource " + name + " from outside the main thread");
         return 0;
     }
 
@@ -529,7 +560,7 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
 
     if (!Thread::IsMainThread())
     {
-        LOGERROR("Attempted to get resource " + name + " from outside the main thread");
+        URHO3D_LOGERROR("Attempted to get resource " + name + " from outside the main thread");
         return nullptr;
     }
 
@@ -551,7 +582,7 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
     resource = DynamicCast<Resource>(context_->CreateObject(type));
     if (!resource)
     {
-        LOGERROR(QString("Could not load unknown resource type ") + type.ToString());
+        URHO3D_LOGERROR(QString("Could not load unknown resource type ") + type.ToString());
 
         if (sendEventOnFailure)
         {
@@ -570,7 +601,7 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
     if (!file)
         return nullptr;   // Error is already logged
 
-    LOGDEBUG("Loading resource " + name);
+    URHO3D_LOGDEBUG("Loading resource " + name);
     resource->SetName(name);
 
     if (!resource->Load(*(file.Get())))
@@ -625,7 +656,7 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QStrin
     resource = DynamicCast<Resource>(context_->CreateObject(type));
     if (!resource)
     {
-        LOGERROR("Could not load unknown resource type " + type.ToString());
+        URHO3D_LOGERROR("Could not load unknown resource type " + type.ToString());
 
         if (sendEventOnFailure)
         {
@@ -644,7 +675,7 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QStrin
     if (!file)
         return SharedPtr<Resource>();  // Error is already logged
 
-    LOGDEBUG("Loading temporary resource " + name);
+    URHO3D_LOGDEBUG("Loading temporary resource " + name);
     resource->SetName(file->GetName());
 
     if (!resource->Load(*(file.Get())))
@@ -686,8 +717,13 @@ bool ResourceCache::Exists(const QString& nameIn) const
     MutexLock lock(resourceMutex_);
 
     QString name = SanitateResourceName(nameIn);
-    if (resourceRouter_)
-        resourceRouter_->Route(name, RESOURCE_CHECKEXISTS);
+    if (!isRouting_)
+    {
+        isRouting_ = true;
+        for (unsigned i = 0; i < resourceRouters_.size(); ++i)
+            resourceRouters_[i]->Route(name, RESOURCE_CHECKEXISTS);
+        isRouting_ = false;
+    }
 
     if (name.isEmpty())
         return false;
@@ -706,31 +742,22 @@ bool ResourceCache::Exists(const QString& nameIn) const
     }
 
     // Fallback using absolute path
-    if (fileSystem->FileExists(name))
-        return true;
-
-    return false;
+    return fileSystem->FileExists(name);
 }
 
-unsigned ResourceCache::GetMemoryBudget(StringHash type) const
+uint64_t ResourceCache::GetMemoryBudget(StringHash type) const
 {
     HashMap<StringHash, ResourceGroup>::const_iterator i = resourceGroups_.find(type);
-    if (i != resourceGroups_.end())
-        return MAP_VALUE(i).memoryBudget_;
-    else
-        return 0;
+    return i != resourceGroups_.end() ? MAP_VALUE(i).memoryBudget_ : 0;
 }
 
-unsigned ResourceCache::GetMemoryUse(StringHash type) const
+uint64_t ResourceCache::GetMemoryUse(StringHash type) const
 {
     HashMap<StringHash, ResourceGroup>::const_iterator i = resourceGroups_.find(type);
-    if (i != resourceGroups_.end())
-        return MAP_VALUE(i).memoryUse_;
-    else
-        return 0;
+    return i != resourceGroups_.end() ? MAP_VALUE(i).memoryUse_ : 0;
 }
 
-unsigned ResourceCache::GetTotalMemoryUse() const
+uint64_t ResourceCache::GetTotalMemoryUse() const
 {
     unsigned total = 0;
     for (const auto & elem : resourceGroups_)
@@ -750,6 +777,11 @@ QString ResourceCache::GetResourceFileName(const QString& name) const
     }
 
     return QString();
+}
+
+ResourceRouter* ResourceCache::GetResourceRouter(unsigned index) const
+{
+    return index < resourceRouters_.size() ? resourceRouters_[index] : (ResourceRouter*)0;
 }
 
 QString ResourceCache::GetPreferredResourceDir(const QString& path) const
@@ -833,8 +865,7 @@ QString ResourceCache::SanitateResourceDirName(const QString& nameIn) const
 
 void ResourceCache::StoreResourceDependency(Resource* resource, const QString& dependency)
 {
-    // If resource reloading is not on, do not create the dependency data structure (saves memory)
-    if (!resource || !autoReloadResources_)
+    if (!resource)
         return;
 
     MutexLock lock(resourceMutex_);
@@ -846,7 +877,7 @@ void ResourceCache::StoreResourceDependency(Resource* resource, const QString& d
 
 void ResourceCache::ResetDependencies(Resource* resource)
 {
-    if (!resource || !autoReloadResources_)
+    if (!resource)
         return;
 
     MutexLock lock(resourceMutex_);
@@ -864,6 +895,68 @@ void ResourceCache::ResetDependencies(Resource* resource)
     }
 }
 
+QString ResourceCache::PrintMemoryUsage() const
+{
+    QString output = "Resource Type                 Cnt       Avg       Max    Budget     Total\n\n";
+    char outputLine[256];
+
+    unsigned totalResourceCt = 0;
+    unsigned long long totalLargest = 0;
+    unsigned long long totalAverage = 0;
+    unsigned long long totalUse = GetTotalMemoryUse();
+
+    for (const auto & entry : resourceGroups_)
+    {
+        const unsigned resourceCt = ELEMENT_VALUE(entry).resources_.size();
+        unsigned long long average = 0;
+        if (resourceCt > 0)
+            average = ELEMENT_VALUE(entry).memoryUse_ / resourceCt;
+        else
+            average = 0;
+        unsigned long long largest = 0;
+        for (auto resIt : ELEMENT_VALUE(entry).resources_)
+        {
+            if (ELEMENT_VALUE(resIt)->GetMemoryUse() > largest)
+                largest = ELEMENT_VALUE(resIt)->GetMemoryUse();
+            if (largest > totalLargest)
+                totalLargest = largest;
+        }
+
+        totalResourceCt += resourceCt;
+
+        const QString countString = QString::number(ELEMENT_VALUE(entry).resources_.size());
+        const QString memUseString = GetFileSizeString(average);
+        const QString memMaxString = GetFileSizeString(largest);
+        const QString memBudgetString = GetFileSizeString(ELEMENT_VALUE(entry).memoryBudget_);
+        const QString memTotalString = GetFileSizeString(ELEMENT_VALUE(entry).memoryUse_);
+        const QString resTypeName = context_->GetTypeName(ELEMENT_KEY(entry));
+
+        memset(outputLine, ' ', 256);
+        outputLine[255] = 0;
+        sprintf(outputLine, "%-28s %4s %9s %9s %9s %9s\n", qPrintable(resTypeName), qPrintable(countString),
+                qPrintable(memUseString),
+                qPrintable(memMaxString),
+                qPrintable(memBudgetString), qPrintable(memTotalString));
+
+        output += ((const char*)outputLine);
+    }
+
+    if (totalResourceCt > 0)
+        totalAverage = totalUse / totalResourceCt;
+
+    const QString countString(QString::number(totalResourceCt));
+    const QString memUseString = GetFileSizeString(totalAverage);
+    const QString memMaxString = GetFileSizeString(totalLargest);
+    const QString memTotalString = GetFileSizeString(totalUse);
+
+    memset(outputLine, ' ', 256);
+    outputLine[255] = 0;
+    sprintf(outputLine, "%-28s %4s %9s %9s %9s %9s\n", "All", qPrintable(countString), qPrintable(memUseString),
+            qPrintable(memMaxString), "-", qPrintable(memTotalString));
+    output += ((const char*)outputLine);
+
+    return output;
+}
 const SharedPtr<Resource>& ResourceCache::FindResource(StringHash type, StringHash nameHash)
 {
     MutexLock lock(resourceMutex_);
@@ -949,9 +1042,9 @@ void ResourceCache::UpdateResourceGroup(StringHash type)
         // If memory budget defined and is exceeded, remove the oldest resource and loop again
         // (resources in use always return a zero timer and can not be removed)
         if (MAP_VALUE(i).memoryBudget_ && MAP_VALUE(i).memoryUse_ > MAP_VALUE(i).memoryBudget_ &&
-            oldestResource != resources.end())
+                oldestResource != resources.end())
         {
-            LOGDEBUG("Resource group " + MAP_VALUE(oldestResource)->GetTypeName() +
+            URHO3D_LOGDEBUG("Resource group " + MAP_VALUE(oldestResource)->GetTypeName() +
                      " over memory budget, releasing resource " + MAP_VALUE(oldestResource)->GetName());
             resources.erase(oldestResource);
         }
@@ -981,7 +1074,7 @@ void ResourceCache::HandleBeginFrame(StringHash eventType, VariantMap& eventData
 
     // Check for background loaded resources that can be finished
     {
-        PROFILE(FinishBackgroundResources);
+        URHO3D_PROFILE(FinishBackgroundResources);
         backgroundLoader_->FinishResources(finishBackgroundResourcesMs_);
     }
 }

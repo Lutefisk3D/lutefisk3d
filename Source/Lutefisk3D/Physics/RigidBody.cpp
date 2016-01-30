@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -75,10 +75,10 @@ RigidBody::RigidBody(Context* context) :
     kinematic_(false),
     trigger_(false),
     useGravity_(true),
-    hasSmoothedTransform_(false),
     readdBody_(false),
     inWorld_(false),
-    enableMassUpdate_(true)
+    enableMassUpdate_(true),
+    hasSimulated_(false)
 {
     compoundShape_ = new btCompoundShape();
     shiftedCompoundShape_ = new btCompoundShape();
@@ -101,33 +101,33 @@ void RigidBody::RegisterObject(Context* context)
 {
     context->RegisterFactory<RigidBody>(PHYSICS_CATEGORY);
 
-    ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Physics Rotation", GetRotation, SetRotation, Quaternion, Quaternion::IDENTITY, AM_FILE | AM_NOEDIT);
-    MIXED_ACCESSOR_ATTRIBUTE("Physics Position", GetPosition, SetPosition, Vector3, Vector3::ZERO, AM_FILE | AM_NOEDIT);
-    ATTRIBUTE("Mass", float, mass_, DEFAULT_MASS, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Friction", GetFriction, SetFriction, float, DEFAULT_FRICTION, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Anisotropic Friction", GetAnisotropicFriction, SetAnisotropicFriction, Vector3, Vector3::ONE, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Rolling Friction", GetRollingFriction, SetRollingFriction, float, DEFAULT_ROLLING_FRICTION, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Restitution", GetRestitution, SetRestitution, float, DEFAULT_RESTITUTION, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Linear Velocity", GetLinearVelocity, SetLinearVelocity, Vector3, Vector3::ZERO, AM_DEFAULT | AM_LATESTDATA);
-    MIXED_ACCESSOR_ATTRIBUTE("Angular Velocity", GetAngularVelocity, SetAngularVelocity, Vector3, Vector3::ZERO, AM_FILE);
-    MIXED_ACCESSOR_ATTRIBUTE("Linear Factor", GetLinearFactor, SetLinearFactor, Vector3, Vector3::ONE, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Angular Factor", GetAngularFactor, SetAngularFactor, Vector3, Vector3::ONE, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Linear Damping", GetLinearDamping, SetLinearDamping, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Angular Damping", GetAngularDamping, SetAngularDamping, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Linear Rest Threshold", GetLinearRestThreshold, SetLinearRestThreshold, float, 0.8f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Angular Rest Threshold", GetAngularRestThreshold, SetAngularRestThreshold, float, 1.0f, AM_DEFAULT);
-    ATTRIBUTE("Collision Layer", int, collisionLayer_, DEFAULT_COLLISION_LAYER, AM_DEFAULT);
-    ATTRIBUTE("Collision Mask", int, collisionMask_, DEFAULT_COLLISION_MASK, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Contact Threshold", GetContactProcessingThreshold, SetContactProcessingThreshold, float, BT_LARGE_FLOAT, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("CCD Radius", GetCcdRadius, SetCcdRadius, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("CCD Motion Threshold", GetCcdMotionThreshold, SetCcdMotionThreshold, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Network Angular Velocity", GetNetAngularVelocityAttr, SetNetAngularVelocityAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_NET | AM_LATESTDATA | AM_NOEDIT);
-    ENUM_ATTRIBUTE("Collision Event Mode", collisionEventMode_, collisionEventModeNames, COLLISION_ACTIVE, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Use Gravity", GetUseGravity, SetUseGravity, bool, true, AM_DEFAULT);
-    ATTRIBUTE("Is Kinematic", bool, kinematic_, false, AM_DEFAULT);
-    ATTRIBUTE("Is Trigger", bool, trigger_, false, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Gravity Override", GetGravityOverride, SetGravityOverride, Vector3, Vector3::ZERO, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Physics Rotation", GetRotation, SetRotation, Quaternion, Quaternion::IDENTITY, AM_FILE | AM_NOEDIT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Physics Position", GetPosition, SetPosition, Vector3, Vector3::ZERO, AM_FILE | AM_NOEDIT);
+    URHO3D_ATTRIBUTE("Mass", float, mass_, DEFAULT_MASS, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Friction", GetFriction, SetFriction, float, DEFAULT_FRICTION, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Anisotropic Friction", GetAnisotropicFriction, SetAnisotropicFriction, Vector3, Vector3::ONE, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Rolling Friction", GetRollingFriction, SetRollingFriction, float, DEFAULT_ROLLING_FRICTION, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Restitution", GetRestitution, SetRestitution, float, DEFAULT_RESTITUTION, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Linear Velocity", GetLinearVelocity, SetLinearVelocity, Vector3, Vector3::ZERO, AM_DEFAULT | AM_LATESTDATA);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Angular Velocity", GetAngularVelocity, SetAngularVelocity, Vector3, Vector3::ZERO, AM_FILE);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Linear Factor", GetLinearFactor, SetLinearFactor, Vector3, Vector3::ONE, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Angular Factor", GetAngularFactor, SetAngularFactor, Vector3, Vector3::ONE, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Linear Damping", GetLinearDamping, SetLinearDamping, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Angular Damping", GetAngularDamping, SetAngularDamping, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Linear Rest Threshold", GetLinearRestThreshold, SetLinearRestThreshold, float, 0.8f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Angular Rest Threshold", GetAngularRestThreshold, SetAngularRestThreshold, float, 1.0f, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Collision Layer", int, collisionLayer_, DEFAULT_COLLISION_LAYER, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Collision Mask", int, collisionMask_, DEFAULT_COLLISION_MASK, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Contact Threshold", GetContactProcessingThreshold, SetContactProcessingThreshold, float, BT_LARGE_FLOAT, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("CCD Radius", GetCcdRadius, SetCcdRadius, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("CCD Motion Threshold", GetCcdMotionThreshold, SetCcdMotionThreshold, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Network Angular Velocity", GetNetAngularVelocityAttr, SetNetAngularVelocityAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_NET | AM_LATESTDATA | AM_NOEDIT);
+    URHO3D_ENUM_ATTRIBUTE("Collision Event Mode", collisionEventMode_, collisionEventModeNames, COLLISION_ACTIVE, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Use Gravity", GetUseGravity, SetUseGravity, bool, true, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Is Kinematic", bool, kinematic_, false, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Is Trigger", bool, trigger_, false, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Gravity Override", GetGravityOverride, SetGravityOverride, Vector3, Vector3::ZERO, AM_DEFAULT);
 }
 
 void RigidBody::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
@@ -166,6 +166,7 @@ void RigidBody::getWorldTransform(btTransform &worldTrans) const
         worldTrans.setOrigin(ToBtVector3(lastPosition_ + lastRotation_ * centerOfMass_));
         worldTrans.setRotation(ToBtQuaternion(lastRotation_));
     }
+    hasSimulated_ = true;
 }
 
 void RigidBody::setWorldTransform(const btTransform &worldTrans)
@@ -198,6 +199,7 @@ void RigidBody::setWorldTransform(const btTransform &worldTrans)
 
         MarkNetworkUpdate();
     }
+    hasSimulated_ = true;
 }
 
 void RigidBody::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
@@ -209,7 +211,7 @@ void RigidBody::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 
         btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
         world->debugDrawObject(body_->getWorldTransform(), shiftedCompoundShape_, IsActive() ? btVector3(1.0f, 1.0f, 1.0f) :
-            btVector3(0.0f, 1.0f, 0.0f));
+                                                                                               btVector3(0.0f, 1.0f, 0.0f));
 
         physicsWorld_->SetDebugRenderer(nullptr);
     }
@@ -235,9 +237,15 @@ void RigidBody::SetPosition(const Vector3& position)
         worldTrans.setOrigin(ToBtVector3(position + ToQuaternion(worldTrans.getRotation()) * centerOfMass_));
 
         // When forcing the physics position, set also interpolated position so that there is no jitter
-        btTransform interpTrans = body_->getInterpolationWorldTransform();
-        interpTrans.setOrigin(worldTrans.getOrigin());
-        body_->setInterpolationWorldTransform(interpTrans);
+        // When not inside the simulation loop, this may lead to erratic movement of parented rigidbodies
+        // so skip in that case. Exception made before first simulation tick so that interpolation position
+        // of e.g. instantiated prefabs will be correct from the start
+        if (!hasSimulated_ || physicsWorld_->IsSimulating())
+        {
+            btTransform interpTrans = body_->getInterpolationWorldTransform();
+            interpTrans.setOrigin(worldTrans.getOrigin());
+            body_->setInterpolationWorldTransform(interpTrans);
+        }
 
         Activate();
         MarkNetworkUpdate();
@@ -254,11 +262,14 @@ void RigidBody::SetRotation(const Quaternion& rotation)
         if (!centerOfMass_.Equals(Vector3::ZERO))
             worldTrans.setOrigin(ToBtVector3(oldPosition + rotation * centerOfMass_));
 
-        btTransform interpTrans = body_->getInterpolationWorldTransform();
-        interpTrans.setRotation(worldTrans.getRotation());
-        if (!centerOfMass_.Equals(Vector3::ZERO))
-            interpTrans.setOrigin(worldTrans.getOrigin());
-        body_->setInterpolationWorldTransform(interpTrans);
+        if (!hasSimulated_ || physicsWorld_->IsSimulating())
+        {
+            btTransform interpTrans = body_->getInterpolationWorldTransform();
+            interpTrans.setRotation(worldTrans.getRotation());
+            if (!centerOfMass_.Equals(Vector3::ZERO))
+                interpTrans.setOrigin(worldTrans.getOrigin());
+            body_->setInterpolationWorldTransform(interpTrans);
+        }
         body_->updateInertiaTensor();
 
         Activate();
@@ -274,10 +285,13 @@ void RigidBody::SetTransform(const Vector3& position, const Quaternion& rotation
         worldTrans.setRotation(ToBtQuaternion(rotation));
         worldTrans.setOrigin(ToBtVector3(position + rotation * centerOfMass_));
 
-        btTransform interpTrans = body_->getInterpolationWorldTransform();
-        interpTrans.setOrigin(worldTrans.getOrigin());
-        interpTrans.setRotation(worldTrans.getRotation());
-        body_->setInterpolationWorldTransform(interpTrans);
+        if (!hasSimulated_ || physicsWorld_->IsSimulating())
+        {
+            btTransform interpTrans = body_->getInterpolationWorldTransform();
+            interpTrans.setOrigin(worldTrans.getOrigin());
+            interpTrans.setRotation(worldTrans.getRotation());
+            body_->setInterpolationWorldTransform(interpTrans);
+        }
         body_->updateInertiaTensor();
 
         Activate();
@@ -693,7 +707,7 @@ bool RigidBody::IsActive() const
 void RigidBody::GetCollidingBodies(std::unordered_set<RigidBody*>& result) const
 {
     if (physicsWorld_)
-        physicsWorld_->GetRigidBodies(result, this);
+        physicsWorld_->GetCollidingBodies(result, this);
     else
         result.clear();
 }
@@ -708,14 +722,10 @@ void RigidBody::ApplyWorldTransform(const Vector3& newWorldPosition, const Quate
     physicsWorld_->SetApplyingTransforms(true);
 
     // Apply transform to the SmoothedTransform component instead of node transform if available
-    SmoothedTransform* transform = nullptr;
-    if (hasSmoothedTransform_)
-        transform = GetComponent<SmoothedTransform>();
-
-    if (transform)
+    if (smoothedTransform_)
     {
-        transform->SetTargetWorldPosition(newWorldPosition);
-        transform->SetTargetWorldRotation(newWorldRotation);
+        smoothedTransform_->SetTargetWorldPosition(newWorldPosition);
+        smoothedTransform_->SetTargetWorldRotation(newWorldRotation);
         lastPosition_ = newWorldPosition;
         lastRotation_ = newWorldRotation;
     }
@@ -771,14 +781,14 @@ void RigidBody::UpdateMass()
     {
         const btTransform& childTransform = shiftedCompoundShape_->getChildTransform(0);
         if (!ToVector3(childTransform.getOrigin()).Equals(Vector3::ZERO) ||
-            !ToQuaternion(childTransform.getRotation()).Equals(Quaternion::IDENTITY))
+                !ToQuaternion(childTransform.getRotation()).Equals(Quaternion::IDENTITY))
             useCompound = true;
     }
     body_->setCollisionShape(useCompound ? shiftedCompoundShape_ : shiftedCompoundShape_->getChildShape(0));
 
     // If we have one shape and this is a triangle mesh, we use a custom material callback in order to adjust internal edges
     if (!useCompound && body_->getCollisionShape()->getShapeType() == SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE &&
-        physicsWorld_->GetInternalEdge())
+            physicsWorld_->GetInternalEdge())
         body_->setCollisionFlags(body_->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
     else
         body_->setCollisionFlags(body_->getCollisionFlags() & ~btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
@@ -879,7 +889,8 @@ void RigidBody::OnMarkedDirty(Node* node)
     // is in use, because in that case the node transform will be constantly updated into smoothed, possibly non-physical
     // states; rather follow the SmoothedTransform target transform directly
     // Also, for kinematic objects Bullet asks the position from us, so we do not need to apply ourselves
-    if (!kinematic_ && (!physicsWorld_ || !physicsWorld_->IsApplyingTransforms()) && !hasSmoothedTransform_)
+    // (exception: initial setting of transform)
+    if ((!kinematic_ || !hasSimulated_) && (!physicsWorld_ || !physicsWorld_->IsApplyingTransforms()) && !smoothedTransform_)
     {
         // Physics operations are not safe from worker threads
         Scene* scene = GetScene();
@@ -909,22 +920,27 @@ void RigidBody::OnMarkedDirty(Node* node)
 void RigidBody::OnNodeSet(Node* node)
 {
     if (node)
-    {
-        Scene* scene = GetScene();
-        if (scene)
-        {
-            if (scene == node)
-                LOGWARNING(GetTypeName() + " should not be created to the root scene node");
-
-            physicsWorld_ = scene->GetOrCreateComponent<PhysicsWorld>();
-            physicsWorld_->AddRigidBody(this);
-
-            AddBodyToWorld();
-        }
-        else
-            LOGERROR("Node is detached from scene, can not create rigid body");
-
         node->AddListener(this);
+}
+
+void RigidBody::OnSceneSet(Scene* scene)
+{
+    if (scene)
+    {
+        if (scene == node_)
+            URHO3D_LOGWARNING(GetTypeName() + " should not be created to the root scene node");
+
+        physicsWorld_ = scene->GetOrCreateComponent<PhysicsWorld>();
+        physicsWorld_->AddRigidBody(this);
+
+        AddBodyToWorld();
+    }
+    else
+    {
+        ReleaseBody();
+
+        if (physicsWorld_)
+            physicsWorld_->RemoveRigidBody(this);
     }
 }
 
@@ -933,7 +949,7 @@ void RigidBody::AddBodyToWorld()
     if (!physicsWorld_)
         return;
 
-    PROFILE(AddBodyToWorld);
+    URHO3D_PROFILE(AddBodyToWorld);
 
     if (mass_ < 0.0f)
         mass_ = 0.0f;
@@ -949,12 +965,11 @@ void RigidBody::AddBodyToWorld()
 
         // Check for existence of the SmoothedTransform component, which should be created by now in network client mode.
         // If it exists, subscribe to its change events
-        SmoothedTransform* transform = GetComponent<SmoothedTransform>();
-        if (transform)
+        smoothedTransform_ = GetComponent<SmoothedTransform>();
+        if (smoothedTransform_)
         {
-            hasSmoothedTransform_ = true;
-            SubscribeToEvent(transform, E_TARGETPOSITION, HANDLER(RigidBody, HandleTargetPosition));
-            SubscribeToEvent(transform, E_TARGETROTATION, HANDLER(RigidBody, HandleTargetRotation));
+            SubscribeToEvent(smoothedTransform_, E_TARGETPOSITION, URHO3D_HANDLER(RigidBody, HandleTargetPosition));
+            SubscribeToEvent(smoothedTransform_, E_TARGETROTATION, URHO3D_HANDLER(RigidBody, HandleTargetRotation));
         }
 
         // Check if CollisionShapes already exist in the node and add them to the compound shape.
@@ -994,6 +1009,7 @@ void RigidBody::AddBodyToWorld()
     world->addRigidBody(body_, collisionLayer_, collisionMask_);
     inWorld_ = true;
     readdBody_ = false;
+    hasSimulated_ = false;
 
     if (mass_ > 0.0f)
         Activate();

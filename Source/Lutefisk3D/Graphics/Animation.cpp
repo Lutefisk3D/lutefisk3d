@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@
 #include "../Resource/ResourceCache.h"
 #include "../IO/Serializer.h"
 #include "../Resource/XMLFile.h"
+#include "../Resource/JSONFile.h"
 
 namespace Urho3D
 {
@@ -39,6 +40,50 @@ inline bool CompareTriggers(AnimationTriggerPoint& lhs, AnimationTriggerPoint& r
     return lhs.time_ < rhs.time_;
 }
 
+inline bool CompareKeyFrames(AnimationKeyFrame& lhs, AnimationKeyFrame& rhs)
+{
+    return lhs.time_ < rhs.time_;
+}
+
+void AnimationTrack::SetKeyFrame(unsigned index, const AnimationKeyFrame& keyFrame)
+{
+    if (index < keyFrames_.size())
+    {
+        keyFrames_[index] = keyFrame;
+        std::sort(keyFrames_.begin(), keyFrames_.end(), CompareKeyFrames);
+    }
+    else if (index == keyFrames_.size())
+        AddKeyFrame(keyFrame);
+}
+
+void AnimationTrack::AddKeyFrame(const AnimationKeyFrame& keyFrame)
+{
+    bool needSort = keyFrames_.size() ? keyFrames_.back().time_ > keyFrame.time_ : false;
+    keyFrames_.push_back(keyFrame);
+    if (needSort)
+        std::sort(keyFrames_.begin(), keyFrames_.end(), CompareKeyFrames);
+}
+
+void AnimationTrack::InsertKeyFrame(unsigned index, const AnimationKeyFrame& keyFrame)
+{
+    keyFrames_.insert(keyFrames_.begin()+index, keyFrame);
+    std::sort(keyFrames_.begin(), keyFrames_.end(), CompareKeyFrames);
+}
+
+void AnimationTrack::RemoveKeyFrame(unsigned index)
+{
+    keyFrames_.erase(keyFrames_.begin()+index);
+}
+
+void AnimationTrack::RemoveAllKeyFrames()
+{
+    keyFrames_.clear();
+}
+
+AnimationKeyFrame* AnimationTrack::GetKeyFrame(unsigned index)
+{
+    return index < keyFrames_.size() ? &keyFrames_[index] : (AnimationKeyFrame*)0;
+}
 void AnimationTrack::GetKeyFrameIndex(float time, unsigned& index) const
 {
     if (time < 0.0f)
@@ -78,7 +123,7 @@ bool Animation::BeginLoad(Deserializer& source)
     // Check ID
     if (source.ReadFileID() != "UANI")
     {
-        LOGERROR(source.GetName() + " is not a valid animation file");
+        URHO3D_LOGERROR(source.GetName() + " is not a valid animation file");
         return false;
     }
 
@@ -89,31 +134,29 @@ bool Animation::BeginLoad(Deserializer& source)
     tracks_.clear();
 
     unsigned tracks = source.ReadUInt();
-    tracks_.resize(tracks);
+    tracks_.reserve(tracks);
     memoryUse += tracks * sizeof(AnimationTrack);
 
     // Read tracks
     for (unsigned i = 0; i < tracks; ++i)
     {
-        AnimationTrack& newTrack = tracks_[i];
-        newTrack.name_ = source.ReadString();
-        newTrack.nameHash_ = newTrack.name_;
-        newTrack.channelMask_ = source.ReadUByte();
+        AnimationTrack* newTrack = CreateTrack(source.ReadString());
+        newTrack->channelMask_ = source.ReadUByte();
 
         unsigned keyFrames = source.ReadUInt();
-        newTrack.keyFrames_.resize(keyFrames);
+        newTrack->keyFrames_.resize(keyFrames);
         memoryUse += keyFrames * sizeof(AnimationKeyFrame);
 
         // Read keyframes of the track
         for (unsigned j = 0; j < keyFrames; ++j)
         {
-            AnimationKeyFrame& newKeyFrame = newTrack.keyFrames_[j];
+            AnimationKeyFrame& newKeyFrame = newTrack->keyFrames_[j];
             newKeyFrame.time_ = source.ReadFloat();
-            if (newTrack.channelMask_ & CHANNEL_POSITION)
+            if (newTrack->channelMask_ & CHANNEL_POSITION)
                 newKeyFrame.position_ = source.ReadVector3();
-            if (newTrack.channelMask_ & CHANNEL_ROTATION)
+            if (newTrack->channelMask_ & CHANNEL_ROTATION)
                 newKeyFrame.rotation_ = source.ReadQuaternion();
-            if (newTrack.channelMask_ & CHANNEL_SCALE)
+            if (newTrack->channelMask_ & CHANNEL_SCALE)
                 newKeyFrame.scale_ = source.ReadVector3();
         }
     }
@@ -138,6 +181,36 @@ bool Animation::BeginLoad(Deserializer& source)
         }
 
         memoryUse += triggers_.size() * sizeof(AnimationTriggerPoint);
+        SetMemoryUse(memoryUse);
+        return true;
+    }
+
+    // Optionally read triggers from a JSON file
+    QString  jsonName = ReplaceExtension(GetName(), ".json");
+
+    SharedPtr<JSONFile> jsonFile(cache->GetTempResource<JSONFile>(jsonName, false));
+    if (jsonFile)
+    {
+        const JSONValue& rootVal = jsonFile->GetRoot();
+        JSONArray triggerArray = rootVal.Get("triggers").GetArray();
+
+        for (unsigned i = 0; i < triggerArray.size(); i++)
+        {
+            const JSONValue& triggerValue = triggerArray.at(i);
+            JSONValue normalizedTimeValue = triggerValue.Get("normalizedTime");
+            if (!normalizedTimeValue.IsNull())
+                AddTrigger(normalizedTimeValue.GetFloat(), true, triggerValue.GetVariant());
+            else
+            {
+                JSONValue timeVal = triggerValue.Get("time");
+                if (!timeVal.IsNull())
+                    AddTrigger(timeVal.GetFloat(), false, triggerValue.GetVariant());
+            }
+        }
+
+        memoryUse += triggers_.size() * sizeof(AnimationTriggerPoint);
+        SetMemoryUse(memoryUse);
+        return true;
     }
 
     SetMemoryUse(memoryUse);
@@ -153,9 +226,9 @@ bool Animation::Save(Serializer& dest) const
 
     // Write tracks
     dest.WriteUInt(tracks_.size());
-    for (unsigned i = 0; i < tracks_.size(); ++i)
+    for (HashMap<StringHash, AnimationTrack>::const_iterator i = tracks_.begin(); i != tracks_.end(); ++i)
     {
-        const AnimationTrack& track = tracks_[i];
+        const AnimationTrack& track(MAP_VALUE(i));
         dest.WriteString(track.name_);
         dest.WriteUByte(track.channelMask_);
         dest.WriteUInt(track.keyFrames_.size());
@@ -196,7 +269,7 @@ bool Animation::Save(Serializer& dest) const
             xml->Save(xmlFile);
         }
         else
-            LOGWARNING("Can not save animation trigger data when not saving into a file");
+            URHO3D_LOGWARNING("Can not save animation trigger data when not saving into a file");
     }
 
     return true;
@@ -213,9 +286,52 @@ void Animation::SetLength(float length)
     length_ = Max(length, 0.0f);
 }
 
-void Animation::SetTracks(const std::vector<AnimationTrack>& tracks)
+AnimationTrack* Animation::CreateTrack(const QString& name)
 {
-    tracks_ = tracks;
+    /// \todo When tracks / keyframes are created dynamically, memory use is not updated
+    StringHash nameHash(name);
+    AnimationTrack* oldTrack = GetTrack(nameHash);
+    if (oldTrack)
+        return oldTrack;
+
+    AnimationTrack& newTrack = tracks_[nameHash];
+    newTrack.name_ = name;
+    newTrack.nameHash_ = nameHash;
+    return &newTrack;
+}
+
+bool Animation::RemoveTrack(const QString& name)
+{
+    HashMap<StringHash, AnimationTrack>::iterator i = tracks_.find(StringHash(name));
+    if (i != tracks_.end())
+    {
+        tracks_.erase(i);
+        return true;
+    }
+    else
+        return false;
+}
+
+void Animation::RemoveAllTracks()
+{
+    tracks_.clear();
+}
+
+void Animation::SetTrigger(unsigned index, const AnimationTriggerPoint& trigger)
+{
+    if (index == triggers_.size())
+        AddTrigger(trigger);
+    else if (index < triggers_.size())
+    {
+        triggers_[index] = trigger;
+        std::sort(triggers_.begin(), triggers_.end(), CompareTriggers);
+    }
+}
+
+void Animation::AddTrigger(const AnimationTriggerPoint& trigger)
+{
+    triggers_.push_back(trigger);
+    std::sort(triggers_.begin(), triggers_.end(), CompareTriggers);
 }
 
 void Animation::AddTrigger(float time, bool timeIsNormalized, const Variant& data)
@@ -244,31 +360,21 @@ void Animation::SetNumTriggers(unsigned num)
     triggers_.resize(num);
 }
 
-const AnimationTrack* Animation::GetTrack(unsigned index) const
+AnimationTrack* Animation::GetTrack(const QString& name)
 {
-    return index < tracks_.size() ? &tracks_[index] : nullptr;
+    HashMap<StringHash, AnimationTrack>::iterator i = tracks_.find(StringHash(name));
+    return i != tracks_.end() ? &MAP_VALUE(i): (AnimationTrack*)0;
 }
 
-const AnimationTrack* Animation::GetTrack(const QString& name) const
+AnimationTrack* Animation::GetTrack(StringHash nameHash)
 {
-    for (const AnimationTrack & elem : tracks_)
-    {
-        if (elem.name_ == name)
-            return &elem;
+    HashMap<StringHash, AnimationTrack>::iterator i = tracks_.find(nameHash);
+    return i != tracks_.end() ? &MAP_VALUE(i) : (AnimationTrack*)0;
     }
 
-    return nullptr;
-}
-
-const AnimationTrack* Animation::GetTrack(StringHash nameHash) const
+AnimationTriggerPoint* Animation::GetTrigger(unsigned index)
 {
-    for (const AnimationTrack & elem : tracks_)
-    {
-        if (elem.nameHash_ == nameHash)
-            return &elem;
-    }
-
-    return nullptr;
+    return index < triggers_.size() ? &triggers_[index] : (AnimationTriggerPoint*)0;
 }
 
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,15 @@
 
 #pragma once
 
-#include "../Graphics/Batch.h"
 #include "../Container/HashMap.h"
+#include "../Graphics/Batch.h"
 #include "../Graphics/Light.h"
 #include "../Core/Object.h"
 #include "../Math/Polyhedron.h"
 #include "../Graphics/Zone.h"
 #include <array>
 #include <deque>
+#include <vector>
 namespace Urho3D
 {
 
@@ -92,12 +93,10 @@ struct ScenePassInfo
     bool allowInstancing_;
     /// Mark to stencil flag.
     bool markToStencil_;
-    /// Light scissor optimization flag.
-    bool useScissor_;
     /// Vertex light flag.
     bool vertexLights_;
     /// Batch queue.
-    unsigned batchQueueIdx_;
+    uint32_t batchQueueIdx_;
 };
 
 /// Per-thread geometry, light and scene range collection structure.
@@ -121,11 +120,11 @@ class View : public Object
     friend void CheckVisibilityWork(const WorkItem* item, unsigned threadIndex);
     friend void ProcessLightWork(const WorkItem* item, unsigned threadIndex);
     typedef HashMap<uint32_t, uint32_t> BatchQueueMap;
-    OBJECT(View)
+    URHO3D_OBJECT(View, Object);
 
-public:
-    /// Construct.
-    View(Context* context);
+    public:
+        /// Construct.
+        View(Context* context);
     /// Destruct.
     virtual ~View();
 
@@ -144,8 +143,10 @@ public:
     Scene* GetScene() const { return scene_; }
     /// Return octree.
     Octree* GetOctree() const { return octree_; }
-    /// Return camera.
+    /// Return viewport camera.
     Camera* GetCamera() const { return camera_; }
+    /// Return culling camera. Normally same as the viewport camera.
+    Camera* GetCullCamera() const { return cullCamera_; }
     /// Return information of the frame being rendered.
     const FrameInfo& GetFrameInfo() const { return frame_; }
     /// Return the rendertarget. 0 if using the backbuffer.
@@ -160,6 +161,14 @@ public:
     const std::vector<Light*>& GetLights() const { return lights_; }
     /// Return light batch queues.
     const std::vector<LightBatchQueue>& GetLightQueues() const { return lightQueues_; }
+    /// Return the last used software occlusion buffer.
+    OcclusionBuffer* GetOcclusionBuffer() const { return occlusionBuffer_; }
+
+    /// Return number of occluders that were actually rendered. Occluders may be rejected if running out of triangles or if behind other occluders.
+    unsigned GetNumActiveOccluders() const { return activeOccluders_; }
+
+    /// Return the source view that was already prepared. Used when viewports specify the same culling camera.
+    View* GetSourceView() const;
     /// Set global (per-frame) shader parameters. Called by Batch and internally by View.
     void SetGlobalShaderParameters();
     /// Set camera-specific shader parameters. Called by Batch and internally by View.
@@ -167,6 +176,8 @@ public:
     /// Set G-buffer offset and inverse size shader parameters. Called by Batch and internally by View.
     void SetGBufferShaderParameters(const IntVector2& texSize, const IntRect& viewRect);
 
+    /// Draw a fullscreen quad. Shaders and renderstates must have been set beforehand.
+    void DrawFullscreenQuad(bool nearQuad);
 private:
     /// Query the octree for drawable objects.
     void GetDrawables();
@@ -202,8 +213,6 @@ private:
     void AllocateScreenBuffers();
     /// Blit the viewport from one surface to another.
     void BlitFramebuffer(Texture* source, RenderSurface* destination, bool depthWrite);
-    /// Draw a fullscreen quad. Shaders and renderstates must have been set beforehand.
-    void DrawFullscreenQuad(bool nearQuad);
     /// Query for occluders as seen from a camera.
     void UpdateOccluders(std::vector<Drawable*>& occluders, Camera* camera);
     /// Draw occluders to occlusion buffer.
@@ -283,10 +292,12 @@ private:
     Scene* scene_;
     /// Octree to use.
     Octree* octree_;
-    /// Camera to use.
+    /// Viewport (rendering) camera.
     Camera* camera_;
-    /// Camera's scene node.
-    Node* cameraNode_;
+    /// Culling camera. Usually same as the viewport camera.
+    Camera* cullCamera_;
+    /// Shared source view. Null if this view is using its own culling.
+    WeakPtr<View> sourceView_;
     /// Zone the camera is inside, or default zone if not assigned.
     Zone* cameraZone_;
     /// Zone at far clip plane.
@@ -313,6 +324,8 @@ private:
     IntVector2 rtSize_;
     /// Information of the frame being rendered.
     FrameInfo frame_;
+    /// View aspect ratio.
+    float aspectRatio_;
     /// Minimum Z value of the visible scene.
     float minZ_;
     /// Maximum Z value of the visible scene.
@@ -325,6 +338,8 @@ private:
     int minInstances_;
     /// Highest zone priority currently visible.
     int highestZonePriority_;
+    /// Geometries updated flag.
+    bool geometriesUpdated_;
     /// Camera zone's override flag.
     bool cameraZoneOverride_;
     /// Draw shadows flag.
@@ -359,6 +374,8 @@ private:
     std::vector<Drawable*> occluders_;
     /// Lights.
     std::vector<Light*> lights_;
+    /// Number of active occluders.
+    unsigned activeOccluders_;
     /// Drawables that limit their maximum light count.
     HashSet<Drawable*> maxLightsDrawables_;
     /// Rendertargets defined by the renderpath.
@@ -370,7 +387,7 @@ private:
     /// Per-pixel light queues.
     std::vector<LightBatchQueue> lightQueues_;
     /// Per-vertex light queues.
-    HashMap<unsigned long long, LightBatchQueue> vertexLightQueues_;
+    HashMap<uint64_t, LightBatchQueue> vertexLightQueues_;
     /// Batch queues by pass index.
     BatchQueueMap batchQueues_;
     std::deque<BatchQueue> batchQueueStorage_;

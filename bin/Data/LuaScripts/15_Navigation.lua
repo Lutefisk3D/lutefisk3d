@@ -111,8 +111,10 @@ function CreateScene()
     local camera = cameraNode:CreateComponent("Camera")
     camera.farClip = 300.0
 
-    -- Set an initial position for the camera scene node above the plane
-    cameraNode.position = Vector3(0.0, 5.0, 0.0)
+    -- Set an initial position for the camera scene node above the plane and looking down
+    cameraNode.position = Vector3(0.0, 50.0, 0.0)
+    pitch = 80.0
+    cameraNode.rotation = Quaternion(pitch, yaw, 0.0)
 end
 
 function CreateUI()
@@ -129,7 +131,7 @@ function CreateUI()
     local instructionText = ui.root:CreateChild("Text")
     instructionText.text = "Use WASD keys to move, RMB to rotate view\n"..
         "LMB to set destination, SHIFT+LMB to teleport\n"..
-        "MMB to add or remove obstacles\n"..
+        "MMB or O key to add or remove obstacles\n"..
         "Space to toggle debug geometry"
     instructionText:SetFont(cache:GetResource("Font", "Fonts/Anonymous Pro.ttf"), 15)
     -- The text has multiple rows. Center them in relation to each other
@@ -200,7 +202,7 @@ function MoveCamera(timeStep)
         SetPathPoint()
     end
     -- Add or remove objects with middle mouse button, then rebuild navigation mesh partially
-    if input:GetMouseButtonPress(MOUSEB_MIDDLE) then
+    if input:GetMouseButtonPress(MOUSEB_MIDDLE) or input:GetKeyPress(KEY_O) then
         AddOrRemoveObject()
     end
     -- Toggle debug geometry with space
@@ -289,7 +291,7 @@ end
 
 function HandleUpdate(eventType, eventData)
     -- Take the frame time step, which is stored as a float
-    local timeStep = eventData:GetFloat("TimeStep")
+    local timeStep = eventData["TimeStep"]:GetFloat()
 
     -- Move the camera, scale movement with time step
     MoveCamera(timeStep)

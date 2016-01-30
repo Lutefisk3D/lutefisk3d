@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,282 +19,260 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-
 #pragma once
 
-#include "../Math/BoundingBox.h"
-#include "../Math/Rect.h"
-#include "../Container/Ptr.h"
+#include "../Container/HashMap.h"
 #include "../Core/Variant.h"
 
-namespace rapidjson
-{
-    template<typename CharType> struct UTF8;
-    class CrtAllocator;
-    template <typename BaseAllocator> class MemoryPoolAllocator;
-    template <typename Encoding, typename Allocator> class GenericValue;
-    typedef GenericValue<UTF8<char>, MemoryPoolAllocator<CrtAllocator> > Value;
-}
+#include <QString>
+
 
 namespace Urho3D
 {
 
-class JSONFile;
+class Context;
 
 /// JSON value type.
 enum JSONValueType
 {
-    /// Any type (use type in JSON value).
-    JSON_ANY = 0,
-    /// Object type (Hash Map).
+    /// JSON null type.
+    JSON_NULL = 0,
+    /// JSON boolean type.
+    JSON_BOOL,
+    /// JSON number type.
+    JSON_NUMBER,
+    /// JSON string type.
+    JSON_STRING,
+    /// JSON array type.
+    JSON_ARRAY,
+    /// JSON object type.
     JSON_OBJECT,
-    /// Array type.
-    JSON_ARRAY
 };
+/// JSON number type.
+enum JSONNumberType
+{
+    /// Not a number.
+    JSONNT_NAN = 0,
+    /// Integer.
+    JSONNT_INT,
+    /// Unsigned integer.
+    JSONNT_UINT,
+    /// Float or double.
+    JSONNT_FLOAT_DOUBLE,
+};
+
+class JSONValue;
+
+/// JSON array type.
+typedef std::vector<JSONValue> JSONArray;
+/// JSON object type.
+typedef HashMap<QString, JSONValue> JSONObject;
 
 /// JSON value class.
 class JSONValue
 {
 public:
     /// Construct null value.
-    JSONValue();
-    /// Construct with document and JSON value pointers.
-    JSONValue(JSONFile* file, rapidjson::Value* value);
-    /// Copy-construct from another value.
-    JSONValue(const JSONValue& rhs);
+    JSONValue() :
+        type_(0)
+    {
+    }
+    /// Construct with a boolean.
+    JSONValue(bool value) :
+        type_(0)
+    {
+        *this = value;
+    }
+    /// Construct with a integer.
+    JSONValue(int value) :
+        type_(0)
+    {
+        *this = value;
+    }
+    /// Construct with a unsigned integer.
+    JSONValue(unsigned value) :
+        type_(0)
+    {
+        *this = value;
+    }
+    /// Construct with a float.
+    JSONValue(float value) :
+        type_(0)
+    {
+        *this = value;
+    }
+    /// Construct with a double.
+    JSONValue(double value) :
+        type_(0)
+    {
+        *this = value;
+    }
+    /// Construct with a string.
+    JSONValue(const QString& value) :
+        type_(0)
+    {
+        *this = value;
+    }
+    /// Construct with a C string.
+    JSONValue(const char* value) :
+        type_(0)
+    {
+        *this = value;
+    }
+    /// Construct with a JSON array.
+    JSONValue(const JSONArray& value) :
+        type_(0)
+    {
+        *this = value;
+    }
+    /// Construct with a JSON object.
+    JSONValue(const JSONObject& value);
+    /// Copy-construct from another JSON value.
+    JSONValue(const JSONValue& value) :
+        type_(0)
+    {
+        *this = value;
+    }
     /// Destruct.
-    ~JSONValue();
+    ~JSONValue()
+    {
+        SetType(JSON_NULL);
+    }
 
-    /// Assignment operator.
+    /// Assign from a boolean.
+    JSONValue& operator =(bool rhs);
+    /// Assign from an integer.
+    JSONValue& operator =(int rhs);
+    /// Assign from an unsigned integer.
+    JSONValue& operator =(unsigned rhs);
+    /// Assign from a float.
+    JSONValue& operator =(float rhs);
+    /// Assign from a double.
+    JSONValue& operator =(double rhs);
+    /// Assign from a string.
+    JSONValue& operator =(const QString& rhs);
+    /// Assign from a C string.
+    JSONValue& operator =(const char* rhs);
+    /// Assign from a JSON array.
+    JSONValue& operator =(const JSONArray& rhs);
+    /// Assign from a JSON object.
+    JSONValue& operator =(const JSONObject& rhs);
+    /// Assign from another JSON value.
     JSONValue& operator = (const JSONValue& rhs);
 
-    /// Return whether does not refer to JSON value.
-    bool IsNull() const;
-    /// Return whether refers to JSON value.
-    bool NotNull() const;
-    /// Return true if refers to JSON value.
-    operator bool () const;
+    /// Return value type.
+    JSONValueType GetValueType() const;
+    /// Return number type.
+    JSONNumberType GetNumberType() const;
+    /// Check is null.
+    bool IsNull() const { return GetValueType() == JSON_NULL; }
+    /// Check is boolean.
+    bool IsBool() const { return GetValueType() == JSON_BOOL; }
+    /// Check is number.
+    bool IsNumber() const { return GetValueType() == JSON_NUMBER; }
+    /// Check is string.
+    bool IsString() const { return GetValueType() == JSON_STRING; }
+    /// Check is array.
+    bool IsArray() const { return GetValueType() == JSON_ARRAY; }
+    /// Check is object.
+    bool IsObject() const { return GetValueType() == JSON_OBJECT; }
 
-    // JSON object value functions
-    /// Create a child value.
-    JSONValue CreateChild(const QString& name, JSONValueType valueType = JSON_OBJECT);
-    /// Return a child value by name. Return null if not exist.
-    JSONValue GetChild(const QString& name, JSONValueType valueType = JSON_ANY) const;
-    /// Set int.
-    void SetInt(const QString& name, int value);
-    /// Set bool.
-    void SetBool(const QString& name, bool value);
-    /// Set float.
-    void SetFloat(const QString& name, float value);
-    /// Set double.
-    void SetDouble(const QString& name, double value);
-    /// Set vector2.
-    void SetVector2(const QString& name, const Vector2& value);
-    /// Set vector3.
-    void SetVector3(const QString& name, const Vector3& value);
-    /// Set vector4.
-    void SetVector4(const QString& name, const Vector4& value);
-    /// Set vector variant.
-    void SetVectorVariant(const QString& name, const Variant& value);
-    /// Set quaternion.
-    void SetQuaternion(const QString& name, const Quaternion& value);
-    /// Set color.
-    void SetColor(const QString& name, const Color& value);
-    /// Set string.
-    void SetString(const QString& name, const QString& value);
-    /// Set buffer.
-    void SetBuffer(const QString& name, const void* data, unsigned size);
-    /// Set buffer.
-    void SetBuffer(const QString& name, const std::vector<unsigned char>& value);
-    /// Set resource ref.
-    void SetResourceRef(const QString& name, const ResourceRef& value);
-    /// Set resource ref list.
-    void SetResourceRefList(const QString& name, const ResourceRefList& value);
-    /// Set int rect.
-    void SetIntRect(const QString& name, const IntRect& value);
-    /// Set int vector2.
-    void SetIntVector2(const QString& name, const IntVector2& value);
-    /// Set matrix3.
-    void SetMatrix3(const QString& name, const Matrix3& value);
-    /// Set matrix3x4.
-    void SetMatrix3x4(const QString& name, const Matrix3x4& value);
-    /// Set matrix4.
-    void SetMatrix4(const QString& name, const Matrix4& value);
-    /// Set variant (include type).
-    void SetVariant(const QString& name, const Variant& value);
-    /// Set variant value.
-    void SetVariantValue(const QString& name, const Variant& value);
+    /// Return boolean value.
+    bool GetBool() const { return IsBool() ? boolValue_ : false;}
+    /// Return integer value.
+    int GetInt() const { return IsNumber() ? (int)numberValue_ : 0; }
+    /// Return unsigned integer value.
+    unsigned GetUInt() const { return IsNumber() ? (unsigned)numberValue_ : 0; }
+    /// Return float value.
+    float GetFloat() const { return IsNumber() ? (float)numberValue_ : 0.0f; }
+    /// Return double value.
+    double GetDouble() const { return IsNumber() ? numberValue_ : 0.0; }
+    /// Return string value.
+    const QString& GetString() const { return IsString() ? *stringValue_ : s_dummy;}
+    /// Return C string value.
+    const char* GetCString() const { return IsString() ? qPrintable(*stringValue_) : nullptr;}
+    /// Return JSON array value.
+    const JSONArray& GetArray() const { return IsArray() ? *arrayValue_ : emptyArray; }
+    /// Return JSON object value.
+    const JSONObject& GetObject() const { return IsObject() ? *objectValue_ : emptyObject; }
 
-    /// Is object type.
-    bool IsObject() const;
-    /// Return child names (only object and array child name).
-    QStringList GetChildNames() const;
-    /// Return member value names.
-    QStringList GetValueNames() const;
-    /// Return int.
-    int GetInt(const QString& name) const;
-    /// Return bool.
-    bool GetBool(const QString& name) const;
-    /// Return float.
-    float GetFloat(const QString& name) const;
-    /// Return double.
-    double GetDouble(const QString& name) const;
-    /// Return vector2.
-    Vector2 GetVector2(const QString& name) const;
-    /// Return vector3.
-    Vector3 GetVector3(const QString& name) const;
-    /// Return vector4.
-    Vector4 GetVector4(const QString& name) const;
-    /// Return vector variant.
-    Variant GetVectorVariant(const QString& name) const;
-    /// Return quaternion.
-    Quaternion GetQuaternion(const QString& name) const;
-    /// Return color.
-    Color GetColor(const QString& name) const;
-    /// Return string.
-    QString GetString(const QString& name) const;
-    /// Return C string.
-    const char* GetCString(const QString& name) const;
-    /// Return buffer.
-    std::vector<unsigned char> GetBuffer(const QString& name) const;
-    /// Return buffer.
-    bool GetBuffer(const QString& name, void* dest, unsigned size) const;
-    /// Return resource ref.
-    ResourceRef GetResourceRef(const QString& name) const;
-    /// Return resource ref list.
-    ResourceRefList GetResourceRefList(const QString& name) const;
-    /// Return int rect.
-    IntRect GetIntRect(const QString& name) const;
-    /// Return int vector2.
-    IntVector2 GetIntVector2(const QString& name) const;
-    /// Return matrix3.
-    Matrix3 GetMatrix3(const QString& name) const;
-    /// Return matrix3x4.
-    Matrix3x4 GetMatrix3x4(const QString& name) const;
-    /// Return matrix4.
-    Matrix4 GetMatrix4(const QString& name) const;
-    /// Return variant.
-    Variant GetVariant(const QString& name) const;
-    /// Return variant value.
-    Variant GetVariantValue(const QString& name, VariantType type) const;
+    // JSON array functions
+    /// Return JSON value at index.
+    JSONValue& operator [](unsigned index);
+    /// Return JSON value at index.
+    const JSONValue& operator [](unsigned index) const;
+    /// Add JSON value at end.
+    void Push(const JSONValue& value);
+    /// Remove the last JSON value.
+    void Pop();
+    /// Insert an JSON value at position.
+    void Insert(unsigned pos, const JSONValue& value);
+    /// Erase a range of JSON values.
+    void Erase(unsigned pos, unsigned length = 1);
+    /// Resize array.
+    void Resize(unsigned newSize);
+    /// Return size of array.
+    unsigned Size() const;
 
-    // JSON array value functions
-    /// Create a child value in array.
-    JSONValue CreateChild(JSONValueType valueType = JSON_OBJECT);
-    /// Remove a child value in array. Return null if not exist.
-    JSONValue GetChild(unsigned index, JSONValueType valueType = JSON_ANY) const;
-    /// Add int.
-    void AddInt(int value);
-    /// Add bool.
-    void AddBool(bool value);
-    /// Add float.
-    void AddFloat(float value);
-    /// Add float.
-    void AddDouble(double value);
-    /// Add vector2.
-    void AddVector2(const Vector2& value);
-    /// Add vector3.
-    void AddVector3(const Vector3& value);
-    /// Add vector4.
-    void AddVector4(const Vector4& value);
-    /// Add vector variant.
-    void AddVectorVariant(const Variant& value);
-    /// Add quaternion.
-    void AddQuaternion(const Quaternion& value);
-    /// Add color.
-    void AddColor(const Color& value);
-    /// Add string.
-    void AddString(const QString& value);
-    /// Add buffer.
-    void AddBuffer(const std::vector<unsigned char>& value);
-    /// Add buffer.
-    void AddBuffer(const void* data, unsigned size);
-    /// Add resource ref.
-    void AddResourceRef(const ResourceRef& value);
-    /// Add resource ref list.
-    void AddResourceRefList(const ResourceRefList& value);
-    /// Add int rect.
-    void AddIntRect(const IntRect& value);
-    /// Add int vector2.
-    void AddIntVector2(const IntVector2& value);
-    /// Add matrix3.
-    void AddMatrix3(const Matrix3& value);
-    /// Add matrix3x4.
-    void AddMatrix3x4(const Matrix3x4& value);
-    /// Add matrix4.
-    void AddMatrix4(const Matrix4& value);
-    /// Add variant.
-    void AddVariant(const Variant& value);
-    /// Add variant value.
-    void AddVariantValue(const Variant& value);
-    /// Is array type.
-    bool IsArray() const;
-    /// Return array size.
-    unsigned GetSize() const;
-    /// Return int.
-    int GetInt(unsigned index) const;
-    /// Return bool.
-    bool GetBool(unsigned index) const;
-    /// Return float.
-    float GetFloat(unsigned index) const;
-    /// Return double.
-    double GetDouble(unsigned index) const;
-    /// Return vector2.
-    Vector2 GetVector2(unsigned index) const;
-    /// Return vector3.
-    Vector3 GetVector3(unsigned index) const;
-    /// Return vector4.
-    Vector4 GetVector4(unsigned index) const;
-    /// Return vector variant.
-    Variant GetVectorVariant(unsigned index) const;
-    /// Return quaternion.
-    Quaternion GetQuaternion(unsigned index) const;
-    /// Return color.
-    Color GetColor(unsigned index) const;
-    /// Return string.
-    QString GetString(unsigned index) const;
-    /// Return C string.
-    const char* GetCString(unsigned index) const;
-    /// Return buffer.
-    std::vector<unsigned char> GetBuffer(unsigned index) const;
-    /// Return buffer.
-    bool GetBuffer(unsigned index, void* dest, unsigned size) const;
-    /// Return resource ref.
-    ResourceRef GetResourceRef(unsigned index) const;
-    /// Return resource ref list.
-    ResourceRefList GetResourceRefList(unsigned index) const;
-    /// Return int rect.
-    IntRect GetIntRect(unsigned index) const;
-    /// Return int vector2.
-    IntVector2 GetIntVector2(unsigned index) const;
-    /// Return matrix3.
-    Matrix3 GetMatrix3(unsigned index) const;
-    /// Return matrix3x4.
-    Matrix3x4 GetMatrix3x4(unsigned index) const;
-    /// Return matrix4.
-    Matrix4 GetMatrix4(unsigned index) const;
-    /// Return variant.
-    Variant GetVariant(unsigned index) const;
-    /// Return variant.
-    Variant GetVariantValue(unsigned index, VariantType type) const;
+    // JSON object functions
+    /// Return JSON value with key.
+    JSONValue& operator [](const QString& key);
+    /// Return JSON value with key.
+    const JSONValue& operator [](const QString& key) const;
+    /// Set JSON value with key.
+    void Set(const QString& key, const JSONValue& value);
+    /// Return JSON value with key.
+    const JSONValue& Get(const QString& key) const;
+    /// Erase a pair by key.
+    bool Erase(const QString& key);
+    /// Return whether contains a pair with key.
+    bool Contains(const QString& key) const;
+    /// Clear array or object.
+    void Clear();
 
-    /// Empty JSONValue.
+    /// Set value type and number type, internal function.
+    void SetType(JSONValueType valueType, JSONNumberType numberType = JSONNT_NAN);
+
+    /// Set variant, context must provide for resource ref.
+    void SetVariant(const Variant& variant, Context* context = 0);
+    /// Return a variant.
+    Variant GetVariant() const;
+    /// Set variant value, context must provide for resource ref.
+    void SetVariantValue(const Variant& variant, Context* context = 0);
+    /// Return a variant with type.
+    Variant GetVariantValue(VariantType type) const;
+    /// Set variant map, context must provide for resource ref.
+    void SetVariantMap(const VariantMap& variantMap, Context* context = 0);
+    /// Return a variant map.
+    VariantMap GetVariantMap() const;
+    /// Set variant vector, context must provide for resource ref.
+    void SetVariantVector(const VariantVector& variantVector, Context* context = 0);
+    /// Return a variant vector.
+    VariantVector GetVariantVector() const;
+
+    /// Empty JSON value.
     static const JSONValue EMPTY;
+    /// Empty JSON array.
+    static const JSONArray emptyArray;
+    /// Empty JSON object.
+    static const JSONObject emptyObject;
 
 private:
-    /// Set JSON value for object type.
-    void AddMember(const QString& name, rapidjson::Value& jsonValue);
-    /// Return JSON value by name for object type.
-    rapidjson::Value& GetMember(const QString& name) const;
-    /// Add JSON value to array type.
-    void AddMember(rapidjson::Value& jsonValue);
-    /// Return JSON value by index for array type.
-    rapidjson::Value&  GetMember(unsigned index) const;
-
-    /// JSON file.
-    WeakPtr<JSONFile> file_;
-    /// Rapid JSON value.
-    rapidjson::Value* value_;
+    /// type.
+    unsigned type_;
+    union
+    {
+        /// Boolean value.
+        bool boolValue_;
+        /// Number value.
+        double numberValue_;
+        /// String value.
+        QString* stringValue_;
+        /// Array value.
+        JSONArray* arrayValue_;
+        /// Object value.
+        JSONObject* objectValue_;
+    };
 };
 
 }

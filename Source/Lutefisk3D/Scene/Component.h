@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +36,7 @@ struct ComponentReplicationState;
 /// Base class for components. Components can be created to scene nodes.
 class Component : public Animatable
 {
-    OBJECT(Component);
-    BASEOBJECT(Component);
+    URHO3D_OBJECT(Component,Animatable);
 
     friend class Node;
     friend class Scene;
@@ -46,7 +45,7 @@ public:
     /// Construct.
     Component(Context* context);
     /// Destruct.
-    virtual ~Component();
+    virtual ~Component() = default;
 
     /// Handle enabled/disabled state change.
     virtual void OnSetEnabled() {}
@@ -54,6 +53,8 @@ public:
     virtual bool Save(Serializer& dest) const override;
     /// Save as XML data. Return true if successful.
     virtual bool SaveXML(XMLElement& dest) const override;
+    /// Save as JSON data. Return true if successful.
+    virtual bool SaveJSON(JSONValue& dest) const override;
     /// Mark for attribute check on the next network update.
     virtual void MarkNetworkUpdate() override;
     /// Return the depended on nodes to order network updates.
@@ -99,6 +100,8 @@ protected:
     virtual void OnAttributeAnimationRemoved() override;
     /// Handle scene node being assigned at creation.
     virtual void OnNodeSet(Node* node);
+    /// Handle scene being assigned. This may happen several times during the component's lifetime. Scene-wide subsystems and events are subscribed to here.
+    virtual void OnSceneSet(Scene * scene);
     /// Handle scene node transform dirtied.
     virtual void OnMarkedDirty(Node* node);
     /// Handle scene node enabled status changing.
@@ -109,6 +112,8 @@ protected:
     void SetNode(Node* node);
     /// Handle scene attribute animation update event.
     void HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& eventData);
+    /// Return a component from the scene root that sends out fixed update events (either PhysicsWorld or PhysicsWorld2D). Return null if neither exists.
+    Component* GetFixedUpdateSource();
 
     /// Scene node.
     Node* node_;

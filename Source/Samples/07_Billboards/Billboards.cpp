@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@
 #include <Lutefisk3D/Graphics/Zone.h>
 
 
-DEFINE_APPLICATION_MAIN(Billboards)
+URHO3D_DEFINE_APPLICATION_MAIN(Billboards)
 
 Billboards::Billboards(Context* context) :
     Sample(context),
@@ -237,11 +237,11 @@ void Billboards::SetupViewport()
 void Billboards::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(Billboards, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Billboards, HandleUpdate));
 
     // Subscribe HandlePostRenderUpdate() function for processing the post-render update event, during which we request
     // debug geometry
-    SubscribeToEvent(E_POSTRENDERUPDATE, HANDLER(Billboards, HandlePostRenderUpdate));
+    SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(Billboards, HandlePostRenderUpdate));
 }
 
 void Billboards::MoveCamera(float timeStep)

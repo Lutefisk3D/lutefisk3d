@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ namespace Urho3D
 extern const char* URHO2D_CATEGORY;
 
 CollisionShape2D::CollisionShape2D(Context* context) :
-    Component(context), 
+    Component(context),
     fixture_(nullptr),
     cachedWorldScale_(Vector3::ONE)
 {
@@ -53,13 +53,13 @@ CollisionShape2D::~CollisionShape2D()
 
 void CollisionShape2D::RegisterObject(Context* context)
 {
-    ACCESSOR_ATTRIBUTE("Trigger", IsTrigger, SetTrigger, bool, false, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Category Bits", GetCategoryBits, SetCategoryBits, int, 0, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Mask Bits", GetMaskBits, SetMaskBits, int, 0, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Group Index", GetGroupIndex, SetGroupIndex, int, 0, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Density", GetDensity, SetDensity, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Friction", GetFriction, SetFriction, float, 0.2f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Restitution", GetRestitution, SetRestitution, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Trigger", IsTrigger, SetTrigger, bool, false, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Category Bits", GetCategoryBits, SetCategoryBits, int, 0, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Mask Bits", GetMaskBits, SetMaskBits, int, 0, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Group Index", GetGroupIndex, SetGroupIndex, int, 0, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Density", GetDensity, SetDensity, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Friction", GetFriction, SetFriction, float, 0.2f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Restitution", GetRestitution, SetRestitution, float, 0.0f, AM_DEFAULT);
 }
 
 void CollisionShape2D::OnSetEnabled()
@@ -96,7 +96,7 @@ void CollisionShape2D::SetCategoryBits(int categoryBits)
     if (fixtureDef_.filter.categoryBits == categoryBits)
         return;
 
-    fixtureDef_.filter.categoryBits = categoryBits;
+    fixtureDef_.filter.categoryBits = (uint16_t)categoryBits;
 
     if (fixture_)
         fixture_->SetFilterData(fixtureDef_.filter);
@@ -109,7 +109,7 @@ void CollisionShape2D::SetMaskBits(int maskBits)
     if (fixtureDef_.filter.maskBits == maskBits)
         return;
 
-    fixtureDef_.filter.maskBits = maskBits;
+    fixtureDef_.filter.maskBits = (uint16_t)maskBits;
 
     if (fixture_)
         fixture_->SetFilterData(fixtureDef_.filter);
@@ -122,7 +122,7 @@ void CollisionShape2D::SetGroupIndex(int groupIndex)
     if (fixtureDef_.filter.groupIndex == groupIndex)
         return;
 
-    fixtureDef_.filter.groupIndex = groupIndex;
+    fixtureDef_.filter.groupIndex = (int16_t)groupIndex;
 
     if (fixture_)
         fixture_->SetFilterData(fixtureDef_.filter);
@@ -210,14 +210,22 @@ void CollisionShape2D::CreateFixture()
         return;
 
     if (!rigidBody_)
-        return;
-
+    {
+        rigidBody_ = node_->GetComponent<RigidBody2D>(); // RigidBody2D can be created after CollisionShape2D
+        if (!rigidBody_)
+            return;
+        rigidBody_->AddCollisionShape2D(this); //TODO: NEM
+    }
     b2Body* body = rigidBody_->GetBody();
     if (!body)
         return;
 
+    // Chain shape must have atleast two vertices before creating fixture
+    if (fixtureDef_.shape->m_type != b2Shape::e_chain || static_cast<const b2ChainShape*>(fixtureDef_.shape)->m_count >= 2)
+    {
     fixture_ = body->CreateFixture(&fixtureDef_);
     fixture_->SetUserData(this);
+}
 }
 
 void CollisionShape2D::ReleaseFixture()
@@ -282,8 +290,6 @@ void CollisionShape2D::OnNodeSet(Node* node)
             CreateFixture();
             rigidBody_->AddCollisionShape2D(this);
         }
-        else
-            LOGERROR("No right body component in node, can not create collision shape");
     }
 }
 

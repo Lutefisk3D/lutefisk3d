@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -159,11 +159,11 @@ void Texture::SetBackupTexture(Texture* texture)
     backupTexture_ = texture;
 }
 
-void Texture::SetMipsToSkip(int quality, int mips)
+void Texture::SetMipsToSkip(int quality, int toSkip)
 {
     if (quality >= QUALITY_LOW && quality < MAX_TEXTURE_QUALITY_LEVELS)
     {
-        mipsToSkip_[quality] = mips;
+        mipsToSkip_[quality] = toSkip;
 
         // Make sure a higher quality level does not actually skip more mips
         for (int i = 1; i < MAX_TEXTURE_QUALITY_LEVELS; ++i)
@@ -187,7 +187,7 @@ void Texture::UpdateParameters()
     // Wrapping
     glTexParameteri(target_, GL_TEXTURE_WRAP_S, (GLint)GetWrapMode(addressMode_[COORD_U]));
     glTexParameteri(target_, GL_TEXTURE_WRAP_T, (GLint)GetWrapMode(addressMode_[COORD_V]));
-    glTexParameteri((GLenum)target_, GL_TEXTURE_WRAP_R, (GLint)GetWrapMode(addressMode_[COORD_W]));
+    glTexParameteri(target_, GL_TEXTURE_WRAP_R, (GLint)GetWrapMode(addressMode_[COORD_W]));
 
     TextureFilterMode filterMode = filterMode_;
     if (filterMode == FILTER_DEFAULT)
@@ -252,12 +252,6 @@ bool Texture::IsCompressed() const
 {
     return format_ == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || format_ == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT ||
         format_ == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ;
-    /*
-     * Mobile platforms also have:
-        || format_ == GL_ETC1_RGB8_OES ||
-        format_ == COMPRESSED_RGB_PVRTC_4BPPV1_IMG || format_ == COMPRESSED_RGBA_PVRTC_4BPPV1_IMG ||
-        format_ == COMPRESSED_RGB_PVRTC_2BPPV1_IMG || format_ == COMPRESSED_RGBA_PVRTC_2BPPV1_IMG
-    */
 }
 
 int Texture::GetLevelWidth(unsigned level) const
@@ -319,7 +313,7 @@ unsigned Texture::GetRowDataSize(int width) const
     #ifndef GL_ES_VERSION_2_0
     case GL_DEPTH24_STENCIL8_EXT:
     case GL_RG16:
-    case GL_R16F:
+    case GL_RG16F:
     case GL_R32F:
     #endif
         return width * 4;
@@ -329,11 +323,12 @@ unsigned Texture::GetRowDataSize(int width) const
         return width;
 
     case GL_RG8:
+    case GL_R16F:
         return width * 2;
     case GL_RGBA16:
+    case GL_RGBA16F_ARB:
         return width * 8;
 
-    case GL_RGBA16F_ARB:
     case GL_RGBA32F_ARB:
         return width * 16;
     #endif
@@ -358,6 +353,13 @@ unsigned Texture::GetRowDataSize(int width) const
     default:
         return 0;
     }
+}
+unsigned Texture::GetComponents() const
+{
+    if (!width_ || IsCompressed())
+        return 0;
+    else
+        return GetRowDataSize(width_) / width_;
 }
 
 gl::GLenum Texture::GetExternalFormat(GLenum format)
@@ -388,9 +390,10 @@ gl::GLenum Texture::GetDataType(GLenum format)
         return GL_UNSIGNED_INT_24_8_EXT;
     else if (format == GL_RG16 || format == GL_RGBA16)
         return GL_UNSIGNED_SHORT;
-    else if (format == GL_RGBA16F_ARB || format == GL_RGBA32F_ARB || format == GL_RG16F || format == GL_RG32F || format == GL_R16F ||
-        format == GL_R32F)
+    else if (format == GL_RGBA32F_ARB || format == GL_RG32F || format == GL_R32F)
         return GL_FLOAT;
+    else if (format == GL_RGBA16F_ARB || format == GL_RG16F || format == GL_R16F)
+        return GL_HALF_FLOAT_ARB;
     else
         return GL_UNSIGNED_BYTE;
 }
@@ -482,8 +485,8 @@ gl::GLenum Texture::GetSRGBFormat(gl::GLenum format)
 void Texture::CheckTextureBudget(StringHash type)
 {
     ResourceCache* cache = GetSubsystem<ResourceCache>();
-    unsigned textureBudget = cache->GetMemoryBudget(type);
-    unsigned textureUse = cache->GetMemoryUse(type);
+    uint64_t textureBudget = cache->GetMemoryBudget(type);
+    uint64_t textureUse = cache->GetMemoryUse(type);
     if (!textureBudget)
         return;
 

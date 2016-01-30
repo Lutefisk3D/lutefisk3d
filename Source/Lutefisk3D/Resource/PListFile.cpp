@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,20 +34,6 @@ namespace Urho3D
 static PListValue EMPTY_VALUE;
 static PListValueMap EMPTY_VALUEMAP;
 static PListValueVector EMPTY_VALUEVECTOR;
-
-PListValue& PListValueMap::operator [](const QString& key)
-{
-    return HashMap<QString, PListValue>::operator [](key);
-}
-
-const PListValue& PListValueMap::operator [](const QString& key) const
-{
-    const_iterator i = find(key);
-    if (i == end())
-        return EMPTY_VALUE;
-
-    return MAP_VALUE(i);
-}
 
 PListValue::PListValue() : type_(PLVT_NONE)
 {
@@ -87,6 +73,20 @@ PListValue::PListValue(const PListValue& value) : type_(PLVT_NONE)
 {
     *this = value;
 }
+PListValue& PListValueMap::operator [](const QString& key)
+{
+    return HashMap<QString, PListValue>::operator [](key);
+}
+
+const PListValue& PListValueMap::operator [](const QString& key) const
+{
+    const_iterator i = find(key);
+    if (i == end())
+        return EMPTY_VALUE;
+
+    return MAP_VALUE(i);
+}
+
 
 PListValue::~PListValue()
 {
@@ -309,14 +309,14 @@ bool PListFile::BeginLoad(Deserializer& source)
     XMLFile xmlFile(context_);
     if (!xmlFile.Load(source))
     {
-        LOGERROR("Could not load property list");
+        URHO3D_LOGERROR("Could not load property list");
         return false;
     }
 
     XMLElement plistElem = xmlFile.GetRoot("plist");
     if (!plistElem)
     {
-        LOGERROR("Invalid property list file");
+        URHO3D_LOGERROR("Invalid property list file");
         return false;
     }
 
@@ -341,7 +341,7 @@ bool PListFile::LoadDict(PListValueMap& dict, const XMLElement& dictElem)
     while (keyElem && valueElem)
     {
         QString key = keyElem.GetValue();
-        XMLElement valueElem = keyElem.GetNext();
+        valueElem = keyElem.GetNext();
 
         PListValue value;
         if (!LoadValue(value, valueElem))
@@ -374,7 +374,7 @@ bool PListFile::LoadArray(PListValueVector& array, const XMLElement& arrayElem)
     return true;
 }
 
-bool PListFile::LoadValue(PListValue& value, XMLElement valueElem)
+bool PListFile::LoadValue(PListValue& value, const XMLElement& valueElem)
 {
     QString valueType = valueElem.GetName();
 
@@ -400,7 +400,7 @@ bool PListFile::LoadValue(PListValue& value, XMLElement valueElem)
     }
     else
     {
-        LOGERROR("Supported value type");
+        URHO3D_LOGERROR("Supported value type");
         return false;
     }
 

@@ -12,7 +12,7 @@ subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-
+// Modified by Yao Wei Tjong for Urho3D
 
 #ifndef BT_VECTOR3_H
 #define BT_VECTOR3_H
@@ -504,7 +504,7 @@ public:
 		float32x4_t vl = vsubq_f32(v1.mVec128, v0.mVec128);
 		vl = vmulq_n_f32(vl, rt);
 		mVec128 = vaddq_f32(vl, v0.mVec128);
-#else	
+#else
 		btScalar s = btScalar(1.0) - rt;
 		m_floats[0] = s * v0.m_floats[0] + rt * v1.m_floats[0];
 		m_floats[1] = s * v0.m_floats[1] + rt * v1.m_floats[1];
@@ -684,6 +684,7 @@ public:
 	{
 		return m_floats[0] == btScalar(0) && m_floats[1] == btScalar(0) && m_floats[2] == btScalar(0);
 	}
+
 
 	SIMD_FORCE_INLINE bool fuzzyZero() const 
 	{
@@ -1000,10 +1001,10 @@ SIMD_FORCE_INLINE btVector3 btVector3::rotate( const btVector3& wAxis, const btS
 SIMD_FORCE_INLINE   long    btVector3::maxDot( const btVector3 *array, long array_count, btScalar &dotOut ) const
 {
 #if (defined BT_USE_SSE && defined BT_USE_SIMD_VECTOR3 && defined BT_USE_SSE_IN_API) || defined (BT_USE_NEON)
-    #if defined _WIN32 || defined (BT_USE_SSE)
+    #ifdef BT_USE_SSE	// Urho3D - to be consistent with the function return below
         const long scalar_cutoff = 10;
         long _maxdot_large( const float *array, const float *vec, unsigned long array_count, float *dotOut );
-    #elif defined BT_USE_NEON
+    #elif BT_USE_NEON
         const long scalar_cutoff = 4;
         extern long (*_maxdot_large)( const float *array, const float *vec, unsigned long array_count, float *dotOut );
     #endif

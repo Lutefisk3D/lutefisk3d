@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 
 #include "Mutex.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include <pthread.h>
@@ -31,7 +31,7 @@
 namespace Urho3D
 {
 
-#ifdef WIN32
+#ifdef _WIN32
 Mutex::Mutex() :
     handle_(new CRITICAL_SECTION)
 {
@@ -49,6 +49,11 @@ Mutex::~Mutex()
 void Mutex::Acquire()
 {
     EnterCriticalSection((CRITICAL_SECTION*)handle_);
+}
+
+bool Mutex::TryAcquire()
+{
+    return TryEnterCriticalSection((CRITICAL_SECTION*)handle_) != FALSE;
 }
 
 void Mutex::Release()
@@ -77,6 +82,11 @@ Mutex::~Mutex()
 void Mutex::Acquire()
 {
     pthread_mutex_lock((pthread_mutex_t*)handle_);
+}
+
+bool Mutex::TryAcquire()
+{
+    return pthread_mutex_trylock((pthread_mutex_t*)handle_) == 0;
 }
 
 void Mutex::Release()

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
 #include "../IO/VectorBuffer.h"
+#include "../Scene/Component.h"
 
 namespace Urho3D
 {
@@ -47,7 +47,8 @@ struct AnimationControl
         setTime_(0),
         setWeight_(0),
         setTimeRev_(0),
-        setWeightRev_(0)
+        setWeightRev_(0),
+        removeOnCompletion_(true)
     {
     }
 
@@ -75,12 +76,14 @@ struct AnimationControl
     unsigned char setTimeRev_;
     /// Set weight command revision.
     unsigned char setWeightRev_;
+    /// Sets whether this should automatically be removed when it finishes playing.
+    bool removeOnCompletion_;
 };
 
 /// %Component that drives an AnimatedModel's animations.
 class AnimationController : public Component
 {
-    OBJECT(AnimationController);
+    URHO3D_OBJECT(AnimationController,Component);
 
 public:
     /// Construct.
@@ -124,6 +127,8 @@ public:
     bool SetSpeed(const QString& name, float speed);
     /// Set animation autofade at end (non-looped animations only.) Zero time disables. Return true on success.
     bool SetAutoFade(const QString& name, float fadeOutTime);
+    /// Set whether an animation auto-removes on completion.
+    bool SetRemoveOnCompletion(const QString& name, bool removeOnCompletion);
 
     /// Return whether an animation is active. Note that non-looping animations that are being clamped at the end also return true.
     bool IsPlaying(const QString& name) const;
@@ -155,6 +160,8 @@ public:
     float GetFadeTime(const QString& name) const;
     /// Return animation autofade time.
     float GetAutoFade(const QString& name) const;
+    /// Return whether animation auto-removes on completion, or false if no such animation.
+    bool GetRemoveOnCompletion(const QString& name) const;
     /// Find an animation state by animation name.
     AnimationState* GetAnimationState(const QString& name) const;
     /// Find an animation state by animation name hash
@@ -174,8 +181,8 @@ public:
     VariantVector GetNodeAnimationStatesAttr() const;
 
 protected:
-    /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node) override;
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene* scene) override;
 
 private:
     /// Add an animation state either to AnimatedModel or as a node animation.

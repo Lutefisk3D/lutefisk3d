@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,6 @@
 #include "../Resource/Resource.h"
 #include "../Resource/JSONValue.h"
 
-namespace rapidjson
-{
-    template <typename Encoding, typename Allocator> class GenericDocument;
-    typedef GenericDocument<UTF8<char>, MemoryPoolAllocator<CrtAllocator> > Document;
-}
 
 namespace Urho3D
 {
@@ -37,7 +32,7 @@ namespace Urho3D
 /// JSON document resource.
 class JSONFile : public Resource
 {
-    OBJECT(JSONFile);
+    URHO3D_OBJECT(JSONFile,Resource);
 
 public:
     /// Construct.
@@ -54,17 +49,14 @@ public:
     /// Save resource with user-defined indentation, only the first character (if any) of the string is used and the length of the string defines the character count. Return true if successful.
     bool Save(Serializer& dest, const QString& indendation) const;
 
-    /// Clear the document and create a root value, default is object type.
-    JSONValue CreateRoot(JSONValueType valueType = JSON_OBJECT);
-    /// Return the root value with specific value type, Return null value if not found.
-    JSONValue GetRoot(JSONValueType valueType = JSON_ANY);
-
-    /// Return rapidjson document.
-    rapidjson::Document* GetDocument() const { return document_; }
+    /// Return root value.
+    JSONValue& GetRoot() { return root_; }
+    /// Return root value.
+    const JSONValue& GetRoot() const { return root_; }
 
 private:
-    /// Rapid JSON document.
-    rapidjson::Document* document_;
+    /// JSON root value.
+    JSONValue root_;
 };
 
 }

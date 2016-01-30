@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,16 +36,15 @@ static const unsigned char USE_FIXEDUPDATE = 0x4;
 /// Bitmask for using the physics post-update event.
 static const unsigned char USE_FIXEDPOSTUPDATE = 0x8;
 
-/// Helper base class for user-defined game logic components that hooks up to update events and forwards them to virtual
-/// functions similar to ScriptInstance class.
+/// Helper base class for user-defined game logic components that hooks up to update events and forwards them to virtual functions similar to ScriptInstance class.
 class LogicComponent : public Component
 {
-    OBJECT(LogicComponent);
+    URHO3D_OBJECT(LogicComponent,Component);
 
     /// Construct.
     LogicComponent(Context* context);
     /// Destruct.
-    virtual ~LogicComponent();
+    virtual ~LogicComponent() = default;
 
     /// Handle enabled/disabled state change. Changes update event subscription.
     virtual void OnSetEnabled() override;
@@ -75,6 +74,8 @@ class LogicComponent : public Component
 protected:
     /// Handle scene node being assigned at creation.
     virtual void OnNodeSet(Node* node) override;
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene * scene) override;
 
 private:
     /// Subscribe/unsubscribe to update events based on current enabled state and update event mask.

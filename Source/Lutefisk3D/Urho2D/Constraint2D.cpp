@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +57,7 @@ Constraint2D::~Constraint2D()
 
 void Constraint2D::RegisterObject(Context* context)
 {
-    ACCESSOR_ATTRIBUTE("Collide Connected", GetCollideConnected, SetCollideConnected, bool, false, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Collide Connected", GetCollideConnected, SetCollideConnected, bool, false, AM_DEFAULT);
 }
 
 void Constraint2D::OnSetEnabled()
@@ -125,16 +125,19 @@ void Constraint2D::OnNodeSet(Node* node)
 
     if (node)
     {
-        Scene* scene = GetScene();
-        physicsWorld_ = scene->GetOrCreateComponent<PhysicsWorld2D>();
-
         ownerBody_ = node->GetComponent<RigidBody2D>();
         if (!ownerBody_)
         {
-            LOGERROR("No right body component in node, can not create constraint");
+            URHO3D_LOGERROR("No right body component in node, can not create constraint");
             return;
         }
     }
+}
+
+void Constraint2D::OnSceneSet(Scene * scene)
+{
+    if (scene)
+        physicsWorld_ = scene->GetOrCreateComponent<PhysicsWorld2D>();
 }
 
 void Constraint2D::InitializeJointDef(b2JointDef* jointDef)

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,13 +35,16 @@
 #include "../Input/InputEvents.h"
 #endif
 #include "../IO/Log.h"
+#include "../IO/PackageFile.h"
 #ifdef LUTEFISK3D_NAVIGATION
 #include "../Navigation/NavigationMesh.h"
 #endif
 #ifdef LUTEFISK3D_NETWORK
 #include "../Network/Network.h"
 #endif
-#include "../IO/PackageFile.h"
+#ifdef LUTEFISK3D_DATABASE
+#include "../Database/Database.h"
+#endif
 #ifdef LUTEFISK3D_PHYSICS
 #include "../Physics/PhysicsWorld.h"
 #endif
@@ -60,9 +63,6 @@
 #include "../Core/WorkQueue.h"
 #include "../Resource/XMLFile.h"
 
-#if defined(EMSCRIPTEN) && defined(URHO3D_TESTING)
-#include <emscripten.h>
-#endif
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 // From dbgint.h
@@ -100,7 +100,7 @@ Engine::Engine(Context* context) :
     maxInactiveFps_(60),
     pauseMinimized_(false),
     #endif
-    #ifdef URHO3D_TESTING
+    #ifdef LUTEFISK3D_TESTING
     timeOut_(0),
     #endif
     autoExit_(true),
@@ -126,6 +126,9 @@ Engine::Engine(Context* context) :
 #ifdef LUTEFISK3D_NETWORK
     context_->RegisterSubsystem(new Network(context_));
 #endif
+#ifdef LUTEFISK3D_DATABASE
+    context_->RegisterSubsystem(new Database(context_));
+#endif
 #ifdef LUTEFISK3D_INPUT
     context_->RegisterSubsystem(new Input(context_));
 #endif
@@ -146,7 +149,7 @@ Engine::Engine(Context* context) :
 #endif
 
 #ifdef LUTEFISK3D_INPUT
-    SubscribeToEvent(E_EXITREQUESTED, HANDLER(Engine, HandleExitRequested));
+    SubscribeToEvent(E_EXITREQUESTED, URHO3D_HANDLER(Engine, HandleExitRequested));
 #endif
 }
 
@@ -159,7 +162,7 @@ bool Engine::Initialize(const VariantMap& parameters)
     if (initialized_)
         return true;
 
-    PROFILE(InitEngine);
+    URHO3D_PROFILE(InitEngine);
 
     // Set headless mode
     headless_ = GetParameter(parameters, "Headless", false).GetBool();
@@ -205,125 +208,128 @@ bool Engine::Initialize(const VariantMap& parameters)
     {
         GetSubsystem<WorkQueue>()->CreateThreads(numThreads);
 
-        LOGINFO(QString("Created %1 worker thread%2").arg(numThreads).arg(numThreads > 1 ? "s" : ""));
+        URHO3D_LOGINFO(QString("Created %1 worker thread%2").arg(numThreads).arg(numThreads > 1 ? "s" : ""));
     }
 
     // Add resource paths
     ResourceCache* cache = GetSubsystem<ResourceCache>();
     FileSystem* fileSystem = GetSubsystem<FileSystem>();
 
-    QString resourcePrefixPath = AddTrailingSlash(GetParameter(parameters, "ResourcePrefixPath", getenv("URHO3D_PREFIX_PATH")).GetString());
-    if (resourcePrefixPath.isEmpty())
-        resourcePrefixPath = fileSystem->GetProgramDir();
-    else if (!IsAbsolutePath(resourcePrefixPath))
-        resourcePrefixPath = fileSystem->GetProgramDir() + resourcePrefixPath;
-    QStringList resourcePaths = GetParameter(parameters, "ResourcePaths", "Data;CoreData").GetString().split(';');
-    QStringList resourcePackages = GetParameter(parameters, "ResourcePackages").GetString().split(';');
-    QStringList autoLoadPaths = GetParameter(parameters, "AutoloadPaths", "Autoload").GetString().split(';');
+    QStringList resourcePrefixPaths = GetParameter(parameters, "ResourcePrefixPaths").GetString().split(';',QString::KeepEmptyParts);
+    for (QString &path : resourcePrefixPaths)
+        path = AddTrailingSlash( IsAbsolutePath(path) ? path : fileSystem->GetProgramDir() + path);
+
+    QStringList resourcePaths = GetParameter(parameters, "ResourcePaths", "Data;CoreData").GetString().split(';',QString::SkipEmptyParts);
+    QStringList resourcePackages = GetParameter(parameters, "ResourcePackages").GetString().split(';',QString::SkipEmptyParts);
+    QStringList autoLoadPaths = GetParameter(parameters, "AutoloadPaths", "Autoload").GetString().split(';',QString::SkipEmptyParts);
 
     for (QString & resourcePath : resourcePaths)
     {
-        bool success = false;
 
         // If path is not absolute, prefer to add it as a package if possible
         if (!IsAbsolutePath(resourcePath))
         {
-            QString packageName = resourcePrefixPath + resourcePath + ".pak";
-            if (fileSystem->FileExists(packageName))
-                success = cache->AddPackageFile(packageName);
-
-            if (!success)
+            unsigned j = 0;
+            for (; j < resourcePrefixPaths.size(); ++j)
             {
-                QString pathName = resourcePrefixPath + resourcePath;
+                QString packageName = resourcePrefixPaths[j] + resourcePath + ".pak";
+                if (fileSystem->FileExists(packageName))
+                {
+                    if (!cache->AddPackageFile(packageName))
+                        return false;   // The root cause of the error should have already been logged
+                    break;
+                }
+                QString pathName = resourcePrefixPaths[j] + resourcePath;
                 if (fileSystem->DirExists(pathName))
-                    success = cache->AddResourceDir(pathName);
+                {
+                    if (!cache->AddResourceDir(pathName))
+                        return false;
+                    break;
+                }
             }
+            if (j == resourcePrefixPaths.size())
+            {
+                URHO3D_LOGERROR(QString("Failed to add resource path '%1', "
+                                        "check the documentation on how to set the 'resource prefix path'").arg(resourcePath));
+                return false;
+            }
+
         }
         else
         {
-            QString pathName = resourcePath;
-            if (fileSystem->DirExists(pathName))
-                success = cache->AddResourceDir(pathName);
-        }
-
-        if (!success)
-        {
-            LOGERROR(QString("Failed to add resource path '%1', check the documentation on how to set the 'resource prefix path'")
-                     .arg(resourcePath));
-            return false;
+            if (fileSystem->DirExists(resourcePath))
+                if (!cache->AddResourceDir(resourcePath))
+                    return false;
         }
     }
 
     // Then add specified packages
     for (QString & resourcePackage : resourcePackages)
     {
-        QString packageName = resourcePrefixPath + resourcePackage;
-        if (fileSystem->FileExists(packageName))
-        {
-            if (!cache->AddPackageFile(packageName))
+        int j=0;
+        for(QString &prefix : resourcePrefixPaths) {
+            ++j;
+            QString packageName = prefix + resourcePackage;
+            if (fileSystem->FileExists(packageName))
             {
-                LOGERROR(QString("Failed to add resource package '%1', check the documentation on how to set the 'resource prefix path'")
-                         .arg(resourcePackage));
-                return false;
+                if (!cache->AddPackageFile(packageName))
+                    return false;
+                break;
             }
         }
-        else {
-            LOGDEBUG(QString("Skip specified resource package '%1' as it does not exist, check the documentation on how to set the 'resource prefix path'")
-                     .arg(resourcePackage));
+        if (j == resourcePrefixPaths.size())
+        {
+            URHO3D_LOGERROR(
+                        QString("Failed to add resource package '%1', check the documentation on how to set "
+                                "the 'resource prefix path'").arg(resourcePackage));
+            return false;
         }
     }
 
     // Add auto load folders. Prioritize these (if exist) before the default folders
     for (QString & autoLoadPaths_i : autoLoadPaths)
     {
-        QString autoLoadPath(autoLoadPaths_i);
-        if (!IsAbsolutePath(autoLoadPath))
-            autoLoadPath = resourcePrefixPath + autoLoadPath;
+        bool autoLoadPathExist = false;
+        for(QString &prefix : resourcePrefixPaths) {
+            QString autoLoadPath(autoLoadPaths_i);
+            if (!IsAbsolutePath(autoLoadPath))
+                autoLoadPath = prefix + autoLoadPath;
 
-        if (fileSystem->DirExists(autoLoadPath))
-        {
-            // Add all the subdirs (non-recursive) as resource directory
-            QStringList subdirs;
-            fileSystem->ScanDir(subdirs, autoLoadPath, "*", SCAN_DIRS, false);
-            for (QString & subdir : subdirs)
+            if (fileSystem->DirExists(autoLoadPath))
             {
-                QString dir = subdir;
-                if (dir.startsWith("."))
-                    continue;
-
-                QString autoResourceDir = autoLoadPath + "/" + dir;
-                if (!cache->AddResourceDir(autoResourceDir, 0))
+                autoLoadPathExist = true;
+                // Add all the subdirs (non-recursive) as resource directory
+                QStringList subdirs;
+                fileSystem->ScanDir(subdirs, autoLoadPath, "*", SCAN_DIRS, false);
+                for (QString & subdir : subdirs)
                 {
-                    LOGERROR(QString("Failed to add resource directory '%1' in autoload path %2, check the documentation on how to set the 'resource prefix path'")
-                             .arg(dir)
-                             .arg(autoLoadPaths_i));
-                    return false;
+                    QString dir = subdir;
+                    if (dir.startsWith("."))
+                        continue;
+
+                    QString autoResourceDir = autoLoadPath + "/" + dir;
+                    if (!cache->AddResourceDir(autoResourceDir, 0))
+                        return false;
                 }
-            }
 
-            // Add all the found package files (non-recursive)
-            QStringList paks;
-            fileSystem->ScanDir(paks, autoLoadPath, "*.pak", SCAN_FILES, false);
-            for (QString & paks_y : paks)
-            {
-                QString pak = paks_y;
-                if (pak.startsWith("."))
-                    continue;
-
-                QString autoPackageName = autoLoadPath + "/" + pak;
-                if (!cache->AddPackageFile(autoPackageName, 0))
+                // Add all the found package files (non-recursive)
+                QStringList paks;
+                fileSystem->ScanDir(paks, autoLoadPath, "*.pak", SCAN_FILES, false);
+                for (QString & paks_y : paks)
                 {
-                    LOGERROR(QString("Failed to add package file '%1' in autoload path %2, check the documentation on how to set the 'resource prefix path'")
-                             .arg(pak)
-                             .arg(autoLoadPaths_i));
-                    return false;
+                    QString pak = paks_y;
+                    if (pak.startsWith("."))
+                        continue;
+
+                    QString autoPackageName = autoLoadPath + "/" + pak;
+                    if (!cache->AddPackageFile(autoPackageName, 0))
+                        return false;
                 }
             }
         }
-        else {
-            LOGDEBUG(QString("Skipped autoload path '%1' as it does not exist, check the documentation on how to set the 'resource prefix path'")
-                     .arg(autoLoadPaths_i));
-        }
+        if (!autoLoadPathExist)
+            URHO3D_LOGDEBUG(QString("Skipped autoload path '%1' as it does not exist, check the documentation on how to set the 'resource prefix path'")
+                            .arg(autoLoadPaths_i));
     }
 
     // Initialize graphics & audio output
@@ -364,7 +370,7 @@ bool Engine::Initialize(const VariantMap& parameters)
 
         renderer->SetDrawShadows(GetParameter(parameters, "Shadows", true).GetBool());
         if (renderer->GetDrawShadows() && GetParameter(parameters, "LowQualityShadows", false).GetBool())
-            renderer->SetShadowQuality(SHADOWQUALITY_LOW_16BIT);
+            renderer->SetShadowQuality(SHADOWQUALITY_SIMPLE_16BIT);
         renderer->SetMaterialQuality(GetParameter(parameters, "MaterialQuality", QUALITY_HIGH).GetInt());
         renderer->SetTextureQuality(GetParameter(parameters, "TextureQuality", QUALITY_HIGH).GetInt());
         renderer->SetTextureFilterMode((TextureFilterMode)GetParameter(parameters, "TextureFilterMode", FILTER_TRILINEAR).GetInt());
@@ -389,7 +395,7 @@ bool Engine::Initialize(const VariantMap& parameters)
     if (HasParameter(parameters, "TouchEmulation"))
         GetSubsystem<Input>()->SetTouchEmulation(GetParameter(parameters, "TouchEmulation").GetBool());
 #endif
-#ifdef URHO3D_TESTING
+#ifdef LUTEFISK3D_TESTING
     if (HasParameter(parameters, "TimeOut"))
         timeOut_ = GetParameter(parameters, "TimeOut", 0).GetInt() * 1000000LL;
 #endif
@@ -406,7 +412,7 @@ bool Engine::Initialize(const VariantMap& parameters)
 
     frameTimer_.Reset();
 
-    LOGINFO("Initialized engine");
+    URHO3D_LOGINFO("Initialized engine");
     initialized_ = true;
     return true;
 }
@@ -545,58 +551,37 @@ void Engine::DumpProfiler()
 {
     Profiler* profiler = GetSubsystem<Profiler>();
     if (profiler)
-        LOGRAW(profiler->GetData(true, true) + "\n");
+        URHO3D_LOGRAW(profiler->PrintData(true, true) + "\n");
 }
 
 void Engine::DumpResources(bool dumpFileName)
 {
-#ifdef URHO3D_LOGGING
+#ifdef LUTEFISK3D_LOGGING
     ResourceCache* cache = GetSubsystem<ResourceCache>();
     const HashMap<StringHash, ResourceGroup>& resourceGroups = cache->GetAllResources();
-    LOGRAW("\n");
+    URHO3D_LOGRAW("\n");
 
     if (dumpFileName)
     {
-        LOGRAW("Used resources:\n");
-    }
-
-    for (const auto & entry : resourceGroups)
-    {
-        const ResourceGroup & resourceGroup(ELEMENT_VALUE(entry));
-        const HashMap<StringHash, SharedPtr<Resource> >& resources = resourceGroup.resources_;
-        if (dumpFileName)
+        URHO3D_LOGRAW("Used resources:\n");
+        for (const auto & entry : resourceGroups)
         {
-            for (auto j : resources)
-            {
-                LOGRAW(ELEMENT_VALUE(j)->GetName() + "\n");
-            }
-
-        }
-        else
-        {
-            unsigned num = resources.size();
-            unsigned memoryUse = resourceGroup.memoryUse_;
-
-            if (num)
-            {
-                LOGRAW(QString("Resource type %1: count %2 memory use %3\n")
-                       .arg(MAP_VALUE(resources.begin())->GetTypeName())
-                       .arg(num)
-                       .arg(memoryUse));
+            const ResourceGroup & resourceGroup(ELEMENT_VALUE(entry));
+            const HashMap<StringHash, SharedPtr<Resource> >& resources = resourceGroup.resources_;
+            if (dumpFileName) {
+                for (auto j : resources)
+                    URHO3D_LOGRAW(ELEMENT_VALUE(j)->GetName() + "\n");
             }
         }
     }
-
-    if (!dumpFileName)
-    {
-        LOGRAW(QString("Total memory use of all resources %1\n\n").arg(cache->GetTotalMemoryUse()));
-    }
+    else
+        URHO3D_LOGRAW(cache->PrintMemoryUsage());
 #endif
 }
 
 void Engine::DumpMemory()
 {
-#ifdef URHO3D_LOGGING
+#ifdef LUTEFISK3D_LOGGING
 #if defined(_MSC_VER) && defined(_DEBUG)
     _CrtMemState state;
     _CrtMemCheckpoint(&state);
@@ -617,9 +602,9 @@ void Engine::DumpMemory()
         if (block->nBlockUse > 0)
         {
             if (block->szFileName)
-                LOGRAW("Block " + String::number((int)block->lRequest) + ": " + String::number(block->nDataSize) + " bytes, file " + String::number(block->szFileName) + " line " + String(block->nLine) + "\n");
+                URHO3D_LOGRAW("Block " + String::number((int)block->lRequest) + ": " + String::number(block->nDataSize) + " bytes, file " + String::number(block->szFileName) + " line " + String(block->nLine) + "\n");
             else
-                LOGRAW("Block " + String::number((int)block->lRequest) + ": " + String::number(block->nDataSize) + " bytes\n");
+                URHO3D_LOGRAW("Block " + String::number((int)block->lRequest) + ": " + String::number(block->nDataSize) + " bytes\n");
 
             total += block->nDataSize;
             ++blocks;
@@ -627,16 +612,16 @@ void Engine::DumpMemory()
         block = block->pBlockHeaderPrev;
     }
 
-    LOGRAW("Total allocated memory " + String::number(total) + " bytes in " + String::number(blocks) + " blocks\n\n");
+    URHO3D_LOGRAW("Total allocated memory " + String::number(total) + " bytes in " + String::number(blocks) + " blocks\n\n");
 #else
-    LOGRAW("DumpMemory() supported on MSVC debug mode only\n\n");
+    URHO3D_LOGRAW("DumpMemory() supported on MSVC debug mode only\n\n");
 #endif
 #endif
 }
 
 void Engine::Update()
 {
-    PROFILE(Update);
+    URHO3D_PROFILE(Update);
 
     // Logic update event
     using namespace Update;
@@ -660,7 +645,7 @@ void Engine::Render()
     if (headless_)
         return;
 
-    PROFILE(Render);
+    URHO3D_PROFILE(Render);
 
     // If device is lost, BeginFrame will fail and we skip rendering
     Graphics* graphics = GetSubsystem<Graphics>();
@@ -691,7 +676,7 @@ void Engine::ApplyFrameLimit()
     // Perform waiting loop if maximum FPS set
     if (maxFps)
     {
-        PROFILE(ApplyFrameLimit);
+        URHO3D_PROFILE(ApplyFrameLimit);
 
         long long targetMax = 1000000LL / maxFps;
 
@@ -711,7 +696,7 @@ void Engine::ApplyFrameLimit()
     }
 
     elapsed = frameTimer_.GetUSec(true);
-#ifdef URHO3D_TESTING
+#ifdef LUTEFISK3D_TESTING
     if (timeOut_ > 0)
     {
         timeOut_ -= elapsed;
@@ -746,6 +731,9 @@ void Engine::ApplyFrameLimit()
 VariantMap Engine::ParseParameters(const QStringList& arguments)
 {
     VariantMap ret;
+    // Pre-initialize the parameters with environment variable values when they are set
+    if (const char* paths = getenv("URHO3D_PREFIX_PATH"))
+        ret["ResourcePrefixPaths"] = paths;
 
     for (unsigned i = 0; i < arguments.size(); ++i)
     {
@@ -801,8 +789,8 @@ VariantMap Engine::ParseParameters(const QStringList& arguments)
                 ret["LogQuiet"] = true;
             else if (argument == "log" && !value.isEmpty())
             {
-                int logLevel = GetStringListIndex(value, logLevelPrefixes, -1);
-                if (logLevel != -1)
+                unsigned logLevel = GetStringListIndex(value, logLevelPrefixes, M_MAX_UNSIGNED);
+                if (logLevel != M_MAX_UNSIGNED)
                 {
                     ret["LogLevel"] = logLevel;
                     ++i;
@@ -835,7 +823,7 @@ VariantMap Engine::ParseParameters(const QStringList& arguments)
             }
             else if (argument == "pp" && !value.isEmpty())
             {
-                ret["ResourcePrefixPath"] = value;
+                ret["ResourcePrefixPaths"] = value;
                 ++i;
             }
             else if (argument == "p" && !value.isEmpty())
@@ -881,7 +869,7 @@ VariantMap Engine::ParseParameters(const QStringList& arguments)
             }
             else if (argument == "touch")
                 ret["TouchEmulation"] = true;
-#ifdef URHO3D_TESTING
+#ifdef LUTEFISK3D_TESTING
             else if (argument == "timeout" && !value.isEmpty())
             {
                 ret["TimeOut"] = value.toInt();
@@ -924,7 +912,7 @@ void Engine::DoExit()
         graphics->Close();
 
     exiting_ = true;
-#if defined(EMSCRIPTEN) && defined(URHO3D_TESTING)
+#if defined(__EMSCRIPTEN__) && defined(LUTEFISK3D_TESTING)
     emscripten_force_exit(EXIT_SUCCESS);    // Some how this is required to signal emrun to stop
 #endif
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,11 @@
 
 #include "Obstacle.h"
 
+#include "DynamicNavigationMesh.h"
+#include "NavigationEvents.h"
 #include "../Core/Context.h"
 #include "../Graphics/DebugRenderer.h"
-#include "DynamicNavigationMesh.h"
 #include "../IO/Log.h"
-#include "NavigationEvents.h"
 #include "../Scene/Scene.h"
 
 namespace Urho3D
@@ -51,9 +51,9 @@ Obstacle::~Obstacle()
 void Obstacle::RegisterObject(Context* context)
 {
     context->RegisterFactory<Obstacle>(NAVIGATION_CATEGORY);
-    COPY_BASE_ATTRIBUTES(Component);
-    ACCESSOR_ATTRIBUTE("Radius", GetRadius, SetRadius, float, 5.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Height", GetHeight, SetHeight, float, 5.0f, AM_DEFAULT);
+    URHO3D_COPY_BASE_ATTRIBUTES(Component);
+    URHO3D_ACCESSOR_ATTRIBUTE("Radius", GetRadius, SetRadius, float, 5.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Height", GetHeight, SetHeight, float, 5.0f, AM_DEFAULT);
 }
 
 void Obstacle::OnSetEnabled()
@@ -83,17 +83,17 @@ void Obstacle::SetRadius(float newRadius)
     MarkNetworkUpdate();
 }
 
-void Obstacle::OnNodeSet(Node* node)
+void Obstacle::OnSceneSet(Scene* scene)
 {
-    if (node)
+    if (scene)
     {
-        if (GetScene() == node)
+        if (scene == node_)
         {
-            LOGWARNING(GetTypeName() + " should not be created to the root scene node");
+            URHO3D_LOGWARNING(GetTypeName() + " should not be created to the root scene node");
             return;
         }
         if (!ownerMesh_)
-            ownerMesh_ = GetScene()->GetComponent<DynamicNavigationMesh>();
+            ownerMesh_ = node_->GetParentComponent<DynamicNavigationMesh>(true);
         if (ownerMesh_)
             ownerMesh_->AddObstacle(this);
     }
@@ -101,6 +101,7 @@ void Obstacle::OnNodeSet(Node* node)
     {
         if (obstacleId_ > 0 && ownerMesh_)
             ownerMesh_->RemoveObstacle(this);
+        ownerMesh_.Reset();
     }
 }
 

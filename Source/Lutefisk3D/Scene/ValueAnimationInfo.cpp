@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,8 +20,9 @@
 // THE SOFTWARE.
 //
 
-#include "../Scene/ValueAnimation.h"
-#include "../Scene/ValueAnimationInfo.h"
+#include "ValueAnimationInfo.h"
+
+#include "ValueAnimation.h"
 #include "../IO/Log.h"
 #include "../Math/MathDefs.h"
 
@@ -59,16 +60,20 @@ ValueAnimationInfo::ValueAnimationInfo(const ValueAnimationInfo& other) :
 {
 }
 
-ValueAnimationInfo::~ValueAnimationInfo()
-{
-}
-
 bool ValueAnimationInfo::Update(float timeStep)
 {
-    if (!animation_ || !target_)
+    if ((animation_ == nullptr) || (target_ == nullptr))
         return true;
 
-    currentTime_ += timeStep * speed_;
+    return SetTime(currentTime_ + timeStep * speed_);
+}
+
+bool ValueAnimationInfo::SetTime(float time)
+{
+    if ((animation_ == nullptr) || (target_ == nullptr))
+        return true;
+
+    currentTime_ = time;
 
     if (!animation_->IsValid())
         return true;
@@ -87,8 +92,8 @@ bool ValueAnimationInfo::Update(float timeStep)
         std::vector<const VAnimEventFrame*> eventFrames;
         GetEventFrames(lastScaledTime_, scaledTime, eventFrames);
 
-        for (unsigned i = 0; i < eventFrames.size(); ++i)
-            target_->SendEvent(eventFrames[i]->eventType_, const_cast<VariantMap&>(eventFrames[i]->eventData_));
+        for (const VAnimEventFrame* fr : eventFrames)
+            target_->SendEvent(fr->eventType_, const_cast<VariantMap&>(fr->eventData_));
     }
 
     lastScaledTime_ = scaledTime;
@@ -101,7 +106,7 @@ Object* ValueAnimationInfo::GetTarget() const
     return target_;
 }
 
-void ValueAnimationInfo::ApplyValue(const Variant & newValue)
+void ValueAnimationInfo::ApplyValue(const Variant & /*newValue*/)
 {
 }
 
@@ -116,8 +121,9 @@ float ValueAnimationInfo::CalculateScaledTime(float currentTime, bool& finished)
         {
             float span = endTime - beginTime;
             float time = fmodf(currentTime - beginTime, span);
-            if (time < 0.0f)
+            if (time < 0.0f) {
                 time += span;
+            }
             return beginTime + time;
         }
 
@@ -129,7 +135,7 @@ float ValueAnimationInfo::CalculateScaledTime(float currentTime, bool& finished)
         return Clamp(currentTime, beginTime, endTime);
 
     default:
-        LOGERROR("Unsupported attribute animation wrap mode");
+        URHO3D_LOGERROR("Unsupported attribute animation wrap mode");
         return beginTime;
     }
 }

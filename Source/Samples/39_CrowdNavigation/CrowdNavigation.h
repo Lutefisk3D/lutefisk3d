@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,6 @@ class Scene;
 
 }
 
-const int NUM_BARRELS = 20;
 
 /// CrowdNavigation example.
 /// This sample demonstrates:
@@ -49,7 +48,7 @@ const int NUM_BARRELS = 20;
 ///     - Using agents to simulate moving obstacles
 class CrowdNavigation : public Sample
 {
-    OBJECT(CrowdNavigation);
+    URHO3D_OBJECT(CrowdNavigation,Sample);
 
 public:
     /// Construct.
@@ -78,7 +77,7 @@ protected:
         "                <attribute name=\"Horiz Alignment\" value=\"Center\" />"
         "                <attribute name=\"Vert Alignment\" value=\"Center\" />"
         "                <attribute name=\"Color\" value=\"0 0 0 1\" />"
-        "                <attribute name=\"Text\" value=\"Teleport\" />"
+        "                <attribute name=\"Text\" value=\"Spawn\" />"
         "            </element>"
         "            <element type=\"Text\">"
         "                <attribute name=\"Name\" value=\"KeyBinding\" />"
@@ -147,7 +146,7 @@ private:
     /// Add new obstacle or remove existing obstacle/agent.
     void AddOrRemoveObject();
     /// Create a "Jack" object at position.
-    void SpawnJack(const Vector3& pos);
+    void SpawnJack(const Vector3& pos, Node* jackGroup);
     /// Create a mushroom object at position.
     void CreateMushroom(const Vector3& pos);
     /// Create an off-mesh connection for each box to make it climbable.
@@ -164,6 +163,8 @@ private:
     void HandleCrowdAgentFailure(StringHash eventType, VariantMap& eventData);
     /// Handle crowd agent reposition.
     void HandleCrowdAgentReposition(StringHash eventType, VariantMap& eventData);
+    /// Handle crowd agent formation.
+    void HandleCrowdAgentFormation(StringHash eventType, VariantMap& eventData);
     /// Flag for drawing debug geometry.
     bool drawDebug_;
 };

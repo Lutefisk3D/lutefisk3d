@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,13 +30,13 @@ namespace Urho3D
 /// %Slider bar %UI element.
 class Slider : public BorderImage
 {
-    OBJECT(Slider);
+    URHO3D_OBJECT(Slider,BorderImage);
 
 public:
     /// Construct.
     Slider(Context* context);
     /// Destruct.
-    virtual ~Slider();
+    virtual ~Slider() = default;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -51,7 +51,7 @@ public:
     /// React to mouse drag begin.
     virtual void OnDragBegin(const IntVector2& position, const IntVector2& screenPosition, int buttons, int qualifiers, Cursor* cursor) override;
     /// React to mouse drag motion.
-    virtual void OnDragMove(const IntVector2& position, const IntVector2& screenPosition, const IntVector2& deltaPos, int buttons, int qualifiers, Cursor* cursor) override;
+    virtual void OnDragMove(const IntVector2& position, const IntVector2&, const IntVector2&, int, int, Cursor*) override;
     /// React to mouse drag end.
     virtual void OnDragEnd(const IntVector2& position, const IntVector2& screenPosition, int dragButtons, int buttons, Cursor* cursor) override;
     /// React to resize.

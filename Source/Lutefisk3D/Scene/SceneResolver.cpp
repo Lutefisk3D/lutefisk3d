@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,11 @@
 // THE SOFTWARE.
 //
 
-#include "Component.h"
 #include "SceneResolver.h"
-#include "../IO/Log.h"
+
+#include "Component.h"
 #include "Node.h"
+#include "../IO/Log.h"
 
 #include <QtCore/QSet>
 
@@ -46,13 +47,13 @@ void SceneResolver::Reset()
 
 void SceneResolver::AddNode(unsigned oldID, Node* node)
 {
-    if (node)
+    if (node != nullptr)
         nodes_[oldID] = node;
 }
 
 void SceneResolver::AddComponent(unsigned oldID, Component* component)
 {
-    if (component)
+    if (component != nullptr)
         components_[oldID] = component;
 }
 
@@ -63,12 +64,12 @@ void SceneResolver::Resolve()
     for (auto & elem : components_)
     {
         Component * component = ELEMENT_VALUE(elem);
-        if (!component || noIDAttributes.contains(component->GetType()))
+        if ((component == nullptr) || noIDAttributes.contains(component->GetType()))
             continue;
 
         bool hasIDAttributes = false;
         const std::vector<AttributeInfo>* attributes = component->GetAttributes();
-        if (!attributes)
+        if (attributes == nullptr)
         {
             noIDAttributes.insert(component->GetType());
             continue;
@@ -77,12 +78,12 @@ void SceneResolver::Resolve()
         for (unsigned j = 0; j < attributes->size(); ++j)
         {
             const AttributeInfo& info = attributes->at(j);
-            if (info.mode_ & AM_NODEID)
+            if ((info.mode_ & AM_NODEID) != 0u)
             {
                 hasIDAttributes = true;
                 unsigned oldNodeID = component->GetAttribute(j).GetUInt();
 
-                if (oldNodeID)
+                if (oldNodeID != 0u)
                 {
                     HashMap<unsigned, WeakPtr<Node> >::const_iterator k = nodes_.find(oldNodeID);
 
@@ -92,15 +93,15 @@ void SceneResolver::Resolve()
                         component->SetAttribute(j, Variant(newNodeID));
                     }
                     else
-                        LOGWARNING("Could not resolve node ID " + QString::number(oldNodeID));
+                        URHO3D_LOGWARNING("Could not resolve node ID " + QString::number(oldNodeID));
                 }
             }
-            else if (info.mode_ & AM_COMPONENTID)
+            else if ((info.mode_ & AM_COMPONENTID) != 0u)
             {
                 hasIDAttributes = true;
                 unsigned oldComponentID = component->GetAttribute(j).GetUInt();
 
-                if (oldComponentID)
+                if (oldComponentID != 0u)
                 {
                     HashMap<unsigned, WeakPtr<Component> >::const_iterator k = components_.find(oldComponentID);
 
@@ -110,15 +111,15 @@ void SceneResolver::Resolve()
                         component->SetAttribute(j, Variant(newComponentID));
                     }
                     else
-                        LOGWARNING("Could not resolve component ID " + QString::number(oldComponentID));
+                        URHO3D_LOGWARNING("Could not resolve component ID " + QString::number(oldComponentID));
                 }
             }
-            else if (info.mode_ & AM_NODEIDVECTOR)
+            else if ((info.mode_ & AM_NODEIDVECTOR) != 0u)
             {
                 hasIDAttributes = true;
                 const VariantVector& oldNodeIDs = component->GetAttribute(j).GetVariantVector();
 
-                if (oldNodeIDs.size())
+                if (oldNodeIDs.size() != 0u)
                 {
                     // The first index stores the number of IDs redundantly. This is for editing
                     unsigned numIDs = oldNodeIDs[0].GetUInt();
@@ -136,7 +137,7 @@ void SceneResolver::Resolve()
                         {
                             // If node was not found, retain number of elements, just store ID 0
                             newIDs.push_back(0);
-                            LOGWARNING("Could not resolve node ID " + QString::number(oldNodeID));
+                            URHO3D_LOGWARNING("Could not resolve node ID " + QString::number(oldNodeID));
                         }
                     }
 

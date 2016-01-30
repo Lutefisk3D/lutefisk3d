@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,15 @@
 // THE SOFTWARE.
 //
 
-#include "../Audio/Audio.h"
+#include "SoundSource.h"
+#include "Audio.h"
+#include "Sound.h"
+#include "SoundStream.h"
+#include "AudioEvents.h"
 #include "../Core/Context.h"
 #include "../Resource/ResourceCache.h"
-#include "../Audio/Sound.h"
-#include "../Audio/SoundSource.h"
-#include "../Audio/SoundStream.h"
-
+#include "../Scene/ReplicationState.h"
+#include "../Scene/Node.h"
 #include <cstring>
 
 namespace Urho3D
@@ -102,9 +104,8 @@ SoundSource::SoundSource(Context* context) :
     gain_(1.0f),
     attenuation_(1.0f),
     panning_(0.0f),
-    autoRemoveTimer_(0.0f),
-    autoRemove_(false),
-    position_(nullptr),
+    sendFinishedEvent_(false),
+    position_(0),
     fractPosition_(0),
     timePosition_(0.0f),
     unusedStreamSize_(0)
@@ -127,16 +128,15 @@ void SoundSource::RegisterObject(Context* context)
 {
     context->RegisterFactory<SoundSource>(AUDIO_CATEGORY);
 
-    ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Sound", GetSoundAttr, SetSoundAttr, ResourceRef, ResourceRef(Sound::GetTypeStatic()), AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Type", GetSoundType, SetSoundType, QString, SOUND_EFFECT, AM_DEFAULT);
-    ATTRIBUTE("Frequency", float, frequency_, 0.0f, AM_DEFAULT);
-    ATTRIBUTE("Gain", float, gain_, 1.0f, AM_DEFAULT);
-    ATTRIBUTE("Attenuation", float, attenuation_, 1.0f, AM_DEFAULT);
-    ATTRIBUTE("Panning", float, panning_, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Is Playing", IsPlaying, SetPlayingAttr, bool, false, AM_DEFAULT);
-    ATTRIBUTE("Autoremove on Stop", bool, autoRemove_, false, AM_FILE);
-    ACCESSOR_ATTRIBUTE("Play Position", GetPositionAttr, SetPositionAttr, int, 0, AM_FILE);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Sound", GetSoundAttr, SetSoundAttr, ResourceRef, ResourceRef(Sound::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Type", GetSoundType, SetSoundType, QString, SOUND_EFFECT, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Frequency", float, frequency_, 0.0f, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Gain", float, gain_, 1.0f, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Attenuation", float, attenuation_, 1.0f, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Panning", float, panning_, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Playing", IsPlaying, SetPlayingAttr, bool, false, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Play Position", GetPositionAttr, SetPositionAttr, int, 0, AM_FILE);
 }
 
 void SoundSource::Play(Sound* sound)
@@ -156,6 +156,19 @@ void SoundSource::Play(Sound* sound)
     }
     else
         PlayLockless(sound);
+    // Forget the Sound & Is Playing attribute previous values so that they will be sent again, triggering
+    // the sound correctly on network clients even after the initial playback
+    if (networkState_ && networkState_->attributes_ && networkState_->previousValues_.size())
+    {
+        for (unsigned i = 1; i < networkState_->previousValues_.size(); ++i)
+        {
+            // The indexing is different for SoundSource & SoundSource3D, as SoundSource3D removes two attributes,
+            // so go by attribute types
+            VariantType type = networkState_->attributes_->at(i).type_;
+            if (type == VAR_RESOURCEREF || type == VAR_BOOL)
+                networkState_->previousValues_[i] = Variant::EMPTY;
+        }
+    }
 
     MarkNetworkUpdate();
 }
@@ -246,7 +259,7 @@ void SoundSource::SetFrequency(float frequency)
 
 void SoundSource::SetGain(float gain)
 {
-    gain_ = Max(gain, 0.0f);
+    gain_ = std::max(gain, 0.0f);
     MarkNetworkUpdate();
 }
 
@@ -262,10 +275,10 @@ void SoundSource::SetPanning(float panning)
     MarkNetworkUpdate();
 }
 
-void SoundSource::SetAutoRemove(bool enable)
-{
-    autoRemove_ = enable;
-}
+//void SoundSource::SetAutoRemove(bool enable)
+//{
+//    autoRemove_ = enable;
+//}
 
 bool SoundSource::IsPlaying() const
 {
@@ -294,22 +307,25 @@ void SoundSource::Update(float timeStep)
     // Free the stream if playback has stopped
     if (soundStream_ && !position_)
         StopLockless();
+    bool playing = IsPlaying();
 
-    // Check for autoremove
-    if (autoRemove_)
+    if (!playing && sendFinishedEvent_)
     {
-        if (!IsPlaying())
-        {
-            autoRemoveTimer_ += timeStep;
-            if (autoRemoveTimer_ > AUTOREMOVE_DELAY)
-            {
-                Remove();
-                // Note: this object is now deleted, so only returning immediately is safe
-                return;
-            }
-        }
-        else
-            autoRemoveTimer_ = 0.0f;
+        sendFinishedEvent_ = false;
+
+        // Make a weak pointer to self to check for destruction during event handling
+        WeakPtr<SoundSource> self(this);
+
+        using namespace SoundFinished;
+
+        VariantMap& eventData = context_->GetEventDataMap();
+        eventData[P_NODE] = node_;
+        eventData[P_SOUNDSOURCE] = this;
+        eventData[P_SOUND] = sound_;
+        node_->SendEvent(E_SOUNDFINISHED, eventData);
+
+        if (self.Expired())
+            return;
     }
 }
 
@@ -335,12 +351,12 @@ void SoundSource::Mix(int* dest, unsigned samples, int mixRate, bool stereo, boo
         position_ = streamBuffer_->GetStart();
 
         // Request new data from the stream
-        signed char* dest = streamBuffer_->GetStart() + unusedStreamSize_;
-        outBytes = neededSize ? soundStream_->GetData(dest, neededSize) : 0;
-        dest += outBytes;
+        signed char* destination = streamBuffer_->GetStart() + unusedStreamSize_;
+        outBytes = neededSize ? soundStream_->GetData(destination, (unsigned)neededSize) : 0;
+        destination += outBytes;
         // Zero-fill rest if stream did not produce enough data
         if (outBytes < neededSize)
-            memset(dest, 0, neededSize - outBytes);
+            memset(destination, 0, (size_t)(neededSize - outBytes));
 
         // Calculate amount of total bytes of data in stream buffer now, to know how much went unused after mixing
         streamFilledSize = neededSize + unusedStreamSize_;
@@ -392,9 +408,9 @@ void SoundSource::Mix(int* dest, unsigned samples, int mixRate, bool stereo, boo
     {
         timePosition_ += ((float)samples / (float)mixRate) * frequency_ / soundStream_->GetFrequency();
 
-        unusedStreamSize_ = Max(streamFilledSize - (int)(size_t)(position_ - streamBuffer_->GetStart()), 0);
+        unusedStreamSize_ = std::max(streamFilledSize - (int)(size_t)(position_ - streamBuffer_->GetStart()), 0);
         if (unusedStreamSize_)
-            memcpy(streamBuffer_->GetStart(), (const void*)position_, unusedStreamSize_);
+            memcpy(streamBuffer_->GetStart(), (const void*)position_, (size_t)unusedStreamSize_);
 
         // If stream did not produce any data, stop if applicable
         if (!outBytes && soundStream_->GetStopAtEnd())
@@ -477,6 +493,7 @@ void SoundSource::PlayLockless(Sound* sound)
                 sound_ = sound;
                 position_ = start;
                 fractPosition_ = 0;
+                sendFinishedEvent_ = true;
                 return;
             }
         }
@@ -514,6 +531,7 @@ void SoundSource::PlayLockless(SharedPtr<SoundStream> stream)
         unusedStreamSize_ = 0;
         position_ = streamBuffer_->GetStart();
         fractPosition_ = 0;
+        sendFinishedEvent_ = true;
         return;
     }
 

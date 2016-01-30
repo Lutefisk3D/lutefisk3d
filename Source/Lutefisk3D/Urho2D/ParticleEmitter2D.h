@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ class Sprite2D;
     float timeToLive_;
 
     /// Position.
-    Vector2 position_;
+    Vector3 position_;
     /// Size.
     float size_;
     /// Size delta.
@@ -75,7 +75,7 @@ class Sprite2D;
 /// 2D particle emitter component.
 class ParticleEmitter2D : public Drawable2D
 {
-    OBJECT(ParticleEmitter2D);
+    URHO3D_OBJECT(ParticleEmitter2D,Drawable2D);
 
 public:
     /// Construct.
@@ -86,7 +86,7 @@ public:
     static void RegisterObject(Context* context);
 
     /// Handle enabled/disabled state change.
-    virtual void OnSetEnabled();
+    virtual void OnSetEnabled() override;
     
     /// Set particle effect.
     void SetEffect(ParticleEffect2D* effect);
@@ -116,14 +116,14 @@ public:
     ResourceRef GetSpriteAttr() const;
 
 private:
-    /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node);
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene *scene) override;
     /// Recalculate the world-space bounding box.
-    virtual void OnWorldBoundingBoxUpdate();
+    virtual void OnWorldBoundingBoxUpdate() override;
     /// Handle draw order changed.
-    virtual void OnDrawOrderChanged();
+    virtual void OnDrawOrderChanged() override;
     /// Update source batches.
-    virtual void UpdateSourceBatches();
+    virtual void UpdateSourceBatches() override;
     /// Update material.
     void UpdateMaterial();
     /// Handle scene post update.

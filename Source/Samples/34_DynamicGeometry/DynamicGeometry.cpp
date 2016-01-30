@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@
 #include <Lutefisk3D/UI/UI.h>
 #include <Lutefisk3D/Graphics/Zone.h>
 
-DEFINE_APPLICATION_MAIN(DynamicGeometry)
+URHO3D_DEFINE_APPLICATION_MAIN(DynamicGeometry)
 
 DynamicGeometry::DynamicGeometry(Context* context) :
     Sample(context),
@@ -101,7 +101,7 @@ void DynamicGeometry::CreateScene()
     Model* originalModel = cache->GetResource<Model>("Models/Box.mdl");
     if (!originalModel)
     {
-        LOGERROR("Model not found, cannot initialize example scene");
+        URHO3D_LOGERROR("Model not found, cannot initialize example scene");
         return;
     }
     // Get the vertex buffer from the first geometry's first LOD level
@@ -136,7 +136,7 @@ void DynamicGeometry::CreateScene()
     }
     else
     {
-        LOGERROR("Failed to lock the model vertex buffer to get original vertices");
+        URHO3D_LOGERROR("Failed to lock the model vertex buffer to get original vertices");
         return;
     }
 
@@ -279,7 +279,7 @@ void DynamicGeometry::SetupViewport()
 void DynamicGeometry::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(DynamicGeometry, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(DynamicGeometry, HandleUpdate));
 }
 
 void DynamicGeometry::MoveCamera(float timeStep)
@@ -317,7 +317,7 @@ void DynamicGeometry::MoveCamera(float timeStep)
 
 void DynamicGeometry::AnimateObjects(float timeStep)
 {
-    PROFILE(AnimateObjects);
+    URHO3D_PROFILE(AnimateObjects);
 
     time_ += timeStep * 100.0f;
 

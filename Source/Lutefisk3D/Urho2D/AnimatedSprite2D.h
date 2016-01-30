@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,13 @@
 
 #pragma once
 
-#include "../Urho2D/Animation2D.h"
 #include "../Urho2D/StaticSprite2D.h"
+
+#ifdef LUTEFISK3D_SPINE
+struct spAnimationState;
+struct spAnimationStateData;
+struct spSkeleton;
+#endif
 
 /// Loop mode.
 enum LoopMode2D
@@ -39,12 +44,16 @@ enum LoopMode2D
 namespace Urho3D
 {
 
+namespace Spriter
+{
+    class SpriterInstance;
+}
 class AnimationSet2D;
 
-/// Animated sprite component, it uses to play animation created by Spriter (http://www.brashmonkey.com/).
+/// Animated sprite component, it uses to play animation created by Spine (http://www.esotericsoftware.com) and Spriter (http://www.brashmonkey.com/).
 class AnimatedSprite2D : public StaticSprite2D
 {
-    OBJECT(AnimatedSprite2D);
+    URHO3D_OBJECT(AnimatedSprite2D,StaticSprite2D);
 
 public:
     /// Construct.
@@ -57,87 +66,81 @@ public:
     /// Handle enabled/disabled state change.
     virtual void OnSetEnabled();
 
-    /// Set speed.
-    void SetSpeed(float speed);
-    /// Set animation by animation set, name and loop mode.
-    void SetAnimation(AnimationSet2D* animationSet, const QString& name, LoopMode2D loopMode = LM_DEFAULT);
-    /// Set animation by name and loop mode.
-    void SetAnimation(const QString& name, LoopMode2D loopMode = LM_DEFAULT);
     /// Set animation set.
     void SetAnimationSet(AnimationSet2D* animationSet);
+    /// Set entity name (skin name for spine, entity name for spriter).
+    void SetEntity(const QString& name);
+    /// Set animation by name and loop mode.
+    void SetAnimation(const QString& name, LoopMode2D loopMode = LM_DEFAULT);
     /// Set loop mode.
     void SetLoopMode(LoopMode2D loopMode);
-
-    /// Return speed.
-    float GetSpeed() const { return speed_; }
-    /// Return animation name.
-    const QString& GetAnimation() const { return animationName_; }
+    /// Set speed.
+    void SetSpeed(float speed);
     /// Return animation.
     AnimationSet2D* GetAnimationSet() const;
+    /// Return entity name.
+    const QString& GetEntity() const { return entity_; }
+    /// Return animation name.
+    const QString& GetAnimation() const { return animationName_; }
     /// Return loop mode.
     LoopMode2D GetLoopMode() const { return loopMode_; }
-    /// Return root node.
-    Node* GetRootNode() const;
+    /// Return speed.
+    float GetSpeed() const { return speed_; }
 
     /// Set animation set attribute.
     void SetAnimationSetAttr(const ResourceRef& value);
     /// Return animation set attribute.
     ResourceRef GetAnimationSetAttr() const;
-    /// Set anmiation by name.
+    /// Set animation by name.
     void SetAnimationAttr(const QString& name);
 
 protected:
-    /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node);
-    /// Recalculate the world-space bounding box.
-    virtual void OnWorldBoundingBoxUpdate();
-    /// Handle draw order changed.
-    virtual void OnDrawOrderChanged();
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene* scene);
     /// Handle update vertices.
     virtual void UpdateSourceBatches();
-    /// Handle flip changed.
-    virtual void OnFlipChanged();
-    /// Set animation.
-    void SetAnimation(Animation2D* animation, LoopMode2D loopMode);
-    /// Update animation.
-    void UpdateAnimation(float timeStep);
-    /// Calculate time line world world transform.
-    void CalculateTimelineWorldTransform(unsigned index);
     /// Handle scene post update.
     void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
+    /// Update animation.
+    void UpdateAnimation(float timeStep);
+#ifdef LUTEFISK3D_SPINE
+    /// Handle set spine animation.
+    void SetSpineAnimation();
+    /// Update spine animation.
+    void UpdateSpineAnimation(float timeStep);
+    /// Update vertices for spine animation;
+    void UpdateSourceBatchesSpine();
+#endif
+    /// Handle set spriter animation.
+    void SetSpriterAnimation();
+    /// Update spriter animation.
+    void UpdateSpriterAnimation(float timeStep);
+    /// Update vertices for spriter animation.
+    void UpdateSourceBatchesSpriter();
+    /// Dispose.
+    void Dispose();
 
     /// Speed.
     float speed_;
+    /// Entity name.
+    QString entity_;
     /// Animation set.
     SharedPtr<AnimationSet2D> animationSet_;
     /// Animation name.
     QString animationName_;
-    /// Animation.
-    SharedPtr<Animation2D> animation_;
     /// Loop mode.
     LoopMode2D loopMode_;
-    /// Looped.
-    bool looped_;
-    /// Current time.
-    float currentTime_;
-    /// Root node.
-    SharedPtr<Node> rootNode_;
-    /// Number of tracks.
-    unsigned numTracks_;
-    /// Track nodes.
-    std::vector<SharedPtr<Node> > trackNodes_;
-    /// Track node info.
-    struct TrackNodeInfo
-    {
-        /// Has sprite.
-        bool hasSprite;
-        /// World space.
-        bool worldSpace;
-        /// Current value.
-        AnimationKeyFrame2D value;
-    };
-    /// Track node infos.
-    std::vector<TrackNodeInfo> trackNodeInfos_;
+#ifdef LUTEFISK3D_SPINE
+    /// Skeleton.
+    spSkeleton* skeleton_;
+    /// Animation state data.
+    spAnimationStateData* animationStateData_;
+    /// Animation state.
+    spAnimationState* animationState_;
+#endif
+    
+    /// Spriter instance.
+    Spriter::SpriterInstance* spriterInstance_;
 };
 
 }

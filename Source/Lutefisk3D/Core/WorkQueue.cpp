@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,11 +65,12 @@ WorkQueue::WorkQueue(Context* context) :
     shutDown_(false),
     pausing_(false),
     paused_(false),
+    completing_(false),
     tolerance_(10),
     lastSize_(0),
     maxNonThreadedWorkMs_(5)
 {
-    SubscribeToEvent(E_BEGINFRAME, HANDLER(WorkQueue, HandleBeginFrame));
+    SubscribeToEvent(E_BEGINFRAME, URHO3D_HANDLER(WorkQueue, HandleBeginFrame));
 }
 
 WorkQueue::~WorkQueue()
@@ -121,7 +122,7 @@ void WorkQueue::AddWorkItem(SharedPtr<WorkItem> item)
 {
     if (!item)
     {
-        LOGERROR("Null work item submitted to the work queue");
+        URHO3D_LOGERROR("Null work item submitted to the work queue");
         return;
     }
 
@@ -136,7 +137,7 @@ void WorkQueue::AddWorkItem(SharedPtr<WorkItem> item)
     // Make sure worker threads' list is safe to modify
     if (threads_.size() && !paused_)
         queueMutex_.Acquire();
-    //queue_.push(item);
+
     queue_.insert(item);
 
     if (threads_.size())
@@ -219,6 +220,8 @@ void WorkQueue::Resume()
 
 void WorkQueue::Complete(unsigned priority)
 {
+    completing_ = true;
+
     if (threads_.size())
     {
         Resume();
@@ -265,6 +268,7 @@ void WorkQueue::Complete(unsigned priority)
     }
 
     PurgeCompleted(priority);
+    completing_ = false;
 }
 
 bool WorkQueue::IsCompleted(unsigned priority) const
@@ -378,7 +382,7 @@ void WorkQueue::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
     // If no worker threads, complete low-priority work here
     if (threads_.empty() && !queue_.empty())
     {
-        PROFILE(CompleteWorkNonthreaded);
+        URHO3D_PROFILE(CompleteWorkNonthreaded);
 
         HiresTimer timer;
 

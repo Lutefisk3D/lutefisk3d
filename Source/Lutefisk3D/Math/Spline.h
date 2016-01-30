@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,9 +53,9 @@ class Spline
 public:
     /// Default constructor.
     Spline() : interpolationMode_(BEZIER_CURVE) { }
-    /// Constructor setting InterpolationMode.
+    /// Constructor setting interpolationmode.
     Spline(InterpolationMode mode) : interpolationMode_(mode) { }
-    /// Constructor setting Knots and InterpolationMode.
+    /// Constructor setting knots and interpolationmode.
     Spline(const std::vector<T>& knots, InterpolationMode mode = BEZIER_CURVE) :
         interpolationMode_(mode),
         knots_(knots)
@@ -79,15 +79,15 @@ public:
     {
         return (knots_ == rhs.knots_ && interpolationMode_ == rhs.interpolationMode_);
     }
-    /// Non Equality operator.
+    /// Inequality operator.
     bool operator!= (const Spline& rhs) const
     {
         return !(*this == rhs);
     }
 
-    /// Return the ImplementationMode.
+    /// Return the interpolation mode.
     InterpolationMode GetInterpolationMode() const { return interpolationMode_; }
-    /// Return the Knots of the Spline.
+    /// Return the knots of the spline.
     const std::vector<T>& GetKnots() const { return knots_; }
     /// Return the Knot at the specific index.
     Variant GetKnot(unsigned index) const { return knots_[index]; }
@@ -113,28 +113,28 @@ public:
         case CATMULL_ROM_FULL_CURVE:
             {
                 /// \todo Do not allocate a new vector each time
-                std::vector<Variant> fullKnots;
-                if (knots_.Size() > 1)
+                std::vector<T> fullKnots;
+                if (knots_.size() > 1)
                 {
                     // Non-cyclic case: duplicate start and end
-                    if (knots_.front() != knots_.bck())
+                    if (knots_.front() != knots_.back())
                     {
                         fullKnots.push_back(knots_.front());
-                        fullKnots.push_back(knots_);
+                        fullKnots.insert(fullKnots.end(),knots_.begin(),knots_.end());
                         fullKnots.push_back(knots_.back());
                     }
                     // Cyclic case: smooth the tangents
                     else
                     {
                         fullKnots.push_back(knots_[knots_.size() - 2]);
-                        fullKnots.push_back(knots_);
+                        fullKnots.insert(fullKnots.end(),knots_.begin(),knots_.end());
                         fullKnots.push_back(knots_[1]);
                     }
                 }
                 return CatmullRomInterpolation(fullKnots, f);
             }
         default:
-            LOGERROR("Unsupported interpolation mode");
+            URHO3D_LOGERROR("Unsupported interpolation mode");
             return T();
         }
     }
@@ -229,15 +229,15 @@ private:
         return CalculateCatmullRom(knots[originIndex], knots[originIndex + 1],
             knots[originIndex + 2], knots[originIndex + 3], t, t2, t3);
     }
-    T CalculateCatmullRom(const T& p0, const T& p1, const T& p2, const T& p3, float t, float t2, float t3)
+    T CalculateCatmullRom(const T& p0, const T& p1, const T& p2, const T& p3, float t, float t2, float t3) const
     {
         return T(0.5f * ((2.0f * p1) + (-p0 + p2) * t +
                 (2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) * t2 +
                 (-p0 + 3.0f * p1 - 3.0f * p2 + p3) * t3));
     }
-    /// InterpolationMode.
+    /// Interpolation mode.
     InterpolationMode interpolationMode_;
-    /// Knots on the Spline.
+    /// Knots on the spline.
     std::vector<T> knots_;
 };
 

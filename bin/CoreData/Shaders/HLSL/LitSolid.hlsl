@@ -18,7 +18,7 @@ void VS(float4 iPos : POSITION,
     #if defined(LIGHTMAP) || defined(AO)
         float2 iTexCoord2 : TEXCOORD1,
     #endif
-    #ifdef NORMALMAP
+    #if defined(NORMALMAP) || defined(DIRBILLBOARD)
         float4 iTangent : TANGENT,
     #endif
     #ifdef SKINNED
@@ -28,7 +28,7 @@ void VS(float4 iPos : POSITION,
     #ifdef INSTANCED
         float4x3 iModelInstance : TEXCOORD2,
     #endif
-    #ifdef BILLBOARD
+    #if defined(BILLBOARD) || defined(DIRBILLBOARD)
         float2 iSize : TEXCOORD1,
     #endif
     #ifndef NORMALMAP
@@ -152,7 +152,7 @@ void PS(
         #ifdef SPOTLIGHT
             float4 iSpotPos : TEXCOORD5,
         #endif
-        #ifdef CUBEMASK
+        #ifdef POINTLIGHT
             float3 iCubeMaskVec : TEXCOORD5,
         #endif
     #else

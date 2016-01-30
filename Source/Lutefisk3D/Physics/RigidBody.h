@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ enum CollisionEventMode
 /// Physics rigid body component.
 class RigidBody : public Component, public btMotionState
 {
-    OBJECT(RigidBody);
+    URHO3D_OBJECT(RigidBody,Component);
 
 public:
     /// Construct.
@@ -212,7 +212,7 @@ public:
     unsigned GetCollisionMask() const { return collisionMask_; }
     /// Return collision event signaling mode.
     CollisionEventMode GetCollisionEventMode() const { return collisionEventMode_; }
-    /// Return colliding rigid bodies from the last simulation step.
+        /// Return colliding rigid bodies from the last simulation step. Only returns collisions that were sent as events (depends on collision event mode) and excludes e.g. static-static collisions.
     void GetCollidingBodies(std::unordered_set<RigidBody *> &result) const;
 
     /// Apply new world transform after a simulation step. Called internally.
@@ -235,6 +235,8 @@ public:
 protected:
     /// Handle node being assigned.
     virtual void OnNodeSet(Node* node) override;
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene* node) override;
     /// Handle node transform being dirtied.
     virtual void OnMarkedDirty(Node* node) override;
 
@@ -256,6 +258,8 @@ private:
     btCompoundShape* shiftedCompoundShape_;
     /// Physics world.
     WeakPtr<PhysicsWorld> physicsWorld_;
+    /// Smoothed transform, if has one.
+    WeakPtr<SmoothedTransform> smoothedTransform_;
     /// Constraints that refer to this rigid body.
     std::unordered_set<Constraint*> constraints_;
     /// Gravity override vector.
@@ -282,14 +286,14 @@ private:
     bool trigger_;
     /// Use gravity flag.
     bool useGravity_;
-    /// Smoothed transform mode.
-    bool hasSmoothedTransform_;
     /// Readd body to world flag.
     bool readdBody_;
     /// Body exists in world flag.
     bool inWorld_;
     /// Mass update enable flag.
     bool enableMassUpdate_;
+    /// Internal flag whether has simulated at least once.
+    mutable bool hasSimulated_;
 };
 
 }

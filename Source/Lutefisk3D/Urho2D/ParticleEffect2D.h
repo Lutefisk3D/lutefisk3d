@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Resource/Resource.h"
 #include "../Graphics/GraphicsDefs.h"
+#include "../Resource/Resource.h"
 
 namespace Urho3D
 {
@@ -41,7 +41,7 @@ enum EmitterType2D
 /// 2D particle effect resource.
 class ParticleEffect2D : public Resource
 {
-    OBJECT(ParticleEffect2D);
+    URHO3D_OBJECT(ParticleEffect2D,Resource);
 
 public:
     /// Construct.

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +49,7 @@
 
 using namespace Urho3D;
 
-DEFINE_APPLICATION_MAIN(Water)
+URHO3D_DEFINE_APPLICATION_MAIN(Water)
 
 Text* text=nullptr;
 Water::Water(Context* context) :
@@ -246,7 +246,7 @@ void Water::SetupViewport()
 void Water::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(Water, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Water, HandleUpdate));
 }
 
 void Water::MoveCamera(float timeStep)

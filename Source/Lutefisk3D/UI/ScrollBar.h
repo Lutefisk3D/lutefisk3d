@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ class Slider;
 /// Scroll bar %UI element with forward and back buttons.
 class ScrollBar : public UIElement
 {
-    OBJECT(ScrollBar);
+    URHO3D_OBJECT(ScrollBar,UIElement);
 
 public:
     /// Construct.

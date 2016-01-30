@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -121,6 +121,8 @@ public:
     Variant ReadVariant(VariantType type);
     /// Read a variant vector.
     std::vector<Variant> ReadVariantVector();
+    /// Read a string vector.
+    QStringList ReadStringVector();
     /// Read a variant map.
     VariantMap ReadVariantMap();
     /// Read a variable-length encoded unsigned integer, which can use 29 bits maximum.

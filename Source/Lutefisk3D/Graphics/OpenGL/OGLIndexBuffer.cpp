@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,9 @@
 namespace Urho3D
 {
 
-IndexBuffer::IndexBuffer(Context* context) :
+IndexBuffer::IndexBuffer(Context* context, bool forceHeadless) :
     Object(context),
-    GPUObject(GetSubsystem<Graphics>()),
+    GPUObject(forceHeadless ? (Graphics*)nullptr : GetSubsystem<Graphics>()),
     indexCount_(0),
     indexSize_(0),
     lockState_(LOCK_NONE),
@@ -124,13 +124,13 @@ bool IndexBuffer::SetData(const void* data)
 {
     if (!data)
     {
-        LOGERROR("Null pointer for index buffer data");
+        URHO3D_LOGERROR("Null pointer for index buffer data");
         return false;
     }
 
     if (!indexSize_)
     {
-        LOGERROR("Index size not defined, can not set index buffer data");
+        URHO3D_LOGERROR("Index size not defined, can not set index buffer data");
         return false;
     }
 
@@ -146,7 +146,7 @@ bool IndexBuffer::SetData(const void* data)
         }
         else
         {
-            LOGWARNING("Index buffer data assignment while device is lost");
+            URHO3D_LOGWARNING("Index buffer data assignment while device is lost");
             dataPending_ = true;
         }
     }
@@ -162,19 +162,19 @@ bool IndexBuffer::SetDataRange(const void* data, unsigned start, unsigned count,
 
     if (!data)
     {
-        LOGERROR("Null pointer for index buffer data");
+        URHO3D_LOGERROR("Null pointer for index buffer data");
         return false;
     }
 
     if (!indexSize_)
     {
-        LOGERROR("Index size not defined, can not set index buffer data");
+        URHO3D_LOGERROR("Index size not defined, can not set index buffer data");
         return false;
     }
 
     if (start + count > indexCount_)
     {
-        LOGERROR("Illegal range for setting new index buffer data");
+        URHO3D_LOGERROR("Illegal range for setting new index buffer data");
         return false;
     }
 
@@ -196,7 +196,7 @@ bool IndexBuffer::SetDataRange(const void* data, unsigned start, unsigned count,
         }
         else
         {
-            LOGWARNING("Index buffer data assignment while device is lost");
+            URHO3D_LOGWARNING("Index buffer data assignment while device is lost");
             dataPending_ = true;
         }
     }
@@ -208,19 +208,19 @@ void* IndexBuffer::Lock(unsigned start, unsigned count, bool discard)
 {
     if (lockState_ != LOCK_NONE)
     {
-        LOGERROR("Index buffer already locked");
+        URHO3D_LOGERROR("Index buffer already locked");
         return nullptr;
     }
 
     if (!indexSize_)
     {
-        LOGERROR("Index size not defined, can not lock index buffer");
+        URHO3D_LOGERROR("Index size not defined, can not lock index buffer");
         return nullptr;
     }
 
     if (start + count > indexCount_)
     {
-        LOGERROR("Illegal range for locking index buffer");
+        URHO3D_LOGERROR("Illegal range for locking index buffer");
         return nullptr;
     }
 
@@ -271,13 +271,13 @@ bool IndexBuffer::GetUsedVertexRange(unsigned start, unsigned count, unsigned& m
 {
     if (!shadowData_)
     {
-        LOGERROR("Used vertex range can only be queried from an index buffer with shadow data");
+        URHO3D_LOGERROR("Used vertex range can only be queried from an index buffer with shadow data");
         return false;
     }
 
     if (start + count > indexCount_)
     {
-        LOGERROR("Illegal index range for querying used vertices");
+        URHO3D_LOGERROR("Illegal index range for querying used vertices");
         return false;
     }
 
@@ -325,7 +325,7 @@ bool IndexBuffer::Create()
     {
         if (graphics_->IsDeviceLost())
         {
-            LOGWARNING("Index buffer creation while device is lost");
+            URHO3D_LOGWARNING("Index buffer creation while device is lost");
             return true;
         }
 
@@ -334,7 +334,7 @@ bool IndexBuffer::Create()
             gl::glGenBuffers(1, &object_);
         if (!object_)
         {
-            LOGERROR("Failed to create index buffer");
+            URHO3D_LOGERROR("Failed to create index buffer");
             return false;
         }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ class TerrainPatch;
 /// Heightmap terrain component.
 class Terrain : public Component
 {
-    OBJECT(Terrain);
+    URHO3D_OBJECT(Terrain,Component);
 
 public:
     /// Construct.
@@ -57,6 +57,10 @@ public:
     void SetPatchSize(int size);
     /// Set vertex (XZ) and height (Y) spacing.
     void SetSpacing(const Vector3& spacing);
+    /// Set maximum number of LOD levels for terrain patches. This can be between 1-4.
+    void SetMaxLodLevels(unsigned levels);
+    /// Set LOD level used for terrain patch occlusion. By default (M_MAX_UNSIGNED) the coarsest. Since the LOD level used needs to be fixed, using finer LOD levels may result in false positive occlusion in cases where the actual rendered geometry is coarser, so use with caution.
+    void SetOcclusionLodLevel(unsigned level);
     /// Set smoothing of heightmap.
     void SetSmoothing(bool enable);
     /// Set heightmap image. Dimensions should be a power of two + 1. Uses 8-bit grayscale, or optionally red as MSB and green as LSB for 16-bit accuracy. Return true if successful.
@@ -81,7 +85,7 @@ public:
     void SetMaxLights(unsigned num);
     /// Set shadowcaster flag for patches.
     void SetCastShadows(bool enable);
-    /// Set occlusion flag for patches. Occlusion uses the coarsest LOD and may potentially be too aggressive, so use with caution.
+    /// Set occlusion flag for patches. Occlusion uses the coarsest LOD by default.
     void SetOccluder(bool enable);
     /// Set occludee flag for patches.
     void SetOccludee(bool enable);
@@ -96,6 +100,10 @@ public:
     const IntVector2& GetNumVertices() const { return numVertices_; }
     /// Return heightmap size in patches.
     const IntVector2& GetNumPatches() const { return numPatches_; }
+    /// Return maximum number of LOD levels for terrain patches. This can be between 1-4.
+    unsigned GetMaxLodLevels() const { return maxLodLevels_; }
+    /// Return LOD level used for occlusion.
+    unsigned GetOcclusionLodLevel() const { return occlusionLodLevel_; }
     /// Return whether smoothing is in use.
     bool GetSmoothing() const { return smoothing_; }
     /// Return heightmap image.
@@ -149,6 +157,10 @@ public:
     void SetMaterialAttr(const ResourceRef& value);
     /// Set patch size attribute.
     void SetPatchSizeAttr(int value);
+    /// Set max LOD levels attribute.
+    void SetMaxLodLevelsAttr(unsigned value);
+    /// Set occlusion LOD level attribute.
+    void SetOcclusionLodLevelAttr(unsigned value);
     /// Return heightmap attribute.
     ResourceRef GetHeightMapAttr() const;
     /// Return material attribute.
@@ -210,6 +222,10 @@ private:
     int lastPatchSize_;
     /// Number of terrain LOD levels.
     unsigned numLodLevels_;
+    /// Maximum number of LOD levels.
+    unsigned maxLodLevels_;
+    /// LOD level used for occlusion.
+    unsigned occlusionLodLevel_;
     /// Smoothing enable flag.
     bool smoothing_;
     /// Visible flag.

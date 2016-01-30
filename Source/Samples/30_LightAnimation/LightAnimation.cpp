@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@
 #include <Lutefisk3D/Scene/ValueAnimation.h>
 
 
-DEFINE_APPLICATION_MAIN(LightAnimation)
+URHO3D_DEFINE_APPLICATION_MAIN(LightAnimation)
 
 LightAnimation::LightAnimation(Context* context) :
     Sample(context)
@@ -231,7 +231,7 @@ void LightAnimation::MoveCamera(float timeStep)
 void LightAnimation::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(LightAnimation, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(LightAnimation, HandleUpdate));
 }
 
 void LightAnimation::HandleUpdate(StringHash eventType, VariantMap& eventData)

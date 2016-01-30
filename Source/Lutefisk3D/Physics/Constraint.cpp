@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 #include "Constraint.h"
 
+#include "../Scene/ObjectAnimation.h"
 #include "../Core/Context.h"
 #include "../Graphics/DebugRenderer.h"
 #include "../IO/Log.h"
@@ -66,7 +67,8 @@ Constraint::Constraint(Context* context) :
     otherBodyNodeID_(0),
     disableCollision_(false),
     recreateConstraint_(true),
-    framesDirty_(false)
+    framesDirty_(false),
+    retryCreation_(false)
 {
 }
 
@@ -82,18 +84,18 @@ void Constraint::RegisterObject(Context* context)
 {
     context->RegisterFactory<Constraint>(PHYSICS_CATEGORY);
 
-    ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    ENUM_ATTRIBUTE("Constraint Type", constraintType_, typeNames, CONSTRAINT_POINT, AM_DEFAULT);
-    ATTRIBUTE("Position", Vector3, position_, Vector3::ZERO, AM_DEFAULT);
-    ATTRIBUTE("Rotation", Quaternion, rotation_, Quaternion::IDENTITY, AM_DEFAULT);
-    ATTRIBUTE("Other Body Position", Vector3, otherPosition_, Vector3::ZERO, AM_DEFAULT);
-    ATTRIBUTE("Other Body Rotation", Quaternion, otherRotation_, Quaternion::IDENTITY, AM_DEFAULT);
-    ATTRIBUTE("Other Body NodeID", int, otherBodyNodeID_, 0, AM_DEFAULT | AM_NODEID);
-    ACCESSOR_ATTRIBUTE("High Limit", GetHighLimit, SetHighLimit, Vector2, Vector2::ZERO, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Low Limit", GetLowLimit, SetLowLimit, Vector2, Vector2::ZERO, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("ERP Parameter", GetERP, SetERP, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("CFM Parameter", GetCFM, SetCFM, float, 0.0f, AM_DEFAULT);
-    ATTRIBUTE("Disable Collision", bool, disableCollision_, false, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
+    URHO3D_ENUM_ATTRIBUTE("Constraint Type", constraintType_, typeNames, CONSTRAINT_POINT, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Position", Vector3, position_, Vector3::ZERO, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Rotation", Quaternion, rotation_, Quaternion::IDENTITY, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Other Body Position", Vector3, otherPosition_, Vector3::ZERO, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Other Body Rotation", Quaternion, otherRotation_, Quaternion::IDENTITY, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Other Body NodeID", unsigned, otherBodyNodeID_, 0, AM_DEFAULT | AM_NODEID);
+    URHO3D_ACCESSOR_ATTRIBUTE("High Limit", GetHighLimit, SetHighLimit, Vector2, Vector2::ZERO, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Low Limit", GetLowLimit, SetLowLimit, Vector2, Vector2::ZERO, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("ERP Parameter", GetERP, SetERP, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("CFM Parameter", GetCFM, SetCFM, float, 0.0f, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Disable Collision", bool, disableCollision_, false, AM_DEFAULT);
 }
 
 void Constraint::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
@@ -161,7 +163,7 @@ void Constraint::GetDependencyNodes(std::vector<Node*>& dest)
 
 void Constraint::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 {
-    if (debug && physicsWorld_ && constraint_ && IsEnabledEffective())
+    if (debug && physicsWorld_ && constraint_)
     {
         physicsWorld_->SetDebugRenderer(debug);
         physicsWorld_->SetDebugDepthTest(depthTest);
@@ -300,7 +302,7 @@ void Constraint::SetWorldPosition(const Vector3& position)
         MarkNetworkUpdate();
     }
     else
-        LOGWARNING("Constraint not created, world position could not be stored");
+        URHO3D_LOGWARNING("Constraint not created, world position could not be stored");
 }
 
 void Constraint::SetHighLimit(const Vector2& limit)
@@ -442,20 +444,34 @@ void Constraint::OnNodeSet(Node* node)
 {
     if (node)
     {
-        Scene* scene = GetScene();
-        if (scene)
-        {
-            if (scene == node)
-                LOGWARNING(GetTypeName() + " should not be created to the root scene node");
-
-            physicsWorld_ = scene->GetOrCreateComponent<PhysicsWorld>();
-            physicsWorld_->AddConstraint(this);
-        }
-        else
-            LOGERROR("Node is detached from scene, can not create constraint");
-
         node->AddListener(this);
         cachedWorldScale_ = node->GetWorldScale();
+    }
+}
+
+void Constraint::OnSceneSet(Scene* scene)
+{
+    if (scene)
+    {
+        if (scene == node_)
+            URHO3D_LOGWARNING(GetTypeName() + " should not be created to the root scene node");
+
+        physicsWorld_ = scene->GetOrCreateComponent<PhysicsWorld>();
+        physicsWorld_->AddConstraint(this);
+
+        // Create constraint now if necessary (attributes modified before adding to scene)
+        if (retryCreation_)
+            CreateConstraint();
+    }
+    else
+    {
+        ReleaseConstraint();
+
+        if (physicsWorld_)
+            physicsWorld_->RemoveConstraint(this);
+
+        // Recreate when moved to a scene again
+        retryCreation_ = true;
     }
 }
 
@@ -468,7 +484,7 @@ void Constraint::OnMarkedDirty(Node* node)
 
 void Constraint::CreateConstraint()
 {
-    PROFILE(CreateConstraint);
+    URHO3D_PROFILE(CreateConstraint);
 
     cachedWorldScale_ = node_->GetWorldScale();
 
@@ -478,8 +494,12 @@ void Constraint::CreateConstraint()
     btRigidBody* ownBody = ownBody_ ? ownBody_->GetBody() : nullptr;
     btRigidBody* otherBody = otherBody_ ? otherBody_->GetBody() : nullptr;
 
+    // If no physics world available now mark for retry later
     if (!physicsWorld_ || !ownBody)
+    {
+        retryCreation_ = true;
         return;
+    }
 
     if (!otherBody)
         otherBody = &btTypedConstraint::getFixedBody();
@@ -540,6 +560,7 @@ void Constraint::CreateConstraint()
 
     recreateConstraint_ = false;
     framesDirty_ = false;
+    retryCreation_ = false;
 }
 
 void Constraint::ApplyLimits()

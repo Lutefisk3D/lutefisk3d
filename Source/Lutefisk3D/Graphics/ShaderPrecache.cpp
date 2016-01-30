@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -59,12 +59,12 @@ ShaderPrecache::ShaderPrecache(Context* context, const QString& fileName) :
     if (!xmlFile_.GetRoot())
         xmlFile_.CreateRoot("shaders");
 
-    LOGINFO("Begin dumping shaders to " + fileName_);
+    URHO3D_LOGINFO("Begin dumping shaders to " + fileName_);
 }
 
 ShaderPrecache::~ShaderPrecache()
 {
-    LOGINFO("End dumping shaders");
+    URHO3D_LOGINFO("End dumping shaders");
 
     if (usedCombinations_.empty())
         return;
@@ -104,7 +104,7 @@ void ShaderPrecache::StoreShaders(ShaderVariation* vs, ShaderVariation* ps)
 
 void ShaderPrecache::LoadShaders(Graphics* graphics, Deserializer& source)
 {
-    LOGDEBUG("Begin precaching shaders");
+    URHO3D_LOGDEBUG("Begin precaching shaders");
 
     XMLFile xmlFile(graphics->GetContext());
     xmlFile.Load(source);
@@ -115,14 +115,7 @@ void ShaderPrecache::LoadShaders(Graphics* graphics, Deserializer& source)
         QString vsDefines = shader.GetAttribute("vsdefines");
         QString psDefines = shader.GetAttribute("psdefines");
 
-        // Check for illegal variations on OpenGL ES and skip them
-        #ifdef GL_ES_VERSION_2_0
-        if (vsDefines.Contains("INSTANCED") || (psDefines.Contains("POINTLIGHT") && psDefines.Contains("SHADOW")))
-        {
-            shader = shader.GetNext("shader");
-            continue;
-        }
-        #endif
+
 
         ShaderVariation* vs = graphics->GetShader(VS, shader.GetAttribute("vs"), vsDefines);
         ShaderVariation* ps = graphics->GetShader(PS, shader.GetAttribute("ps"), psDefines);
@@ -132,7 +125,7 @@ void ShaderPrecache::LoadShaders(Graphics* graphics, Deserializer& source)
         shader = shader.GetNext("shader");
     }
 
-    LOGDEBUG("End precaching shaders");
+    URHO3D_LOGDEBUG("End precaching shaders");
 }
 
 }

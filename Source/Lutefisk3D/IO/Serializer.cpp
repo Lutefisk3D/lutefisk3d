@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -167,7 +167,7 @@ bool Serializer::WriteBoundingBox(const BoundingBox& value)
 
 bool Serializer::WriteString(const QString& value)
 {
-    int length = strlen(qPrintable(value)) + 1;
+    int length = value.length() + 1;
     // Count length to the first zero, because ReadString() does the same
     return Write(qPrintable(value), length) == length;
 }
@@ -175,7 +175,7 @@ bool Serializer::WriteString(const QString& value)
 bool Serializer::WriteFileID(const QString& value)
 {
     bool success = true;
-    unsigned length = Min((int)value.length(), 4);
+    unsigned length = std::min((int)value.length(), 4);
 
     success &= Write(qPrintable(value), length) == length;
     for (unsigned i = value.length(); i < 4; ++i)
@@ -245,9 +245,6 @@ bool Serializer::WriteVariantData(const Variant& value)
     case VAR_FLOAT:
         return WriteFloat(value.GetFloat());
 
-    case VAR_DOUBLE:
-        return WriteDouble(value.GetDouble());
-
     case VAR_VECTOR2:
         return WriteVector2(value.GetVector2());
 
@@ -283,6 +280,9 @@ bool Serializer::WriteVariantData(const Variant& value)
     case VAR_VARIANTVECTOR:
         return WriteVariantVector(value.GetVariantVector());
 
+    case VAR_STRINGVECTOR:
+        return WriteStringVector(value.GetStringVector());
+
     case VAR_VARIANTMAP:
         return WriteVariantMap(value.GetVariantMap());
 
@@ -301,6 +301,9 @@ bool Serializer::WriteVariantData(const Variant& value)
     case VAR_MATRIX4:
         return WriteMatrix4(value.GetMatrix4());
 
+    case VAR_DOUBLE:
+        return WriteDouble(value.GetDouble());
+
     default:
         return false;
     }
@@ -312,6 +315,15 @@ bool Serializer::WriteVariantVector(const VariantVector& value)
     success &= WriteVLE(value.size());
     for (const auto & elem : value)
         success &= WriteVariant(elem);
+    return success;
+}
+
+bool Serializer::WriteStringVector(const QStringList & value)
+{
+    bool success = true;
+    success &= WriteVLE(value.size());
+    for (const QString & str : value)
+        success &= WriteString(str);
     return success;
 }
 

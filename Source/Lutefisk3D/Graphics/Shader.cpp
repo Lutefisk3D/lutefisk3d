@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -98,10 +98,9 @@ bool Shader::BeginLoad(Deserializer& source)
     CommentOutFunction(vsSourceCode_, "void PS(");
     CommentOutFunction(psSourceCode_, "void VS(");
 
-    // OpenGL: rename either VS() or PS() to main(), comment out vertex attributes in pixel shaders
+    // OpenGL: rename either VS() or PS() to main()
     vsSourceCode_.replace("void VS(", "void main(");
     psSourceCode_.replace("void PS(", "void main(");
-    psSourceCode_.replace("attribute ", "// attribute ");
 
     RefreshMemoryUse();
     return true;

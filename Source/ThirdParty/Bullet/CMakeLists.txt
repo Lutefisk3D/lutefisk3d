@@ -238,7 +238,7 @@ ENDIF(BUILD_EXTRAS)
 
 SUBDIRS(src)
 
-IF("${CMAKE_GENERATOR}" MATCHES "Unix Makefiles")
+IF("${CMAKE_GENERATOR}" MATCHES "Unix Makefiles" OR "${CMAKE_GENERATOR}" MATCHES "Ninja")
 	OPTION(INSTALL_LIBS "Set when you want to install libraries" ON)
 ELSE()
 	IF(APPLE AND FRAMEWORK)

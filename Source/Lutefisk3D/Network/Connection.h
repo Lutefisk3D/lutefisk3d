@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -105,7 +105,7 @@ enum ObserverPositionSendMode
 /// %Connection to a remote network host.
 class Connection : public Object
 {
-    OBJECT(Connection);
+    URHO3D_OBJECT(Connection,Object);
 
 public:
     /// Construct with context and kNet message connection pointers.
@@ -178,12 +178,25 @@ public:
     QString GetAddress() const { return address_; }
     /// Return remote port.
     unsigned short GetPort() const { return port_; }
+    /// Return the connection's round trip time in milliseconds.
+    float GetRoundTripTime() const;
+    /// Return the time since last received data from the remote host in milliseconds.
+    float GetLastHeardTime() const;
+    /// Return bytes received per second.
+    float GetBytesInPerSec() const;
+    /// Return bytes sent per second.
+    float GetBytesOutPerSec() const;
+    /// Return packets received per second.
+    float GetPacketsInPerSec() const;
+    /// Return packets sent per second.
+    float GetPacketsOutPerSec() const;
+
     /// Return an address:port string.
     QString ToString() const;
     /// Return number of package downloads remaining.
     unsigned GetNumDownloads() const;
     /// Return name of current package download, or empty if no downloads.
-    QString GetDownloadName() const;
+    const QString& GetDownloadName() const;
     /// Return progress of current package download, or 1.0 if no downloads.
     float GetDownloadProgress() const;
     /// Trigger client connection to download a package file from the server. Can be used to download additional resource packages when client is already joined in a scene. The package must have been added as a requirement to the scene the client is joined in, or else the eventual download will fail.

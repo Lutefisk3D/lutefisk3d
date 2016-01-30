@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -157,7 +157,7 @@ class Octree : public Component, public Octant
 {
     friend void RaycastDrawablesWork(const WorkItem* item, unsigned threadIndex);
 
-    OBJECT(Octree);
+    URHO3D_OBJECT(Octree,Component);
 
 public:
     /// Construct.
@@ -207,12 +207,8 @@ private:
     std::vector<Drawable*> drawableReinsertions_;
     /// Mutex for octree reinsertions.
     Mutex octreeMutex_;
-    /// Current threaded ray query.
-    mutable RayOctreeQuery* rayQuery_;
-    /// Drawable list for threaded ray query.
+    /// Ray query temporary list of drawables.
     mutable std::vector<Drawable*> rayQueryDrawables_;
-    /// Threaded ray query intermediate results.
-    mutable std::vector<std::vector<RayQueryResult> > rayQueryResults_;
     /// Subdivision level.
     unsigned numLevels_;
 };

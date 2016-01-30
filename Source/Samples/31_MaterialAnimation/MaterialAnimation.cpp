@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@
 #include <Lutefisk3D/Scene/ValueAnimation.h>
 #include <Lutefisk3D/UI/UI.h>
 
-DEFINE_APPLICATION_MAIN(MaterialAnimation)
+URHO3D_DEFINE_APPLICATION_MAIN(MaterialAnimation)
 
 MaterialAnimation::MaterialAnimation(Context* context) :
     Sample(context)
@@ -196,7 +196,7 @@ void MaterialAnimation::MoveCamera(float timeStep)
 void MaterialAnimation::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(MaterialAnimation, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(MaterialAnimation, HandleUpdate));
 }
 
 void MaterialAnimation::HandleUpdate(StringHash eventType, VariantMap& eventData)

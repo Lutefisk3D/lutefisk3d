@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 
 #include "Context.h"
 #include "Thread.h"
-
+#include "../IO/Log.h"
 #include "../Container/HashMap.h"
 
 namespace Urho3D
@@ -52,6 +52,10 @@ void RemoveNamedAttribute(HashMap<StringHash, std::vector<AttributeInfo> >& attr
 
 Context::Context() : eventHandler_(nullptr)
 {
+#ifdef ANDROID
+    // Always reset the random seed on Android, as the Urho3D library might not be unloaded between runs
+    SetRandomSeed(1);
+#endif
     // Set the main thread ID (assuming the Context is created in it)
     Thread::SetMainThread();
 }
@@ -98,7 +102,7 @@ void Context::RegisterFactory(ObjectFactory* factory, const char* category)
         return;
 
     RegisterFactory(factory);
-    if (!category || 0==category[0])
+    if (category && category[0]!=0)
         objectCategories_[category].push_back(factory->GetType());
 }
 
@@ -120,8 +124,12 @@ void Context::RemoveSubsystem(StringHash objectType)
 void Context::RegisterAttribute(StringHash objectType, const AttributeInfo& attr)
 {
     // None or pointer types can not be supported
-    if (attr.type_ == VAR_NONE) // || attr.type_ == VAR_VOIDPTR || attr.type_ == VAR_PTR
+    if (attr.type_ == VAR_NONE || attr.type_ == VAR_VOIDPTR || attr.type_ == VAR_PTR)
+    {
+        URHO3D_LOGWARNING("Attempt to register unsupported attribute type " + Variant::GetTypeName(attr.type_) + " to class " +
+            GetTypeName(objectType));
         return;
+    }
     attributes_[objectType].push_back(attr);
 
     if (attr.mode_ & AM_NET)
@@ -155,13 +163,18 @@ VariantMap& Context::GetEventDataMap()
 
 void Context::CopyBaseAttributes(StringHash baseType, StringHash derivedType)
 {
-    const std::vector<AttributeInfo>* baseAttributes = GetAttributes(baseType);
-    if (!baseAttributes)
+    // Prevent endless loop if mistakenly copying attributes from same class as derived
+    if (baseType == derivedType)
+    {
+        URHO3D_LOGWARNING("Attempt to copy base attributes to itself for class " + GetTypeName(baseType));
         return;
+    }
 
     std::vector<AttributeInfo> &target(attributes_[derivedType]);
-
-    for (const AttributeInfo& attr : *baseAttributes)
+    const std::vector<AttributeInfo> *src(GetAttributes(baseType));
+    if(!src)
+        return;
+    for (const AttributeInfo& attr : *src)
     {
         target.push_back(attr);
         if (attr.mode_ & AM_NET)

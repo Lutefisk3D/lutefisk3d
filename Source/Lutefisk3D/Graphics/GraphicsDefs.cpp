@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,8 @@
 
 namespace Urho3D
 {
+// The extern keyword is required when building Urho3D.dll for Windows platform
+// The keyword is not required for other platforms but it does no harm, aside from warning from static analyzer
 
 extern const StringHash VSP_AMBIENTSTARTCOLOR("AmbientStartColor");
 extern const StringHash VSP_AMBIENTENDCOLOR("AmbientEndColor");
@@ -43,6 +45,8 @@ extern const StringHash VSP_GBUFFEROFFSETS("GBufferOffsets");
 extern const StringHash VSP_LIGHTDIR("LightDir");
 extern const StringHash VSP_LIGHTPOS("LightPos");
 extern const StringHash VSP_MODEL("Model");
+extern const StringHash VSP_VIEW("View");
+extern const StringHash VSP_VIEWINV("ViewInv");
 extern const StringHash VSP_VIEWPROJ("ViewProj");
 extern const StringHash VSP_UOFFSET("UOffset");
 extern const StringHash VSP_VOFFSET("VOffset");
@@ -63,7 +67,7 @@ extern const StringHash PSP_LIGHTDIR("LightDirPS");
 extern const StringHash PSP_LIGHTPOS("LightPosPS");
 extern const StringHash PSP_MATDIFFCOLOR("MatDiffColor");
 extern const StringHash PSP_MATEMISSIVECOLOR("MatEmissiveColor");
-extern const StringHash PSP_MATENVMAPECOLOR("MatEnvMapColor");
+extern const StringHash PSP_MATENVMAPCOLOR("MatEnvMapColor");
 extern const StringHash PSP_MATSPECCOLOR("MatSpecColor");
 extern const StringHash PSP_NEARCLIP("NearClipPS");
 extern const StringHash PSP_FARCLIP("FarClipPS");
@@ -73,6 +77,7 @@ extern const StringHash PSP_SHADOWINTENSITY("ShadowIntensity");
 extern const StringHash PSP_SHADOWMAPINVSIZE("ShadowMapInvSize");
 extern const StringHash PSP_SHADOWSPLITS("ShadowSplits");
 extern const StringHash PSP_LIGHTMATRICES("LightMatricesPS");
+extern const StringHash PSP_VSMSHADOWPARAMS("VSMShadowParams");
 
 extern const Vector3 DOT_SCALE(1 / 3.0f, 1 / 3.0f, 1 / 3.0f);
 

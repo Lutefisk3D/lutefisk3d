@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -95,20 +95,20 @@ void Connection::SendMessage(int msgID, bool reliable, bool inOrder, const unsig
     // Make sure not to use kNet internal message ID's
     if (msgID <= 0x4 || msgID >= 0x3ffffffe)
     {
-        LOGERROR("Can not send message with reserved ID");
+        URHO3D_LOGERROR("Can not send message with reserved ID");
         return;
     }
 
     if (numBytes && !data)
     {
-        LOGERROR("Null pointer supplied for network message data");
+        URHO3D_LOGERROR("Null pointer supplied for network message data");
         return;
     }
 
     kNet::NetworkMessage *msg = connection_->StartNewMessage(msgID, numBytes);
     if (!msg)
     {
-        LOGERROR("Can not start new network message");
+        URHO3D_LOGERROR("Can not start new network message");
         return;
     }
 
@@ -136,17 +136,17 @@ void Connection::SendRemoteEvent(Node* node, StringHash eventType, bool inOrder,
 {
     if (!node)
     {
-        LOGERROR("Null sender node for remote node event");
+        URHO3D_LOGERROR("Null sender node for remote node event");
         return;
     }
     if (node->GetScene() != scene_)
     {
-        LOGERROR("Sender node is not in the connection's scene, can not send remote node event");
+        URHO3D_LOGERROR("Sender node is not in the connection's scene, can not send remote node event");
         return;
     }
     if (node->GetID() >= FIRST_LOCAL_ID)
     {
-        LOGERROR("Sender node has a local ID, can not send remote node event");
+        URHO3D_LOGERROR("Sender node has a local ID, can not send remote node event");
         return;
     }
 
@@ -196,7 +196,7 @@ void Connection::SetScene(Scene* newScene)
     {
         // Make sure there is no existing async loading
         scene_->StopAsyncLoading();
-        SubscribeToEvent(scene_, E_ASYNCLOADFINISHED, HANDLER(Connection, HandleAsyncLoadFinished));
+        SubscribeToEvent(scene_, E_ASYNCLOADFINISHED, URHO3D_HANDLER(Connection, HandleAsyncLoadFinished));
     }
 }
 
@@ -282,21 +282,21 @@ void Connection::SendClientUpdate()
 
 void Connection::SendRemoteEvents()
 {
-    #ifdef URHO3D_LOGGING
+    #ifdef LUTEFISK3D_LOGGING
     if (logStatistics_ && statsTimer_.GetMSec(false) > STATS_INTERVAL_MSEC)
     {
         statsTimer_.Reset();
         char statsBuffer[256];
         sprintf(statsBuffer, "RTT %.3f ms Pkt in %d Pkt out %d Data in %.3f KB/s Data out %.3f KB/s", connection_->RoundTripTime(), (int)connection_->PacketsInPerSec(),
             (int)connection_->PacketsOutPerSec(), connection_->BytesInPerSec() / 1000.0f, connection_->BytesOutPerSec() / 1000.0f);
-        LOGINFO(statsBuffer);
+        URHO3D_LOGINFO(statsBuffer);
     }
     #endif
 
     if (remoteEvents_.empty())
         return;
 
-    PROFILE(SendRemoteEvents);
+    URHO3D_PROFILE(SendRemoteEvents);
 
     for (std::vector<RemoteEvent>::const_iterator i = remoteEvents_.begin(); i != remoteEvents_.end(); ++i)
     {
@@ -448,13 +448,13 @@ void Connection::ProcessLoadScene(int msgID, MemoryBuffer& msg)
 {
     if (IsClient())
     {
-        LOGWARNING("Received unexpected LoadScene message from client " + ToString());
+        URHO3D_LOGWARNING("Received unexpected LoadScene message from client " + ToString());
         return;
     }
 
     if (!scene_)
     {
-        LOGERROR("Can not handle LoadScene message without an assigned scene");
+        URHO3D_LOGERROR("Can not handle LoadScene message without an assigned scene");
         return;
     }
 
@@ -496,11 +496,11 @@ void Connection::ProcessSceneChecksumError(int msgID, MemoryBuffer& msg)
 {
     if (IsClient())
     {
-        LOGWARNING("Received unexpected SceneChecksumError message from client " + ToString());
+        URHO3D_LOGWARNING("Received unexpected SceneChecksumError message from client " + ToString());
         return;
     }
 
-    LOGERROR("Scene checksum error");
+    URHO3D_LOGERROR("Scene checksum error");
     OnSceneLoadFailed();
 }
 
@@ -510,7 +510,7 @@ void Connection::ProcessSceneUpdate(int msgID, MemoryBuffer& msg)
     /// while the application is minimized
     if (IsClient())
     {
-        LOGWARNING("Received unexpected SceneUpdate message from client " + ToString());
+        URHO3D_LOGWARNING("Received unexpected SceneUpdate message from client " + ToString());
         return;
     }
 
@@ -568,7 +568,7 @@ void Connection::ProcessSceneUpdate(int msgID, MemoryBuffer& msg)
                 // If was unable to create the component, would desync the message and therefore have to abort
                 if (!component)
                 {
-                    LOGERROR("CreateNode message parsing aborted due to unknown component");
+                    URHO3D_LOGERROR("CreateNode message parsing aborted due to unknown component");
                     return;
                 }
 
@@ -597,7 +597,7 @@ void Connection::ProcessSceneUpdate(int msgID, MemoryBuffer& msg)
                 }
             }
             else
-                LOGWARNING("NodeDeltaUpdate message received for missing node " + QString::number(nodeID));
+                URHO3D_LOGWARNING("NodeDeltaUpdate message received for missing node " + QString::number(nodeID));
         }
         break;
 
@@ -652,7 +652,7 @@ void Connection::ProcessSceneUpdate(int msgID, MemoryBuffer& msg)
                 // If was unable to create the component, would desync the message and therefore have to abort
                 if (!component)
                 {
-                    LOGERROR("CreateComponent message parsing aborted due to unknown component");
+                    URHO3D_LOGERROR("CreateComponent message parsing aborted due to unknown component");
                     return;
                 }
 
@@ -661,7 +661,7 @@ void Connection::ProcessSceneUpdate(int msgID, MemoryBuffer& msg)
                 component->ApplyAttributes();
             }
             else
-                LOGWARNING("CreateComponent message received for missing node " + QString::number(nodeID));
+                URHO3D_LOGWARNING("CreateComponent message received for missing node " + QString::number(nodeID));
         }
         break;
 
@@ -675,7 +675,7 @@ void Connection::ProcessSceneUpdate(int msgID, MemoryBuffer& msg)
                 component->ApplyAttributes();
             }
             else
-                LOGWARNING("ComponentDeltaUpdate message received for missing component " + QString::number(componentID));
+                URHO3D_LOGWARNING("ComponentDeltaUpdate message received for missing component " + QString::number(componentID));
         }
         break;
 
@@ -707,6 +707,7 @@ void Connection::ProcessSceneUpdate(int msgID, MemoryBuffer& msg)
             componentLatestData_.remove(componentID);
         }
         break;
+    default: break;
     }
 }
 
@@ -717,7 +718,7 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
     case MSG_REQUESTPACKAGE:
         if (!IsClient())
         {
-            LOGWARNING("Received unexpected RequestPackage message from server");
+            URHO3D_LOGWARNING("Received unexpected RequestPackage message from server");
             return;
         }
         else
@@ -726,7 +727,7 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
 
             if (!scene_)
             {
-                LOGWARNING("Received a RequestPackage message without an assigned scene from client " + ToString());
+                URHO3D_LOGWARNING("Received a RequestPackage message without an assigned scene from client " + ToString());
                 return;
             }
 
@@ -743,7 +744,7 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
                     // Do not restart upload if already exists
                     if (uploads_.contains(nameHash))
                     {
-                        LOGWARNING("Received a request for package " + name + " already in transfer");
+                        URHO3D_LOGWARNING("Received a request for package " + name + " already in transfer");
                         return;
                     }
 
@@ -751,12 +752,12 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
                     SharedPtr<File> file(new File(context_, packageFullName));
                     if (!file->IsOpen())
                     {
-                        LOGERROR("Failed to transmit package file " + name);
+                        URHO3D_LOGERROR("Failed to transmit package file " + name);
                         SendPackageError(name);
                         return;
                     }
 
-                    LOGINFO("Transmitting package file " + name + " to client " + ToString());
+                    URHO3D_LOGINFO("Transmitting package file " + name + " to client " + ToString());
 
                     uploads_[nameHash].file_ = file;
                     uploads_[nameHash].fragment_ = 0;
@@ -765,7 +766,7 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
                 }
             }
 
-            LOGERROR("Client requested an unexpected package file " + name);
+            URHO3D_LOGERROR("Client requested an unexpected package file " + name);
             // Send the name hash only to indicate a failed download
             SendPackageError(name);
             return;
@@ -775,7 +776,7 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
     case MSG_PACKAGEDATA:
         if (IsClient())
         {
-            LOGWARNING("Received unexpected PackageData message from client");
+            URHO3D_LOGWARNING("Received unexpected PackageData message from client");
             return;
         }
         else
@@ -821,7 +822,7 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
             // Check if all fragments received
             if (download.receivedFragments_.size() == download.totalFragments_)
             {
-                LOGINFO("Package " + download.name_ + " downloaded successfully");
+                URHO3D_LOGINFO("Package " + download.name_ + " downloaded successfully");
 
                 // Instantiate the package and add to the resource system, as we will need it to load the scene
                 download.file_->Close();
@@ -835,7 +836,7 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
                 {
                     PackageDownload& nextDownload = MAP_VALUE(downloads_.begin());
 
-                    LOGINFO("Requesting package " + nextDownload.name_ + " from server");
+                    URHO3D_LOGINFO("Requesting package " + nextDownload.name_ + " from server");
                     msg_.clear();
                     msg_.WriteString(nextDownload.name_);
                     SendMessage(MSG_REQUESTPACKAGE, true, true, msg_);
@@ -844,6 +845,7 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
             }
         }
         break;
+    default: break;
     }
 }
 
@@ -851,7 +853,7 @@ void Connection::ProcessIdentity(int msgID, MemoryBuffer& msg)
 {
     if (!IsClient())
     {
-        LOGWARNING("Received unexpected Identity message from server");
+        URHO3D_LOGWARNING("Received unexpected Identity message from server");
         return;
     }
 
@@ -873,7 +875,7 @@ void Connection::ProcessControls(int msgID, MemoryBuffer& msg)
 {
     if (!IsClient())
     {
-        LOGWARNING("Received unexpected Controls message from server");
+        URHO3D_LOGWARNING("Received unexpected Controls message from server");
         return;
     }
 
@@ -896,13 +898,13 @@ void Connection::ProcessSceneLoaded(int msgID, MemoryBuffer& msg)
 {
     if (!IsClient())
     {
-        LOGWARNING("Received unexpected SceneLoaded message from server");
+        URHO3D_LOGWARNING("Received unexpected SceneLoaded message from server");
         return;
     }
 
     if (!scene_)
     {
-        LOGWARNING("Received a SceneLoaded message without an assigned scene from client " + ToString());
+        URHO3D_LOGWARNING("Received a SceneLoaded message without an assigned scene from client " + ToString());
         return;
     }
 
@@ -910,7 +912,7 @@ void Connection::ProcessSceneLoaded(int msgID, MemoryBuffer& msg)
 
     if (checksum != scene_->GetChecksum())
     {
-        LOGINFO("Scene checksum error from client " + ToString());
+        URHO3D_LOGINFO("Scene checksum error from client " + ToString());
         msg_.clear();
         SendMessage(MSG_SCENECHECKSUMERROR, true, true, msg_);
         OnSceneLoadFailed();
@@ -936,7 +938,7 @@ void Connection::ProcessRemoteEvent(int msgID, MemoryBuffer& msg)
         StringHash eventType = msg.ReadStringHash();
         if (!GetSubsystem<Network>()->CheckRemoteEvent(eventType))
         {
-            LOGWARNING("Discarding not allowed remote event " + eventType.ToString());
+            URHO3D_LOGWARNING("Discarding not allowed remote event " + eventType.ToString());
             return;
         }
 
@@ -948,7 +950,7 @@ void Connection::ProcessRemoteEvent(int msgID, MemoryBuffer& msg)
     {
         if (!scene_)
         {
-            LOGERROR("Can not receive remote node event without an assigned scene");
+            URHO3D_LOGERROR("Can not receive remote node event without an assigned scene");
             return;
         }
 
@@ -956,7 +958,7 @@ void Connection::ProcessRemoteEvent(int msgID, MemoryBuffer& msg)
         StringHash eventType = msg.ReadStringHash();
         if (!GetSubsystem<Network>()->CheckRemoteEvent(eventType))
         {
-            LOGWARNING("Discarding not allowed remote event " + eventType.ToString());
+            URHO3D_LOGWARNING("Discarding not allowed remote event " + eventType.ToString());
             return;
         }
 
@@ -964,7 +966,7 @@ void Connection::ProcessRemoteEvent(int msgID, MemoryBuffer& msg)
         Node* sender = scene_->GetNode(nodeID);
         if (!sender)
         {
-            LOGWARNING("Missing sender for remote node event, discarding");
+            URHO3D_LOGWARNING("Missing sender for remote node event, discarding");
             return;
         }
         eventData[P_CONNECTION] = this;
@@ -987,6 +989,36 @@ bool Connection::IsConnected() const
     return connection_->GetConnectionState() == kNet::ConnectionOK;
 }
 
+float Connection::GetRoundTripTime() const
+{
+    return connection_->RoundTripTime();
+}
+
+float Connection::GetLastHeardTime() const
+{
+    return connection_->LastHeardTime();
+}
+
+float Connection::GetBytesInPerSec() const
+{
+    return connection_->BytesInPerSec();
+}
+
+float Connection::GetBytesOutPerSec() const
+{
+    return connection_->BytesOutPerSec();
+}
+
+float Connection::GetPacketsInPerSec() const
+{
+    return connection_->PacketsInPerSec();
+}
+
+float Connection::GetPacketsOutPerSec() const
+{
+    return connection_->PacketsOutPerSec();
+}
+
 QString Connection::ToString() const
 {
     return GetAddress() + ":" + QString::number(GetPort());
@@ -997,14 +1029,14 @@ unsigned Connection::GetNumDownloads() const
     return downloads_.size();
 }
 
-QString Connection::GetDownloadName() const
+const QString &Connection::GetDownloadName() const
 {
     for (const auto & elem : downloads_)
     {
         if (ELEMENT_VALUE(elem).initiated_)
             return ELEMENT_VALUE(elem).name_;
     }
-    return QString::null;
+    return s_dummy;
 }
 
 float Connection::GetDownloadProgress() const
@@ -1024,12 +1056,12 @@ void Connection::SendPackageToClient(PackageFile* package)
 
     if (!IsClient())
     {
-        LOGERROR("SendPackageToClient can be called on the server only");
+        URHO3D_LOGERROR("SendPackageToClient can be called on the server only");
         return;
     }
     if (!package)
     {
-        LOGERROR("Null package specified for SendPackageToClient");
+        URHO3D_LOGERROR("Null package specified for SendPackageToClient");
         return;
     }
 
@@ -1228,7 +1260,7 @@ void Connection::ProcessExistingNode(Node* node, NodeReplicationState& nodeState
                 else
                 {
                     // Variable has been marked dirty, but is removed (which is unsupported): send a dummy variable in place
-                    LOGWARNING("Sending dummy user variable as original value was removed");
+                    URHO3D_LOGWARNING("Sending dummy user variable as original value was removed");
                     msg_.WriteStringHash(StringHash());
                     msg_.WriteVariant(Variant::EMPTY);
                 }
@@ -1371,7 +1403,7 @@ bool Connection::RequestNeededPackages(unsigned numPackages, MemoryBuffer& msg)
         {
             if (packageCacheDir.isEmpty())
             {
-                LOGERROR("Can not check/download required packages, as package cache directory is not set");
+                URHO3D_LOGERROR("Can not check/download required packages, as package cache directory is not set");
                 return false;
             }
 
@@ -1390,7 +1422,7 @@ bool Connection::RequestNeededPackages(unsigned numPackages, MemoryBuffer& msg)
                 if (newPackage->GetTotalSize() == fileSize && newPackage->GetChecksum() == checksum)
                 {
                     // Add the package to the resource system now, as we will need it to load the scene
-                    cache->AddPackageFile(newPackage, true);
+                    cache->AddPackageFile(newPackage, 0);
                     found = true;
                     break;
                 }
@@ -1419,7 +1451,7 @@ void Connection::RequestPackage(const QString& name, unsigned fileSize, unsigned
     // Start download now only if no existing downloads, else wait for the existing ones to finish
     if (downloads_.size() == 1)
     {
-        LOGINFO("Requesting package " + name + " from server");
+        URHO3D_LOGINFO("Requesting package " + name + " from server");
         msg_.clear();
         msg_.WriteString(name);
         SendMessage(MSG_REQUESTPACKAGE, true, true, msg_);
@@ -1447,7 +1479,7 @@ void Connection::OnSceneLoadFailed()
 
 void Connection::OnPackageDownloadFailed(const QString& name)
 {
-    LOGERROR("Download of package " + name + " failed");
+    URHO3D_LOGERROR("Download of package " + name + " failed");
     // As one package failed, we can not join the scene in any case. Clear the downloads
     downloads_.clear();
     OnSceneLoadFailed();
@@ -1497,7 +1529,7 @@ void Connection::ProcessPackageInfo(int msgID, MemoryBuffer& msg)
 
     if (IsClient())
     {
-        LOGWARNING("Received unexpected packages info message from client");
+        URHO3D_LOGWARNING("Received unexpected packages info message from client");
         return;
     }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,9 +30,9 @@ namespace Urho3D
 {
 
 /// Work item completed event.
-EVENT(E_WORKITEMCOMPLETED, WorkItemCompleted)
+URHO3D_EVENT(E_WORKITEMCOMPLETED, WorkItemCompleted)
 {
-    PARAM(P_ITEM, Item);                        // WorkItem ptr
+    URHO3D_PARAM(P_ITEM, Item);                        // WorkItem ptr
 }
 
 class WorkerThread;
@@ -92,7 +92,7 @@ struct comparePrioritySharedPtr {
 /// Work queue subsystem for multithreading.
 class WorkQueue : public Object
 {
-    OBJECT(WorkQueue);
+    URHO3D_OBJECT(WorkQueue, Object);
 
     friend class WorkerThread;
 
@@ -127,6 +127,8 @@ public:
     unsigned GetNumThreads() const { return threads_.size(); }
     /// Return whether all work with at least the specified priority is finished.
     bool IsCompleted(unsigned priority) const;
+    /// Return whether the queue is currently completing work in the main thread.
+    bool IsCompleting() const { return completing_; }
     /// Return the pool tolerance.
     int GetTolerance() const { return tolerance_; }
     /// Return how many milliseconds maximum to spend on non-threaded low-priority work.
@@ -149,10 +151,8 @@ private:
     /// Work item pool for reuse to cut down on allocation. The bool is a flag for item pooling and whether it is available or not.
     std::list<SharedPtr<WorkItem> > poolItems_;
     /// Work item collection. Accessed only by the main thread.
-    //std::deque<SharedPtr<WorkItem> > workItems_;
     std::multiset<SharedPtr<WorkItem>,comparePrioritySharedPtr> workItems_;
     /// Work item prioritized queue for worker threads. Pointers are guaranteed to be valid (point to workItems.)
-    //std::priority_queue<WorkItem*,std::deque<WorkItem*>,comparePriority> queue_;
     std::multiset<WorkItem*,comparePriority> queue_;
     typedef std::multiset<WorkItem*,comparePriority>::iterator iQueue;
     /// Worker queue mutex.
@@ -163,6 +163,8 @@ private:
     volatile bool pausing_;
     /// Paused flag. Indicates the queue mutex being locked to prevent worker threads using up CPU time.
     bool paused_;
+    /// Completing work in the main thread flag.
+    bool completing_;
     /// Tolerance for the shared pool before it begins to deallocate.
     int tolerance_;
     /// Last size of the shared pool.

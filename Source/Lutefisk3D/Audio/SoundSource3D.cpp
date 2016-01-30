@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,13 @@
 // THE SOFTWARE.
 //
 
-#include "../Audio/Audio.h"
+#include "SoundSource3D.h"
+#include "Audio.h"
+#include "Sound.h"
+#include "SoundListener.h"
 #include "../Core/Context.h"
 #include "../Graphics/DebugRenderer.h"
 #include "../Scene/Node.h"
-#include "../Audio/Sound.h"
-#include "../Audio/SoundListener.h"
-#include "../Audio/SoundSource3D.h"
 
 namespace Urho3D
 {
@@ -114,15 +114,15 @@ void SoundSource3D::RegisterObject(Context* context)
 {
     context->RegisterFactory<SoundSource3D>(AUDIO_CATEGORY);
 
-    COPY_BASE_ATTRIBUTES(SoundSource);
+    URHO3D_COPY_BASE_ATTRIBUTES(SoundSource);
     // Remove Attenuation and Panning as attribute as they are constantly being updated
-    REMOVE_ATTRIBUTE("Attenuation");
-    REMOVE_ATTRIBUTE("Panning");
-    ATTRIBUTE("Near Distance", float, nearDistance_, DEFAULT_NEARDISTANCE, AM_DEFAULT);
-    ATTRIBUTE("Far Distance", float, farDistance_, DEFAULT_FARDISTANCE, AM_DEFAULT);
-    ATTRIBUTE("Inner Angle", float, innerAngle_, DEFAULT_ANGLE, AM_DEFAULT);
-    ATTRIBUTE("Outer Angle", float, outerAngle_, DEFAULT_ANGLE, AM_DEFAULT);
-    ATTRIBUTE("Rolloff Factor", float, rolloffFactor_, DEFAULT_ROLLOFF, AM_DEFAULT);
+    URHO3D_REMOVE_ATTRIBUTE("Attenuation");
+    URHO3D_REMOVE_ATTRIBUTE("Panning");
+    URHO3D_ATTRIBUTE("Near Distance", float, nearDistance_, DEFAULT_NEARDISTANCE, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Far Distance", float, farDistance_, DEFAULT_FARDISTANCE, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Inner Angle", float, innerAngle_, DEFAULT_ANGLE, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Outer Angle", float, outerAngle_, DEFAULT_ANGLE, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Rolloff Factor", float, rolloffFactor_, DEFAULT_ROLLOFF, AM_DEFAULT);
 }
 
 void SoundSource3D::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
@@ -157,9 +157,9 @@ void SoundSource3D::Update(float timeStep)
 
 void SoundSource3D::SetDistanceAttenuation(float nearDistance, float farDistance, float rolloffFactor)
 {
-    nearDistance_ = Max(nearDistance, 0.0f);
-    farDistance_ = Max(farDistance, 0.0f);
-    rolloffFactor_ = Max(rolloffFactor, MIN_ROLLOFF);
+    nearDistance_ = std::max(nearDistance, 0.0f);
+    farDistance_ = std::max(farDistance, 0.0f);
+    rolloffFactor_ = std::max(rolloffFactor, MIN_ROLLOFF);
     MarkNetworkUpdate();
 }
 
@@ -172,13 +172,13 @@ void SoundSource3D::SetAngleAttenuation(float innerAngle, float outerAngle)
 
 void SoundSource3D::SetFarDistance(float distance)
 {
-    farDistance_ = Max(distance, 0.0f);
+    farDistance_ = std::max(distance, 0.0f);
     MarkNetworkUpdate();
 }
 
 void SoundSource3D::SetNearDistance(float distance)
 {
-    nearDistance_ = Max(distance, 0.0f);
+    nearDistance_ = std::max(distance, 0.0f);
     MarkNetworkUpdate();
 }
 
@@ -196,7 +196,7 @@ void SoundSource3D::SetOuterAngle(float angle)
 
 void SoundSource3D::SetRolloffFactor(float factor)
 {
-    rolloffFactor_ = Max(factor, MIN_ROLLOFF);
+    rolloffFactor_ = std::max(factor, MIN_ROLLOFF);
     MarkNetworkUpdate();
 }
 
@@ -233,7 +233,7 @@ void SoundSource3D::CalculateAttenuation()
                     node_->GetWorldPosition()));
                 float listenerDot = Vector3::FORWARD.DotProduct(listenerRelativePos.Normalized());
                 float listenerAngle = acosf(listenerDot) * M_RADTODEG * 2.0f;
-                float angleInterval = Max(outerAngle_ - innerAngle_, 0.0f);
+                float angleInterval = std::max(outerAngle_ - innerAngle_, 0.0f);
                 float angleAttenuation = 1.0f;
 
                 if (angleInterval > 0.0f)

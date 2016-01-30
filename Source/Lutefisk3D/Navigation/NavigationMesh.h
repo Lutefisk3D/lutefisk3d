@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,21 +24,19 @@
 
 #include "../Container/ArrayPtr.h"
 #include "../Math/BoundingBox.h"
-#include "../Scene/Component.h"
 #include "../Math/Matrix3x4.h"
+#include "../Scene/Component.h"
 #include <QtCore/QSet>
+
+#ifdef DT_POLYREF64
+typedef uint64_t dtPolyRef;
+#else
+typedef unsigned int dtPolyRef;
+#endif
 
 class dtNavMesh;
 class dtNavMeshQuery;
 class dtQueryFilter;
-struct dtNavMeshCreateParams;
-class rcContext;
-struct rcHeightfield;
-struct rcCompactHeightfield;
-struct rcContourSet;
-struct rcPolyMesh;
-struct rcPolyMeshDetail;
-struct rcHeightFieldLayerSet;
 
 namespace Urho3D
 {
@@ -66,11 +64,30 @@ struct NavigationGeometryInfo
     BoundingBox boundingBox_;
 };
 
+/// A flag representing the type of path point- none, the start of a path segment, the end of one, or an off-mesh connection.
+enum NavigationPathPointFlag
+{
+    NAVPATHFLAG_NONE = 0,
+    NAVPATHFLAG_START = 0x01,
+    NAVPATHFLAG_END = 0x02,
+    NAVPATHFLAG_OFF_MESH = 0x04
+};
+
+struct NavigationPathPoint
+{
+    /// World-space position of the path point
+    Vector3 position_;
+    /// Detour flag
+    NavigationPathPointFlag flag_;
+    /// Detour area ID
+    unsigned char areaID_;
+};
+
 /// Navigation mesh component. Collects the navigation geometry from child nodes with the Navigable component and responds to path queries.
 class NavigationMesh : public Component
 {
-    OBJECT(NavigationMesh);
-    friend class DetourCrowdManager;
+    URHO3D_OBJECT(NavigationMesh,Component);
+    friend class CrowdManager;
 
 public:
     /// Construct.
@@ -117,20 +134,32 @@ public:
     virtual bool Build();
     /// Rebuild part of the navigation mesh contained by the world-space bounding box. Return true if successful.
     virtual bool Build(const BoundingBox& boundingBox);
-    /// Find the nearest point on the navigation mesh to a given point. Extens specifies how far out from the specified point to check along each axis.
-    Vector3 FindNearestPoint(const Vector3& point, const Vector3& extents=Vector3::ONE);
+    /// Find the nearest point on the navigation mesh to a given point. Extents specifies how far out from the specified point to check along each axis.
+    Vector3 FindNearestPoint
+        (const Vector3& point, const Vector3& extents = Vector3::ONE, const dtQueryFilter* filter = 0, dtPolyRef* nearestRef = 0);
     /// Try to move along the surface from one point to another.
-    Vector3 MoveAlongSurface(const Vector3& start, const Vector3& end, const Vector3& extents=Vector3::ONE, int maxVisited=3);
+    Vector3 MoveAlongSurface(const Vector3& start, const Vector3& end, const Vector3& extents = Vector3::ONE, int maxVisited = 3,
+        const dtQueryFilter* filter = 0);
     /// Find a path between world space points. Return non-empty list of points if successful. Extents specifies how far off the navigation mesh the points can be.
-    void FindPath( std::deque<Vector3> &dest, const Vector3& start, const Vector3& end, const Vector3& extents = Vector3::ONE);
+    void FindPath(std::deque<Vector3> & dest, const Vector3& start, const Vector3& end, const Vector3& extents = Vector3::ONE,
+        const dtQueryFilter* filter = 0);
+    /// Find a path between world space points. Return non-empty list of navigation path points if successful. Extents specifies how far off the navigation mesh the points can be.
+    void FindPath (std::deque<NavigationPathPoint>& dest, const Vector3& start, const Vector3& end, const Vector3& extents = Vector3::ONE,
+        const dtQueryFilter* filter = 0);
     /// Return a random point on the navigation mesh.
-    Vector3 GetRandomPoint();
+    Vector3 GetRandomPoint(const dtQueryFilter* filter = 0, dtPolyRef* randomRef = 0);
     /// Return a random point on the navigation mesh within a circle. The circle radius is only a guideline and in practice the returned point may be further away.
-    Vector3 GetRandomPointInCircle(const Vector3& center, float radius, const Vector3& extents = Vector3::ONE);
+    Vector3 GetRandomPointInCircle
+        (const Vector3& center, float radius, const Vector3& extents = Vector3::ONE, const dtQueryFilter* filter = 0,
+            dtPolyRef* randomRef = 0);
     /// Return distance to wall from a point. Maximum search radius must be specified.
-    float GetDistanceToWall(const Vector3& point, float radius, const Vector3& extents = Vector3::ONE);
+    float GetDistanceToWall
+        (const Vector3& point, float radius, const Vector3& extents = Vector3::ONE, const dtQueryFilter* filter = 0,
+            Vector3* hitPos = 0, Vector3* hitNormal = 0);
     /// Perform a walkability raycast on the navigation mesh between start and end and return the point where a wall was hit, or the end point if no walls.
-    Vector3 Raycast(const Vector3& start, const Vector3& end, const Vector3& extents = Vector3::ONE);
+    Vector3 Raycast
+        (const Vector3& start, const Vector3& end, const Vector3& extents = Vector3::ONE, const dtQueryFilter* filter = 0,
+            Vector3* hitNormal = 0);
     /// Add debug geometry to the debug renderer.
     void DrawDebugGeometry(bool depthTest);
 
@@ -260,8 +289,6 @@ protected:
     NavmeshPartitionType partitionType_;
     /// Keep internal build resources for debug draw modes.
     bool keepInterResults_;
-    /// Internal build resources for creating the navmesh.
-    HashMap<std::pair<int, int>, NavBuildData*> builds_;
 
     /// Debug draw OffMeshConnection components.
     bool drawOffMeshConnections_;

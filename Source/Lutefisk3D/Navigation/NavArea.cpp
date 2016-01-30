@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +26,12 @@
 #include "../IO/Log.h"
 #include "../Navigation/NavArea.h"
 #include "../Scene/Node.h"
-#include "../Container/Str.h"
 
 namespace Urho3D
 {
     static const unsigned MAX_NAV_AREA_ID = 255;
     static const Vector3 DEFAULT_BOUNDING_BOX_MIN(-10.0f, -10.0f, -10.0f);
     static const Vector3 DEFAULT_BOUNDING_BOX_MAX(10.0f, 10.0f, 10.0f);
-    static const unsigned DEFAULT_MASK_FLAG = 0;
     static const unsigned DEFAULT_AREA_ID = 0;
 
     extern const char* NAVIGATION_CATEGORY;
@@ -53,16 +51,16 @@ namespace Urho3D
     {
         context->RegisterFactory<NavArea>(NAVIGATION_CATEGORY);
 
-        COPY_BASE_ATTRIBUTES(Component);
-        ATTRIBUTE("Bounding Box Min", Vector3, boundingBox_.min_, DEFAULT_BOUNDING_BOX_MIN, AM_DEFAULT);
-        ATTRIBUTE("Bounding Box Max", Vector3, boundingBox_.max_, DEFAULT_BOUNDING_BOX_MAX, AM_DEFAULT);
-        ACCESSOR_ATTRIBUTE("Area ID", GetAreaID, SetAreaID, unsigned, DEFAULT_AREA_ID, AM_DEFAULT);
+        URHO3D_COPY_BASE_ATTRIBUTES(Component);
+        URHO3D_ATTRIBUTE("Bounding Box Min", Vector3, boundingBox_.min_, DEFAULT_BOUNDING_BOX_MIN, AM_DEFAULT);
+        URHO3D_ATTRIBUTE("Bounding Box Max", Vector3, boundingBox_.max_, DEFAULT_BOUNDING_BOX_MAX, AM_DEFAULT);
+        URHO3D_ACCESSOR_ATTRIBUTE("Area ID", GetAreaID, SetAreaID, unsigned, DEFAULT_AREA_ID, AM_DEFAULT);
     }
 
     void NavArea::SetAreaID(unsigned newID)
     {
         if (newID > MAX_NAV_AREA_ID)
-            LOGERROR(QString("NavArea Area ID %1 exceeds maximum value of %2").arg(newID).arg(MAX_NAV_AREA_ID));
+            URHO3D_LOGERROR(QString("NavArea Area ID %1 exceeds maximum value of %2").arg(newID).arg(MAX_NAV_AREA_ID));
         areaID_ = (unsigned char)newID;
         MarkNetworkUpdate();
     }

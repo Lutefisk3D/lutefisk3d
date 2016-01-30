@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -150,9 +150,10 @@ enum DeferredLightPSVariation
 /// High-level rendering subsystem. Manages drawing of 3D views.
 class Renderer : public Object
 {
-    OBJECT(Renderer);
+    URHO3D_OBJECT(Renderer,Object);
 
 public:
+    typedef void(Object::*ShadowMapFilter)(View* view, Texture2D* shadowMap);
     /// Construct.
     Renderer(Context* context);
     /// Destruct.
@@ -182,8 +183,14 @@ public:
     void SetDrawShadows(bool enable);
     /// Set shadow map resolution.
     void SetShadowMapSize(int size);
-    /// Set shadow quality mode. See the SHADOWQUALITY constants in GraphicsDefs.h.
-    void SetShadowQuality(int quality);
+    /// Set shadow quality mode. See the SHADOWQUALITY enum in GraphicsDefs.h.
+    void SetShadowQuality(ShadowQuality quality);
+    /// Set shadow softness, only works when SHADOWQUALITY_BLUR_VSM is used.
+    void SetShadowSoftness(float shadowSoftness);
+    /// Set shadow parameters when VSM is used, they help to reduce light bleeding. LightBleeding must be in [0, 1[
+    void SetVSMShadowParameters(float minVariance, float lightBleedingReduction);
+    /// Set post processing filter to the shadow map
+    void SetShadowMapFilter(Object* instance, ShadowMapFilter functionPtr);
     /// Set reuse of shadow maps. Default is true. If disabled, also transparent geometry can be shadowed.
     void SetReuseShadowMaps(bool enable);
     /// Set maximum number of shadow maps created for one resolution. Only has effect if reuse of shadow maps is disabled.
@@ -194,18 +201,23 @@ public:
     void SetMinInstances(int instances);
     /// Set maximum number of sorted instances per batch group. If exceeded, instances are rendered unsorted.
     void SetMaxSortedInstances(int instances);
-    /// Set maximum number of occluder trianges.
+    /// Set maximum number of occluder triangles.
     void SetMaxOccluderTriangles(int triangles);
     /// Set occluder buffer width.
     void SetOcclusionBufferSize(int size);
     /// Set required screen size (1.0 = full screen) for occluders.
     void SetOccluderSizeThreshold(float screenSize);
+    /// Set whether to thread occluder rendering. Default false.
+    void SetThreadedOcclusion(bool enable);
     /// Set shadow depth bias multiplier for mobile platforms (OpenGL ES.) No effect on desktops. Default 2.
     void SetMobileShadowBiasMul(float mul);
     /// Set shadow depth bias addition for mobile platforms (OpenGL ES.)  No effect on desktops. Default 0.0001.
     void SetMobileShadowBiasAdd(float add);
     /// Force reload of shaders.
     void ReloadShaders();
+
+    /// Apply post processing filter to the shadow map. Called by View.
+    void ApplyShadowMapFilter(View* view, Texture2D* shadowMap);
 
     /// Return number of backbuffer viewports.
     unsigned GetNumViewports() const { return viewports_.size(); }
@@ -230,7 +242,13 @@ public:
     /// Return shadow map resolution.
     int GetShadowMapSize() const { return shadowMapSize_; }
     /// Return shadow quality.
-    int GetShadowQuality() const { return shadowQuality_; }
+    ShadowQuality GetShadowQuality() const { return shadowQuality_; }
+
+    /// Return shadow softness.
+    float GetShadowSoftness() const { return shadowSoftness_; }
+
+    /// Return VSM shadow parameters
+    Vector2 GetVSMShadowParameters() const { return vsmShadowParams_; };
     /// Return whether shadow maps are reused.
     bool GetReuseShadowMaps() const { return reuseShadowMaps_; }
     /// Return maximum number of shadow maps per resolution.
@@ -247,6 +265,8 @@ public:
     int GetOcclusionBufferSize() const { return occlusionBufferSize_; }
     /// Return occluder screen size threshold.
     float GetOccluderSizeThreshold() const { return occluderSizeThreshold_; }
+    /// Return whether occlusion rendering is threaded.
+    bool GetThreadedOcclusion() const { return threadedOcclusion_; }
     /// Return shadow depth bias multiplier for mobile platforms.
     float GetMobileShadowBiasMul() const { return mobileShadowBiasMul_; }
     /// Return shadow depth bias addition for mobile platforms.
@@ -307,10 +327,14 @@ public:
     OcclusionBuffer* GetOcclusionBuffer(Camera* camera);
     /// Allocate a temporary shadow camera and a scene node for it. Is thread-safe.
     Camera* GetShadowCamera();
+    /// Mark a view as prepared by the specified culling camera.
+    void StorePreparedView(View* view, Camera* cullCamera);
+    /// Return a prepared view if exists for the specified camera. Used to avoid duplicate view preparation CPU work.
+    View* GetPreparedView(Camera* cullCamera);
     /// Choose shaders for a forward rendering batch.
     void SetBatchShaders(Batch& batch, const Technique* tech, bool allowShadows = true);
     /// Choose shaders for a deferred light volume batch.
-    void SetLightVolumeBatchShaders(Batch& batch, const QString& vsName, const QString& psName, const QString& vsDefines, const QString& psDefines);
+    void SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const QString& vsName, const QString& psName, const QString& vsDefines, const QString& psDefines);
     /// Set cull mode while taking possible projection flipping into account.
     void SetCullMode(CullMode mode, Camera* camera);
     /// Ensure sufficient size of the instancing vertex buffer. Return true if successful.
@@ -325,6 +349,8 @@ public:
     void OptimizeLightByStencil(Light* light, Camera* camera);
     /// Return a scissor rectangle for a light.
     const Rect& GetLightScissor(Light* light, Camera* camera);
+    /// Return a view or its source view if it uses one. Used internally for render statistics.
+    static View* GetActualView(View* view);
 
 private:
     /// Initialize when screen mode initially set.
@@ -355,10 +381,14 @@ private:
     void ResetShadowMaps();
     /// Remove all occlusion and screen buffers.
     void ResetBuffers();
+    /// Find variations for shadow shaders
+    QString GetShadowVariations() const;
     /// Handle screen mode event.
     void HandleScreenMode(StringHash eventType, VariantMap& eventData);
     /// Handle render update event.
     void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
+    /// Blur the shadow map
+    void BlurShadowMap(View* view, Texture2D* shadowMap);
 
     /// Graphics subsystem.
     WeakPtr<Graphics> graphics_;
@@ -394,6 +424,10 @@ private:
     HashMap<int, SharedPtr<Texture2D> > colorShadowMaps_;
     /// Shadow map allocations by resolution.
     HashMap<int, std::vector<Light*> > shadowMapAllocations_;
+    /// Instance of shadow map filter
+    Object* shadowMapFilterInstance_;
+    /// Function pointer of shadow map filter
+    ShadowMapFilter shadowMapFilter_;
     /// Screen buffers by resolution and format.
     HashMap<long long, std::vector<SharedPtr<Texture> > > screenBuffers_;
     /// Current screen buffer allocations by resolution and format.
@@ -408,6 +442,8 @@ private:
     std::vector<std::pair<WeakPtr<RenderSurface>, WeakPtr<Viewport> > > queuedViewports_;
     /// Views that have been processed this frame.
     std::vector<WeakPtr<View> > views_;
+    /// Prepared views by culling camera.
+    HashMap<Camera*, WeakPtr<View> > preparedViews_;
     /// Octrees that have been updated during the frame.
     HashSet<Octree*> updatedOctrees_;
     /// Techniques for which missing shader error has been displayed.
@@ -429,7 +465,11 @@ private:
     /// Shadow map resolution.
     int shadowMapSize_;
     /// Shadow quality.
-    int shadowQuality_;
+    ShadowQuality shadowQuality_;
+    /// Shadow softness, only works when SHADOWQUALITY_BLUR_VSM is used.
+    float shadowSoftness_;
+    /// Shadow parameters when VSM is used, they help to reduce light bleeding.
+    Vector2 vsmShadowParams_;
     /// Maximum number of shadow maps per resolution.
     int maxShadowMaps_;
     /// Minimum number of instances required in a batch group to render as instanced.
@@ -468,6 +508,8 @@ private:
     bool reuseShadowMaps_;
     /// Dynamic instancing flag.
     bool dynamicInstancing_;
+    /// Threaded occlusion rendering flag.
+    bool threadedOcclusion_;
     /// Shaders need reloading flag.
     bool shadersDirty_;
     /// Initialized flag.

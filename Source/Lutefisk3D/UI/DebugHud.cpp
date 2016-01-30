@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include "../Graphics/Renderer.h"
 #include "../UI/Text.h"
 #include "../UI/UI.h"
-
+#include "../Resource/ResourceCache.h"
 namespace Urho3D
 {
 
@@ -44,10 +44,12 @@ static const char* qualityTexts[] =
 
 static const char* shadowQualityTexts[] =
 {
-    "16bit Low",
-    "24bit Low",
-    "16bit High",
-    "24bit High"
+    "16bit Simple",
+    "24bit Simple",
+    "16bit PCF",
+    "24bit PCF",
+    "VSM",
+    "Blurred VSM"
 };
 
 DebugHud::DebugHud(Context* context) :
@@ -77,8 +79,13 @@ DebugHud::DebugHud(Context* context) :
     profilerText_->SetPriority(100);
     profilerText_->SetVisible(false);
     uiRoot->AddChild(profilerText_);
+    memoryText_ = new Text(context_);
+    memoryText_->SetAlignment(HA_RIGHT, VA_TOP);
+    memoryText_->SetPriority(100);
+    memoryText_->SetVisible(false);
+    uiRoot->AddChild(memoryText_);
 
-    SubscribeToEvent(E_POSTUPDATE, HANDLER(DebugHud, HandlePostUpdate));
+    SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(DebugHud, HandlePostUpdate));
 }
 
 DebugHud::~DebugHud()
@@ -86,6 +93,7 @@ DebugHud::~DebugHud()
     statsText_->Remove();
     modeText_->Remove();
     profilerText_->Remove();
+    memoryText_->Remove();
 }
 
 void DebugHud::Update()
@@ -162,12 +170,17 @@ void DebugHud::Update()
 
             if (profilerText_->IsVisible())
             {
-                QString profilerOutput = profiler->GetData(false, false, profilerMaxDepth_);
+                QString profilerOutput = profiler->PrintData(false, false, profilerMaxDepth_);
                 profilerText_->SetText(profilerOutput);
             }
 
             profiler->BeginInterval();
         }
+    }
+    if (memoryText_->IsVisible())
+    {
+        ResourceCache* cache = GetSubsystem<ResourceCache>();
+        memoryText_->SetText(cache->PrintMemoryUsage());
     }
 }
 
@@ -182,6 +195,8 @@ void DebugHud::SetDefaultStyle(XMLFile* style)
     modeText_->SetStyle("DebugHudText");
     profilerText_->SetDefaultStyle(style);
     profilerText_->SetStyle("DebugHudText");
+    memoryText_->SetDefaultStyle(style);
+    memoryText_->SetStyle("DebugHudText");
 }
 
 void DebugHud::SetMode(unsigned mode)
@@ -189,6 +204,7 @@ void DebugHud::SetMode(unsigned mode)
     statsText_->SetVisible((mode & DEBUGHUD_SHOW_STATS) != 0);
     modeText_->SetVisible((mode & DEBUGHUD_SHOW_MODE) != 0);
     profilerText_->SetVisible((mode & DEBUGHUD_SHOW_PROFILER) != 0);
+    memoryText_->SetVisible((mode & DEBUGHUD_SHOW_MEMORY) != 0);
 
     mode_ = mode;
 }

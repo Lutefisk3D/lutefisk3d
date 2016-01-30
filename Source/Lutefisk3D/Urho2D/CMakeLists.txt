@@ -1,6 +1,5 @@
 set(INCLUDES
 AnimatedSprite2D.h
-Animation2D.h
 AnimationSet2D.h
 CollisionBox2D.h
 CollisionChain2D.h
@@ -29,6 +28,8 @@ PhysicsWorld2D.h
 Renderer2D.h
 RigidBody2D.h
 Sprite2D.h
+SpriterData2D.h
+SpriterInstance2D.h
 SpriteSheet2D.h
 StaticSprite2D.h
 TileMap2D.h
@@ -39,7 +40,6 @@ Urho2D.h
 )
 set(SOURCE
 AnimatedSprite2D.cpp
-Animation2D.cpp
 AnimationSet2D.cpp
 CollisionBox2D.cpp
 CollisionChain2D.cpp
@@ -66,6 +66,8 @@ PhysicsWorld2D.cpp
 Renderer2D.cpp
 RigidBody2D.cpp
 Sprite2D.cpp
+SpriterData2D.cpp
+SpriterInstance2D.cpp
 SpriteSheet2D.cpp
 StaticSprite2D.cpp
 TileMap2D.cpp

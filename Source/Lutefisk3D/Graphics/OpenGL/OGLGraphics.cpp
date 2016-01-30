@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,10 +72,12 @@
 #include <stdio.h>
 using namespace gl;
 #ifdef WIN32
-// On Intel / NVIDIA setups prefer the NVIDIA GPU
+// Prefer the high-performance GPU on switchable GPU systems
 #include <windows.h>
-extern "C" {
-__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+extern "C"
+{
+    __declspec(dllexport) DWORD NvOptimusEnablement = 1;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 #endif
 
@@ -154,14 +156,9 @@ static const GLenum glStencilOps[] =
 // This avoids a skinning bug on GLES2 devices which only support 8.
 static const unsigned glVertexAttrIndex[] =
 {
-    0, 1, 2, 3, 4, 8, 9, 5, 6, 7, 10, 11, 12
+    0, 1, 2, 3, 4, 8, 9, 5, 6, 7, 10, 11, 12, 13
 };
 
-
-#ifdef GL_ES_VERSION_2_0
-static unsigned glesDepthStencilFormat = GL_DEPTH_COMPONENT16;
-static unsigned glesReadableDepthFormat = GL_DEPTH_COMPONENT;
-#endif
 
 static QString extensions;
 
@@ -273,7 +270,7 @@ void Graphics::SetExternalWindow(void* window)
     if (!impl_->window_)
         externalWindow_ = window;
     else
-        LOGERROR("Window already opened, can not set external window");
+        URHO3D_LOGERROR("Window already opened, can not set external window");
 }
 
 void Graphics::SetWindowTitle(const QString& windowTitle)
@@ -305,7 +302,7 @@ void Graphics::SetWindowPosition(int x, int y)
 
 bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, bool resizable, bool vsync, bool tripleBuffer, int multiSample)
 {
-    PROFILE(SetScreenMode);
+    URHO3D_PROFILE(SetScreenMode);
 
     bool maximize = false;
 
@@ -452,9 +449,9 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
                 impl_->window_ = SDL_CreateWindow(qPrintable(windowTitle_), x, y, width, height, flags);
             else
             {
-#ifndef EMSCRIPTEN
+#ifndef __EMSCRIPTEN__
                 if (!impl_->window_)
-                    impl_->window_ = SDL_CreateWindowFrom(externalWindow_, SDL_WINDOW_OPENGL);
+                    impl_->window_ = SDL_CreateWindowFrom(externalWindow_);
                 fullscreen = false;
 #endif
             }
@@ -472,7 +469,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
                 }
                 else
                 {
-                    LOGERROR(QString("Could not create window, root cause: '%1'").arg(SDL_GetError()));
+                    URHO3D_LOGERROR(QString("Could not create window, root cause: '%1'").arg(SDL_GetError()));
                     return false;
                 }
             }
@@ -522,7 +519,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
 
     CheckFeatureSupport();
 
-#ifdef URHO3D_LOGGING
+#ifdef LUTEFISK3D_LOGGING
     QString msg  = QString("Set screen mode %1x%2 %3").arg(width_).arg(height_).arg((fullscreen_ ? "fullscreen" : "windowed"));
     if (borderless_)
         msg.append(" borderless");
@@ -530,7 +527,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
         msg.append(" resizable");
     if (multiSample > 1)
         msg += QString(" multisample %1").arg(multiSample);
-    LOGINFO(msg);
+    URHO3D_LOGINFO(msg);
 #endif
 
     using namespace ScreenMode;
@@ -570,7 +567,7 @@ void Graphics::SetForceGL2(bool enable)
 {
     if (IsInitialized())
     {
-        LOGERROR("OpenGL 2 can only be forced before setting the initial screen mode");
+        URHO3D_LOGERROR("OpenGL 2 can only be forced before setting the initial screen mode");
         return;
     }
 
@@ -598,7 +595,7 @@ void Graphics::Close()
 
 bool Graphics::TakeScreenShot(Image& destImage)
 {
-    PROFILE(TakeScreenShot);
+    URHO3D_PROFILE(TakeScreenShot);
 
     ResetRenderTargets();
 
@@ -625,6 +622,10 @@ bool Graphics::BeginFrame()
             SetMode(width, height);
     }
 
+    // Re-enable depth test and depth func in case a third party program has modified it
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(glCmpFunc[depthTestMode_]);
+
     // Set default rendertarget and depth buffer
     ResetRenderTargets();
 
@@ -649,7 +650,7 @@ void Graphics::EndFrame()
     if (!IsInitialized())
         return;
 
-    PROFILE(Present);
+    URHO3D_PROFILE(Present);
 
     SendEvent(E_ENDRENDERING);
 
@@ -716,7 +717,7 @@ bool Graphics::ResolveToTexture(Texture2D* destination, const IntRect& viewport)
     if (!destination || !destination->GetRenderSurface())
         return false;
 
-    PROFILE(ResolveToTexture);
+    URHO3D_PROFILE(ResolveToTexture);
 
     IntRect vpCopy = viewport;
     if (vpCopy.right_ <= vpCopy.left_)
@@ -777,7 +778,7 @@ void Graphics::Draw(PrimitiveType type, unsigned indexStart, unsigned indexCount
 
 void Graphics::DrawInstanced(PrimitiveType type, unsigned indexStart, unsigned indexCount, unsigned minVertex, unsigned vertexCount, unsigned instanceCount)
 {
-#ifndef GL_ES_VERSION_2_0
+#if !defined(GL_ES_VERSION_2_0) || defined(__EMSCRIPTEN__)
     if (!indexCount || !indexBuffer_ || !indexBuffer_->GetGPUObject() || !instancingSupport_)
         return;
 
@@ -820,12 +821,12 @@ bool Graphics::SetVertexBuffers(const std::vector<VertexBuffer*>& buffers, const
 {
     if (buffers.size() > MAX_VERTEX_STREAMS)
     {
-        LOGERROR("Too many vertex buffers");
+        URHO3D_LOGERROR("Too many vertex buffers");
         return false;
     }
     if (buffers.size() != elementMasks.size())
     {
-        LOGERROR("Amount of element masks and vertex buffers does not match");
+        URHO3D_LOGERROR("Amount of element masks and vertex buffers does not match");
         return false;
     }
 
@@ -882,7 +883,7 @@ bool Graphics::SetVertexBuffers(const std::vector<VertexBuffer*>& buffers, const
                 }
 
                 // Set the attribute pointer. Add instance offset for the instance matrix pointers
-                unsigned offset = j >= ELEMENT_INSTANCEMATRIX1 ? instanceOffset * vertexSize : 0;
+                unsigned offset = (j >= ELEMENT_INSTANCEMATRIX1 && j < ELEMENT_OBJECTINDEX) ? instanceOffset * vertexSize : 0;
                 glVertexAttribPointer(attrIndex, VertexBuffer::elementComponents[j], VertexBuffer::elementType[j],
                                       (GLboolean)VertexBuffer::elementNormalize[j], vertexSize,
                                       reinterpret_cast<const GLvoid*>(buffer->GetElementOffset((VertexElement)j) + offset));
@@ -940,14 +941,14 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
     {
         if (vs->GetCompilerOutput().isEmpty())
         {
-            PROFILE(CompileVertexShader);
+            URHO3D_PROFILE(CompileVertexShader);
 
             bool success = vs->Create();
             if (success)
-                LOGDEBUG("Compiled vertex shader " + vs->GetFullName());
+                URHO3D_LOGDEBUG("Compiled vertex shader " + vs->GetFullName());
             else
             {
-                LOGERROR("Failed to compile vertex shader " + vs->GetFullName() + ":\n" + vs->GetCompilerOutput());
+                URHO3D_LOGERROR("Failed to compile vertex shader " + vs->GetFullName() + ":\n" + vs->GetCompilerOutput());
                 vs = nullptr;
             }
         }
@@ -959,14 +960,14 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
     {
         if (ps->GetCompilerOutput().isEmpty())
         {
-            PROFILE(CompilePixelShader);
+            URHO3D_PROFILE(CompilePixelShader);
 
             bool success = ps->Create();
             if (success)
-                LOGDEBUG("Compiled pixel shader " + ps->GetFullName());
+                URHO3D_LOGDEBUG("Compiled pixel shader " + ps->GetFullName());
             else
             {
-                LOGERROR("Failed to compile pixel shader " + ps->GetFullName() + ":\n" + ps->GetCompilerOutput());
+                URHO3D_LOGERROR("Failed to compile pixel shader " + ps->GetFullName() + ":\n" + ps->GetCompilerOutput());
                 ps = nullptr;
             }
         }
@@ -1006,19 +1007,19 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
         else
         {
             // Link a new combination
-            PROFILE(LinkShaders);
+            URHO3D_PROFILE(LinkShaders);
 
             SharedPtr<ShaderProgram> newProgram(new ShaderProgram(this, vs, ps));
             if (newProgram->Link())
             {
-                LOGDEBUG("Linked vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName());
+                URHO3D_LOGDEBUG("Linked vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName());
                 // Note: Link() calls glUseProgram() to set the texture sampler uniforms,
                 // so it is not necessary to call it again
                 shaderProgram_ = newProgram;
             }
             else
             {
-                LOGERROR("Failed to link vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName() + ":\n" +
+                URHO3D_LOGERROR("Failed to link vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName() + ":\n" +
                          newProgram->GetLinkerOutput());
                 glUseProgram(0);
                 shaderProgram_ = nullptr;
@@ -1096,6 +1097,7 @@ void Graphics::SetShaderParameter(StringHash param, const float* data, unsigned 
             case GL_FLOAT_MAT4:
                 glUniformMatrix4fv(info->location_, count / 16, GL_FALSE, data);
                 break;
+            default: break;
             }
         }
     }
@@ -1151,6 +1153,7 @@ void Graphics::SetShaderParameter(StringHash param, const Vector2& vector)
             case GL_FLOAT_VEC2:
                 glUniform2fv(info->location_, 1, vector.Data());
                 break;
+            default: break;
             }
         }
     }
@@ -1206,6 +1209,7 @@ void Graphics::SetShaderParameter(StringHash param, const Vector3& vector)
             case GL_FLOAT_VEC3:
                 glUniform3fv(info->location_, 1, vector.Data());
                 break;
+            default: break;
             }
         }
     }
@@ -1265,6 +1269,7 @@ void Graphics::SetShaderParameter(StringHash param, const Vector4& vector)
             case GL_FLOAT_VEC4:
                 glUniform4fv(info->location_, 1, vector.Data());
                 break;
+            default: break;
             }
         }
     }
@@ -1346,6 +1351,13 @@ void Graphics::SetShaderParameter(StringHash param, const Variant& value)
         SetShaderParameter(param, value.GetMatrix4());
         break;
 
+    case VAR_BUFFER:
+        {
+            const std::vector<unsigned char>& buffer = value.GetBuffer();
+            if (buffer.size() >= sizeof(float))
+                SetShaderParameter(param, reinterpret_cast<const float*>(&buffer[0]), buffer.size() / sizeof(float));
+        }
+        break;
     default:
         // Unsupported parameter type, do nothing
         break;
@@ -1410,32 +1422,20 @@ void Graphics::SetTexture(unsigned index, Texture* texture)
         if (texture)
         {
             GLenum glType = texture->GetTarget();
-            if (glType != textureTypes_[index])
-            {
-                if (GL_NONE!=textureTypes_[index])
-                {
-                    if (textures_[index])
-                        glBindTexture(textureTypes_[index], 0);
-                    if (!gl3Support)
-                        glDisable(textureTypes_[index]);
-                }
-
-                if (!gl3Support)
-                    glEnable(glType);
-                textureTypes_[index] = glType;
-            }
-
+            // Unbind old texture type if necessary
+            if (GL_NONE!=textureTypes_[index] && textureTypes_[index] != glType)
+                glBindTexture(textureTypes_[index], 0);
             glBindTexture(glType, texture->GetGPUObject());
+            textureTypes_[index] = glType;
 
             if (texture->GetParametersDirty())
                 texture->UpdateParameters();
         }
-        else
+        else if (GL_NONE!=textureTypes_[index])
         {
-            if (GL_NONE!=textureTypes_[index])
-                glBindTexture(textureTypes_[index], 0);
+            glBindTexture(textureTypes_[index], 0);
+            textureTypes_[index] = GL_NONE;
         }
-
         textures_[index] = texture;
     }
     else
@@ -1462,7 +1462,12 @@ void Graphics::SetTextureForUpdate(Texture* texture)
         impl_->activeTexture_ = 0;
     }
 
-    glBindTexture(texture->GetTarget(), texture->GetGPUObject());
+    GLenum glType = texture->GetTarget();
+    // Unbind old texture type if necessary
+    if (textureTypes_[0]!=GL_NONE && textureTypes_[0] != glType)
+        glBindTexture(textureTypes_[0], 0);
+    glBindTexture(glType, texture->GetGPUObject());
+    textureTypes_[0] = glType;
     textures_[0] = texture;
 }
 
@@ -1886,7 +1891,7 @@ void Graphics::EndDumpShaders()
 
 void Graphics::PrecacheShaders(Deserializer& source)
 {
-    PROFILE(PrecacheShaders);
+    URHO3D_PROFILE(PrecacheShaders);
 
     ShaderPrecache::LoadShaders(this, source);
 }
@@ -2094,7 +2099,7 @@ void Graphics::WindowResized()
     CleanupFramebuffers();
     ResetRenderTargets();
 
-    LOGDEBUG(QString("Window was resized to %1x%2").arg(width_).arg(height_));
+    URHO3D_LOGDEBUG(QString("Window was resized to %1x%2").arg(width_).arg(height_));
 
     using namespace ScreenMode;
 
@@ -2121,7 +2126,7 @@ void Graphics::WindowMoved()
     position_.x_ = newX;
     position_.y_ = newY;
 
-    LOGDEBUG(QString("Window was moved to %1,%2").arg(position_.x_).arg(position_.y_));
+    URHO3D_LOGDEBUG(QString("Window was moved to %1,%2").arg(position_.x_).arg(position_.y_));
 
     using namespace WindowPos;
 
@@ -2200,7 +2205,7 @@ void Graphics::FreeScratchBuffer(void* buffer)
         }
     }
 
-    LOGWARNING("Reserved scratch buffer " + ToStringHex((unsigned)(size_t)buffer) + " not found");
+    URHO3D_LOGWARNING("Reserved scratch buffer " + ToStringHex((unsigned)(size_t)buffer) + " not found");
 }
 
 void Graphics::CleanupScratchBuffers()
@@ -2336,7 +2341,7 @@ void Graphics::Release(bool clearGPUObjects, bool closeWindow)
     {
         // Do not log this message if we are exiting
         if (!clearGPUObjects)
-            LOGINFO("OpenGL context lost");
+            URHO3D_LOGINFO("OpenGL context lost");
 
         SDL_GL_DeleteContext(impl_->context_);
         impl_->context_ = nullptr;
@@ -2392,7 +2397,7 @@ void Graphics::Restore()
 
         if (!impl_->context_)
         {
-            LOGERROR(QString("Could not create OpenGL context, root cause '%1'").arg(SDL_GetError()));
+            URHO3D_LOGERROR(QString("Could not create OpenGL context, root cause '%1'").arg(SDL_GetError()));
             return;
         }
 
@@ -2422,7 +2427,7 @@ void Graphics::Restore()
             if (supportedExts.find(GLextension::GL_EXT_framebuffer_object)==supportedExts.end()
                     || supportedExts.find(GLextension::GL_EXT_packed_depth_stencil)==supportedExts.end())
             {
-                LOGERROR("EXT_framebuffer_object and EXT_packed_depth_stencil OpenGL extensions are required");
+                URHO3D_LOGERROR("EXT_framebuffer_object and EXT_packed_depth_stencil OpenGL extensions are required");
                 return;
             }
 
@@ -2431,7 +2436,7 @@ void Graphics::Restore()
         }
         else
         {
-            LOGERROR("OpenGL 2.0 is required");
+            URHO3D_LOGERROR("OpenGL 2.0 is required");
             return;
         }
 
@@ -2646,7 +2651,6 @@ void Graphics::CheckFeatureSupport()
     lightPrepassSupport_ = false;
     deferredSupport_ = false;
 
-#ifndef GL_ES_VERSION_2_0
     int numSupportedRTs = 1;
     if (gl3Support)
     {
@@ -2697,45 +2701,6 @@ void Graphics::CheckFeatureSupport()
         dummyColorFormat_ = GetRGBAFormat();
 #endif
 
-#else
-    // Check for supported compressed texture formats
-#ifdef EMSCRIPTEN
-    dxtTextureSupport_ = CheckExtension("WEBGL_compressed_texture_s3tc");
-#else
-    dxtTextureSupport_ = CheckExtension("EXT_texture_compression_dxt1");
-    etcTextureSupport_ = CheckExtension("OES_compressed_ETC1_RGB8_texture");
-    pvrtcTextureSupport_ = CheckExtension("IMG_texture_compression_pvrtc");
-#endif
-    // Check for best supported depth renderbuffer format for GLES2
-    if (CheckExtension("GL_OES_depth24"))
-        glesDepthStencilFormat = GL_DEPTH_COMPONENT24_OES;
-    if (CheckExtension("GL_OES_packed_depth_stencil"))
-        glesDepthStencilFormat = GL_DEPTH24_STENCIL8_OES;
-#ifdef EMSCRIPTEN
-    if (!CheckExtension("WEBGL_depth_texture"))
-#else
-    if (!CheckExtension("GL_OES_depth_texture"))
-#endif
-    {
-        shadowMapFormat_ = 0;
-        hiresShadowMapFormat_ = 0;
-        glesReadableDepthFormat = 0;
-    }
-    else
-    {
-#ifdef IOS
-        // iOS hack: depth renderbuffer seems to fail, so use depth textures for everything
-        // if supported
-        glesDepthStencilFormat = GL_DEPTH_COMPONENT;
-#endif
-        shadowMapFormat_ = GL_DEPTH_COMPONENT;
-        hiresShadowMapFormat_ = 0;
-        // WebGL shadow map rendering seems to be extremely slow without an attached dummy color texture
-#ifdef EMSCRIPTEN
-        dummyColorFormat_ = GetRGBAFormat();
-#endif
-    }
-#endif
 }
 
 FrameBufferObject &Graphics::getOrCreateFrameBufferObject(unsigned long long fboKey)
@@ -2853,9 +2818,10 @@ void Graphics::PrepareDraw()
                 {
                     if (renderTargets_[j])
                     {
-                        // since we'e using GL33 enums, and GL_COLOR_ATTACHMENT0 == GL_COLOR_ATTACHMENT0_EXT
-                        // we can use GL_COLOR_ATTACHMENT0 even for gl2 contexts
-                        drawBufferIds[drawBufferCount++] = (GLenum)((unsigned)GL_COLOR_ATTACHMENT0 + j);
+                        if (!gl3Support)
+                            drawBufferIds[drawBufferCount++] = GL_COLOR_ATTACHMENT0_EXT + j;
+                        else
+                            drawBufferIds[drawBufferCount++] = GL_COLOR_ATTACHMENT0 + j;
                     }
                 }
                 glDrawBuffers(drawBufferCount, drawBufferIds);

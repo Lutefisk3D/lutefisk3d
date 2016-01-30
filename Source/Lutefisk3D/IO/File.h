@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,12 +28,24 @@
 #include "../Core/Object.h"
 
 #ifdef ANDROID
-#include <SDL2/SDL_rwops.h>
+#include <SDL/SDL_rwops.h>
 #endif
 
 namespace Urho3D
 {
 
+#ifdef ANDROID
+extern const char* APK;
+
+// Macro for checking if a given pathname is inside APK's assets directory
+#define URHO3D_IS_ASSET(p) p.StartsWith(APK)
+// Macro for truncating the APK prefix string from the asset pathname and at the same time patching the directory name components (see custom_rules.xml)
+#ifdef ASSET_DIR_INDICATOR
+#define URHO3D_ASSET(p) qPrintable(p.mid(5).replace("/", ASSET_DIR_INDICATOR "/"))
+#else
+#define URHO3D_ASSET(p) qPrintable(p.mid(5))
+#endif
+#endif
 /// File open mode.
 enum FileMode
 {
@@ -47,7 +59,7 @@ class PackageFile;
 /// %File opened either through the filesystem or from within a package file.
 class File : public Object, public Deserializer, public Serializer
 {
-    OBJECT(File);
+    URHO3D_OBJECT(File, Object);
 
 public:
     /// Construct.
@@ -97,6 +109,10 @@ private:
     FileMode mode_;
     /// File handle.
     void* handle_;
+#ifdef ANDROID
+    /// SDL RWops context for Android asset loading.
+    SDL_RWops* assetHandle_;
+#endif
     /// Read buffer for Android asset or compressed file loading.
     SharedArrayPtr<uint8_t> readBuffer_;
     /// Decompression input buffer for compressed file loading.

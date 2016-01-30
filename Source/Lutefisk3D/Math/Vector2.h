@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ public:
     }
 
     /// Construct from a float array.
-    Vector2(const float* data) :
+    explicit Vector2(const float* data) :
         x_(data[0]),
         y_(data[1])
     {
@@ -236,6 +236,13 @@ public:
     {
     }
 
+    /// Assign from another vector.
+    IntVector2& operator =(const IntVector2& rhs)
+    {
+        x_ = rhs.x_;
+        y_ = rhs.y_;
+        return *this;
+    }
     /// Test for equality with another vector.
     bool operator == (const IntVector2& rhs) const { return x_ == rhs.x_ && y_ == rhs.y_; }
     /// Test for inequality with another vector.

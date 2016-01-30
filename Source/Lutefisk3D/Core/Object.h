@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,24 +42,52 @@ class EventHandler;
 typedef std::deque<EventHandler *>::iterator ilEventHandler;
 typedef std::deque<EventHandler *>::const_iterator cilEventHandler;
 
-#define OBJECT(typeName) \
+/// Type info.
+class TypeInfo
+{
+public:
+    /// Construct.
+    TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo);
+    /// Destruct.
+    ~TypeInfo();
+
+    /// Check current type is type of specified type.
+    bool IsTypeOf(StringHash type) const;
+    /// Check current type is type of specified type.
+    bool IsTypeOf(const TypeInfo* typeInfo) const;
+    /// Check current type is type of specified class type.
+    template<typename T> bool IsTypeOf() const { return IsTypeOf(T::GetTypeInfoStatic()); }
+
+    /// Return type.
+    StringHash GetType() const { return type_; }
+    /// Return type name.
+    const QString& GetTypeName() const { return typeName_;}
+    /// Return base type info.
+    const TypeInfo* GetBaseTypeInfo() const { return baseTypeInfo_; }
+
+private:
+    /// Type.
+    StringHash type_;
+    /// Type name.
+    QString typeName_;
+    /// Base class type info.
+    const TypeInfo* baseTypeInfo_;
+};
+#define URHO3D_OBJECT(typeName, baseTypeName) \
     public: \
         typedef typeName ClassName; \
-        virtual Urho3D::StringHash GetType() const override { return GetTypeStatic(); } \
-        virtual Urho3D::StringHash GetBaseType() const override { return GetBaseTypeStatic(); } \
-        virtual const QString& GetTypeName() const override { return GetTypeNameStatic(); } \
-        static Urho3D::StringHash GetTypeStatic() { static const Urho3D::StringHash typeStatic(#typeName); return typeStatic; } \
-        static const QString& GetTypeNameStatic() { static const QString typeNameStatic(#typeName); return typeNameStatic; } \
+        typedef baseTypeName BaseClassName; \
+        virtual Urho3D::StringHash GetType() const override { return GetTypeInfoStatic()->GetType(); } \
+        virtual const QString& GetTypeName() const override { return GetTypeInfoStatic()->GetTypeName(); } \
+        virtual const Urho3D::TypeInfo* GetTypeInfo() const override { return GetTypeInfoStatic(); } \
+        static Urho3D::StringHash GetTypeStatic() { return GetTypeInfoStatic()->GetType(); } \
+        static const QString& GetTypeNameStatic() { return GetTypeInfoStatic()->GetTypeName(); } \
+        static const Urho3D::TypeInfo* GetTypeInfoStatic() { static const Urho3D::TypeInfo typeInfoStatic(#typeName, BaseClassName::GetTypeInfoStatic()); return &typeInfoStatic; } \
 
-#define BASEOBJECT(typeName) \
-    public: \
-        static Urho3D::StringHash GetBaseTypeStatic() { static const Urho3D::StringHash baseTypeStatic(#typeName); return baseTypeStatic; } \
 
 /// Base class for objects with type identification, subsystem access and event sending/receiving capability.
 class Object : public RefCounted
 {
-    BASEOBJECT(Object)
-
     friend class Context;
 
 public:
@@ -70,13 +98,27 @@ public:
 
     /// Return type hash.
     virtual StringHash GetType() const = 0;
-    /// Return base class type hash.
-    virtual StringHash GetBaseType() const = 0;
     /// Return type name.
     virtual const QString& GetTypeName() const = 0;
+    /// Return type info.
+    virtual const TypeInfo* GetTypeInfo() const = 0;
     /// Handle event.
     virtual void OnEvent(Object* sender, StringHash eventType, VariantMap& eventData);
 
+    /// Return type info static.
+    static const TypeInfo* GetTypeInfoStatic() { return 0; }
+    /// Check current type is type of specified type.
+    static bool IsTypeOf(StringHash type);
+    /// Check current type is type of specified type.
+    static bool IsTypeOf(const TypeInfo* typeInfo);
+    /// Check current type is type of specified class.
+    template<typename T> static bool IsTypeOf() { return IsTypeOf(T::GetTypeInfoStatic()); }
+    /// Check current instance is type of specified type.
+    bool IsInstanceOf(StringHash type) const;
+    /// Check current instance is type of specified type.
+    bool IsInstanceOf(const TypeInfo* typeInfo) const;
+    /// Check current instance is type of specified class.
+    template<typename T> bool IsInstanceOf() const { return IsInstanceOf(T::GetTypeInfoStatic()); }
     /// Subscribe to an event that can be sent by any sender.
     void SubscribeToEvent(StringHash eventType, EventHandler* handler);
     /// Subscribe to a specific sender's event.
@@ -127,7 +169,7 @@ private:
     /// Find the first event handler with specific sender.
     cilEventHandler FindSpecificEventHandler(Object* sender) const;
     /// Find the first event handler with specific sender and event type.
-    cilEventHandler FindSpecificEventHandler(Object* sender, StringHash eventType) const;
+    cilEventHandler FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous = 0) const;
     /// Remove event handlers related to a specific sender.
     void RemoveEventSender(Object* sender);
 
@@ -135,10 +177,7 @@ private:
     std::deque<EventHandler *> eventHandlers_;
 };
 
-template <class T>
-T* Object::GetSubsystem() const {
-    return static_cast<T*>(GetSubsystem(T::GetTypeStatic()));
-}
+template <class T> T* Object::GetSubsystem() const { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }
 
 /// Base class for object factories.
 class ObjectFactory : public RefCounted
@@ -156,22 +195,18 @@ public:
 
     /// Return execution context.
     Context* GetContext() const { return context_; }
+    /// Return type info of objects created by this factory.
+    const TypeInfo* GetTypeInfo() const { return typeInfo_; }
     /// Return type hash of objects created by this factory.
-    StringHash GetType() const { return type_; }
-    /// Return base type hash of objects created by this factory.
-    StringHash GetBaseType() const { return baseType_; }
+    StringHash GetType() const { return typeInfo_->GetType(); }
     /// Return type name of objects created by this factory.
-    const QString& GetTypeName() const { return typeName_; }
+    const QString& GetTypeName() const { return typeInfo_->GetTypeName(); }
 
 protected:
     /// Execution context.
     Context* context_;
-    /// Object type.
-    StringHash type_;
-    /// Object base type.
-    StringHash baseType_;
-    /// Object type name.
-    QString typeName_;
+    /// Type info.
+    const TypeInfo* typeInfo_;
 };
 
 /// Template implementation of the object factory.
@@ -182,9 +217,7 @@ public:
     ObjectFactoryImpl(Context* context) :
         ObjectFactory(context)
     {
-        type_ = T::GetTypeStatic();
-        baseType_ = T::GetBaseTypeStatic();
-        typeName_ = T::GetTypeNameStatic();
+        typeInfo_ = T::GetTypeInfoStatic();
     }
 
     /// Create an object of the specific type.
@@ -289,12 +322,12 @@ private:
 };
 
 /// Describe an event's hash ID and begin a namespace in which to define its parameters.
-#define EVENT(eventID, eventName) static const StringHash eventID(#eventName); namespace eventName
+#define URHO3D_EVENT(eventID, eventName) static const Urho3D::StringHash eventID(#eventName); namespace eventName
 /// Describe an event's parameter hash ID. Should be used inside an event namespace.
-#define PARAM(paramID, paramName) static const StringHash paramID(#paramName)
+#define URHO3D_PARAM(paramID, paramName) static const Urho3D::StringHash paramID(#paramName)
 /// Convenience macro to construct an EventHandler that points to a receiver object and its member function.
-#define HANDLER(className, function) (new Urho3D::EventHandlerImpl<className>(this, &className::function))
+#define URHO3D_HANDLER(className, function) (new Urho3D::EventHandlerImpl<className>(this, &className::function))
 /// Convenience macro to construct an EventHandler that points to a receiver object and its member function, and also defines a userdata pointer.
-#define HANDLER_USERDATA(className, function, userData) (new Urho3D::EventHandlerImpl<className>(this, &className::function, userData))
+#define URHO3D_HANDLER_USERDATA(className, function, userData) (new Urho3D::EventHandlerImpl<className>(this, &className::function, userData))
 
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,12 +50,12 @@ void SplinePath::RegisterObject(Context* context)
 {
     context->RegisterFactory<SplinePath>(LOGIC_CATEGORY);
 
-    ENUM_ACCESSOR_ATTRIBUTE("Interpolation Mode", GetInterpolationMode, SetInterpolationMode, InterpolationMode, interpolationModeNames, BEZIER_CURVE, AM_FILE);
-    ATTRIBUTE("Speed", float, speed_, 1.f, AM_FILE);
-    ATTRIBUTE("Traveled", float, traveled_, 0.f, AM_FILE | AM_NOEDIT);
-    ATTRIBUTE("Elapsed Time", float, elapsedTime_, 0.f, AM_FILE | AM_NOEDIT);
-    ACCESSOR_ATTRIBUTE("Controlled", GetControlledIdAttr, SetControlledIdAttr, unsigned, 0, AM_FILE | AM_NODEID);
-    ACCESSOR_ATTRIBUTE("Control Points", GetControlPointIdsAttr, SetControlPointIdsAttr, VariantVector, Variant::emptyVariantVector, AM_FILE | AM_NODEIDVECTOR);
+    URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Interpolation Mode", GetInterpolationMode, SetInterpolationMode, InterpolationMode, interpolationModeNames, BEZIER_CURVE, AM_FILE);
+    URHO3D_ATTRIBUTE("Speed", float, speed_, 1.f, AM_FILE);
+    URHO3D_ATTRIBUTE("Traveled", float, traveled_, 0.f, AM_FILE | AM_NOEDIT);
+    URHO3D_ATTRIBUTE("Elapsed Time", float, elapsedTime_, 0.f, AM_FILE | AM_NOEDIT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Controlled", GetControlledIdAttr, SetControlledIdAttr, unsigned, 0, AM_FILE | AM_NODEID);
+    URHO3D_ACCESSOR_ATTRIBUTE("Control Points", GetControlPointIdsAttr, SetControlPointIdsAttr, VariantVector, Variant::emptyVariantVector, AM_FILE | AM_NODEIDVECTOR);
 }
 
 void SplinePath::ApplyAttributes()
@@ -68,7 +68,7 @@ void SplinePath::ApplyAttributes()
     for (unsigned i = 0; i < controlPoints_.size(); ++i)
     {
         Node* node = controlPoints_[i];
-        if (node)
+        if (node != nullptr)
             node->RemoveListener(this);
     }
 
@@ -77,13 +77,13 @@ void SplinePath::ApplyAttributes()
 
     Scene* scene = GetScene();
 
-    if (scene)
+    if (scene != nullptr)
     {
         // The first index stores the number of IDs redundantly. This is for editing
         for (unsigned i = 1; i < controlPointIdsAttr_.size(); ++i)
         {
             Node* node = scene->GetNode(controlPointIdsAttr_[i].GetUInt());
-            if (node)
+            if (node != nullptr)
             {
                 WeakPtr<Node> controlPoint(node);
                 node->AddListener(this);
@@ -93,7 +93,7 @@ void SplinePath::ApplyAttributes()
         }
 
         Node* node = scene->GetNode(controlledIdAttr_);
-        if (node)
+        if (node != nullptr)
         {
             WeakPtr<Node> controlled(node);
             controlledNode_ = controlled;
@@ -106,30 +106,30 @@ void SplinePath::ApplyAttributes()
 
 void SplinePath::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 {
-    if (debug && node_ && IsEnabledEffective())
+    if ((debug != nullptr) && (node_ != nullptr) && IsEnabledEffective())
     {
         if (spline_.GetKnots().size() > 1)
         {
             Vector3 a = spline_.GetPoint(0.f).GetVector3();
-            for (float f = 0.01f; f <= 1.0f; f = f + 0.01f)
+            for (int i = 1; i <= 100; ++i)
             {
-                Vector3 b = spline_.GetPoint(f).GetVector3();
+                const Vector3 b = spline_.GetPoint(float(i)*0.01f).GetVector3();
                 debug->AddLine(a, b, Color::GREEN);
                 a = b;
             }
         }
 
-        for (std::vector<WeakPtr<Node> >::const_iterator i = controlPoints_.begin(); i != controlPoints_.end(); ++i)
+        for (auto i = controlPoints_.cbegin(); i != controlPoints_.cend(); ++i)
             debug->AddNode(*i);
 
-        if (controlledNode_)
+        if (controlledNode_ != nullptr)
             debug->AddNode(controlledNode_);
     }
 }
 
 void SplinePath::AddControlPoint(Node* point, unsigned index)
 {
-    if (!point)
+    if (point == nullptr)
         return;
 
     WeakPtr<Node> controlPoint(point);
@@ -144,7 +144,7 @@ void SplinePath::AddControlPoint(Node* point, unsigned index)
 
 void SplinePath::RemoveControlPoint(Node* point)
 {
-    if (!point)
+    if (point == nullptr)
         return;
 
     WeakPtr<Node> controlPoint(point);
@@ -170,7 +170,7 @@ void SplinePath::ClearControlPoints()
     for (unsigned i = 0; i < controlPoints_.size(); ++i)
     {
         Node* node = controlPoints_[i];
-        if (node)
+        if (node != nullptr)
             node->RemoveListener(this);
     }
 
@@ -183,7 +183,7 @@ void SplinePath::ClearControlPoints()
 
 void SplinePath::SetControlledNode(Node* controlled)
 {
-    if (controlled)
+    if (controlled != nullptr)
         controlledNode_ = WeakPtr<Node>(controlled);
 }
 
@@ -234,7 +234,7 @@ void SplinePath::SetControlPointIdsAttr(const VariantVector& value)
 {
     // Just remember the node IDs. They need to go through the SceneResolver, and we actually find the nodes during
     // ApplyAttributes()
-    if (value.size())
+    if (value.size() != 0u)
     {
         controlPointIdsAttr_.clear();
 
@@ -245,7 +245,7 @@ void SplinePath::SetControlPointIdsAttr(const VariantVector& value)
             numInstances = 0;
 
         controlPointIdsAttr_.push_back(numInstances);
-        while (numInstances--)
+        while ((numInstances--) != 0u)
         {
             // If vector contains less IDs than should, fill the rest with zeros
             if (index < value.size())
@@ -275,7 +275,7 @@ void SplinePath::SetControlledIdAttr(unsigned value)
 
 void SplinePath::OnMarkedDirty(Node* point)
 {
-    if (!point)
+    if (point == nullptr)
         return;
 
     WeakPtr<Node> controlPoint(point);
@@ -294,7 +294,7 @@ void SplinePath::OnMarkedDirty(Node* point)
 
 void SplinePath::OnNodeSetEnabled(Node* point)
 {
-    if (!point)
+    if (point == nullptr)
         return;
 
     WeakPtr<Node> controlPoint(point);
@@ -325,7 +325,7 @@ void SplinePath::UpdateNodeIds()
     for (unsigned i = 0; i < numInstances; ++i)
     {
         Node* node = controlPoints_[i];
-        controlPointIdsAttr_.push_back(node ? node->GetID() : 0);
+        controlPointIdsAttr_.push_back(node != nullptr ? node->GetID() : 0);
     }
 }
 

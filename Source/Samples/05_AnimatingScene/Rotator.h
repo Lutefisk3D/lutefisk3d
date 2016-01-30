@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 /// Custom logic component for rotating a scene node.
 class Rotator : public Urho3D::LogicComponent
 {
-    OBJECT(Rotator);
+    URHO3D_OBJECT(Rotator,Urho3D::LogicComponent);
 
 public:
     /// Construct.

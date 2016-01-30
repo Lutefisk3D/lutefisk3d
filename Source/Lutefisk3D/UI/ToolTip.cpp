@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,11 @@
 // THE SOFTWARE.
 //
 
-#include "../UI/ToolTip.h"
+#include "ToolTip.h"
+
+#include "UI.h"
 #include "../Core/Context.h"
 #include "../Core/Timer.h"
-#include "../UI/UI.h"
 
 namespace Urho3D
 {
@@ -38,24 +39,20 @@ ToolTip::ToolTip(Context* context) :
     SetVisible(false);
 }
 
-ToolTip::~ToolTip()
-{
-}
-
 void ToolTip::RegisterObject(Context* context)
 {
     context->RegisterFactory<ToolTip>(UI_CATEGORY);
 
-    COPY_BASE_ATTRIBUTES(UIElement);
-    ACCESSOR_ATTRIBUTE("Delay", GetDelay, SetDelay, float, 0.0f, AM_FILE);
+    URHO3D_COPY_BASE_ATTRIBUTES(UIElement);
+    URHO3D_ACCESSOR_ATTRIBUTE("Delay", GetDelay, SetDelay, float, 0.0f, AM_FILE);
 }
 
-void ToolTip::Update(float timeStep)
+void ToolTip::Update(float /*timeStep*/)
 {
     // Track the element we are parented to for hovering. When we display, we move ourself to the root element
     // to ensure displaying on top
     UIElement* root = GetRoot();
-    if (!root)
+    if (nullptr==root)
         return;
     if (parent_ != root)
         target_ = parent_;
@@ -70,7 +67,7 @@ void ToolTip::Update(float timeStep)
     if (target_->IsHovering())
     {
         float effectiveDelay = delay_ > 0.0f ? delay_ : GetSubsystem<UI>()->GetDefaultToolTipDelay();
-        
+
         if (!parentHovered_)
         {
             parentHovered_ = true;

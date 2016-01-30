@@ -28,6 +28,7 @@
    andreas@angelcode.com
 */
 
+// Modified by Yao Wei Tjong and Skrylar for Urho3D
 
 
 //
@@ -799,12 +800,13 @@
 
 			// As of version 4.7 MinGW changed the ABI, presumably
 			// to be better aligned with how MSVC works
+			// Urho3D: also check for Clang version and use the same workaround 
 			#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || __GNUC__ > 4
 				#define AS_MINGW47
 			#endif
-		
-			#if (__clang_major__ == 3 && __clang_minor__ > 4) || __clang_major > 3
-				#define AS_MINGW47
+
+			#if (__clang_major__ == 3 && __clang_minor__ > 4)
+			    #define AS_MINGW47
 			#endif
 
 			#ifdef AS_MINGW47
@@ -909,7 +911,7 @@
 				#undef AS_NO_THISCALL_FUNCTOR_METHOD
 			#else
 				// For other ABIs the native calling convention is not available (yet)
-			#define AS_MAX_PORTABILITY
+				#define AS_MAX_PORTABILITY
 			#endif
 		#else
 			#define AS_MAX_PORTABILITY
@@ -1011,6 +1013,9 @@
 		#if (defined(_ARM_) || defined(__arm__))
 			// Android ARM
 
+			// TODO: The stack unwind on exceptions currently fails due to the assembler code in as_callfunc_arm_gcc.S
+			#define AS_NO_EXCEPTIONS
+
 			#undef THISCALL_RETURN_SIMPLE_IN_MEMORY_MIN_SIZE
 			#undef CDECL_RETURN_SIMPLE_IN_MEMORY_MIN_SIZE
 			#undef STDCALL_RETURN_SIMPLE_IN_MEMORY_MIN_SIZE
@@ -1036,7 +1041,25 @@
 			#define THISCALL_PASS_OBJECT_POINTER_ON_THE_STACK
 			#define AS_X86
 			#undef AS_NO_THISCALL_FUNCTOR_METHOD
-		#elif defined(__mips__)
+// Urho3D - Add support for Android Intel x86_64 and Android ARM 64bit
+		#elif defined(__LP64__) && !defined(__aarch64__)
+			// Android Intel x86_64 (same config as Linux x86_64). Tested with Intel x86_64 Atom System Image.
+			#define AS_X64_GCC
+			#undef AS_NO_THISCALL_FUNCTOR_METHOD
+			#define HAS_128_BIT_PRIMITIVES
+			#define SPLIT_OBJS_BY_MEMBER_TYPES
+			#define AS_LARGE_OBJS_PASSED_BY_REF
+			#define AS_LARGE_OBJ_MIN_SIZE 5
+			// STDCALL is not available on 64bit Linux
+			#undef STDCALL
+			#define STDCALL
+        #elif defined(__aarch64__)
+			// Doesn't support native calling for Android ARM 64bit yet
+			#define AS_MAX_PORTABILITY
+			// STDCALL is not available on ARM
+			#undef STDCALL
+			#define STDCALL
+        #elif defined(__mips__)
 			#define AS_MIPS
 			#undef STDCALL
 			#define STDCALL
@@ -1090,7 +1113,7 @@
 			// Support native calling conventions on Intel 32bit CPU
 			#define THISCALL_PASS_OBJECT_POINTER_ON_THE_STACK
 			#define AS_X86
-		#elif defined(__x86_64__)
+		#elif (defined(__x86_64__) || defined(__LP64__))
 			#define AS_X64_GCC
 			#define HAS_128_BIT_PRIMITIVES
 			#define SPLIT_OBJS_BY_MEMBER_TYPES

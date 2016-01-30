@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,8 @@ enum MouseMode
 {
     MM_ABSOLUTE = 0,
     MM_RELATIVE,
-    MM_WRAP
+    MM_WRAP,
+    MM_FREE
 };
 
 class Deserializer;
@@ -122,7 +123,7 @@ struct JoystickState
 /// %Input subsystem. Converts operating system window messages to input state and events.
 class Input : public Object
 {
-    OBJECT(Input);
+    URHO3D_OBJECT(Input,Object);
 
 public:
     /// Construct.
@@ -134,9 +135,9 @@ public:
     void Update();
     /// Set whether ALT-ENTER fullscreen toggle is enabled.
     void SetToggleFullscreen(bool enable);
-    /// Set whether the operating system mouse cursor is visible. When not visible (default), is kept centered to prevent leaving the window. Mouse visiblility event can be suppressed-- this also recalls any unsuppressed SetMouseVisible which can be returned by ResetMouseVisible().
+    /// Set whether the operating system mouse cursor is visible. When not visible (default), is kept centered to prevent leaving the window. Mouse visibility event can be suppressed-- this also recalls any unsuppressed SetMouseVisible which can be returned by ResetMouseVisible().
     void SetMouseVisible(bool enable, bool suppressEvent = false);
-    /// Reset last mouse visibilty that was not suppressed in SetMouseVisible.
+    /// Reset last mouse visibility that was not suppressed in SetMouseVisible.
     void ResetMouseVisible();
     /// Set whether the mouse is currently being grabbed by an operation.
     void SetMouseGrabbed(bool grab);
@@ -154,6 +155,9 @@ public:
      *
      *  MM_WRAP grabs the mouse from the operating system and confines the operating system cursor to the window, wrapping the cursor when it is near the edges.
      *  SetMouseMode(MM_WRAP) will call SetMouseGrabbed(true).
+     *
+     *  MM_FREE does not grab/confine the mouse cursor even when it is hidden. This can be used for cases where the cursor should render using the operating system
+     *  outside the window, and perform custom rendering (with SetMouseVisible(false)) inside.
     */
     void SetMouseMode(MouseMode mode);
     /// Add screen joystick.
@@ -208,7 +212,7 @@ public:
     /// Check if a key is held down by scancode.
     bool GetScancodeDown(int scancode) const;
     /// Check if a key has been pressed on this frame by scancode.
-    bool GetScancodePress(int scanode) const;
+    bool GetScancodePress(int scancode) const;
     /// Check if a mouse button is held down.
     bool GetMouseButtonDown(int button) const;
     /// Check if a mouse button has been pressed on this frame.
@@ -286,7 +290,7 @@ private:
     /// Handle a mouse button change.
     void SetMouseButton(int button, bool newState);
     /// Handle a key change.
-    void SetKey(int key, int scancode, unsigned raw, bool newState);
+    void SetKey(int key, int scancode, bool newState);
     /// Handle mousewheel change.
     void SetMouseWheel(int delta);
     /// Internal function to set the mouse cursor position.
@@ -314,7 +318,7 @@ private:
     HashMap<int, TouchState> touches_;
     /// List that maps between event touch IDs and normalised touch IDs
     QList<int> availableTouchIDs_;
-    /// Mapping of touch indicies
+    /// Mapping of touch indices
     HashMap<int, int> touchIDMap_;
     /// String for text input.
     QString textInput_;

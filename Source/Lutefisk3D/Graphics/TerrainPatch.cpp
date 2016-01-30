@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,9 @@
 
 #include "Terrain.h"
 #include "Camera.h"
+#include "DebugRenderer.h"
 #include "../Core/Context.h"
+#include "../IO/Log.h"
 #include "Geometry.h"
 #include "IndexBuffer.h"
 #include "Material.h"
@@ -47,15 +49,14 @@ TerrainPatch::TerrainPatch(Context* context) :
     Drawable(context, DRAWABLE_GEOMETRY),
     geometry_(new Geometry(context)),
     maxLodGeometry_(new Geometry(context)),
-    minLodGeometry_(new Geometry(context)),
+    occlusionGeometry_(new Geometry(context)),
     vertexBuffer_(new VertexBuffer(context)),
     coordinates_(IntVector2::ZERO),
-    lodLevel_(0),
-    occlusionOffset_(0.0f)
+    lodLevel_(0)
 {
     geometry_->SetVertexBuffer(0, vertexBuffer_, MASK_POSITION | MASK_NORMAL | MASK_TEXCOORD1 | MASK_TANGENT);
     maxLodGeometry_->SetVertexBuffer(0, vertexBuffer_, MASK_POSITION | MASK_NORMAL | MASK_TEXCOORD1 | MASK_TANGENT);
-    minLodGeometry_->SetVertexBuffer(0, vertexBuffer_, MASK_POSITION | MASK_NORMAL | MASK_TEXCOORD1 | MASK_TANGENT);
+    occlusionGeometry_->SetVertexBuffer(0, vertexBuffer_, MASK_POSITION | MASK_NORMAL | MASK_TEXCOORD1 | MASK_TANGENT);
 
     batches_.resize(1);
     batches_[0].geometry_ = geometry_;
@@ -83,6 +84,7 @@ void TerrainPatch::ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQ
 
     case RAY_OBB:
     case RAY_TRIANGLE:
+        {
         Matrix3x4 inverse(node_->GetWorldTransform().Inverse());
         Ray localRay = query.ray_.Transformed(inverse);
         float distance = localRay.HitDistance(boundingBox_);
@@ -106,6 +108,11 @@ void TerrainPatch::ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQ
             result.subObject_ = M_MAX_UNSIGNED;
             results.push_back(result);
         }
+        }
+        break;
+
+    case RAY_TRIANGLE_UV:
+        URHO3D_LOGWARNING("RAY_TRIANGLE_UV query level is not supported for TerrainPatch component");
         break;
     }
 }
@@ -169,7 +176,7 @@ unsigned TerrainPatch::GetNumOccluderTriangles()
     if (mat && !mat->GetOcclusion())
         return 0;
     else
-        return minLodGeometry_->GetIndexCount() / 3;
+        return occlusionGeometry_->GetIndexCount() / 3;
 }
 
 bool TerrainPatch::DrawOcclusion(OcclusionBuffer* buffer)
@@ -191,24 +198,20 @@ bool TerrainPatch::DrawOcclusion(OcclusionBuffer* buffer)
     unsigned indexSize;
     unsigned elementMask;
 
-    minLodGeometry_->GetRawData(vertexData, vertexSize, indexData, indexSize, elementMask);
+    occlusionGeometry_->GetRawData(vertexData, vertexSize, indexData, indexSize, elementMask);
     // Check for valid geometry data
     if (!vertexData || !indexData)
         return true;
 
-    const Matrix3x4& worldTransform = node_->GetWorldTransform();
-
-    Matrix3x4 occlusionTransform(worldTransform.Translation() + worldTransform * Vector4(0.0f, occlusionOffset_, 0.0f,
-        0.0f), worldTransform.Rotation(), worldTransform.Scale());
-
     // Draw and check for running out of triangles
-    return buffer->Draw(occlusionTransform, vertexData, vertexSize, indexData, indexSize, minLodGeometry_->GetIndexStart(),
-        minLodGeometry_->GetIndexCount());
+    return buffer->AddTriangles(node_->GetWorldTransform(), vertexData, vertexSize, indexData, indexSize, occlusionGeometry_->GetIndexStart(),
+        occlusionGeometry_->GetIndexCount());
+
 }
 
 void TerrainPatch::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 {
-    // Intentionally no action
+    // Intentionally no operation
 }
 
 
@@ -241,11 +244,6 @@ void TerrainPatch::SetCoordinates(const IntVector2& coordinates)
     coordinates_ = coordinates;
 }
 
-void TerrainPatch::SetOcclusionOffset(float offset)
-{
-    occlusionOffset_ = offset;
-}
-
 void TerrainPatch::ResetLod()
 {
     lodLevel_ = 0;
@@ -261,9 +259,9 @@ Geometry* TerrainPatch::GetMaxLodGeometry() const
     return maxLodGeometry_;
 }
 
-Geometry* TerrainPatch::GetMinLodGeometry() const
+Geometry* TerrainPatch::GetOcclusionGeometry() const
 {
-    return minLodGeometry_;
+    return occlusionGeometry_;
 }
 
 VertexBuffer* TerrainPatch::GetVertexBuffer() const

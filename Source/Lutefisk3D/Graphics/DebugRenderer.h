@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,8 @@
 #pragma once
 
 #include "../Math/Color.h"
-#include "../Scene/Component.h"
 #include "../Math/Frustum.h"
+#include "../Scene/Component.h"
 
 namespace Urho3D
 {
@@ -94,7 +94,7 @@ struct DebugTriangle
 /// Debug geometry rendering component. Should be added only to the root scene node.
 class DebugRenderer : public Component
 {
-    OBJECT(DebugRenderer);
+    URHO3D_OBJECT(DebugRenderer,Component);
 
 public:
     /// Construct.
@@ -132,6 +132,12 @@ public:
     void AddSkeleton(const Skeleton& skeleton, const Color& color, bool depthTest = true);
     /// Add a triangle mesh.
     void AddTriangleMesh(const void* vertexData, unsigned vertexSize, const void* indexData, unsigned indexSize, unsigned indexStart, unsigned indexCount, const Matrix3x4& transform, const Color& color, bool depthTest = true);
+    /// Add a circle.
+    void AddCircle(const Vector3& center, const Vector3& normal, float radius, const Color& color, int steps = 64, bool depthTest = true);
+    /// Add a cross.
+    void AddCross(const Vector3& center, float size, const Color& color, bool depthTest = true);
+    /// Add a quad on the XZ plane.
+    void AddQuad(const Vector3& center, float width, float height, const Color& color, bool depthTest = true);
     /// Update vertex buffer and render all debug lines. The viewport and rendertarget should be set before.
     void Render();
 

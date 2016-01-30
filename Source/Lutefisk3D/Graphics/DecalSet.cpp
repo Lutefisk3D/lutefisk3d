@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -90,7 +90,7 @@ static DecalVertex ClipEdge(const DecalVertex& v0, const DecalVertex& v1, float 
 
 static void ClipPolygon(std::vector<DecalVertex>& dest, const std::vector<DecalVertex>& src, const Plane& plane, bool skinned)
 {
-    unsigned last;
+    unsigned last = 0;
     float lastDistance = 0.0f;
     dest.clear();
 
@@ -178,14 +178,14 @@ void DecalSet::RegisterObject(Context* context)
 {
     context->RegisterFactory<DecalSet>(GEOMETRY_CATEGORY);
 
-    ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Material", GetMaterialAttr, SetMaterialAttr, ResourceRef, ResourceRef(Material::GetTypeStatic()), AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Max Vertices", GetMaxVertices, SetMaxVertices, unsigned, DEFAULT_MAX_VERTICES, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Max Indices", GetMaxIndices, SetMaxIndices, unsigned, DEFAULT_MAX_INDICES, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Draw Distance", GetDrawDistance, SetDrawDistance, float, 0.0f, AM_DEFAULT);
-    COPY_BASE_ATTRIBUTES(Drawable);
-    MIXED_ACCESSOR_ATTRIBUTE("Decals", GetDecalsAttr, SetDecalsAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_FILE | AM_NOEDIT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Material", GetMaterialAttr, SetMaterialAttr, ResourceRef, ResourceRef(Material::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Max Vertices", GetMaxVertices, SetMaxVertices, unsigned, DEFAULT_MAX_VERTICES, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Max Indices", GetMaxIndices, SetMaxIndices, unsigned, DEFAULT_MAX_INDICES, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Draw Distance", GetDrawDistance, SetDrawDistance, float, 0.0f, AM_DEFAULT);
+    URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Decals", GetDecalsAttr, SetDecalsAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_FILE | AM_NOEDIT);
 }
 
 void DecalSet::ApplyAttributes()
@@ -286,7 +286,7 @@ bool DecalSet::AddDecal(Drawable* target, const Vector3& worldPosition, const Qu
     float aspectRatio, float depth, const Vector2& topLeftUV, const Vector2& bottomRightUV, float timeToLive, float normalCutoff,
     unsigned subGeometry)
 {
-    PROFILE(AddDecal);
+    URHO3D_PROFILE(AddDecal);
 
     // Do not add decals in headless mode
     if (!node_ || !GetSubsystem<Graphics>())
@@ -294,7 +294,7 @@ bool DecalSet::AddDecal(Drawable* target, const Vector3& worldPosition, const Qu
 
     if (!target || !target->GetNode())
     {
-        LOGERROR("Null target drawable for decal");
+        URHO3D_LOGERROR("Null target drawable for decal");
         return false;
     }
 
@@ -419,7 +419,7 @@ bool DecalSet::AddDecal(Drawable* target, const Vector3& worldPosition, const Qu
 
     if (newDecal.vertices_.size() > maxVertices_)
     {
-        LOGWARNING(QString("Can not add decal, vertex count %1 exceeds maximum %2")
+        URHO3D_LOGWARNING(QString("Can not add decal, vertex count %1 exceeds maximum %2")
                 .arg(newDecal.vertices_.size())
                 .arg(maxVertices_));
         decals_.pop_back();
@@ -427,7 +427,7 @@ bool DecalSet::AddDecal(Drawable* target, const Vector3& worldPosition, const Qu
     }
     if (newDecal.indices_.size() > maxIndices_)
     {
-        LOGWARNING(QString("Can not add decal, index count %1 exceeds maximum %2")
+        URHO3D_LOGWARNING(QString("Can not add decal, index count %1 exceeds maximum %2")
                    .arg(newDecal.indices_.size()).arg(maxIndices_));
         decals_.pop_back();
         return false;
@@ -457,7 +457,7 @@ bool DecalSet::AddDecal(Drawable* target, const Vector3& worldPosition, const Qu
     while (decals_.size() && (numVertices_ > maxVertices_ || numIndices_ > maxIndices_))
         RemoveDecals(1);
 
-    LOGDEBUG("Added decal with " + QString::number(newDecal.vertices_.size()) + " vertices");
+    URHO3D_LOGDEBUG("Added decal with " + QString::number(newDecal.vertices_.size()) + " vertices");
 
     // If new decal is time limited, subscribe to scene post-update
     if (newDecal.timeToLive_ > 0.0f && !subscribed_)
@@ -520,7 +520,7 @@ void DecalSet::SetDecalsAttr(const std::vector<unsigned char>& value)
 
     while (numDecals--)
     {
-        decals_.push_back(Decal());
+        decals_.emplace_back();
         Decal& newDecal = decals_.back();
 
         newDecal.timer_ = buffer.ReadFloat();
@@ -741,7 +741,7 @@ void DecalSet::GetFaces(std::vector<std::vector<DecalVertex> >& faces, Drawable*
         geometry->GetRawData(positionData, positionStride, indexData, indexStride, elementMask);
         if (!positionData)
         {
-            LOGWARNING("Can not add decal, target drawable has no CPU-side geometry data");
+            URHO3D_LOGWARNING("Can not add decal, target drawable has no CPU-side geometry data");
             return;
         }
     }
@@ -890,7 +890,7 @@ bool DecalSet::GetBones(Drawable* target, unsigned batchIndex, const float* blen
 
             if (!bone)
             {
-                LOGWARNING("Out of range bone index for skinned decal");
+                URHO3D_LOGWARNING("Out of range bone index for skinned decal");
                 return false;
             }
 
@@ -915,7 +915,7 @@ bool DecalSet::GetBones(Drawable* target, unsigned batchIndex, const float* blen
             {
                 if (bones_.size() >= Graphics::GetMaxBones())
                 {
-                    LOGWARNING("Maximum skinned decal bone count reached");
+                    URHO3D_LOGWARNING("Maximum skinned decal bone count reached");
                     return false;
                 }
                 else
@@ -1133,7 +1133,7 @@ void DecalSet::UpdateEventSubscription(bool checkAllDecals)
 
     if (enabled && !subscribed_)
     {
-        SubscribeToEvent(scene, E_SCENEPOSTUPDATE, HANDLER(DecalSet, HandleScenePostUpdate));
+        SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(DecalSet, HandleScenePostUpdate));
         subscribed_ = true;
     }
     else if (!enabled && subscribed_)

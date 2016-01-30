@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,14 +21,15 @@
 //
 
 #include "ValueAnimation.h"
+
 #include "Animatable.h"
 #include "ObjectAnimation.h"
-
 #include "../Core/Context.h"
 #include "../IO/Deserializer.h"
 #include "../IO/Log.h"
 #include "../IO/Serializer.h"
 #include "../Resource/XMLFile.h"
+#include "../Resource/JSONFile.h"
 
 
 namespace Urho3D
@@ -51,10 +52,6 @@ ValueAnimation::ValueAnimation(Context* context) :
     beginTime_(M_INFINITY),
     endTime_(-M_INFINITY),
     splineTangentsDirty_(false)
-{
-}
-
-ValueAnimation::~ValueAnimation()
 {
 }
 
@@ -133,17 +130,15 @@ bool ValueAnimation::SaveXML(XMLElement& dest) const
     if (interpolationMethod_ == IM_SPLINE)
         dest.SetFloat("splinetension", splineTension_);
 
-    for (unsigned i = 0; i < keyFrames_.size(); ++i)
+    for (const VAnimKeyFrame& keyFrame : keyFrames_)
     {
-        const VAnimKeyFrame& keyFrame = keyFrames_[i];
         XMLElement keyFrameEleme = dest.CreateChild("keyframe");
         keyFrameEleme.SetFloat("time", keyFrame.time_);
         keyFrameEleme.SetVariant(keyFrame.value_);
     }
 
-    for (unsigned i = 0; i < eventFrames_.size(); ++i)
+    for (const VAnimEventFrame& eventFrame : eventFrames_)
     {
-        const VAnimEventFrame& eventFrame = eventFrames_[i];
         XMLElement eventFrameElem = dest.CreateChild("eventframe");
         eventFrameElem.SetFloat("time", eventFrame.time_);
         eventFrameElem.SetUInt("eventtype", eventFrame.eventType_.Value());
@@ -153,6 +148,84 @@ bool ValueAnimation::SaveXML(XMLElement& dest) const
     return true;
 }
 
+bool ValueAnimation::LoadJSON(const JSONValue& source)
+{
+    valueType_ = VAR_NONE;
+    eventFrames_.clear();
+
+    QString interpMethodString = source.Get("interpolationmethod").GetString();
+    InterpMethod method = IM_LINEAR;
+    for (int i = 0; i <= IM_SPLINE; ++i)
+    {
+        if (interpMethodString == interpMethodNames[i])
+        {
+            method = (InterpMethod)i;
+            break;
+        }
+    }
+
+    SetInterpolationMethod(method);
+    if (interpolationMethod_ == IM_SPLINE)
+        splineTension_ = source.Get("splinetension").GetFloat();
+
+    // Load keyframes
+    JSONArray keyFramesArray = source.Get("keyframes").GetArray();
+    for (const JSONValue& val : keyFramesArray)
+    {
+        float time = val.Get("time").GetFloat();
+        Variant value = val.Get("value").GetVariant();
+        SetKeyFrame(time, value);
+    }
+
+    // Load event frames
+    JSONArray eventFramesArray = source.Get("eventframes").GetArray();
+    for (const JSONValue &eventFrameVal : eventFramesArray)
+    {
+        float time = eventFrameVal.Get("time").GetFloat();
+        unsigned eventType = eventFrameVal.Get("eventtype").GetUInt();
+        VariantMap eventData = eventFrameVal.Get("eventdata").GetVariantMap();
+        SetEventFrame(time, StringHash(eventType), eventData);
+    }
+
+    return true;
+}
+
+bool ValueAnimation::SaveJSON(JSONValue& dest) const
+{
+    dest.Set("interpolationmethod", interpMethodNames[interpolationMethod_]);
+    if (interpolationMethod_ == IM_SPLINE)
+        dest.Set("splinetension", (float) splineTension_);
+
+    JSONArray keyFramesArray;
+    keyFramesArray.reserve(keyFrames_.size());
+    for (const VAnimKeyFrame& keyFrame : keyFrames_)
+    {
+        JSONValue keyFrameVal;
+        keyFrameVal.Set("time", keyFrame.time_);
+        JSONValue valueVal;
+        valueVal.SetVariant(keyFrame.value_);
+        keyFrameVal.Set("value", valueVal);
+        keyFramesArray.emplace_back(keyFrameVal);
+    }
+    dest.Set("keyframes", keyFramesArray);
+
+    JSONArray eventFramesArray;
+    eventFramesArray.reserve(eventFrames_.size());
+    for(const VAnimEventFrame & eventFrame : eventFrames_)
+    {
+        JSONValue eventFrameVal;
+        eventFrameVal.Set("time", eventFrame.time_);
+        eventFrameVal.Set("eventtype", eventFrame.eventType_.Value());
+        JSONValue eventDataVal;
+        eventDataVal.SetVariantMap(eventFrame.eventData_);
+        eventFrameVal.Set("eventdata", eventDataVal);
+
+        eventFramesArray.emplace_back(eventFrameVal);
+    }
+    dest.Set("eventframes", eventFramesArray);
+
+    return true;
+}
 void ValueAnimation::SetValueType(VariantType valueType)
 {
     if (valueType == valueType_)
@@ -160,7 +233,7 @@ void ValueAnimation::SetValueType(VariantType valueType)
 
     valueType_ = valueType;
     interpolatable_ = (valueType_ == VAR_FLOAT) || (valueType_ == VAR_VECTOR2) || (valueType_ == VAR_VECTOR3) || (valueType_ == VAR_VECTOR4) ||
-        (valueType_ == VAR_QUATERNION) || (valueType_ == VAR_COLOR);
+            (valueType_ == VAR_QUATERNION) || (valueType_ == VAR_COLOR);
 
     if ((valueType_ == VAR_INTRECT) || (valueType_ == VAR_INTVECTOR2))
     {
@@ -258,7 +331,8 @@ void ValueAnimation::SetEventFrame(float time, const StringHash& eventType, cons
 
 bool ValueAnimation::IsValid() const
 {
-    return (interpolationMethod_ == IM_LINEAR && keyFrames_.size() > 1) || (interpolationMethod_ == IM_SPLINE && keyFrames_.size() > 2);
+    return (interpolationMethod_ == IM_LINEAR && keyFrames_.size() > 1) ||
+            (interpolationMethod_ == IM_SPLINE && keyFrames_.size() > 2);
 }
 
 Variant ValueAnimation::GetAnimationValue(float scaledTime)
@@ -272,20 +346,19 @@ Variant ValueAnimation::GetAnimationValue(float scaledTime)
 
     if (index >= keyFrames_.size() || !interpolatable_)
         return keyFrames_[index - 1].value_;
-    else
-    {
-        if (interpolationMethod_ == IM_LINEAR)
-            return LinearInterpolation(index - 1, index, scaledTime);
-        else
-            return SplineInterpolation(index - 1, index, scaledTime);
-    }
+
+
+    if (interpolationMethod_ == IM_LINEAR)
+        return LinearInterpolation(index - 1, index, scaledTime);
+
+    return SplineInterpolation(index - 1, index, scaledTime);
+
 }
 
 void ValueAnimation::GetEventFrames(float beginTime, float endTime, std::vector<const VAnimEventFrame*>& eventFrames) const
 {
-    for (unsigned i = 0; i < eventFrames_.size(); ++i)
+    for (const VAnimEventFrame& eventFrame : eventFrames_)
     {
-        const VAnimEventFrame& eventFrame = eventFrames_[i];
         if (eventFrame.time_ > endTime)
             break;
 
@@ -308,9 +381,6 @@ Variant ValueAnimation::LinearInterpolation(unsigned index1, unsigned index2, fl
     case VAR_FLOAT:
         return Lerp(value1.GetFloat(), value2.GetFloat(), t);
 
-    case VAR_DOUBLE:
-        return Lerp(value1.GetDouble(), value2.GetDouble(), t);
-
     case VAR_VECTOR2:
         return value1.GetVector2().Lerp(value2.GetVector2(), t);
 
@@ -327,23 +397,26 @@ Variant ValueAnimation::LinearInterpolation(unsigned index1, unsigned index2, fl
         return value1.GetColor().Lerp(value2.GetColor(), t);
 
     case VAR_INTRECT:
-        {
-            float s = 1.0f - t;
-            const IntRect& r1 = value1.GetIntRect();
-            const IntRect& r2 = value2.GetIntRect();
-            return IntRect((int)(r1.left_ * s + r2.left_ * t), (int)(r1.top_ * s + r2.top_ * t), (int)(r1.right_ * s + r2.right_ * t), (int)(r1.bottom_ * s + r2.bottom_ * t));
-        }
+    {
+        float s = 1.0f - t;
+        const IntRect& r1 = value1.GetIntRect();
+        const IntRect& r2 = value2.GetIntRect();
+        return IntRect((int)(r1.left_ * s + r2.left_ * t), (int)(r1.top_ * s + r2.top_ * t), (int)(r1.right_ * s + r2.right_ * t), (int)(r1.bottom_ * s + r2.bottom_ * t));
+    }
 
     case VAR_INTVECTOR2:
-        {
-            float s = 1.0f - t;
-            const IntVector2& v1 = value1.GetIntVector2();
-            const IntVector2& v2 = value2.GetIntVector2();
-            return IntVector2((int)(v1.x_ * s + v2.x_ * t), (int)(v1.y_ * s + v2.y_ * t));
-        }
+    {
+        float s = 1.0f - t;
+        const IntVector2& v1 = value1.GetIntVector2();
+        const IntVector2& v2 = value2.GetIntVector2();
+        return IntVector2((int)(v1.x_ * s + v2.x_ * t), (int)(v1.y_ * s + v2.y_ * t));
+    }
+
+    case VAR_DOUBLE:
+        return Lerp(value1.GetDouble(), value2.GetDouble(), t);
 
     default:
-        LOGERROR("Invalid value type for linear interpolation");
+        URHO3D_LOGERROR("Invalid value type for linear interpolation");
         return Variant::EMPTY;
     }
 }
@@ -376,9 +449,6 @@ Variant ValueAnimation::SplineInterpolation(unsigned index1, unsigned index2, fl
     case VAR_FLOAT:
         return v1.GetFloat() * h1 + v2.GetFloat() * h2 + t1.GetFloat() * h3 + t2.GetFloat() * h4;
 
-    case VAR_DOUBLE:
-        return v1.GetDouble() * h1 + v2.GetDouble() * h2 + t1.GetDouble() * h3 + t2.GetDouble() * h4;
-
     case VAR_VECTOR2:
         return v1.GetVector2() * h1 + v2.GetVector2() * h2 + t1.GetVector2() * h3 + t2.GetVector2() * h4;
 
@@ -394,8 +464,11 @@ Variant ValueAnimation::SplineInterpolation(unsigned index1, unsigned index2, fl
     case VAR_COLOR:
         return v1.GetColor() * h1 + v2.GetColor() * h2 + t1.GetColor() * h3 + t2.GetColor() * h4;
 
+    case VAR_DOUBLE:
+        return v1.GetDouble() * h1 + v2.GetDouble() * h2 + t1.GetDouble() * h3 + t2.GetDouble() * h4;
+
     default:
-        LOGERROR("Invalid value type for spline interpolation");
+        URHO3D_LOGERROR("Invalid value type for spline interpolation");
         return Variant::EMPTY;
     }
 }
@@ -429,9 +502,6 @@ Variant ValueAnimation::SubstractAndMultiply(const Variant& value1, const Varian
     case VAR_FLOAT:
         return (value1.GetFloat() - value2.GetFloat()) * t;
 
-    case VAR_DOUBLE:
-        return (value1.GetDouble() - value2.GetDouble()) * t;
-
     case VAR_VECTOR2:
         return (value1.GetVector2() - value2.GetVector2()) * t;
 
@@ -447,8 +517,11 @@ Variant ValueAnimation::SubstractAndMultiply(const Variant& value1, const Varian
     case VAR_COLOR:
         return (value1.GetColor() - value2.GetColor()) * t;
 
+    case VAR_DOUBLE:
+        return (value1.GetDouble() - value2.GetDouble()) * t;
+
     default:
-        LOGERROR("Invalid value type for spline interpolation's substract and multiply operation");
+        URHO3D_LOGERROR("Invalid value type for spline interpolation's substract and multiply operation");
         return Variant::EMPTY;
     }
 }

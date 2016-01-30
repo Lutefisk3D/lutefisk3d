@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -125,11 +125,10 @@ bool ShaderProgram::Link()
     gl::glBindAttribLocation(object_, 7, "iBlendIndices");
     gl::glBindAttribLocation(object_, 8, "iCubeTexCoord");
     gl::glBindAttribLocation(object_, 9, "iCubeTexCoord2");
-    #ifndef GL_ES_VERSION_2_0
     gl::glBindAttribLocation(object_, 10, "iInstanceMatrix1");
     gl::glBindAttribLocation(object_, 11, "iInstanceMatrix2");
     gl::glBindAttribLocation(object_, 12, "iInstanceMatrix3");
-    #endif
+    gl::glBindAttribLocation(object_, 13, "iObjectIndex");
 
     gl::glAttachShader(object_, vertexShader_->GetGPUObject());
     gl::glAttachShader(object_, pixelShader_->GetGPUObject());
@@ -204,7 +203,7 @@ bool ShaderProgram::Link()
 
             if (group >= MAX_SHADER_PARAMETER_GROUPS)
             {
-                LOGWARNING("Skipping unrecognized uniform block " + name + " in shader program " + vertexShader_->GetFullName() +
+                URHO3D_LOGWARNING("Skipping unrecognized uniform block " + name + " in shader program " + vertexShader_->GetFullName() +
                     " " + pixelShader_->GetFullName());
                 continue;
             }

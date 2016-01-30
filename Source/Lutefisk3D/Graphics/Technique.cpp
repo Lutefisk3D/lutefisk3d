@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -278,7 +278,7 @@ bool Technique::BeginLoad(Deserializer& source)
                 newPass->SetAlphaMask(globalAlphaMask);
         }
         else
-            LOGERROR("Missing pass name");
+            URHO3D_LOGERROR("Missing pass name");
 
         passElem = passElem.GetNext("pass");
     }

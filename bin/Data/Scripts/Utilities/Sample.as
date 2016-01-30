@@ -144,7 +144,19 @@ void HandleKeyDown(StringHash eventType, VariantMap& eventData)
 
     // Toggle debug HUD with F2
     else if (key == KEY_F2)
-        debugHud.ToggleAll();
+    {
+        if (debugHud.mode == 0 || (debugHud.mode & DEBUGHUD_SHOW_MEMORY) > 0)
+            debugHud.mode = DEBUGHUD_SHOW_STATS | DEBUGHUD_SHOW_MODE | DEBUGHUD_SHOW_PROFILER;
+        else
+            debugHud.mode = 0;
+    }
+    else if (key == KEY_F3)
+    {
+        if (debugHud.mode == 0 || (debugHud.mode & DEBUGHUD_SHOW_PROFILER) > 0)
+            debugHud.mode = DEBUGHUD_SHOW_STATS | DEBUGHUD_SHOW_MODE | DEBUGHUD_SHOW_MEMORY;
+        else
+            debugHud.mode = 0;
+    }
 
     // Common rendering quality controls, only when UI has no focused element
     if (ui.focusElement is null)
@@ -204,10 +216,10 @@ void HandleKeyDown(StringHash eventType, VariantMap& eventData)
         // Shadow depth and filtering quality
         else if (key == '6')
         {
-            int quality = renderer.shadowQuality;
-            ++quality;
-            if (quality > SHADOWQUALITY_HIGH_24BIT)
-                quality = SHADOWQUALITY_LOW_16BIT;
+            ShadowQuality quality = renderer.shadowQuality;
+            quality = ShadowQuality(quality + 1);
+            if (quality > SHADOWQUALITY_BLUR_VSM)
+                quality = SHADOWQUALITY_SIMPLE_16BIT;
             renderer.shadowQuality = quality;
         }
 
@@ -230,7 +242,7 @@ void HandleKeyDown(StringHash eventType, VariantMap& eventData)
             graphics.TakeScreenShot(screenshot);
             // Here we save in the Data folder with date and time appended
             screenshot.SavePNG(fileSystem.programDir + "Data/Screenshot_" +
-                String(time.timeStamp).Replace(':', '_').Replace('.', '_').Replace(' ', '_') + ".png");
+                time.timeStamp.Replaced(':', '_').Replaced('.', '_').Replaced(' ', '_') + ".png");
         }
     }
 }

@@ -114,8 +114,10 @@ void CreateScene()
     Camera@ camera = cameraNode.CreateComponent("Camera");
     camera.farClip = 300.0f;
 
-    // Set an initial position for the camera scene node above the plane
-    cameraNode.position = Vector3(0.0f, 5.0f, 0.0f);
+    // Set an initial position for the camera scene node above the plane and looking down
+    cameraNode.position = Vector3(0.0f, 50.0f, 0.0f);
+    pitch = 80.0f;
+    cameraNode.rotation = Quaternion(pitch, yaw, 0.0f);
 }
 
 void CreateUI()
@@ -134,7 +136,7 @@ void CreateUI()
     instructionText.text =
         "Use WASD keys to move, RMB to rotate view\n"
         "LMB to set destination, SHIFT+LMB to teleport\n"
-        "MMB to add or remove obstacles\n"
+        "MMB or O key to add or remove obstacles\n"
         "Space to toggle debug geometry";
     instructionText.SetFont(cache.GetResource("Font", "Fonts/Anonymous Pro.ttf"), 15);
     // The text has multiple rows. Center them in relation to each other
@@ -204,7 +206,7 @@ void MoveCamera(float timeStep)
     if (input.mouseButtonPress[MOUSEB_LEFT])
         SetPathPoint();
     // Add or remove objects with middle mouse button, then rebuild navigation mesh partially
-    if (input.mouseButtonPress[MOUSEB_MIDDLE])
+    if (input.mouseButtonPress[MOUSEB_MIDDLE] || input.keyPress['O'])
         AddOrRemoveObject();
 
     // Toggle debug geometry with space

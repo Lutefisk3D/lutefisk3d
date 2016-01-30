@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -128,7 +128,7 @@ struct HeightfieldData : public CollisionGeometryData
 /// Physics collision shape component.
 class CollisionShape : public Component
 {
-    OBJECT(CollisionShape);
+    URHO3D_OBJECT(CollisionShape,Component);
 
 public:
     /// Construct.
@@ -221,6 +221,8 @@ public:
 protected:
     /// Handle node being assigned.
     virtual void OnNodeSet(Node* node) override;
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene* scene) override;
     /// Handle node transform being dirtied.
     virtual void OnMarkedDirty(Node* node) override;
 
@@ -256,12 +258,14 @@ private:
     Vector3 cachedWorldScale_;
     /// Model LOD level.
     unsigned lodLevel_;
-    /// CustomGeometry component ID for convex hull mode. 0 if not creating the convex hull from a CustomGeometry.
-    int customGeometryID_;
+    /// CustomGeometry component ID. 0 if not creating the convex hull / triangle mesh from a CustomGeometry.
+    unsigned customGeometryID_;
     /// Collision margin.
     float margin_;
-    /// Recrease collision shape flag.
+    /// Recreate collision shape flag.
     bool recreateShape_;
+    /// Shape creation retry flag if attributes initially set without scene.
+    bool retryCreation_;
 };
 
 }

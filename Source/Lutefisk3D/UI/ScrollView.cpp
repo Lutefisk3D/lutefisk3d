@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,14 +20,15 @@
 // THE SOFTWARE.
 //
 
+#include "ScrollView.h"
+
+#include "ScrollBar.h"
+#include "Slider.h"
+#include "UI.h"
+#include "UIEvents.h"
 #include "../Core/Context.h"
-#include "../UI/BorderImage.h"
 #include "../Input/InputEvents.h"
-#include "../UI/ScrollBar.h"
-#include "../UI/ScrollView.h"
-#include "../UI/Slider.h"
-#include "../UI/UI.h"
-#include "../UI/UIEvents.h"
+#include "../UI/BorderImage.h"
 
 namespace Urho3D
 {
@@ -73,13 +74,13 @@ ScrollView::ScrollView(Context* context) :
     scrollPanel_->SetEnabled(true);
     scrollPanel_->SetClipChildren(true);
 
-    SubscribeToEvent(horizontalScrollBar_, E_SCROLLBARCHANGED, HANDLER(ScrollView, HandleScrollBarChanged));
-    SubscribeToEvent(horizontalScrollBar_, E_VISIBLECHANGED, HANDLER(ScrollView, HandleScrollBarVisibleChanged));
-    SubscribeToEvent(verticalScrollBar_, E_SCROLLBARCHANGED, HANDLER(ScrollView, HandleScrollBarChanged));
-    SubscribeToEvent(verticalScrollBar_, E_VISIBLECHANGED, HANDLER(ScrollView, HandleScrollBarVisibleChanged));
-    SubscribeToEvent(E_TOUCHMOVE, HANDLER(ScrollView, HandleTouchMove));
-    SubscribeToEvent(E_TOUCHBEGIN, HANDLER(ScrollView, HandleTouchMove));
-    SubscribeToEvent(E_TOUCHEND, HANDLER(ScrollView, HandleTouchMove));
+    SubscribeToEvent(horizontalScrollBar_, E_SCROLLBARCHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarChanged));
+    SubscribeToEvent(horizontalScrollBar_, E_VISIBLECHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarVisibleChanged));
+    SubscribeToEvent(verticalScrollBar_, E_SCROLLBARCHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarChanged));
+    SubscribeToEvent(verticalScrollBar_, E_VISIBLECHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarVisibleChanged));
+    SubscribeToEvent(E_TOUCHMOVE, URHO3D_HANDLER(ScrollView, HandleTouchMove));
+    SubscribeToEvent(E_TOUCHBEGIN, URHO3D_HANDLER(ScrollView, HandleTouchMove));
+    SubscribeToEvent(E_TOUCHEND, URHO3D_HANDLER(ScrollView, HandleTouchMove));
 
 }
 
@@ -91,18 +92,18 @@ void ScrollView::RegisterObject(Context* context)
 {
     context->RegisterFactory<ScrollView>(UI_CATEGORY);
 
-    COPY_BASE_ATTRIBUTES(UIElement);
-    UPDATE_ATTRIBUTE_DEFAULT_VALUE("Clip Children", true);
-    UPDATE_ATTRIBUTE_DEFAULT_VALUE("Is Enabled", true);
-    UPDATE_ATTRIBUTE_DEFAULT_VALUE("Focus Mode", FM_FOCUSABLE_DEFOCUSABLE);
-    ACCESSOR_ATTRIBUTE("View Position", GetViewPosition, SetViewPositionAttr, IntVector2, IntVector2::ZERO, AM_FILE);
-    ACCESSOR_ATTRIBUTE("Scroll Step", GetScrollStep, SetScrollStep, float, 0.1f, AM_FILE);
-    ACCESSOR_ATTRIBUTE("Page Step", GetPageStep, SetPageStep, float, 1.0f, AM_FILE);
-    ACCESSOR_ATTRIBUTE("Auto Show/Hide Scrollbars", GetScrollBarsAutoVisible, SetScrollBarsAutoVisible, bool, true, AM_FILE);
-    ACCESSOR_ATTRIBUTE("Scroll Deceleration", GetScrollDeceleration, SetScrollDeceleration, float, 30.0f, AM_FILE);
-    ACCESSOR_ATTRIBUTE("Scroll Snap Epsilon", GetScrollSnapEpsilon, SetScrollSnapEpsilon, float, 1.0f, AM_FILE);
-    ACCESSOR_ATTRIBUTE("Auto Disable Children", GetAutoDisableChildren, SetAutoDisableChildren, bool, false, AM_FILE);
-    ACCESSOR_ATTRIBUTE("Auto Disable Threshold", GetAutoDisableThreshold, SetAutoDisableThreshold, float, 25.0f, AM_FILE);
+    URHO3D_COPY_BASE_ATTRIBUTES(UIElement);
+    URHO3D_UPDATE_ATTRIBUTE_DEFAULT_VALUE("Clip Children", true);
+    URHO3D_UPDATE_ATTRIBUTE_DEFAULT_VALUE("Is Enabled", true);
+    URHO3D_UPDATE_ATTRIBUTE_DEFAULT_VALUE("Focus Mode", FM_FOCUSABLE_DEFOCUSABLE);
+    URHO3D_ACCESSOR_ATTRIBUTE("View Position", GetViewPosition, SetViewPositionAttr, IntVector2, IntVector2::ZERO, AM_FILE);
+    URHO3D_ACCESSOR_ATTRIBUTE("Scroll Step", GetScrollStep, SetScrollStep, float, 0.1f, AM_FILE);
+    URHO3D_ACCESSOR_ATTRIBUTE("Page Step", GetPageStep, SetPageStep, float, 1.0f, AM_FILE);
+    URHO3D_ACCESSOR_ATTRIBUTE("Auto Show/Hide Scrollbars", GetScrollBarsAutoVisible, SetScrollBarsAutoVisible, bool, true, AM_FILE);
+    URHO3D_ACCESSOR_ATTRIBUTE("Scroll Deceleration", GetScrollDeceleration, SetScrollDeceleration, float, 30.0f, AM_FILE);
+    URHO3D_ACCESSOR_ATTRIBUTE("Scroll Snap Epsilon", GetScrollSnapEpsilon, SetScrollSnapEpsilon, float, M_EPSILON, AM_FILE);
+    URHO3D_ACCESSOR_ATTRIBUTE("Auto Disable Children", GetAutoDisableChildren, SetAutoDisableChildren, bool, false, AM_FILE);
+    URHO3D_ACCESSOR_ATTRIBUTE("Auto Disable Threshold", GetAutoDisableThreshold, SetAutoDisableThreshold, float, 25.0f, AM_FILE);
 }
 
 void ScrollView::Update(float timeStep)
@@ -252,6 +253,7 @@ void ScrollView::OnKey(int key, int buttons, int qualifiers)
         if (verticalScrollBar_->IsVisible())
             verticalScrollBar_->ChangeValue(pageStep_);
         break;
+    default: break;
     }
 }
 
@@ -287,7 +289,7 @@ void ScrollView::SetContentElement(UIElement* element)
     if (contentElement_)
     {
         scrollPanel_->AddChild(contentElement_);
-        SubscribeToEvent(contentElement_, E_RESIZED, HANDLER(ScrollView, HandleElementResized));
+        SubscribeToEvent(contentElement_, E_RESIZED, URHO3D_HANDLER(ScrollView, HandleElementResized));
     }
 
     OnResize();
@@ -492,19 +494,17 @@ void ScrollView::UpdateView(const IntVector2& position)
     }
 }
 
-void ScrollView::HandleScrollBarChanged(StringHash eventType, VariantMap& eventData)
+void ScrollView::HandleScrollBarChanged(StringHash eventType, VariantMap &eventData)
 {
     if (!ignoreEvents_)
     {
-        IntVector2 size = scrollPanel_->GetSize();
-        IntRect panelBorder = scrollPanel_->GetClipBorder();
+        IntVector2 size        = scrollPanel_->GetSize();
+        IntRect    panelBorder = scrollPanel_->GetClipBorder();
         size.x_ -= panelBorder.left_ + panelBorder.right_;
         size.y_ -= panelBorder.top_ + panelBorder.bottom_;
 
-        UpdateView(IntVector2(
-            (int)(horizontalScrollBar_->GetValue() * (float)size.x_),
-            (int)(verticalScrollBar_->GetValue() * (float)size.y_)
-        ));
+        UpdateView(IntVector2((int)(horizontalScrollBar_->GetValue() * (float)size.x_),
+                              (int)(verticalScrollBar_->GetValue() * (float)size.y_)));
     }
 }
 

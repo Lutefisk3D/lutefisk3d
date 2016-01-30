@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -55,7 +55,10 @@ public:
     }
 
     /// Check if a button was pressed on this frame. Requires previous frame's controls.
-    bool IsPressed(unsigned button, const Controls& previousControls) const { return (buttons_ & button) != 0 && (previousControls.buttons_ & button) == 0; }
+    bool IsPressed(unsigned button, const Controls& previousControls) const
+    {
+        return (buttons_ & button) != 0 && (previousControls.buttons_ & button) == 0;
+    }
 
     /// Button state.
     unsigned buttons_;

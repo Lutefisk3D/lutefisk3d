@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,8 @@
 #pragma once
 
 #include "../Container/ArrayPtr.h"
-#include "../Graphics/GraphicsDefs.h"
 #include "../Core/Object.h"
+#include "../Graphics/GraphicsDefs.h"
 
 namespace Urho3D
 {
@@ -37,7 +37,7 @@ class VertexBuffer;
 /// Defines one or more vertex buffers, an index buffer and a draw range.
 class Geometry : public Object
 {
-    OBJECT(Geometry);
+    URHO3D_OBJECT(Geometry,Object);
 
 public:
     /// Construct with one empty vertex buffer.
@@ -94,7 +94,7 @@ public:
     void GetRawData(const unsigned char*& vertexData, unsigned& vertexSize, const unsigned char*& indexData, unsigned& indexSize, unsigned& elementMask) const;
     /// Return raw vertex and index data for CPU operations, or null pointers if not available.
     void GetRawDataShared(SharedArrayPtr<unsigned char>& vertexData, unsigned& vertexSize, SharedArrayPtr<unsigned char>& indexData, unsigned& indexSize, unsigned& elementMask) const;
-    /// Return ray hit distance or infinity if no hit. Requires raw data to be set. Optionally return hit normal.
+    /// Return ray hit distance or infinity if no hit. Requires raw data to be set. Optionally return hit normal and hit uv coordinates at intersect point.
     float GetHitDistance(const Ray& ray, Vector3* outNormal = nullptr,Vector2* outUV = nullptr) const;
     /// Return whether or not the ray is inside geometry.
     bool IsInside(const Ray& ray) const;

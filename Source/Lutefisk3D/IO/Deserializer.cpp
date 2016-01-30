@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -97,10 +97,7 @@ unsigned char Deserializer::ReadUByte()
 
 bool Deserializer::ReadBool()
 {
-    if (ReadUByte())
-        return true;
-    else
-        return false;
+    return ReadUByte() != 0;
 }
 
 float Deserializer::ReadFloat()
@@ -292,8 +289,6 @@ Variant Deserializer::ReadVariant(VariantType type)
     case VAR_FLOAT:
         return Variant(ReadFloat());
 
-    case VAR_DOUBLE:
-        return Variant(ReadDouble());
 
     case VAR_VECTOR2:
         return Variant(ReadVector2());
@@ -330,6 +325,9 @@ Variant Deserializer::ReadVariant(VariantType type)
 
     case VAR_VARIANTVECTOR:
         return Variant(ReadVariantVector());
+   
+    case VAR_STRINGVECTOR:
+        return Variant(ReadStringVector());
 
     case VAR_VARIANTMAP:
         return Variant(ReadVariantMap());
@@ -349,6 +347,9 @@ Variant Deserializer::ReadVariant(VariantType type)
     case VAR_MATRIX4:
         return Variant(ReadMatrix4());
 
+    case VAR_DOUBLE:
+        return Variant(ReadDouble());
+
     default:
         return Variant();
     }
@@ -359,6 +360,16 @@ VariantVector Deserializer::ReadVariantVector()
     VariantVector ret(ReadVLE());
     for (unsigned i = 0; i < ret.size(); ++i)
         ret[i] = ReadVariant();
+    return ret;
+}
+
+QStringList Deserializer::ReadStringVector()
+{
+    QStringList ret;
+    int count = ReadVLE();
+    ret.reserve(count);
+    for (unsigned i = 0; i < count; ++i)
+        ret << ReadString();
     return ret;
 }
 

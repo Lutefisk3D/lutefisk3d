@@ -82,6 +82,7 @@ function CreateScene()
         -- Enable full blending weight and looping
         state.weight = 1.0
         state.looped = true
+        state.time = Random(walkAnimation.length)
 
         -- Create our Mover script object that will move & animate the model during each frame's update.
 
@@ -170,7 +171,7 @@ end
 
 function HandleUpdate(eventType, eventData)
     -- Take the frame time step, which is stored as a float
-    local timeStep = eventData:GetFloat("TimeStep")
+    local timeStep = eventData["TimeStep"]:GetFloat()
 
     -- Move the camera, scale movement with time step
     MoveCamera(timeStep)

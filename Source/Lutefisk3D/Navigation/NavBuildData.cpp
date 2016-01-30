@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,29 @@
 
 #include "../Navigation/NavBuildData.h"
 
-#include <Recast/Recast.h>
-#include <Detour/DetourNavMesh.h>
-#include <Detour/DetourNavMeshBuilder.h>
-#include <Detour/DetourNavMeshQuery.h>
-#include <DetourTileCache/DetourTileCache.h>
 #include <DetourTileCache/DetourTileCacheBuilder.h>
+#include <Recast/Recast.h>
+
+#include <cassert>
 
 namespace Urho3D
 {
 
 NavBuildData::NavBuildData() :
-    ctx_(0),
+    ctx_(new rcContext(true)),
     heightField_(0),
     compactHeightField_(0)
 {
-    ctx_ = new rcContext(true);
 }
 
 NavBuildData::~NavBuildData()
 {
-    if (ctx_)
         delete(ctx_);
-    rcFreeHeightField(heightField_);
-    rcFreeCompactHeightfield(compactHeightField_);
 
     ctx_ = 0;
+    rcFreeHeightField(heightField_);
     heightField_ = 0;
+    rcFreeCompactHeightfield(compactHeightField_);
     compactHeightField_ = 0;
 }
 
@@ -63,33 +59,32 @@ SimpleNavBuildData::SimpleNavBuildData() :
 SimpleNavBuildData::~SimpleNavBuildData()
 {
     rcFreeContourSet(contourSet_);
-    rcFreePolyMesh(polyMesh_);
-    rcFreePolyMeshDetail(polyMeshDetail_);
 
     contourSet_ = 0;
+    rcFreePolyMesh(polyMesh_);
     polyMesh_ = 0;
+    rcFreePolyMeshDetail(polyMeshDetail_);
     polyMeshDetail_ = 0;
 }
 
 DynamicNavBuildData::DynamicNavBuildData(dtTileCacheAlloc* allocator) :
+    NavBuildData(),
     contourSet_(0),
-    heightFieldLayers_(0),
     polyMesh_(0),
+    heightFieldLayers_(0),
     alloc_(allocator)
 {
+    assert(allocator);
 }
 
 DynamicNavBuildData::~DynamicNavBuildData()
 {
-    if (contourSet_)
         dtFreeTileCacheContourSet(alloc_, contourSet_);
-    if (polyMesh_)
-        dtFreeTileCachePolyMesh(alloc_, polyMesh_);
-    if (heightFieldLayers_)
-        rcFreeHeightfieldLayerSet(heightFieldLayers_);
 
     contourSet_ = 0;
+    dtFreeTileCachePolyMesh(alloc_, polyMesh_);
     polyMesh_ = 0;
+    rcFreeHeightfieldLayerSet(heightFieldLayers_);
     heightFieldLayers_ = 0;
 }
 

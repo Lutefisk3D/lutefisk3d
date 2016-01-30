@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,11 +31,12 @@ class PListFile;
 class Sprite2D;
 class Texture2D;
 class XMLFile;
+class JSONFile;
 
 /// Sprite sheet.
 class SpriteSheet2D : public Resource
 {
-    OBJECT(SpriteSheet2D);
+    URHO3D_OBJECT(SpriteSheet2D,Resource);
 
 public:
     /// Construct.
@@ -46,9 +47,9 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source);
+    virtual bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
-    virtual bool EndLoad();
+    virtual bool EndLoad() override;
 
     /// Return texture.
     Texture2D* GetTexture() const { return texture_; }
@@ -69,6 +70,10 @@ private:
     bool BeginLoadFromXMLFile(Deserializer& source);
     /// End load from XML file.
     bool EndLoadFromXMLFile();
+    /// Begin load from JSON file.
+    bool BeginLoadFromJSONFile(Deserializer& source);
+    /// End load from JSON file.
+    bool EndLoadFromJSONFile();
 
     /// Texture.
     SharedPtr<Texture2D> texture_;
@@ -78,6 +83,8 @@ private:
     SharedPtr<PListFile> loadPListFile_;
     /// XML file used while loading.
     SharedPtr<XMLFile> loadXMLFile_;
+    /// JSON file used while loading.
+    SharedPtr<JSONFile> loadJSONFile_;
     /// Texture name used while loading.
     QString loadTextureName_;
 };

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +23,11 @@
 #pragma once
 
 #include "../Container/ArrayPtr.h"
-#include "../Math/BoundingBox.h"
+#include "../Container/Ptr.h"
 #include "../Graphics/GraphicsDefs.h"
 #include "../Graphics/Skeleton.h"
+#include "../Math/BoundingBox.h"
 #include "../Resource/Resource.h"
-#include "../Container/Ptr.h"
-#include "../Container/HashMap.h"
 
 namespace Urho3D
 {
@@ -108,7 +107,7 @@ struct GeometryDesc
 /// 3D model resource.
 class Model : public Resource
 {
-    OBJECT(Model);
+    URHO3D_OBJECT(Model,Resource);
 
 public:
     /// Construct.

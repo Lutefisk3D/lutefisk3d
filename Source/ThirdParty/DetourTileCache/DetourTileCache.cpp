@@ -81,6 +81,9 @@ dtTileCache::dtTileCache() :
 
 dtTileCache::~dtTileCache()
 {
+	// Urho3D: added null check for tile allocation
+	if (m_tiles)
+	{
     for (int i = 0; i < m_params.maxTiles; ++i)
     {
         if (m_tiles[i].flags & DT_COMPRESSEDTILE_FREE_DATA)
@@ -89,6 +92,7 @@ dtTileCache::~dtTileCache()
             m_tiles[i].data = 0;
         }
     }
+	}
     dtFree(m_obstacles);
     m_obstacles = 0;
     dtFree(m_posLookup);

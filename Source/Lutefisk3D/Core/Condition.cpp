@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 
 #include "Condition.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include <pthread.h>
@@ -31,7 +31,7 @@
 namespace Urho3D
 {
 
-#ifdef WIN32
+#ifdef _WIN32
 Condition::Condition() :
     event_(0)
 {

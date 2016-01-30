@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,8 +49,8 @@ TileMap2D::~TileMap2D()
 void TileMap2D::RegisterObject(Context* context)
 {
     context->RegisterFactory<TileMap2D>(URHO2D_CATEGORY);
-    ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Tmx File", GetTmxFileAttr, SetTmxFileAttr, ResourceRef, ResourceRef(TmxFile2D::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Tmx File", GetTmxFileAttr, SetTmxFileAttr, ResourceRef, ResourceRef(TmxFile2D::GetTypeStatic()), AM_DEFAULT);
 }
 
 void TileMap2D::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
@@ -172,18 +172,6 @@ void TileMap2D::SetTmxFileAttr(const ResourceRef& value)
 ResourceRef TileMap2D::GetTmxFileAttr() const
 {
     return GetResourceRef(tmxFile_, TmxFile2D::GetTypeStatic());
-}
-
-void TileMap2D::OnNodeSet(Node* node)
-{
-    if (!node)
-    {
-        if (rootNode_)
-            rootNode_->Remove();
-
-        rootNode_ = nullptr;
-        layers_.clear();
-    }
 }
 
 }

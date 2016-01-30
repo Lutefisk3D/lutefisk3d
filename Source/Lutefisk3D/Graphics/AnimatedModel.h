@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ class AnimationState;
 /// Animated model component.
 class AnimatedModel : public StaticModel
 {
-    OBJECT(AnimatedModel);
+    URHO3D_OBJECT(AnimatedModel,StaticModel);
 
     friend class AnimationState;
 
@@ -51,6 +51,8 @@ public:
     virtual bool Load(Deserializer& source, bool setInstanceDefault = false) override;
     /// Load from XML data. Return true if successful.
     virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    /// Load from JSON data. Return true if successful.
+    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
     /// Apply attribute changes that can not be applied immediately. Called after scene load or a network update.
     virtual void ApplyAttributes() override;
     /// Process octree raycast. May be called from a worker thread.
@@ -148,6 +150,8 @@ public:
     const std::vector<std::vector<unsigned> >& GetGeometryBoneMappings() const { return geometryBoneMappings_; }
     /// Return per-geometry skin matrices. If empty, uses global skinning
     const std::vector<std::vector<Matrix3x4> >& GetGeometrySkinMatrices() const { return geometrySkinMatrices_; }
+    /// Recalculate the bone bounding box. Normally called internally, but can also be manually called if up-to-date information before rendering is necessary.
+    void UpdateBoneBoundingBox();
 
 protected:
     /// Handle node being assigned.
@@ -178,8 +182,6 @@ private:
     void CopyMorphVertices(void* dest, void* src, unsigned vertexCount, VertexBuffer* clone, VertexBuffer* original);
     /// Recalculate animations. Called from Update().
     void UpdateAnimation(const FrameInfo& frame);
-    /// Recalculate the bone bounding box.
-    void UpdateBoneBoundingBox();
     /// Recalculate skinning.
     void UpdateSkinning();
     /// Reapply all vertex morphs.
@@ -237,6 +239,8 @@ private:
     bool loading_;
     /// Bone nodes assignment pending flag.
     bool assignBonesPending_;
+    /// Force animation update after becoming visible flag.
+    bool forceAnimationUpdate_;
 };
 
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -80,7 +80,7 @@ public:
     }
 
     /// Construct from a float array.
-    Color(const float* data) :
+    explicit Color(const float* data) :
         r_(data[0]),
         g_(data[1]),
         b_(data[2]),
@@ -88,6 +88,15 @@ public:
     {
     }
 
+    /// Assign from another color.
+    Color& operator =(const Color& rhs)
+    {
+        r_ = rhs.r_;
+        g_ = rhs.g_;
+        b_ = rhs.b_;
+        a_ = rhs.a_;
+        return *this;
+    }
     /// Test for equality with another color without epsilon.
     bool operator == (const Color& rhs) const { return r_ == rhs.r_ && g_ == rhs.g_ && b_ == rhs.b_ && a_ == rhs.a_; }
     /// Test for inequality with another color without epsilon.
@@ -96,6 +105,8 @@ public:
     Color operator * (float rhs) const { return Color(r_ * rhs, g_ * rhs, b_ * rhs, a_ * rhs); }
     /// Add a color.
     Color operator + (const Color& rhs) const { return Color(r_ + rhs.r_, g_ + rhs.g_, b_ + rhs.b_, a_ + rhs.a_); }
+    /// Return negation.
+    Color operator -() const { return Color(-r_, -g_, -b_, -a_); }
     /// Substract a color.
     Color operator - (const Color& rhs) const { return Color(r_ - rhs.r_, g_ - rhs.g_, b_ - rhs.b_, a_ - rhs.a_); }
     

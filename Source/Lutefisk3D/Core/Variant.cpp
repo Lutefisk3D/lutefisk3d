@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,11 +29,12 @@ namespace Urho3D
 {
 
 const Variant Variant::EMPTY;
-const std::vector<unsigned char> Variant::emptyBuffer;
+const std::vector<unsigned char> Variant::emptyBuffer(0);
 const ResourceRef Variant::emptyResourceRef;
 const ResourceRefList Variant::emptyResourceRefList;
 const VariantMap Variant::emptyVariantMap;
-const VariantVector Variant::emptyVariantVector;
+const VariantVector Variant::emptyVariantVector(0);
+const QStringList Variant::emptyStringVector;
 
 static const char* typeNames[] =
 {
@@ -60,6 +61,7 @@ static const char* typeNames[] =
     "Matrix3x4",
     "Matrix4",
     "Double",
+    "StringVector",
     nullptr
 };
 Variant& Variant::operator = (const Variant& rhs)
@@ -88,8 +90,11 @@ Variant& Variant::operator = (const Variant& rhs)
         *(reinterpret_cast<VariantVector*>(&value_)) = *(reinterpret_cast<const VariantVector*>(&rhs.value_));
         break;
 
+    case VAR_STRINGVECTOR:
+        *(reinterpret_cast<QStringList*>(&value_)) = *(reinterpret_cast<const QStringList*>(&rhs.value_));
+        break;
     case VAR_VARIANTMAP:
-        *(reinterpret_cast<VariantMap*>(value_.ptr_)) = *(reinterpret_cast<const VariantMap*>(rhs.value_.ptr_));
+        *(reinterpret_cast<VariantMap*>(&value_)) = *(reinterpret_cast<const VariantMap*>(&rhs.value_));
         break;
 
     case VAR_PTR:
@@ -106,10 +111,6 @@ Variant& Variant::operator = (const Variant& rhs)
 
     case VAR_MATRIX4:
         *(reinterpret_cast<Matrix4*>(value_.ptr_)) = *(reinterpret_cast<const Matrix4*>(rhs.value_.ptr_));
-        break;
-
-    case VAR_DOUBLE:
-        *(reinterpret_cast<double*>(&value_)) = *(reinterpret_cast<const double*>(&rhs.value_));
         break;
 
     default:
@@ -138,8 +139,6 @@ bool Variant::operator == (const Variant& rhs) const
     case VAR_FLOAT:
         return value_.float_ == rhs.value_.float_;
 
-    case VAR_DOUBLE:
-        return value_.double_ == rhs.value_.double_;
 
     case VAR_VECTOR2:
         return *(reinterpret_cast<const Vector2*>(&value_)) == *(reinterpret_cast<const Vector2*>(&rhs.value_));
@@ -168,8 +167,10 @@ bool Variant::operator == (const Variant& rhs) const
     case VAR_VARIANTVECTOR:
         return *(reinterpret_cast<const VariantVector*>(&value_)) == *(reinterpret_cast<const VariantVector*>(&rhs.value_));
 
+    case VAR_STRINGVECTOR:
+        return *(reinterpret_cast<const QStringList*>(&value_)) == *(reinterpret_cast<const QStringList*>(&rhs.value_));
     case VAR_VARIANTMAP:
-        return *(reinterpret_cast<const VariantMap*>(value_.ptr_)) == *(reinterpret_cast<const VariantMap*>(rhs.value_.ptr_));
+        return *(reinterpret_cast<const VariantMap*>(&value_)) == *(reinterpret_cast<const VariantMap*>(&rhs.value_));
 
     case VAR_INTRECT:
         return *(reinterpret_cast<const IntRect*>(&value_)) == *(reinterpret_cast<const IntRect*>(&rhs.value_));
@@ -185,12 +186,20 @@ bool Variant::operator == (const Variant& rhs) const
 
     case VAR_MATRIX4:
         return *(reinterpret_cast<const Matrix4*>(value_.ptr_)) == *(reinterpret_cast<const Matrix4*>(rhs.value_.ptr_));
+    case VAR_DOUBLE:
+        return *(reinterpret_cast<const double*>(&value_)) == *(reinterpret_cast<const double*>(&rhs.value_));
 
     default:
         return true;
     }
 }
 
+bool Variant::operator ==(const std::vector<unsigned char>& rhs) const
+{
+    // Use strncmp() instead of std::vector<unsigned char>::operator ==
+    const std::vector<unsigned char>& buffer = *(reinterpret_cast<const std::vector<unsigned char>*>(&value_));
+    return type_ == VAR_BUFFER && buffer.size() == rhs.size() ? strncmp(reinterpret_cast<const char*>(&buffer[0]), reinterpret_cast<const char*>(&rhs[0]), buffer.size()) == 0 : false;
+}
 void Variant::FromString(const QString& type, const QString& value)
 {
     return FromString(GetTypeFromName(type), qPrintable(value));
@@ -221,10 +230,6 @@ void Variant::FromString(VariantType type, const char* value)
 
     case VAR_FLOAT:
         *this = src.toFloat();
-        break;
-
-    case VAR_DOUBLE:
-        *this = src.toDouble();
         break;
 
     case VAR_VECTOR2:
@@ -316,7 +321,9 @@ void Variant::FromString(VariantType type, const char* value)
     case VAR_MATRIX4:
         *this = ToMatrix4(value);
         break;
-
+    case VAR_DOUBLE:
+        *this = src.toDouble();
+        break;
     default:
         SetType(VAR_NONE);
     }
@@ -351,9 +358,6 @@ QString Variant::ToString() const
 
     case VAR_FLOAT:
         return QString::number(value_.float_);
-
-    case VAR_DOUBLE:
-        return QString::number(value_.double_);
 
     case VAR_VECTOR2:
         return (reinterpret_cast<const Vector2*>(&value_))->ToString();
@@ -392,12 +396,6 @@ QString Variant::ToString() const
     case VAR_INTVECTOR2:
         return (reinterpret_cast<const IntVector2*>(&value_))->ToString();
 
-    default:
-        // VAR_RESOURCEREF, VAR_RESOURCEREFLIST, VAR_VARIANTVECTOR, VAR_VARIANTMAP
-        // Reference string serialization requires typehash-to-name mapping from the context. Can not support here
-        // Also variant map or vector string serialization is not supported. XML or binary save should be used instead
-        return QString::null;
-
     case VAR_MATRIX3:
         return (reinterpret_cast<const Matrix3*>(value_.ptr_))->ToString();
 
@@ -406,6 +404,14 @@ QString Variant::ToString() const
 
     case VAR_MATRIX4:
         return (reinterpret_cast<const Matrix4*>(value_.ptr_))->ToString();
+
+    case VAR_DOUBLE:
+        return QString::number(value_.double_);
+    default:
+        // VAR_RESOURCEREF, VAR_RESOURCEREFLIST, VAR_VARIANTVECTOR, VAR_STRINGVECTOR, VAR_VARIANTMAP
+        // Reference string serialization requires typehash-to-name mapping from the context. Can not support here
+        // Also variant map or vector string serialization is not supported. XML or binary save should be used instead
+        return QString::null;
     }
 }
 
@@ -422,8 +428,6 @@ bool Variant::IsZero() const
     case VAR_FLOAT:
         return value_.float_ == 0.0f;
 
-    case VAR_DOUBLE:
-        return value_.double_ == 0.0;
 
     case VAR_VECTOR2:
         return *reinterpret_cast<const Vector2*>(&value_) == Vector2::ZERO;
@@ -467,8 +471,11 @@ bool Variant::IsZero() const
     case VAR_VARIANTVECTOR:
         return reinterpret_cast<const VariantVector*>(&value_)->empty();
 
+    case VAR_STRINGVECTOR:
+        return reinterpret_cast<const QStringList*>(&value_)->isEmpty();
+
     case VAR_VARIANTMAP:
-        return reinterpret_cast<const VariantMap*>(value_.ptr_)->empty();
+        return reinterpret_cast<const VariantMap*>(&value_)->empty();
 
     case VAR_INTRECT:
         return *reinterpret_cast<const IntRect*>(&value_) == IntRect::ZERO;
@@ -488,6 +495,8 @@ bool Variant::IsZero() const
     case VAR_MATRIX4:
         return *reinterpret_cast<const Matrix4*>(value_.ptr_) == Matrix4::IDENTITY;
 
+    case VAR_DOUBLE:
+        return *reinterpret_cast<const double*>(&value_) == 0.0;
     default:
         return true;
     }
@@ -504,10 +513,8 @@ void Variant::SetType(VariantType newType)
         (reinterpret_cast<QString*>(&value_))->~QString();
         break;
 
-    case VAR_BUFFER: {
-        using namespace std;
-        (reinterpret_cast<vector<unsigned char>*>(&value_))->~vector();
-    }
+    case VAR_BUFFER:
+        (reinterpret_cast<std::vector<unsigned char>*>(&value_))->~vector();
         break;
 
     case VAR_RESOURCEREF:
@@ -522,8 +529,11 @@ void Variant::SetType(VariantType newType)
         (reinterpret_cast<VariantVector*>(&value_))->~VariantVector();
         break;
 
+    case VAR_STRINGVECTOR:
+        (reinterpret_cast<QStringList*>(&value_))->~QStringList();
+        break;
     case VAR_VARIANTMAP:
-        delete reinterpret_cast<VariantMap*>(value_.ptr_);
+        (reinterpret_cast<VariantMap*>(&value_))->~VariantMap();
         break;
 
     case VAR_PTR:
@@ -573,8 +583,11 @@ void Variant::SetType(VariantType newType)
         new(reinterpret_cast<VariantVector*>(&value_)) VariantVector();
         break;
 
+    case VAR_STRINGVECTOR:
+        new(reinterpret_cast<QStringList*>(&value_)) QStringList();
+        break;
     case VAR_VARIANTMAP:
-        value_.ptr_ = new VariantMap();
+        new(reinterpret_cast<VariantMap*>(&value_)) VariantMap();
         break;
 
     case VAR_PTR:
@@ -710,6 +723,11 @@ template<> ResourceRefList Variant::Get<ResourceRefList>() const
 template<> VariantVector Variant::Get<VariantVector>() const
 {
     return GetVariantVector();
+}
+
+template <> QStringList Variant::Get<QStringList >() const
+{
+    return GetStringVector();
 }
 
 template<> VariantMap Variant::Get<VariantMap>() const

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,7 @@ enum FONT_TYPE
 /// %Font resource.
 class Font : public Resource
 {
-    OBJECT(Font);
+    URHO3D_OBJECT(Font,Resource);
 
 public:
     /// Construct.

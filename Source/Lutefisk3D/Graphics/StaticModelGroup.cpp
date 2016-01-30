@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,8 +53,8 @@ void StaticModelGroup::RegisterObject(Context* context)
 {
     context->RegisterFactory<StaticModelGroup>(GEOMETRY_CATEGORY);
 
-    COPY_BASE_ATTRIBUTES(StaticModel);
-    ACCESSOR_ATTRIBUTE("Instance Nodes", GetNodeIDsAttr, SetNodeIDsAttr, VariantVector, Variant::emptyVariantVector, AM_DEFAULT | AM_NODEIDVECTOR);
+    URHO3D_COPY_BASE_ATTRIBUTES(StaticModel);
+    URHO3D_ACCESSOR_ATTRIBUTE("Instance Nodes", GetNodeIDsAttr, SetNodeIDsAttr, VariantVector, Variant::emptyVariantVector, AM_DEFAULT | AM_NODEIDVECTOR);
 }
 
 void StaticModelGroup::ApplyAttributes()
@@ -254,7 +254,7 @@ bool StaticModelGroup::DrawOcclusion(OcclusionBuffer* buffer)
             unsigned indexCount = geometry->GetIndexCount();
 
             // Draw and check for running out of triangles
-            if (!buffer->Draw(worldTransforms_[i], vertexData, vertexSize, indexData, indexSize, indexStart, indexCount))
+            if (!buffer->AddTriangles(worldTransforms_[i], vertexData, vertexSize, indexData, indexSize, indexStart, indexCount))
                 return false;
         }
     }

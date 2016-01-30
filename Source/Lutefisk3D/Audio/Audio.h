@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@ class SoundSource;
 /// %Audio subsystem.
 class Audio : public Object
 {
-    OBJECT(Audio);
+    URHO3D_OBJECT(Audio,Object);
 
 public:
     /// Construct.
@@ -96,7 +96,7 @@ public:
     void MixOutput(void *dest, unsigned samples);
 
     /// Final multiplier for for audio byte conversion
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
     static const int SAMPLE_SIZE_MUL = 2;
 #else
     static const int SAMPLE_SIZE_MUL = 1;

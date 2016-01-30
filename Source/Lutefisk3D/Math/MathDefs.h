@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,8 +44,8 @@ static const float M_MIN_NEARCLIP = 0.01f;
 static const float M_MAX_FOV = 160.0f;
 static const float M_LARGE_VALUE = 100000000.0f;
 static const float M_INFINITY = (float)HUGE_VAL;
-static const float M_DEGTORAD = (float)M_PI / 180.0f;
-static const float M_DEGTORAD_2 = (float)M_PI / 360.0f; // M_DEGTORAD / 2.f
+static const float M_DEGTORAD = M_PI / 180.0f;
+static const float M_DEGTORAD_2 = M_PI / 360.0f;    // M_DEGTORAD / 2.f
 static const float M_RADTODEG = 1.0f / M_DEGTORAD;
 
 /// Intersection test result.
@@ -60,6 +60,8 @@ enum Intersection
 inline bool Equals(float lhs, float rhs) { return lhs + M_EPSILON >= rhs && lhs - M_EPSILON <= rhs; }
 /// Linear interpolation between two float values.
 inline float Lerp(float lhs, float rhs, float t) { return lhs * (1.0f - t) + rhs * t; }
+/// Linear interpolation between two double values.
+inline double Lerp(double lhs, double rhs, float t) { return lhs * (1.0 - t) + rhs * t; }
 /// Return the smaller of two floats.
 inline float Min(float lhs, float rhs) { return lhs < rhs ? lhs : rhs; }
 /// Return the larger of two floats.
@@ -169,10 +171,53 @@ inline float Random(float range) { return Rand() * range / 32767.0f; }
 /// Return a random float between min and max, inclusive from both ends.
 inline float Random(float min, float max) { return Rand() * (max - min) / 32767.0f + min; }
 /// Return a random integer between 0 and range - 1.
-inline int Random(int range) { return (Rand() * (range - 1) + 16384) / 32767; }
+inline int Random(int range) { return (int)(Random() * range); }
 /// Return a random integer between min and max - 1.
-inline int Random(int min, int max) { return (Rand() * (max - min - 1) + 16384) / 32767 + min; }
+inline int Random(int min, int max) { float range = (float)(max - min); return (int)(Random() * range) + min; }
 /// Return a random normal distributed number with the given mean value and variance.
 inline float RandomNormal(float meanValue, float variance) { return RandStandardNormal() * sqrtf(variance) + meanValue; }
+
+/// Convert float to half float. From https://gist.github.com/martinkallman/5049614
+inline unsigned short FloatToHalf(float value)
+{
+    unsigned inu = *((unsigned*)&value);
+    unsigned t1 = inu & 0x7fffffff;         // Non-sign bits
+    unsigned t2 = inu & 0x80000000;         // Sign bit
+    unsigned t3 = inu & 0x7f800000;         // Exponent
+
+    t1 >>= 13;                              // Align mantissa on MSB
+    t2 >>= 16;                              // Shift sign bit into position
+
+    t1 -= 0x1c000;                          // Adjust bias
+
+    t1 = (t3 < 0x38800000) ? 0 : t1;        // Flush-to-zero
+    t1 = (t3 > 0x47000000) ? 0x7bff : t1;   // Clamp-to-max
+    t1 = (t3 == 0 ? 0 : t1);                // Denormals-as-zero
+
+    t1 |= t2;                               // Re-insert sign bit
+
+    return (unsigned short)t1;
+}
+
+/// Convert half float to float. From https://gist.github.com/martinkallman/5049614
+inline float HalfToFloat(unsigned short value)
+{
+    unsigned t1 = value & 0x7fff;           // Non-sign bits
+    unsigned t2 = value & 0x8000;           // Sign bit
+    unsigned t3 = value & 0x7c00;           // Exponent
+
+    t1 <<= 13;                              // Align mantissa on MSB
+    t2 <<= 16;                              // Shift sign bit into position
+
+    t1 += 0x38000000;                       // Adjust bias
+
+    t1 = (t3 == 0 ? 0 : t1);                // Denormals-as-zero
+
+    t1 |= t2;                               // Re-insert sign bit
+
+    float out;
+    *((unsigned*)&out) = t1;
+    return out;
+}
 
 }

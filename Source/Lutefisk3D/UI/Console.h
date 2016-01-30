@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ class XMLFile;
 /// %Console window with log history and command line prompt.
 class Console : public Object
 {
-    OBJECT(Console);
+    URHO3D_OBJECT(Console,Object);
 
 public:
     /// Construct.
@@ -110,8 +110,8 @@ private:
     void HandleLineEditKey(StringHash eventType, VariantMap& eventData);
     /// Handle close button being pressed.
     void HandleCloseButtonPressed(StringHash eventType, VariantMap& eventData);
-    /// Handle rendering window resize.
-    void HandleScreenMode(StringHash eventType, VariantMap& eventData);
+    /// Handle UI root resize.
+    void HandleRootElementResized(StringHash eventType, VariantMap& eventData);
     /// Handle a log message.
     void HandleLogMessage(StringHash eventType, VariantMap& eventData);
     /// Handle the application post-update.

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 #include "../Math/BoundingBox.h"
 #include "../Core/Context.h"
 #include "../Navigation/CrowdAgent.h"
+#include "../Navigation/DynamicNavigationMesh.h"
 #include "../Graphics/DebugRenderer.h"
 #include "../IO/Log.h"
 #include "../IO/MemoryBuffer.h"
@@ -49,18 +50,17 @@
 #include <Recast/Recast.h>
 #include <Recast/RecastAlloc.h>
 
-//DebugNew is deliberately not used because the macro 'free' conflicts DetourTileCache's LinearAllocator interface
-//
 
-#define TILECACHE_MAXLAYERS 128
+#define TILECACHE_MAXLAYERS 255
 
 namespace Urho3D
 {
 
 extern const char* NAVIGATION_CATEGORY;
-
-static const int DEFAULT_MAX_OBSTACLES = 1024;
-
+namespace {
+const constexpr int DEFAULT_MAX_OBSTACLES = 1024;
+const constexpr int DEFAULT_MAX_LAYERS = 16;
+}
 struct DynamicNavigationMesh::TileCacheData
 {
     unsigned char* data;
@@ -135,9 +135,9 @@ struct MeshProcess : public dtTileCacheMeshProcess
                     offMeshVertices_.push_back(start);
                     offMeshVertices_.push_back(end);
                     offMeshRadii_.push_back(connection->GetRadius());
-                    offMeshFlags_.push_back(connection->GetMask());
+                    offMeshFlags_.push_back((unsigned short)connection->GetMask());
                     offMeshAreas_.push_back((unsigned char)connection->GetAreaID());
-                    offMeshDir_.push_back(connection->IsBidirectional() ? DT_OFFMESH_CON_BIDIR : 0);
+                    offMeshDir_.push_back((unsigned char)connection->IsBidirectional() ? DT_OFFMESH_CON_BIDIR : 0);
                 }
             }
             params->offMeshConCount = offMeshRadii_.size();
@@ -213,6 +213,7 @@ DynamicNavigationMesh::DynamicNavigationMesh(Context* context) :
     NavigationMesh(context),
     tileCache_(0),
     maxObstacles_(1024),
+    maxLayers_(DEFAULT_MAX_LAYERS),
     drawObstacles_(false)
 {
     //64 is the largest tile-size that DetourTileCache will tolerate without silently failing
@@ -238,14 +239,15 @@ void DynamicNavigationMesh::RegisterObject(Context* context)
 {
     context->RegisterFactory<DynamicNavigationMesh>(NAVIGATION_CATEGORY);
 
-    COPY_BASE_ATTRIBUTES(NavigationMesh);
-    ACCESSOR_ATTRIBUTE("Max Obstacles", GetMaxObstacles, SetMaxObstacles, unsigned, DEFAULT_MAX_OBSTACLES, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Draw Obstacles", GetDrawObstacles, SetDrawObstacles, bool, false, AM_DEFAULT);
+    URHO3D_COPY_BASE_ATTRIBUTES(NavigationMesh);
+    URHO3D_ACCESSOR_ATTRIBUTE("Max Obstacles", GetMaxObstacles, SetMaxObstacles, unsigned, DEFAULT_MAX_OBSTACLES, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Max Layers", GetMaxLayers, SetMaxLayers, unsigned, DEFAULT_MAX_LAYERS, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Draw Obstacles", GetDrawObstacles, SetDrawObstacles, bool, false, AM_DEFAULT);
 }
 
 bool DynamicNavigationMesh::Build()
 {
-    PROFILE(BuildNavigationMesh);
+    URHO3D_PROFILE(BuildNavigationMesh);
     // Release existing navigation data and zero the bounding box
     ReleaseNavigationMesh();
 
@@ -253,7 +255,7 @@ bool DynamicNavigationMesh::Build()
         return false;
 
     if (!node_->GetWorldScale().Equals(Vector3::ONE))
-        LOGWARNING("Navigation mesh root node has scaling. Agent parameters may not work as intended");
+        URHO3D_LOGWARNING("Navigation mesh root node has scaling. Agent parameters may not work as intended");
 
     std::vector<NavigationGeometryInfo> geometryList;
     CollectGeometries(geometryList);
@@ -270,7 +272,7 @@ bool DynamicNavigationMesh::Build()
     boundingBox_.max_ += padding_;
 
     {
-        PROFILE(BuildNavigationMesh);
+        URHO3D_PROFILE(BuildNavigationMesh);
 
         // Calculate number of tiles
         int gridW = 0, gridH = 0;
@@ -280,7 +282,7 @@ bool DynamicNavigationMesh::Build()
         numTilesZ_ = (gridH + tileSize_ - 1) / tileSize_;
 
         // Calculate max. number of tiles and polygons, 22 bits available to identify both tile & polygon within tile
-        unsigned maxTiles = NextPowerOfTwo(numTilesX_ * numTilesZ_) * TILECACHE_MAXLAYERS;
+        unsigned maxTiles = NextPowerOfTwo((unsigned)(numTilesX_ * numTilesZ_)) * maxLayers_;
         unsigned tileBits = 0;
         unsigned temp = maxTiles;
         while (temp > 1)
@@ -301,13 +303,13 @@ bool DynamicNavigationMesh::Build()
         navMesh_ = dtAllocNavMesh();
         if (!navMesh_)
         {
-            LOGERROR("Could not allocate navigation mesh");
+            URHO3D_LOGERROR("Could not allocate navigation mesh");
             return false;
         }
 
         if (dtStatusFailed(navMesh_->init(&params)))
         {
-            LOGERROR("Could not initialize navigation mesh");
+            URHO3D_LOGERROR("Could not initialize navigation mesh");
             ReleaseNavigationMesh();
             return false;
         }
@@ -320,7 +322,7 @@ bool DynamicNavigationMesh::Build()
         tileCacheParams.width = tileSize_;
         tileCacheParams.height = tileSize_;
         tileCacheParams.maxSimplificationError = edgeMaxError_;
-        tileCacheParams.maxTiles = numTilesX_ * numTilesZ_ * TILECACHE_MAXLAYERS;
+        tileCacheParams.maxTiles = numTilesX_ * numTilesZ_ * maxLayers_;
         tileCacheParams.maxObstacles = maxObstacles_;
         // Settings from NavigationMesh
         tileCacheParams.walkableClimb = agentMaxClimb_;
@@ -330,14 +332,14 @@ bool DynamicNavigationMesh::Build()
         tileCache_ = dtAllocTileCache();
         if (!tileCache_)
         {
-            LOGERROR("Could not allocate tile cache");
+            URHO3D_LOGERROR("Could not allocate tile cache");
             ReleaseNavigationMesh();
             return false;
         }
 
         if (dtStatusFailed(tileCache_->init(&tileCacheParams, allocator_, compressor_, meshProcessor_)))
         {
-            LOGERROR("Could not initialize tile cache");
+            URHO3D_LOGERROR("Could not initialize tile cache");
             ReleaseNavigationMesh();
             return false;
         }
@@ -355,7 +357,7 @@ bool DynamicNavigationMesh::Build()
                 {
                     dtCompressedTileRef tileRef;
                     int status = tileCache_->addTile(tiles[i].data, tiles[i].dataSize, DT_COMPRESSEDTILE_FREE_DATA, &tileRef);
-                    if (dtStatusFailed(status))
+                    if (dtStatusFailed((dtStatus)status))
                     {
                         dtFree(tiles[i].data);
                         tiles[i].data = 0x0;
@@ -368,10 +370,10 @@ bool DynamicNavigationMesh::Build()
         }
 
         // For a full build it's necessary to update the nav mesh
-        // not doing so will cause dependent components to crash, like DetourCrowdManager
+        // not doing so will cause dependent components to crash, like CrowdManager
         tileCache_->update(0, navMesh_);
 
-        LOGDEBUG(QString("Built navigation mesh with %1 tiles").arg(numTiles));
+        URHO3D_LOGDEBUG(QString("Built navigation mesh with %1 tiles").arg(numTiles));
 
         // Send a notification event to concerned parties that we've been fully rebuilt
         {
@@ -398,19 +400,19 @@ bool DynamicNavigationMesh::Build()
 
 bool DynamicNavigationMesh::Build(const BoundingBox& boundingBox)
 {
-    PROFILE(BuildPartialNavigationMesh);
+    URHO3D_PROFILE(BuildPartialNavigationMesh);
 
     if (!node_)
         return false;
 
     if (!navMesh_)
     {
-        LOGERROR("Navigation mesh must first be built fully before it can be partially rebuilt");
+        URHO3D_LOGERROR("Navigation mesh must first be built fully before it can be partially rebuilt");
         return false;
     }
 
     if (!node_->GetWorldScale().Equals(Vector3::ONE))
-        LOGWARNING("Navigation mesh root node has scaling. Agent parameters may not work as intended");
+        URHO3D_LOGWARNING("Navigation mesh root node has scaling. Agent parameters may not work as intended");
 
     BoundingBox localSpaceBox = boundingBox.Transformed(node_->GetWorldTransform().Inverse());
 
@@ -431,7 +433,7 @@ bool DynamicNavigationMesh::Build(const BoundingBox& boundingBox)
         for (int x = sx; x <= ex; ++x)
         {
             dtCompressedTileRef existing[TILECACHE_MAXLAYERS];
-            const int existingCt = tileCache_->getTilesAt(x, z, existing, TILECACHE_MAXLAYERS);
+            const int existingCt = tileCache_->getTilesAt(x, z, existing, maxLayers_);
             for (int i = 0; i < existingCt; ++i)
             {
                 unsigned char* data = 0x0;
@@ -445,7 +447,7 @@ bool DynamicNavigationMesh::Build(const BoundingBox& boundingBox)
             {
                 dtCompressedTileRef tileRef;
                 int status = tileCache_->addTile(tiles[i].data, tiles[i].dataSize, DT_COMPRESSEDTILE_FREE_DATA, &tileRef);
-                if (dtStatusFailed(status))
+                if (dtStatusFailed((dtStatus)status))
                 {
                     dtFree(tiles[i].data);
                     tiles[i].data = 0x0;
@@ -459,7 +461,7 @@ bool DynamicNavigationMesh::Build(const BoundingBox& boundingBox)
         }
     }
 
-    LOGDEBUG(QString("Rebuilt %1 tiles of the navigation mesh").arg(numTiles));
+    URHO3D_LOGDEBUG(QString("Rebuilt %1 tiles of the navigation mesh").arg(numTiles));
     return true;
 }
 
@@ -576,13 +578,13 @@ void DynamicNavigationMesh::SetNavigationDataAttr(const std::vector<unsigned cha
     navMesh_ = dtAllocNavMesh();
     if (!navMesh_)
     {
-        LOGERROR("Could not allocate navigation mesh");
+        URHO3D_LOGERROR("Could not allocate navigation mesh");
         return;
     }
 
     if (dtStatusFailed(navMesh_->init(&params)))
     {
-        LOGERROR("Could not initialize navigation mesh");
+        URHO3D_LOGERROR("Could not initialize navigation mesh");
         ReleaseNavigationMesh();
         return;
     }
@@ -593,13 +595,13 @@ void DynamicNavigationMesh::SetNavigationDataAttr(const std::vector<unsigned cha
     tileCache_ = dtAllocTileCache();
     if (!tileCache_)
     {
-        LOGERROR("Could not allocate tile cache");
+        URHO3D_LOGERROR("Could not allocate tile cache");
         ReleaseNavigationMesh();
         return;
     }
     if (dtStatusFailed(tileCache_->init(&tcParams, allocator_, compressor_, meshProcessor_)))
     {
-        LOGERROR("Could not initialize tile cache");
+        URHO3D_LOGERROR("Could not initialize tile cache");
         ReleaseNavigationMesh();
         return;
     }
@@ -610,11 +612,11 @@ void DynamicNavigationMesh::SetNavigationDataAttr(const std::vector<unsigned cha
         buffer.Read(&header, sizeof(dtTileCacheLayerHeader));
         const int dataSize = buffer.ReadInt();
         unsigned char* data = (unsigned char*)dtAlloc(dataSize, DT_ALLOC_PERM);
-        buffer.Read(data, dataSize);
+        buffer.Read(data, (unsigned)dataSize);
 
         if (dtStatusFailed(tileCache_->addTile(data, dataSize, DT_TILE_FREE_DATA, 0)))
         {
-            LOGERROR("Failed to add tile");
+            URHO3D_LOGERROR("Failed to add tile");
             dtFree(data);
             return;
         }
@@ -649,7 +651,7 @@ std::vector<unsigned char> DynamicNavigationMesh::GetNavigationDataAttr() const
             for (int x = 0; x < numTilesX_; ++x)
             {
                 dtCompressedTileRef tiles[TILECACHE_MAXLAYERS];
-                const int ct = tileCache_->getTilesAt(x, z, tiles, TILECACHE_MAXLAYERS);
+                const int ct = tileCache_->getTilesAt(x, z, tiles, maxLayers_);
                 for (int i = 0; i < ct; ++i)
                 {
                     const dtCompressedTile* tile = tileCache_->getTileByRef(tiles[i]);
@@ -658,7 +660,7 @@ std::vector<unsigned char> DynamicNavigationMesh::GetNavigationDataAttr() const
                     // The header conveniently has the majority of the information required
                     ret.Write(tile->header, sizeof(dtTileCacheLayerHeader));
                     ret.WriteInt(tile->dataSize);
-                    ret.Write(tile->data, tile->dataSize);
+                    ret.Write(tile->data, (unsigned)tile->dataSize);
                 }
             }
         }
@@ -666,9 +668,16 @@ std::vector<unsigned char> DynamicNavigationMesh::GetNavigationDataAttr() const
     return ret.GetBuffer();
 }
 
+void DynamicNavigationMesh::SetMaxLayers(unsigned maxLayers)
+{
+    // Set 3 as a minimum due to the tendency of layers to be constructed inside the hollow space of stacked objects
+    // That behavior is unlikely to be expected by the end user
+    maxLayers_ = Max(3, Min(maxLayers, TILECACHE_MAXLAYERS));
+}
+
 int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geometryList, int x, int z, TileCacheData* tiles)
 {
-    PROFILE(BuildNavigationMeshTile);
+    URHO3D_PROFILE(BuildNavigationMeshTile);
 
     tileCache_->removeTile(navMesh_->getTileRefAt(x, z, 0), 0, 0);
 
@@ -723,14 +732,14 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
     build.heightField_ = rcAllocHeightfield();
     if (!build.heightField_)
     {
-        LOGERROR("Could not allocate heightfield");
+        URHO3D_LOGERROR("Could not allocate heightfield");
         return 0;
     }
 
     if (!rcCreateHeightfield(build.ctx_, *build.heightField_, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs,
         cfg.ch))
     {
-        LOGERROR("Could not create heightfield");
+        URHO3D_LOGERROR("Could not create heightfield");
         return 0;
     }
 
@@ -750,18 +759,18 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
     build.compactHeightField_ = rcAllocCompactHeightfield();
     if (!build.compactHeightField_)
     {
-        LOGERROR("Could not allocate create compact heightfield");
+        URHO3D_LOGERROR("Could not allocate create compact heightfield");
         return 0;
     }
     if (!rcBuildCompactHeightfield(build.ctx_, cfg.walkableHeight, cfg.walkableClimb, *build.heightField_,
         *build.compactHeightField_))
     {
-        LOGERROR("Could not build compact heightfield");
+        URHO3D_LOGERROR("Could not build compact heightfield");
         return 0;
     }
     if (!rcErodeWalkableArea(build.ctx_, cfg.walkableRadius, *build.compactHeightField_))
     {
-        LOGERROR("Could not erode compact heightfield");
+        URHO3D_LOGERROR("Could not erode compact heightfield");
         return 0;
     }
 
@@ -773,13 +782,13 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
     {
         if (!rcBuildDistanceField(build.ctx_, *build.compactHeightField_))
         {
-            LOGERROR("Could not build distance field");
+            URHO3D_LOGERROR("Could not build distance field");
             return 0;
         }
         if (!rcBuildRegions(build.ctx_, *build.compactHeightField_, cfg.borderSize, cfg.minRegionArea,
             cfg.mergeRegionArea))
         {
-            LOGERROR("Could not build regions");
+            URHO3D_LOGERROR("Could not build regions");
             return 0;
         }
     }
@@ -787,7 +796,7 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
     {
         if (!rcBuildRegionsMonotone(build.ctx_, *build.compactHeightField_, cfg.borderSize, cfg.minRegionArea, cfg.mergeRegionArea))
         {
-            LOGERROR("Could not build monotone regions");
+            URHO3D_LOGERROR("Could not build monotone regions");
             return 0;
         }
     }
@@ -795,13 +804,13 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
     build.heightFieldLayers_ = rcAllocHeightfieldLayerSet();
     if (!build.heightFieldLayers_)
     {
-        LOGERROR("Could not allocate height field layer set");
+        URHO3D_LOGERROR("Could not allocate height field layer set");
         return 0;
     }
 
     if (!rcBuildHeightfieldLayers(build.ctx_, *build.compactHeightField_, cfg.borderSize, cfg.walkableHeight, *build.heightFieldLayers_))
     {
-        LOGERROR("Could not build height field layers");
+        URHO3D_LOGERROR("Could not build height field layers");
         return 0;
     }
 
@@ -831,7 +840,7 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
 
         if (dtStatusFailed(dtBuildTileCacheLayer(compressor_/*compressor*/, &header, layer->heights, layer->areas/*areas*/, layer->cons, &(tiles[retCt].data), &tiles[retCt].dataSize)))
         {
-            LOGERROR("Failed to build tile cache layers");
+            URHO3D_LOGERROR("Failed to build tile cache layers");
             return 0;
         }
         else
@@ -883,11 +892,13 @@ void DynamicNavigationMesh::ReleaseTileCache()
     tileCache_ = 0;
 }
 
-void DynamicNavigationMesh::OnNodeSet(Node* node)
+void DynamicNavigationMesh::OnSceneSet(Scene* scene)
 {
     // Subscribe to the scene subsystem update, which will trigger the tile cache to update the nav mesh
-    if (node)
-        SubscribeToEvent(node, E_SCENESUBSYSTEMUPDATE, HANDLER(DynamicNavigationMesh, HandleSceneSubsystemUpdate));
+    if (scene)
+        SubscribeToEvent(scene, E_SCENESUBSYSTEMUPDATE, URHO3D_HANDLER(DynamicNavigationMesh, HandleSceneSubsystemUpdate));
+    else
+        UnsubscribeFromEvent(E_SCENESUBSYSTEMUPDATE);
 }
 
 void DynamicNavigationMesh::AddObstacle(Obstacle* obstacle, bool silent)
@@ -906,7 +917,7 @@ void DynamicNavigationMesh::AddObstacle(Obstacle* obstacle, bool silent)
 
         if (dtStatusFailed(tileCache_->addObstacle(pos, obstacle->GetRadius(), obstacle->GetHeight(), &refHolder)))
         {
-            LOGERROR("Failed to add obstacle");
+            URHO3D_LOGERROR("Failed to add obstacle");
             return;
         }
         obstacle->obstacleId_ = refHolder;
@@ -946,7 +957,7 @@ void DynamicNavigationMesh::RemoveObstacle(Obstacle* obstacle, bool silent)
 
         if (dtStatusFailed(tileCache_->removeObstacle(obstacle->obstacleId_)))
         {
-            LOGERROR("Failed to remove obstacle");
+            URHO3D_LOGERROR("Failed to remove obstacle");
             return;
         }
         obstacle->obstacleId_ = 0;

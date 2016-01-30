@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -119,29 +119,47 @@ void UIBatch::AddQuad(int x, int y, int width, int height, int texOffsetX, int t
     float* dest = &(vertexData_->at(begin));
     vertexEnd_ = vertexData_->size();
 
-    dest[0] = left; dest[1] = top; dest[2] = 0.0f;
+    dest[0] = left;
+    dest[1] = top;
+    dest[2] = 0.0f;
     ((unsigned&)dest[3]) = topLeftColor;
-    dest[4] = leftUV; dest[5] = topUV;
+    dest[4] = leftUV;
+    dest[5] = topUV;
 
-    dest[6] = right; dest[7] = top; dest[8] = 0.0f;
+    dest[6] = right;
+    dest[7] = top;
+    dest[8] = 0.0f;
     ((unsigned&)dest[9]) = topRightColor;
-    dest[10] = rightUV; dest[11] = topUV;
+    dest[10] = rightUV;
+    dest[11] = topUV;
 
-    dest[12] = left; dest[13] = bottom; dest[14] = 0.0f;
+    dest[12] = left;
+    dest[13] = bottom;
+    dest[14] = 0.0f;
     ((unsigned&)dest[15]) = bottomLeftColor;
-    dest[16] = leftUV; dest[17] = bottomUV;
+    dest[16] = leftUV;
+    dest[17] = bottomUV;
 
-    dest[18] = right; dest[19] = top; dest[20] = 0.0f;
+    dest[18] = right;
+    dest[19] = top;
+    dest[20] = 0.0f;
     ((unsigned&)dest[21]) = topRightColor;
-    dest[22] = rightUV; dest[23] = topUV;
+    dest[22] = rightUV;
+    dest[23] = topUV;
 
-    dest[24] = right; dest[25] = bottom; dest[26] = 0.0f;
+    dest[24] = right;
+    dest[25] = bottom;
+    dest[26] = 0.0f;
     ((unsigned&)dest[27]) = bottomRightColor;
-    dest[28] = rightUV; dest[29] = bottomUV;
+    dest[28] = rightUV;
+    dest[29] = bottomUV;
 
-    dest[30] = left; dest[31] = bottom; dest[32] = 0.0f;
+    dest[30] = left;
+    dest[31] = bottom;
+    dest[32] = 0.0f;
     ((unsigned&)dest[33]) = bottomLeftColor;
-    dest[34] = leftUV; dest[35] = bottomUV;
+    dest[34] = leftUV;
+    dest[35] = bottomUV;
 }
 
 void UIBatch::AddQuad(const Matrix3x4& transform, int x, int y, int width, int height, int texOffsetX, int texOffsetY,
@@ -183,29 +201,47 @@ void UIBatch::AddQuad(const Matrix3x4& transform, int x, int y, int width, int h
     float* dest = &(vertexData_->at(begin));
     vertexEnd_ = vertexData_->size();
 
-    dest[0] = v1.x_; dest[1] = v1.y_; dest[2] = 0.0f;
+    dest[0] = v1.x_;
+    dest[1] = v1.y_;
+    dest[2] = 0.0f;
     ((unsigned&)dest[3]) = topLeftColor;
-    dest[4] = leftUV; dest[5] = topUV;
+    dest[4] = leftUV;
+    dest[5] = topUV;
 
-    dest[6] = v2.x_; dest[7] = v2.y_; dest[8] = 0.0f;
+    dest[6] = v2.x_;
+    dest[7] = v2.y_;
+    dest[8] = 0.0f;
     ((unsigned&)dest[9]) = topRightColor;
-    dest[10] = rightUV; dest[11] = topUV;
+    dest[10] = rightUV;
+    dest[11] = topUV;
 
-    dest[12] = v3.x_; dest[13] = v3.y_; dest[14] = 0.0f;
+    dest[12] = v3.x_;
+    dest[13] = v3.y_;
+    dest[14] = 0.0f;
     ((unsigned&)dest[15]) = bottomLeftColor;
-    dest[16] = leftUV; dest[17] = bottomUV;
+    dest[16] = leftUV;
+    dest[17] = bottomUV;
 
-    dest[18] = v2.x_; dest[19] = v2.y_; dest[20] = 0.0f;
+    dest[18] = v2.x_;
+    dest[19] = v2.y_;
+    dest[20] = 0.0f;
     ((unsigned&)dest[21]) = topRightColor;
-    dest[22] = rightUV; dest[23] = topUV;
+    dest[22] = rightUV;
+    dest[23] = topUV;
 
-    dest[24] = v4.x_; dest[25] = v4.y_; dest[26] = 0.0f;
+    dest[24] = v4.x_;
+    dest[25] = v4.y_;
+    dest[26] = 0.0f;
     ((unsigned&)dest[27]) = bottomRightColor;
-    dest[28] = rightUV; dest[29] = bottomUV;
+    dest[28] = rightUV;
+    dest[29] = bottomUV;
 
-    dest[30] = v3.x_; dest[31] = v3.y_; dest[32] = 0.0f;
+    dest[30] = v3.x_;
+    dest[31] = v3.y_;
+    dest[32] = 0.0f;
     ((unsigned&)dest[33]) = bottomLeftColor;
-    dest[34] = leftUV; dest[35] = bottomUV;
+    dest[34] = leftUV;
+    dest[35] = bottomUV;
 
 }
 

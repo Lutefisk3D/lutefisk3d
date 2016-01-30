@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,14 +37,14 @@ class PhysicsWorld2D;
 enum BodyType2D
 {
     BT_STATIC = b2_staticBody,
-    BT_DYNAMIC = b2_dynamicBody,
     BT_KINEMATIC = b2_kinematicBody,
+    BT_DYNAMIC = b2_dynamicBody
 };
 
 /// 2D rigid body component.
 class RigidBody2D : public Component
 {
-    OBJECT(RigidBody2D);
+    URHO3D_OBJECT(RigidBody2D,Component);
 
 public:
     /// Construct.
@@ -55,17 +55,17 @@ public:
     static void RegisterObject(Context* context);
 
     /// Handle enabled/disabled state change.
-    virtual void OnSetEnabled();
+    virtual void OnSetEnabled() override;
 
     /// Set body type.
     void SetBodyType(BodyType2D bodyType);
-    /// Set Mass.
+    /// Set mass.
     void SetMass(float mass);
     /// Set inertia.
     void SetInertia(float inertia);
     /// Set mass center.
     void SetMassCenter(const Vector2& center);
-    /// Use fixture mass (default is true).
+    /// Set whether to automatically calculate mass and inertia from collision shapes. Default true.
     void SetUseFixtureMass(bool useFixtureMass);
     /// Set linear damping.
     void SetLinearDamping(float linearDamping);
@@ -75,7 +75,7 @@ public:
     void SetAllowSleep(bool allowSleep);
     /// Set fixed rotation.
     void SetFixedRotation(bool fixedRotation);
-    /// Set bullet.
+    /// Set bullet mode.
     void SetBullet(bool bullet);
     /// Set gravity scale.
     void SetGravityScale(float gravityScale);
@@ -101,7 +101,7 @@ public:
     /// Release body.
     void ReleaseBody();
 
-    /// Apply world transform.
+    /// Apply world transform. Called by PhysicsWorld2D.
     void ApplyWorldTransform();
     /// Add collision shape.
     void AddCollisionShape2D(CollisionShape2D* collisionShape);
@@ -114,13 +114,13 @@ public:
 
     /// Return body type.
     BodyType2D GetBodyType() const { return (BodyType2D)bodyDef_.type; }
-    /// Return Mass.
+    /// Return mass.
     float GetMass() const;
     /// Return inertia.
     float GetInertia() const;
     /// Return mass center.
     Vector2 GetMassCenter() const;
-    /// Return use fixture mass.
+    /// Return whether to calculate mass and inertia from collision shapes automatically.
     bool GetUseFixtureMass() const { return useFixtureMass_; }
     /// Return linear damping.
     float GetLinearDamping() const { return bodyDef_.linearDamping; }
@@ -130,7 +130,7 @@ public:
     bool IsAllowSleep() const { return bodyDef_.allowSleep; }
     /// Return fixed rotation.
     bool IsFixedRotation() const { return bodyDef_.fixedRotation; }
-    /// Return bullet.
+    /// Return bullet mode.
     bool IsBullet() const { return bodyDef_.bullet; }
     /// Return gravity scale.
     float GetGravityScale() const { return bodyDef_.gravityScale; }
@@ -146,9 +146,11 @@ public:
 
 private:
     /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node);
+    virtual void OnNodeSet(Node* node) override;
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene *scene) override;
     /// Handle node transform being dirtied.
-    virtual void OnMarkedDirty(Node* node);
+    virtual void OnMarkedDirty(Node* node) override;
 
     /// Physics world.
     WeakPtr<PhysicsWorld2D> physicsWorld_;
@@ -156,17 +158,15 @@ private:
     b2BodyDef bodyDef_;
     /// Box2D mass data.
     b2MassData massData_;
-    /// Use fixture mass.
+    /// Use fixture mass (calculate mass & inertia from collision shapes automatically.)
     bool useFixtureMass_;
     /// Box2D body.
     b2Body* body_;
     /// Collision shapes.
     std::set< WeakPtr<CollisionShape2D> > collisionShapes_;
-    //std::vector<WeakPtr<CollisionShape2D> > collisionShapes_;
     /// Constraints.
 
     std::set< WeakPtr<Constraint2D> > constraints_;
-    //std::vector<WeakPtr<Constraint2D> > constraints_;
 };
 
 }

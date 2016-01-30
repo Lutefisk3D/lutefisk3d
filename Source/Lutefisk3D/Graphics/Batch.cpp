@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,9 @@ namespace Urho3D
 
 inline bool CompareBatchesState(Batch* lhs, Batch* rhs)
 {
-    if (lhs->sortKey_ != rhs->sortKey_)
+    if (lhs->renderOrder_ != rhs->renderOrder_)
+        return lhs->renderOrder_ < rhs->renderOrder_;
+    else if (lhs->sortKey_ != rhs->sortKey_)
         return lhs->sortKey_ < rhs->sortKey_;
     else
         return lhs->distance_ < rhs->distance_;
@@ -53,7 +55,9 @@ inline bool CompareBatchesState(Batch* lhs, Batch* rhs)
 
 inline bool CompareBatchesFrontToBack(Batch* lhs, Batch* rhs)
 {
-    if (lhs->distance_ != rhs->distance_)
+    if (lhs->renderOrder_ != rhs->renderOrder_)
+        return lhs->renderOrder_ < rhs->renderOrder_;
+    else if (lhs->distance_ != rhs->distance_)
         return lhs->distance_ < rhs->distance_;
     else
         return lhs->sortKey_ < rhs->sortKey_;
@@ -61,7 +65,9 @@ inline bool CompareBatchesFrontToBack(Batch* lhs, Batch* rhs)
 
 inline bool CompareBatchesBackToFront(Batch* lhs, Batch* rhs)
 {
-    if (lhs->distance_ != rhs->distance_)
+    if (lhs->renderOrder_ != rhs->renderOrder_)
+        return lhs->renderOrder_ < rhs->renderOrder_;
+    else if (lhs->distance_ != rhs->distance_)
         return lhs->distance_ > rhs->distance_;
     else
         return lhs->sortKey_ < rhs->sortKey_;
@@ -70,6 +76,11 @@ inline bool CompareBatchesBackToFront(Batch* lhs, Batch* rhs)
 inline bool CompareInstancesFrontToBack(const InstanceData& lhs, const InstanceData& rhs)
 {
     return lhs.distance_ < rhs.distance_;
+}
+
+inline bool CompareBatchGroupOrder(BatchGroup* lhs, BatchGroup* rhs)
+{
+    return lhs->renderOrder_ < rhs->renderOrder_;
 }
 
 void CalculateShadowMatrix(Matrix4& dest, LightBatchQueue* queue, unsigned split, Renderer* renderer, const Vector3& translation)
@@ -90,16 +101,16 @@ void CalculateShadowMatrix(Matrix4& dest, LightBatchQueue* queue, unsigned split
     float height = (float)shadowMap->GetHeight();
 
     Vector3 offset(
-        (float)viewport.left_ / width,
-        (float)viewport.top_ / height,
-        0.0f
-    );
+                (float)viewport.left_ / width,
+                (float)viewport.top_ / height,
+                0.0f
+                );
 
     Vector3 scale(
-        0.5f * (float)viewport.Width() / width,
-        0.5f * (float)viewport.Height() / height,
-        1.0f
-    );
+                0.5f * (float)viewport.Width() / width,
+                0.5f * (float)viewport.Height() / height,
+                1.0f
+                );
     // Add pixel-perfect offset if needed by the graphics API
     const Vector2& pixelUVOffset = Graphics::GetPixelUVOffset();
     offset.x_ += scale.x_ + pixelUVOffset.x_ / width;
@@ -110,7 +121,7 @@ void CalculateShadowMatrix(Matrix4& dest, LightBatchQueue* queue, unsigned split
     offset.y_ = 1.0f - offset.y_;
 
     // If using 4 shadow samples, offset the position diagonally by half pixel
-    if (renderer->GetShadowQuality() & SHADOWQUALITY_HIGH_16BIT)
+    if (renderer->GetShadowQuality() == SHADOWQUALITY_PCF_16BIT || renderer->GetShadowQuality() == SHADOWQUALITY_PCF_24BIT)
     {
         offset.x_ -= 0.5f / width;
         offset.y_ -= 0.5f / height;
@@ -156,17 +167,17 @@ void Batch::CalculateSortKey()
     unsigned geometryID = (*((unsigned*)&geometry_) / sizeof(Geometry)) & 0xffff;
 
     sortKey_ = (((unsigned long long)shaderID) << 48) | (((unsigned long long)lightQueueID) << 32) |
-        (((unsigned long long)materialID) << 16) | geometryID;
+            (((unsigned long long)materialID) << 16) | geometryID;
 }
 
-void Batch::Prepare(View* view, bool setModelTransform, bool allowDepthWrite) const
+void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool allowDepthWrite) const
 {
     if (!vertexShader_ || !pixelShader_)
         return;
 
     Graphics* graphics = view->GetGraphics();
     Renderer* renderer = view->GetRenderer();
-    Node* cameraNode = camera_ ? camera_->GetNode() : nullptr;
+    Node* cameraNode = camera ? camera->GetNode() : nullptr;
     Light* light = lightQueue_ ? lightQueue_->light_ : nullptr;
     Texture2D* shadowMap = lightQueue_ ? lightQueue_->shadowMap_ : nullptr;
     // Set shaders first. The available shader parameters and their register/uniform positions depend on the currently set shaders
@@ -188,14 +199,14 @@ void Batch::Prepare(View* view, bool setModelTransform, bool allowDepthWrite) co
         graphics->SetBlendMode(blend);
 
         bool isShadowPass = pass_->GetIndex() == Technique::shadowPassIndex;
-        renderer->SetCullMode(isShadowPass ? material_->GetShadowCullMode() : material_->GetCullMode(), camera_);
+        renderer->SetCullMode(isShadowPass ? material_->GetShadowCullMode() : material_->GetCullMode(), camera);
         if (!isShadowPass)
         {
             const BiasParameters& depthBias = material_->GetDepthBias();
             graphics->SetDepthBias(depthBias.constantBias_, depthBias.slopeScaledBias_);
         }
         // Use the "least filled" fill mode combined from camera & material
-        graphics->SetFillMode((FillMode)(Max(camera_->GetFillMode(), material_->GetFillMode())));
+        graphics->SetFillMode((FillMode)(Max(camera->GetFillMode(), material_->GetFillMode())));
         graphics->SetDepthTest(pass_->GetDepthTestMode());
         graphics->SetDepthWrite(pass_->GetDepthWrite() && allowDepthWrite);
     }
@@ -206,14 +217,14 @@ void Batch::Prepare(View* view, bool setModelTransform, bool allowDepthWrite) co
         view->SetGlobalShaderParameters();
 
     // Set camera & viewport shader parameters
-    unsigned cameraHash = (unsigned)(size_t)camera_;
+    unsigned cameraHash = (unsigned)(size_t)camera;
     IntRect viewport = graphics->GetViewport();
     IntVector2 viewSize = IntVector2(viewport.Width(), viewport.Height());
     unsigned viewportHash = viewSize.x_ | (viewSize.y_ << 16);
 
     if (graphics->NeedParameterUpdate(SP_CAMERA, reinterpret_cast<const void*>(cameraHash + viewportHash)))
     {
-        view->SetCameraShaderParameters(camera_, true);
+        view->SetCameraShaderParameters(camera, true);
         // During renderpath commands the G-Buffer or viewport texture is assumed to always be viewport-sized
         view->SetGBufferShaderParameters(viewSize, IntRect(0, 0, viewSize.x_, viewSize.y_));
     }
@@ -224,7 +235,7 @@ void Batch::Prepare(View* view, bool setModelTransform, bool allowDepthWrite) co
         if (geometryType_ == GEOM_SKINNED)
         {
             graphics->SetShaderParameter(VSP_SKINMATRICES, reinterpret_cast<const float*>(worldTransform_),
-                12 * numWorldTransforms_);
+                                         12 * numWorldTransforms_);
         }
         else
             graphics->SetShaderParameter(VSP_MODEL, *worldTransform_);
@@ -262,7 +273,7 @@ void Batch::Prepare(View* view, bool setModelTransform, bool allowDepthWrite) co
         graphics->SetShaderParameter(PSP_AMBIENTCOLOR, zone_->GetAmbientColor());
         graphics->SetShaderParameter(PSP_FOGCOLOR, overrideFogColorToBlack ? Color::BLACK : zone_->GetFogColor());
 
-        float farClip = camera_->GetFarClip();
+        float farClip = camera->GetFarClip();
         float fogStart = Min(zone_->GetFogStart(), farClip);
         float fogEnd = Min(zone_->GetFogEnd(), farClip);
         if (fogStart >= fogEnd * (1.0f - M_LARGE_EPSILON))
@@ -285,37 +296,37 @@ void Batch::Prepare(View* view, bool setModelTransform, bool allowDepthWrite) co
     if (lightQueue_)
     {
         if (light && graphics->NeedParameterUpdate(SP_LIGHT, lightQueue_))
-    {
-        // Deferred light volume batches operate in a camera-centered space. Detect from material, zone & pass all being null
-        bool isLightVolume = !material_ && !pass_ && !zone_;
+        {
+            // Deferred light volume batches operate in a camera-centered space. Detect from material, zone & pass all being null
+            bool isLightVolume = !material_ && !pass_ && !zone_;
 
-        Matrix3x4 cameraEffectiveTransform = camera_->GetEffectiveWorldTransform();
-        Vector3 cameraEffectivePos = cameraEffectiveTransform.Translation();
+            Matrix3x4 cameraEffectiveTransform = camera->GetEffectiveWorldTransform();
+            Vector3 cameraEffectivePos = cameraEffectiveTransform.Translation();
 
-        Node* lightNode = light->GetNode();
-        Matrix3 lightWorldRotation = lightNode->GetWorldRotation().RotationMatrix();
+            Node* lightNode = light->GetNode();
+            Matrix3 lightWorldRotation = lightNode->GetWorldRotation().RotationMatrix();
 
-        graphics->SetShaderParameter(VSP_LIGHTDIR, lightWorldRotation * Vector3::BACK);
+            graphics->SetShaderParameter(VSP_LIGHTDIR, lightWorldRotation * Vector3::BACK);
 
-        float atten = 1.0f / Max(light->GetRange(), M_EPSILON);
-        graphics->SetShaderParameter(VSP_LIGHTPOS, Vector4(lightNode->GetWorldPosition(), atten));
+            float atten = 1.0f / Max(light->GetRange(), M_EPSILON);
+            graphics->SetShaderParameter(VSP_LIGHTPOS, Vector4(lightNode->GetWorldPosition(), atten));
 
             if (graphics->HasShaderParameter(VSP_LIGHTMATRICES))
-        {
-            switch (light->GetLightType())
             {
-            case LIGHT_DIRECTIONAL:
+                switch (light->GetLightType())
+                {
+                case LIGHT_DIRECTIONAL:
                 {
                     Matrix4 shadowMatrices[MAX_CASCADE_SPLITS];
-                    unsigned numSplits = Min(MAX_CASCADE_SPLITS, (int)lightQueue_->shadowSplits_.size());
+                        unsigned numSplits = (unsigned)Min(MAX_CASCADE_SPLITS, (int)lightQueue_->shadowSplits_.size());
                     for (unsigned i = 0; i < numSplits; ++i)
                         CalculateShadowMatrix(shadowMatrices[i], lightQueue_, i, renderer, Vector3::ZERO);
 
                     graphics->SetShaderParameter(VSP_LIGHTMATRICES, shadowMatrices[0].Data(), 16 * numSplits);
                 }
-                break;
+                    break;
 
-            case LIGHT_SPOT:
+                case LIGHT_SPOT:
                 {
                     Matrix4 shadowMatrices[2];
 
@@ -326,52 +337,52 @@ void Batch::Prepare(View* view, bool setModelTransform, bool allowDepthWrite) co
 
                     graphics->SetShaderParameter(VSP_LIGHTMATRICES, shadowMatrices[0].Data(), isShadowed ? 32 : 16);
                 }
-                break;
+                    break;
 
-            case LIGHT_POINT:
+                case LIGHT_POINT:
                 {
                     Matrix4 lightVecRot(lightNode->GetWorldRotation().RotationMatrix());
                     // HLSL compiler will pack the parameters as if the matrix is only 3x4, so must be careful to not overwrite
                     // the next parameter
                     graphics->SetShaderParameter(VSP_LIGHTMATRICES, lightVecRot.Data(), 16);
                 }
-                break;
+                    break;
+                }
             }
-        }
 
-        float fade = 1.0f;
-        float fadeEnd = light->GetDrawDistance();
-        float fadeStart = light->GetFadeDistance();
+            float fade = 1.0f;
+            float fadeEnd = light->GetDrawDistance();
+            float fadeStart = light->GetFadeDistance();
 
-        // Do fade calculation for light if both fade & draw distance defined
-        if (light->GetLightType() != LIGHT_DIRECTIONAL && fadeEnd > 0.0f && fadeStart > 0.0f && fadeStart < fadeEnd)
-            fade = Min(1.0f - (light->GetDistance() - fadeStart) / (fadeEnd - fadeStart), 1.0f);
+            // Do fade calculation for light if both fade & draw distance defined
+            if (light->GetLightType() != LIGHT_DIRECTIONAL && fadeEnd > 0.0f && fadeStart > 0.0f && fadeStart < fadeEnd)
+                fade = Min(1.0f - (light->GetDistance() - fadeStart) / (fadeEnd - fadeStart), 1.0f);
 
-        // Negative lights will use subtract blending, so write absolute RGB values to the shader parameter
-        graphics->SetShaderParameter(PSP_LIGHTCOLOR, Color(light->GetEffectiveColor().Abs(),
-            light->GetEffectiveSpecularIntensity()) * fade);
-        graphics->SetShaderParameter(PSP_LIGHTDIR, lightWorldRotation * Vector3::BACK);
-        graphics->SetShaderParameter(PSP_LIGHTPOS, Vector4((isLightVolume ? (lightNode->GetWorldPosition() -
-            cameraEffectivePos) : lightNode->GetWorldPosition()), atten));
+            // Negative lights will use subtract blending, so write absolute RGB values to the shader parameter
+            graphics->SetShaderParameter(PSP_LIGHTCOLOR, Color(light->GetEffectiveColor().Abs(),
+                                                               light->GetEffectiveSpecularIntensity()) * fade);
+            graphics->SetShaderParameter(PSP_LIGHTDIR, lightWorldRotation * Vector3::BACK);
+            graphics->SetShaderParameter(PSP_LIGHTPOS, Vector4((isLightVolume ? (lightNode->GetWorldPosition() -
+                                                                                 cameraEffectivePos) : lightNode->GetWorldPosition()), atten));
 
             if (graphics->HasShaderParameter(PSP_LIGHTMATRICES))
-        {
-            switch (light->GetLightType())
             {
-            case LIGHT_DIRECTIONAL:
+                switch (light->GetLightType())
+                {
+                case LIGHT_DIRECTIONAL:
                 {
                     Matrix4 shadowMatrices[MAX_CASCADE_SPLITS];
                     unsigned numSplits = Min(MAX_CASCADE_SPLITS, (int)lightQueue_->shadowSplits_.size());
                     for (unsigned i = 0; i < numSplits; ++i)
                     {
                         CalculateShadowMatrix(shadowMatrices[i], lightQueue_, i, renderer, isLightVolume ? cameraEffectivePos :
-                            Vector3::ZERO);
+                                                                                                           Vector3::ZERO);
                     }
                     graphics->SetShaderParameter(PSP_LIGHTMATRICES, shadowMatrices[0].Data(), 16 * numSplits);
                 }
-                break;
+                    break;
 
-            case LIGHT_SPOT:
+                case LIGHT_SPOT:
                 {
                     Matrix4 shadowMatrices[2];
 
@@ -380,92 +391,97 @@ void Batch::Prepare(View* view, bool setModelTransform, bool allowDepthWrite) co
                     if (isShadowed)
                     {
                         CalculateShadowMatrix(shadowMatrices[1], lightQueue_, 0, renderer, isLightVolume ? cameraEffectivePos :
-                            Vector3::ZERO);
+                                                                                                           Vector3::ZERO);
                     }
 
                     graphics->SetShaderParameter(PSP_LIGHTMATRICES, shadowMatrices[0].Data(), isShadowed ? 32 : 16);
                 }
-                break;
+                    break;
 
-            case LIGHT_POINT:
+                case LIGHT_POINT:
                 {
                     Matrix4 lightVecRot(lightNode->GetWorldRotation().RotationMatrix());
                     graphics->SetShaderParameter(PSP_LIGHTMATRICES, lightVecRot.Data(), 16);
                 }
-                break;
-            }
-        }
-
-        // Set shadow mapping shader parameters
-        if (shadowMap)
-        {
-            {
-                // Calculate point light shadow sampling offsets (unrolled cube map)
-                unsigned faceWidth = shadowMap->GetWidth() / 2;
-                unsigned faceHeight = shadowMap->GetHeight() / 3;
-                float width = (float)shadowMap->GetWidth();
-                float height = (float)shadowMap->GetHeight();
-                float mulX = (float)(faceWidth - 3) / width;
-                float mulY = (float)(faceHeight - 3) / height;
-                float addX = 1.5f / width;
-                float addY = 1.5f / height;
-                // If using 4 shadow samples, offset the position diagonally by half pixel
-                if (renderer->GetShadowQuality() & SHADOWQUALITY_HIGH_16BIT)
-                {
-                    addX -= 0.5f / width;
-                    addY -= 0.5f / height;
+                    break;
                 }
-                graphics->SetShaderParameter(PSP_SHADOWCUBEADJUST, Vector4(mulX, mulY, addX, addY));
             }
 
+            // Set shadow mapping shader parameters
+            if (shadowMap)
             {
-                // Calculate shadow camera depth parameters for point light shadows and shadow fade parameters for
-                //  directional light shadows, stored in the same uniform
-                Camera* shadowCamera = lightQueue_->shadowSplits_[0].shadowCamera_;
-                float nearClip = shadowCamera->GetNearClip();
-                float farClip = shadowCamera->GetFarClip();
-                float q = farClip / (farClip - nearClip);
-                float r = -q * nearClip;
+                {
+                    // Calculate point light shadow sampling offsets (unrolled cube map)
+                    unsigned faceWidth = shadowMap->GetWidth() / 2;
+                    unsigned faceHeight = shadowMap->GetHeight() / 3;
+                    float width = (float)shadowMap->GetWidth();
+                    float height = (float)shadowMap->GetHeight();
+                    float mulX = (float)(faceWidth - 3) / width;
+                    float mulY = (float)(faceHeight - 3) / height;
+                    float addX = 1.5f / width;
+                    float addY = 1.5f / height;
+                    // If using 4 shadow samples, offset the position diagonally by half pixel
+                    if (renderer->GetShadowQuality() == SHADOWQUALITY_PCF_16BIT || renderer->GetShadowQuality() == SHADOWQUALITY_PCF_24BIT)
+                    {
+                        addX -= 0.5f / width;
+                        addY -= 0.5f / height;
+                    }
+                    graphics->SetShaderParameter(PSP_SHADOWCUBEADJUST, Vector4(mulX, mulY, addX, addY));
+                }
 
-                const CascadeParameters& parameters = light->GetShadowCascade();
-                float viewFarClip = camera_->GetFarClip();
-                float shadowRange = parameters.GetShadowRange();
-                float fadeStart = parameters.fadeStart_ * shadowRange / viewFarClip;
-                float fadeEnd = shadowRange / viewFarClip;
-                float fadeRange = fadeEnd - fadeStart;
+                {
+                    // Calculate shadow camera depth parameters for point light shadows and shadow fade parameters for
+                    //  directional light shadows, stored in the same uniform
+                    Camera* shadowCamera = lightQueue_->shadowSplits_[0].shadowCamera_;
+                    float nearClip = shadowCamera->GetNearClip();
+                    float farClip = shadowCamera->GetFarClip();
+                    float q = farClip / (farClip - nearClip);
+                    float r = -q * nearClip;
 
-                graphics->SetShaderParameter(PSP_SHADOWDEPTHFADE, Vector4(q, r, fadeStart, 1.0f / fadeRange));
-            }
+                    const CascadeParameters& parameters = light->GetShadowCascade();
+                    float viewFarClip = camera->GetFarClip();
+                    float shadowRange = parameters.GetShadowRange();
+                    float fadeStart = parameters.fadeStart_ * shadowRange / viewFarClip;
+                    float fadeEnd = shadowRange / viewFarClip;
+                    float fadeRange = fadeEnd - fadeStart;
 
-            {
-                float intensity = light->GetShadowIntensity();
-                float fadeStart = light->GetShadowFadeDistance();
-                float fadeEnd = light->GetShadowDistance();
-                if (fadeStart > 0.0f && fadeEnd > 0.0f && fadeEnd > fadeStart)
-                    intensity = Lerp(intensity, 1.0f, Clamp((light->GetDistance() - fadeStart) / (fadeEnd - fadeStart), 0.0f, 1.0f));
-                float pcfValues = (1.0f - intensity);
-                float samples = renderer->GetShadowQuality() >= SHADOWQUALITY_HIGH_16BIT ? 4.0f : 1.0f;
+                    graphics->SetShaderParameter(PSP_SHADOWDEPTHFADE, Vector4(q, r, fadeStart, 1.0f / fadeRange));
+                }
 
-                graphics->SetShaderParameter(PSP_SHADOWINTENSITY, Vector4(pcfValues / samples, intensity, 0.0f, 0.0f));
-            }
+                {
+                    float intensity = light->GetShadowIntensity();
+                    float fadeStart = light->GetShadowFadeDistance();
+                    float fadeEnd = light->GetShadowDistance();
+                    if (fadeStart > 0.0f && fadeEnd > 0.0f && fadeEnd > fadeStart)
+                        intensity = Lerp(intensity, 1.0f, Clamp((light->GetDistance() - fadeStart) / (fadeEnd - fadeStart), 0.0f, 1.0f));
+                    float pcfValues = (1.0f - intensity);
+                    float samples = 1.0f;
+                    if (renderer->GetShadowQuality() == SHADOWQUALITY_PCF_16BIT || renderer->GetShadowQuality() == SHADOWQUALITY_PCF_24BIT)
+                        samples = 4.0f;
 
-            float sizeX = 1.0f / (float)shadowMap->GetWidth();
-            float sizeY = 1.0f / (float)shadowMap->GetHeight();
-            graphics->SetShaderParameter(PSP_SHADOWMAPINVSIZE, Vector4(sizeX, sizeY, 0.0f, 0.0f));
+                    graphics->SetShaderParameter(PSP_SHADOWINTENSITY, Vector4(pcfValues / samples, intensity, 0.0f, 0.0f));
+                }
 
-            Vector4 lightSplits(M_LARGE_VALUE, M_LARGE_VALUE, M_LARGE_VALUE, M_LARGE_VALUE);
-            if (lightQueue_->shadowSplits_.size() > 1)
-                lightSplits.x_ = lightQueue_->shadowSplits_[0].farSplit_ / camera_->GetFarClip();
-            if (lightQueue_->shadowSplits_.size() > 2)
-                lightSplits.y_ = lightQueue_->shadowSplits_[1].farSplit_ / camera_->GetFarClip();
-            if (lightQueue_->shadowSplits_.size() > 3)
-                lightSplits.z_ = lightQueue_->shadowSplits_[2].farSplit_ / camera_->GetFarClip();
+                float sizeX = 1.0f / (float)shadowMap->GetWidth();
+                float sizeY = 1.0f / (float)shadowMap->GetHeight();
+                graphics->SetShaderParameter(PSP_SHADOWMAPINVSIZE, Vector2(sizeX, sizeY));
 
-            graphics->SetShaderParameter(PSP_SHADOWSPLITS, lightSplits);
+                Vector4 lightSplits(M_LARGE_VALUE, M_LARGE_VALUE, M_LARGE_VALUE, M_LARGE_VALUE);
+                if (lightQueue_->shadowSplits_.size() > 1)
+                    lightSplits.x_ = lightQueue_->shadowSplits_[0].farSplit_ / camera->GetFarClip();
+                if (lightQueue_->shadowSplits_.size() > 2)
+                    lightSplits.y_ = lightQueue_->shadowSplits_[1].farSplit_ / camera->GetFarClip();
+                if (lightQueue_->shadowSplits_.size() > 3)
+                    lightSplits.z_ = lightQueue_->shadowSplits_[2].farSplit_ / camera->GetFarClip();
+
+                graphics->SetShaderParameter(PSP_SHADOWSPLITS, lightSplits);
+
+                if (graphics->HasShaderParameter(PSP_VSMSHADOWPARAMS))
+                    graphics->SetShaderParameter(PSP_VSMSHADOWPARAMS, renderer->GetVSMShadowParameters());
             }
         }
         else if (lightQueue_->vertexLights_.size() && graphics->HasShaderParameter(VSP_VERTEXLIGHTS) &&
-            graphics->NeedParameterUpdate(SP_LIGHT, lightQueue_))
+                 graphics->NeedParameterUpdate(SP_LIGHT, lightQueue_))
         {
             Vector4 vertexLights[MAX_VERTEX_LIGHTS * 3];
             const std::vector<Light*>& lights = lightQueue_->vertexLights_;
@@ -556,17 +572,17 @@ void Batch::Prepare(View* view, bool setModelTransform, bool allowDepthWrite) co
     }
 
     // Set zone texture if necessary
-    #ifdef DESKTOP_GRAPHICS
+#ifdef DESKTOP_GRAPHICS
     if (zone_ && graphics->HasTextureUnit(TU_ZONE))
         graphics->SetTexture(TU_ZONE, zone_->GetZoneTexture());
-    #endif
+#endif
 }
 
-void Batch::Draw(View* view, bool allowDepthWrite) const
+void Batch::Draw(View* view, Camera* camera, bool allowDepthWrite) const
 {
     if (!geometry_->IsEmpty())
     {
-        Prepare(view, true, allowDepthWrite);
+        Prepare(view, camera, true, allowDepthWrite);
         geometry_->Draw(view->GetGraphics());
     }
 }
@@ -587,7 +603,7 @@ void BatchGroup::SetTransforms(void* lockedData, unsigned& freeIndex)
     freeIndex += instances_.size();
 }
 
-void BatchGroup::Draw(View* view, bool allowDepthWrite) const
+void BatchGroup::Draw(View* view, Camera* camera, bool allowDepthWrite) const
 {
     Graphics* graphics = view->GetGraphics();
     Renderer* renderer = view->GetRenderer();
@@ -598,7 +614,7 @@ void BatchGroup::Draw(View* view, bool allowDepthWrite) const
         VertexBuffer* instanceBuffer = renderer->GetInstancingBuffer();
         if (!instanceBuffer || geometryType_ != GEOM_INSTANCED || startIndex_ == M_MAX_UNSIGNED)
         {
-            Batch::Prepare(view, false, allowDepthWrite);
+            Batch::Prepare(view, camera, false, allowDepthWrite);
 
             graphics->SetIndexBuffer(geometry_->GetIndexBuffer());
             graphics->SetVertexBuffers(geometry_->GetVertexBuffers(), geometry_->GetVertexElementMasks());
@@ -609,25 +625,25 @@ void BatchGroup::Draw(View* view, bool allowDepthWrite) const
                     graphics->SetShaderParameter(VSP_MODEL, *instances_[i].worldTransform_);
 
                 graphics->Draw(geometry_->GetPrimitiveType(), geometry_->GetIndexStart(), geometry_->GetIndexCount(),
-                    geometry_->GetVertexStart(), geometry_->GetVertexCount());
+                               geometry_->GetVertexStart(), geometry_->GetVertexCount());
             }
         }
         else
         {
-            Batch::Prepare(view, false, allowDepthWrite);
+            Batch::Prepare(view, camera, false, allowDepthWrite);
 
             // Get the geometry vertex buffers, then add the instancing stream buffer
             // Hack: use a const_cast to avoid dynamic allocation of new temp vectors
             std::vector<SharedPtr<VertexBuffer> >& vertexBuffers = const_cast<std::vector<SharedPtr<VertexBuffer> >&>
-                (geometry_->GetVertexBuffers());
+                    (geometry_->GetVertexBuffers());
             std::vector<unsigned>& elementMasks = const_cast<std::vector<unsigned>&>(geometry_->GetVertexElementMasks());
             vertexBuffers.push_back(SharedPtr<VertexBuffer>(instanceBuffer));
             elementMasks.push_back(instanceBuffer->GetElementMask());
 
-                graphics->SetIndexBuffer(geometry_->GetIndexBuffer());
-                graphics->SetVertexBuffers(vertexBuffers, elementMasks, startIndex_);
-                graphics->DrawInstanced(geometry_->GetPrimitiveType(), geometry_->GetIndexStart(), geometry_->GetIndexCount(),
-                    geometry_->GetVertexStart(), geometry_->GetVertexCount(), instances_.size());
+            graphics->SetIndexBuffer(geometry_->GetIndexBuffer());
+            graphics->SetVertexBuffers(vertexBuffers, elementMasks, startIndex_);
+            graphics->DrawInstanced(geometry_->GetPrimitiveType(), geometry_->GetIndexStart(), geometry_->GetIndexCount(),
+                                    geometry_->GetVertexStart(), geometry_->GetVertexCount(), instances_.size());
 
             // Remove the instancing buffer & element mask now
             vertexBuffers.pop_back();
@@ -655,12 +671,14 @@ void BatchQueue::SortBackToFront()
 
     std::sort(sortedBatches_.begin(), sortedBatches_.end(), CompareBatchesBackToFront);
 
-    // Do not actually sort batch groups, just list them
+
     sortedBatchGroups_.resize(batchGroupStorage_.size());
 
     unsigned index = 0;
     for (BatchGroup & elem: batchGroupStorage_)
         sortedBatchGroups_[index++] = &elem;
+
+    std::sort(sortedBatchGroups_.begin(), sortedBatchGroups_.end(), CompareBatchGroupOrder);
 }
 
 void BatchQueue::SortFrontToBack()
@@ -701,11 +719,6 @@ void BatchQueue::SortFrontToBack()
 
 void BatchQueue::SortFrontToBack2Pass(std::vector<Batch*>& batches)
 {
-    // Mobile devices likely use a tiled deferred approach, with which front-to-back sorting is irrelevant. The 2-pass
-    // method is also time consuming, so just sort with state having priority
-    #ifdef GL_ES_VERSION_2_0
-    std::sort(batches.begin(), batches.end(), CompareBatchesState);
-    #else
     // For desktop, first sort by distance and remap shader/material/geometry IDs in the sort key
     std::sort(batches.begin(), batches.end(), CompareBatchesFrontToBack);
 
@@ -747,7 +760,7 @@ void BatchQueue::SortFrontToBack2Pass(std::vector<Batch*>& batches)
             ++freeGeometryID;
         }
 
-        batch->sortKey_ = (((unsigned long long)shaderID) << 32) || (((unsigned long long)materialID) << 16) | geometryID;
+        batch->sortKey_ = (((unsigned long long)shaderID) << 32) | (((unsigned long long)materialID) << 16) | geometryID;
     }
 
     shaderRemapping_.clear();
@@ -756,7 +769,6 @@ void BatchQueue::SortFrontToBack2Pass(std::vector<Batch*>& batches)
 
     // Finally sort again with the rewritten ID's
     std::sort(batches.begin(), batches.end(), CompareBatchesState);
-    #endif
 }
 
 void BatchQueue::SetTransforms(void* lockedData, unsigned& freeIndex)
@@ -765,7 +777,7 @@ void BatchQueue::SetTransforms(void* lockedData, unsigned& freeIndex)
         elem.SetTransforms(lockedData, freeIndex);
 }
 
-void BatchQueue::Draw(View* view, bool markToStencil, bool usingLightOptimization, bool allowDepthWrite) const
+void BatchQueue::Draw(View* view, Camera* camera, bool markToStencil, bool usingLightOptimization, bool allowDepthWrite) const
 {
     Graphics* graphics = view->GetGraphics();
     Renderer* renderer = view->GetRenderer();
@@ -787,7 +799,7 @@ void BatchQueue::Draw(View* view, bool markToStencil, bool usingLightOptimizatio
         if (markToStencil)
             graphics->SetStencilTest(true, CMP_ALWAYS, OP_REF, OP_KEEP, OP_KEEP, group->lightMask_);
 
-        group->Draw(view, allowDepthWrite);
+        group->Draw(view, camera, allowDepthWrite);
     }
     // Non-instanced
     for (Batch* batch : sortedBatches_)
@@ -799,12 +811,12 @@ void BatchQueue::Draw(View* view, bool markToStencil, bool usingLightOptimizatio
         {
             // If drawing an alpha batch, we can optimize fillrate by scissor test
             if (!batch->isBase_ && batch->lightQueue_)
-                renderer->OptimizeLightByScissor(batch->lightQueue_->light_, batch->camera_);
+                renderer->OptimizeLightByScissor(batch->lightQueue_->light_, camera);
             else
                 graphics->SetScissorTest(false);
         }
 
-        batch->Draw(view, allowDepthWrite);
+        batch->Draw(view, camera, allowDepthWrite);
     }
 }
 
@@ -813,7 +825,7 @@ unsigned BatchQueue::GetNumInstances() const
     unsigned total = 0;
     for (const BatchGroup & elem : batchGroupStorage_)
     {
-       if (elem.geometryType_ == GEOM_INSTANCED)
+        if (elem.geometryType_ == GEOM_INSTANCED)
             total += elem.instances_.size();
     }
 

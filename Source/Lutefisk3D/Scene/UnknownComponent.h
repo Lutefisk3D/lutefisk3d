@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 namespace Urho3D
 {
-
+class JSONValue;
 /// Placeholder for allowing unregistered components to be loaded & saved along with scenes.
 class UnknownComponent : public Component
 {
@@ -47,10 +47,14 @@ public:
     virtual bool Load(Deserializer& source, bool setInstanceDefault = false);
     /// Load from XML data. Return true if successful.
     virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false);
+    /// Load from JSON data. Return true if successful.
+    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
     /// Save as binary data. Return true if successful.
     virtual bool Save(Serializer& dest) const;
     /// Save as XML data. Return true if successful.
     virtual bool SaveXML(XMLElement& dest) const;
+    /// Save as JSON data. Return true if successful.
+    virtual bool SaveJSON(JSONValue& dest) const override;
 
     /// Initialize the type name. Called by Node when loading.
     void SetTypeName(const QString& typeName);
@@ -65,9 +69,15 @@ public:
     bool GetUseXML() const { return useXML_; }
 
     /// Return static type.
-    static StringHash GetTypeStatic() { static const StringHash typeStatic("UnknownComponent"); return typeStatic; } \
+    static StringHash GetTypeStatic() {
+        static const StringHash typeStatic("UnknownComponent");
+        return typeStatic;
+    }
     /// Return static type name.
-    static const QString& GetTypeNameStatic() { static const QString typeNameStatic("UnknownComponent"); return typeNameStatic; } \
+    static const QString& GetTypeNameStatic() {
+        static const QString typeNameStatic("UnknownComponent");
+        return typeNameStatic;
+    }
 
 private:
     /// Type of stored component.
@@ -80,8 +90,8 @@ private:
     QStringList xmlAttributes_;
     /// Binary attributes.
     std::vector<unsigned char> binaryAttributes_;
-    /// Flag of whether was loaded using XML data.
+    /// Flag of whether was loaded using XML/JSON data.
     bool useXML_;
 };
 
-}
+} // namespace Urho3D

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -169,21 +169,14 @@ static const unsigned short spotLightIndexData[] =
     7, 6, 5
 };
 
-static const char* shadowVariations[] =
-{
-    // No specific hardware shadow compare variation on OpenGL, it is always supported
-    "LQSHADOW ",
-    "LQSHADOW ",
-    "",
-    ""
-};
 
 static const char* geometryVSVariations[] =
 {
     "",
     "SKINNED ",
     "INSTANCED ",
-    "BILLBOARD "
+    "BILLBOARD ",
+    "DIRBILLBOARD "
 };
 
 static const char* lightVSVariations[] =
@@ -245,12 +238,16 @@ static const unsigned MAX_BUFFER_AGE = 1000;
 Renderer::Renderer(Context* context) :
     Object(context),
     defaultZone_(new Zone(context)),
+    shadowMapFilterInstance_(0),
+    shadowMapFilter_(0),
     textureAnisotropy_(4),
     textureFilterMode_(FILTER_TRILINEAR),
     textureQuality_(QUALITY_HIGH),
     materialQuality_(QUALITY_HIGH),
     shadowMapSize_(1024),
-    shadowQuality_(SHADOWQUALITY_HIGH_16BIT),
+    shadowQuality_(SHADOWQUALITY_PCF_16BIT),
+    shadowSoftness_(2.0f),
+    vsmShadowParams_(0.0000001f, 0.2f),
     maxShadowMaps_(1),
     minInstances_(2),
     maxSortedInstances_(1000),
@@ -267,11 +264,12 @@ Renderer::Renderer(Context* context) :
     drawShadows_(true),
     reuseShadowMaps_(true),
     dynamicInstancing_(true),
+    threadedOcclusion_(false),
     shadersDirty_(true),
     initialized_(false),
     resetViews_(false)
 {
-    SubscribeToEvent(E_SCREENMODE, HANDLER(Renderer, HandleScreenMode));
+    SubscribeToEvent(E_SCREENMODE, URHO3D_HANDLER(Renderer, HandleScreenMode));
 
     // Try to initialize right now, but skip if screen mode is not yet set
     Initialize();
@@ -374,32 +372,61 @@ void Renderer::SetShadowMapSize(int size)
     }
 }
 
-void Renderer::SetShadowQuality(int quality)
+void Renderer::SetShadowQuality(ShadowQuality quality)
 {
     if (!graphics_)
         return;
 
-    quality &= SHADOWQUALITY_HIGH_24BIT;
 
     // If no hardware PCF, do not allow to select one-sample quality
     if (!graphics_->GetHardwareShadowSupport())
-        quality |= SHADOWQUALITY_HIGH_16BIT;
-    if (0==(unsigned)graphics_->GetHiresShadowMapFormat())
-        quality &= SHADOWQUALITY_HIGH_16BIT;
+    {
+        if (quality == SHADOWQUALITY_SIMPLE_16BIT)
+            quality = SHADOWQUALITY_PCF_16BIT;
 
+        if (quality == SHADOWQUALITY_SIMPLE_24BIT)
+            quality = SHADOWQUALITY_PCF_24BIT;
+    }
+    // if high resolution is not allowed
+    if (0==graphics_->GetHiresShadowMapFormat())
+    {
+        if (quality == SHADOWQUALITY_SIMPLE_24BIT)
+            quality = SHADOWQUALITY_SIMPLE_16BIT;
+
+        if (quality == SHADOWQUALITY_PCF_24BIT)
+            quality = SHADOWQUALITY_PCF_16BIT;
+    }
     if (quality != shadowQuality_)
     {
         shadowQuality_ = quality;
         shadersDirty_ = true;
+        if (quality == SHADOWQUALITY_BLUR_VSM)
+            SetShadowMapFilter(this, static_cast<ShadowMapFilter>(&Renderer::BlurShadowMap));
+        else
+            SetShadowMapFilter(0, 0);
         ResetShadowMaps();
     }
 }
 
+void Renderer::SetShadowSoftness(float shadowSoftness)
+{
+    shadowSoftness_ = Max(shadowSoftness, 0.0f);
+}
+
+void Renderer::SetVSMShadowParameters(float minVariance, float lightBleedingReduction)
+{
+    vsmShadowParams_.x_ = Max(minVariance, 0.0f);
+    vsmShadowParams_.y_ = Clamp(lightBleedingReduction, 0.0f, 1.0f);
+}
+
+void Renderer::SetShadowMapFilter(Object* instance, ShadowMapFilter functionPtr)
+{
+    shadowMapFilterInstance_ = instance;
+    shadowMapFilter_ = functionPtr;
+}
+
 void Renderer::SetReuseShadowMaps(bool enable)
 {
-    if (enable == reuseShadowMaps_)
-        return;
-
     reuseShadowMaps_ = enable;
 }
 
@@ -461,11 +488,24 @@ void Renderer::SetOccluderSizeThreshold(float screenSize)
     occluderSizeThreshold_ = Max(screenSize, 0.0f);
 }
 
+void Renderer::SetThreadedOcclusion(bool enable)
+{
+    if (enable != threadedOcclusion_)
+    {
+        threadedOcclusion_ = enable;
+        occlusionBuffers_.clear();
+    }
+}
 void Renderer::ReloadShaders()
 {
     shadersDirty_ = true;
 }
 
+void Renderer::ApplyShadowMapFilter(View* view, Texture2D* shadowMap)
+{
+    if (shadowMapFilterInstance_ && shadowMapFilter_)
+        (shadowMapFilterInstance_->*shadowMapFilter_)(view, shadowMap);
+}
 Viewport* Renderer::GetViewport(unsigned index) const
 {
     return index < viewports_.size() ? viewports_[index] : (Viewport*)nullptr;
@@ -483,8 +523,12 @@ unsigned Renderer::GetNumGeometries(bool allViews) const
 
     for (unsigned i = 0; i < lastView; ++i)
     {
-        if (views_[i])
-            numGeometries += views_[i]->GetGeometries().size();
+        // Use the source view's statistics if applicable
+        View* view = GetActualView(views_[i]);
+        if (!view)
+            continue;
+
+        numGeometries += view->GetGeometries().size();
     }
 
     return numGeometries;
@@ -497,8 +541,11 @@ unsigned Renderer::GetNumLights(bool allViews) const
 
     for (unsigned i = 0; i < lastView; ++i)
     {
-        if (views_[i])
-            numLights += views_[i]->GetLights().size();
+        View* view = GetActualView(views_[i]);
+        if (!view)
+            continue;
+
+        numLights += view->GetLights().size();
     }
 
     return numLights;
@@ -511,10 +558,11 @@ unsigned Renderer::GetNumShadowMaps(bool allViews) const
 
     for (unsigned i = 0; i < lastView; ++i)
     {
-        if (!views_[i])
+        View* view = GetActualView(views_[i]);
+        if (!view)
             continue;
 
-        const std::vector<LightBatchQueue>& lightQueues = views_[i]->GetLightQueues();
+        const std::vector<LightBatchQueue>& lightQueues = view->GetLightQueues();
 
         for (const LightBatchQueue & lightQueue : lightQueues)
         {
@@ -533,8 +581,11 @@ unsigned Renderer::GetNumOccluders(bool allViews) const
 
     for (unsigned i = 0; i < lastView; ++i)
     {
-        if (views_[i])
-            numOccluders += views_[i]->GetOccluders().size();
+        View* view = GetActualView(views_[i]);
+        if (!view)
+            continue;
+
+        numOccluders += view->GetNumActiveOccluders();
     }
 
     return numOccluders;
@@ -542,9 +593,10 @@ unsigned Renderer::GetNumOccluders(bool allViews) const
 
 void Renderer::Update(float timeStep)
 {
-    PROFILE(UpdateViews);
+    URHO3D_PROFILE(UpdateViews);
 
     views_.clear();
+    preparedViews_.clear();
 
     // If device lost, do not perform update. This is because any dynamic vertex/index buffer updates happen already here,
     // and if the device is lost, the updates queue up, causing memory use to rise constantly
@@ -625,14 +677,6 @@ void Renderer::Update(float timeStep)
 
     }
 
-    // Reset update flag from queued render surfaces. At this point no new views can be added on this frame
-    for (unsigned i = 0; i < queuedViewports_.size(); ++i)
-    {
-        WeakPtr<RenderSurface>& renderTarget = queuedViewports_[i].first;
-        if (renderTarget)
-            renderTarget->WasUpdated();
-    }
-
     queuedViewports_.clear();
     resetViews_ = false;
 }
@@ -642,7 +686,7 @@ void Renderer::Render()
     // Engine does not render when window is closed or device is lost
     assert(graphics_ && graphics_->IsInitialized() && !graphics_->IsDeviceLost());
 
-    PROFILE(RenderViews);
+    URHO3D_PROFILE(RenderViews);
 
     // If the indirection textures have lost content (OpenGL mode only), restore them now
     if (faceSelectCubeMap_ && faceSelectCubeMap_->IsDataLost())
@@ -703,7 +747,7 @@ void Renderer::Render()
 
 void Renderer::DrawDebugGeometry(bool depthTest)
 {
-    PROFILE(RendererDrawDebug);
+    URHO3D_PROFILE(RendererDrawDebug);
 
     /// \todo Because debug geometry is per-scene, if two cameras show views of the same area, occlusion is not shown correctly
     HashSet<Drawable*> processedGeometries;
@@ -759,8 +803,12 @@ void Renderer::QueueViewport(RenderSurface* renderTarget, Viewport* viewport)
 {
     if (viewport)
     {
-        queuedViewports_.push_back(std::pair<WeakPtr<RenderSurface>, WeakPtr<Viewport> >(WeakPtr<RenderSurface>(renderTarget),
-            WeakPtr<Viewport>(viewport)));
+        std::pair<WeakPtr<RenderSurface>, WeakPtr<Viewport> > newView=std::make_pair(WeakPtr<RenderSurface>(renderTarget),
+                    WeakPtr<Viewport>(viewport));
+
+        // Prevent double add of the same rendertarget/viewport combination
+        if (std::find(queuedViewports_.begin(),queuedViewports_.end(),newView)==queuedViewports_.end())
+            queuedViewports_.push_back(newView);
     }
 }
 
@@ -862,9 +910,30 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
         }
     }
 
-    gl::GLenum shadowMapFormat = (shadowQuality_ & SHADOWQUALITY_LOW_24BIT) ? graphics_->GetHiresShadowMapFormat() :
-        graphics_->GetShadowMapFormat();
-    if (0 == (unsigned)shadowMapFormat)
+    // Find format and usage of the shadow map
+    gl::GLenum shadowMapFormat = gl::GL_NONE;
+    TextureUsage shadowMapUsage = TEXTURE_DEPTHSTENCIL;
+
+    switch (shadowQuality_)
+    {
+    case SHADOWQUALITY_SIMPLE_16BIT:
+    case SHADOWQUALITY_PCF_16BIT:
+        shadowMapFormat = graphics_->GetShadowMapFormat();
+        break;
+
+    case SHADOWQUALITY_SIMPLE_24BIT:
+    case SHADOWQUALITY_PCF_24BIT:
+        shadowMapFormat = graphics_->GetHiresShadowMapFormat();
+        break;
+
+    case SHADOWQUALITY_VSM:
+    case SHADOWQUALITY_BLUR_VSM:
+        shadowMapFormat = graphics_->GetRGFloat32Format();
+        shadowMapUsage = TEXTURE_RENDERTARGET;
+        break;
+    }
+
+    if (0==shadowMapFormat)
         return nullptr;
 
     SharedPtr<Texture2D> newShadowMap(new Texture2D(context_));
@@ -873,7 +942,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
 
     while (retries)
     {
-        if (!newShadowMap->SetSize(width, height, shadowMapFormat, TEXTURE_DEPTHSTENCIL))
+        if (!newShadowMap->SetSize(width, height, shadowMapFormat, shadowMapUsage))
         {
             width >>= 1;
             height >>= 1;
@@ -884,11 +953,11 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
             #ifndef GL_ES_VERSION_2_0
             // OpenGL (desktop) and D3D11: shadow compare mode needs to be specifically enabled for the shadow map
             newShadowMap->SetFilterMode(FILTER_BILINEAR);
-            newShadowMap->SetShadowCompare(true);
+            newShadowMap->SetShadowCompare(shadowMapUsage == TEXTURE_DEPTHSTENCIL);
             #endif
             // Create dummy color texture for the shadow map if necessary: Direct3D9, or OpenGL when working around an OS X +
             // Intel driver bug
-            if ((unsigned)dummyColorFormat)
+            if (shadowMapUsage == TEXTURE_DEPTHSTENCIL && 0!=dummyColorFormat)
             {
                 // If no dummy color rendertarget for this size exists yet, create one now
                 if (!colorShadowMaps_.contains(searchKey))
@@ -980,7 +1049,7 @@ Texture* Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, boo
         newBuffer->ResetUseTimer();
         screenBuffers_[searchKey].push_back(newBuffer);
 
-        LOGDEBUG(QString("Allocated new screen buffer size %1x%2 format %3").arg(width).arg(height).arg((unsigned)format));
+        URHO3D_LOGDEBUG(QString("Allocated new screen buffer size %1x%2 format %3").arg(width).arg(height).arg((unsigned)format));
         return newBuffer;
     }
     else
@@ -1017,7 +1086,7 @@ OcclusionBuffer* Renderer::GetOcclusionBuffer(Camera* camera)
     int height = (int)((float)occlusionBufferSize_ / camera->GetAspectRatio() + 0.5f);
 
     OcclusionBuffer* buffer = occlusionBuffers_[numOcclusionBuffers_++];
-    buffer->SetSize(width, height);
+    buffer->SetSize(width, height, threadedOcclusion_);
     buffer->SetView(camera);
     buffer->ResetUseTimer();
 
@@ -1043,14 +1112,33 @@ Camera* Renderer::GetShadowCamera()
     return camera;
 }
 
+void Renderer::StorePreparedView(View* view, Camera* camera)
+{
+    if (view && camera)
+        preparedViews_[camera] = view;
+}
+
+View* Renderer::GetPreparedView(Camera* camera)
+{
+    HashMap<Camera*, WeakPtr<View> >::iterator i = preparedViews_.find(camera);
+    return i != preparedViews_.end() ? MAP_VALUE(i) : (View*)nullptr;
+}
+
+View* Renderer::GetActualView(View* view)
+{
+    if (view && view->GetSourceView())
+        return view->GetSourceView();
+    else
+        return view;
+}
+
 void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, bool allowShadows)
 {
     // Check if shaders are unloaded or need reloading
     Pass* pass = batch.pass_;
     std::vector<SharedPtr<ShaderVariation> >& vertexShaders = pass->GetVertexShaders();
     std::vector<SharedPtr<ShaderVariation> >& pixelShaders = pass->GetPixelShaders();
-    if (vertexShaders.empty() || pixelShaders.empty() || pass->GetShadersLoadedFrameNumber() !=
-        shadersChangedFrameNumber_)
+    if (vertexShaders.empty() || pixelShaders.empty() || pass->GetShadersLoadedFrameNumber() != shadersChangedFrameNumber_)
     {
         // First release all previous shaders, then load
         pass->ReleaseShaders();
@@ -1149,12 +1237,12 @@ void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, bool allowSh
         if (!shaderErrorDisplayed_.contains(tech))
         {
             shaderErrorDisplayed_.insert(tech);
-            LOGERROR("Technique " + tech->GetName() + " has missing shaders");
+            URHO3D_LOGERROR("Technique " + tech->GetName() + " has missing shaders");
         }
     }
 }
 
-void Renderer::SetLightVolumeBatchShaders(Batch& batch, const QString& vsName, const QString& psName, const QString& vsDefines, const QString& psDefines)
+void Renderer::SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const QString& vsName, const QString& psName, const QString& vsDefines, const QString& psDefines)
 {
     assert(deferredLightPSVariations_.size());
 
@@ -1186,7 +1274,7 @@ void Renderer::SetLightVolumeBatchShaders(Batch& batch, const QString& vsName, c
     if (specularLighting_ && light->GetSpecularIntensity() > 0.0f)
         psi += DLPS_SPEC;
 
-    if (batch.camera_->IsOrthographic())
+    if (camera->IsOrthographic())
     {
         vsi += DLVS_ORTHO;
         psi += DLPS_ORTHO;
@@ -1231,13 +1319,13 @@ bool Renderer::ResizeInstancingBuffer(unsigned numInstances)
 
     if (!instancingBuffer_->SetSize(newSize, INSTANCING_BUFFER_MASK, true))
     {
-        LOGERROR("Failed to resize instancing buffer to " + QString::number(newSize));
+        URHO3D_LOGERROR("Failed to resize instancing buffer to " + QString::number(newSize));
         // If failed, try to restore the old size
         instancingBuffer_->SetSize(oldSize, INSTANCING_BUFFER_MASK, true);
         return false;
     }
 
-    LOGDEBUG("Resized instancing buffer to " + QString::number(newSize));
+    URHO3D_LOGDEBUG("Resized instancing buffer to " + QString::number(newSize));
     return true;
 }
 
@@ -1313,6 +1401,8 @@ void Renderer::OptimizeLightByStencil(Light* light, Camera* camera)
         graphics_->SetDepthWrite(false);
         graphics_->SetStencilTest(true, CMP_ALWAYS, OP_REF, OP_KEEP, OP_KEEP, lightStencilValue_);
         graphics_->SetShaders(graphics_->GetShader(VS, "Stencil"), graphics_->GetShader(PS, "Stencil"));
+        graphics_->SetShaderParameter(VSP_VIEW, view);
+        graphics_->SetShaderParameter(VSP_VIEWINV, camera->GetEffectiveWorldTransform());
         graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * view);
         graphics_->SetShaderParameter(VSP_MODEL, light->GetVolumeTransform(camera));
 
@@ -1366,7 +1456,7 @@ void Renderer::RemoveUnusedBuffers()
     {
         if (occlusionBuffers_[i]->GetUseTimer() > MAX_BUFFER_AGE)
         {
-            LOGDEBUG("Removed unused occlusion buffer");
+            URHO3D_LOGDEBUG("Removed unused occlusion buffer");
             occlusionBuffers_.erase(occlusionBuffers_.begin()+i);
         }
     }
@@ -1379,7 +1469,7 @@ void Renderer::RemoveUnusedBuffers()
             Texture* buffer = buffers[j];
             if (buffer->GetUseTimer() > MAX_BUFFER_AGE)
             {
-                LOGDEBUG(QString("Removed unused screen buffer size %1x%2 format %3")
+                URHO3D_LOGDEBUG(QString("Removed unused screen buffer size %1x%2 format %3")
                          .arg(buffer->GetWidth()).arg(buffer->GetHeight()).arg((unsigned)buffer->GetFormat()));
                 buffers.erase(buffers.begin()+j);
             }
@@ -1414,11 +1504,11 @@ void Renderer::Initialize()
     if (!graphics || !graphics->IsInitialized() || !cache)
         return;
 
-    PROFILE(InitRenderer);
+    URHO3D_PROFILE(InitRenderer);
 
     graphics_ = graphics;
 
-    if (0==(unsigned)graphics_->GetShadowMapFormat())
+    if (0==graphics_->GetShadowMapFormat())
         drawShadows_ = false;
     // Validate the shadow quality level
     SetShadowQuality(shadowQuality_);
@@ -1440,14 +1530,14 @@ void Renderer::Initialize()
     shadersDirty_ = true;
     initialized_ = true;
 
-    SubscribeToEvent(E_RENDERUPDATE, HANDLER(Renderer, HandleRenderUpdate));
+    SubscribeToEvent(E_RENDERUPDATE, URHO3D_HANDLER(Renderer, HandleRenderUpdate));
 
-    LOGINFO("Initialized renderer");
+    URHO3D_LOGINFO("Initialized renderer");
 }
 
 void Renderer::LoadShaders()
 {
-    LOGDEBUG("Reloading shaders");
+    URHO3D_LOGDEBUG("Reloading shaders");
 
     // Release old material shaders, mark them for reload
     ReleaseMaterialShaders();
@@ -1455,12 +1545,11 @@ void Renderer::LoadShaders()
 
     // Construct new names for deferred light volume pixel shaders based on rendering options
     deferredLightPSVariations_.reserve(MAX_DEFERRED_LIGHT_PS_VARIATIONS);
-    unsigned shadows = (graphics_->GetHardwareShadowSupport() ? 1 : 0) | (shadowQuality_ & SHADOWQUALITY_HIGH_16BIT);
     for (unsigned i = 0; i < MAX_DEFERRED_LIGHT_PS_VARIATIONS; ++i)
     {
         QString entry = lightPSVariations[i % DLPS_ORTHO];
         if (i & DLPS_SHADOW)
-            entry += shadowVariations[shadows];
+            entry += GetShadowVariations();
         if (i & DLPS_ORTHO)
             entry += "ORTHO";
         deferredLightPSVariations_ << entry;
@@ -1472,9 +1561,8 @@ void Renderer::LoadShaders()
 void Renderer::LoadPassShaders(Pass* pass)
 {
 
-    PROFILE(LoadPassShaders);
+    URHO3D_PROFILE(LoadPassShaders);
 
-    unsigned shadows = (graphics_->GetHardwareShadowSupport() ? 1 : 0) | (shadowQuality_ & SHADOWQUALITY_HIGH_16BIT);
 
     std::vector<SharedPtr<ShaderVariation> >& vertexShaders = pass->GetVertexShaders();
     std::vector<SharedPtr<ShaderVariation> >& pixelShaders = pass->GetPixelShaders();
@@ -1482,6 +1570,12 @@ void Renderer::LoadPassShaders(Pass* pass)
     // Forget all the old shaders
     vertexShaders.clear();
     pixelShaders.clear();
+    QString extraShaderDefines = " ";
+    if (pass->GetName() == "shadow"
+        && (shadowQuality_ == SHADOWQUALITY_VSM || shadowQuality_ == SHADOWQUALITY_BLUR_VSM))
+    {
+        extraShaderDefines = " VSM_SHADOW ";
+    }
 
     if (pass->GetLightingMode() == LIGHTING_PERPIXEL)
     {
@@ -1494,8 +1588,8 @@ void Renderer::LoadPassShaders(Pass* pass)
             unsigned g = j / MAX_LIGHT_VS_VARIATIONS;
             unsigned l = j % MAX_LIGHT_VS_VARIATIONS;
 
-            vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(), pass->GetVertexShaderDefines() + " " +
-                lightVSVariations[l] + geometryVSVariations[g]);
+            vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(),
+                pass->GetVertexShaderDefines() + extraShaderDefines + lightVSVariations[l] + geometryVSVariations[g]);
         }
         for (unsigned j = 0; j < MAX_LIGHT_PS_VARIATIONS * 2; ++j)
         {
@@ -1504,12 +1598,13 @@ void Renderer::LoadPassShaders(Pass* pass)
 
             if (l & LPS_SHADOW)
             {
-                pixelShaders[j] = graphics_->GetShader(PS, pass->GetPixelShader(), pass->GetPixelShaderDefines() + " " +
-                    lightPSVariations[l] + shadowVariations[shadows] + heightFogVariations[h]);
+                pixelShaders[j] = graphics_->GetShader(PS, pass->GetPixelShader(),
+                    pass->GetPixelShaderDefines() + extraShaderDefines + lightPSVariations[l] + GetShadowVariations() +
+                    heightFogVariations[h]);
             }
             else
-                pixelShaders[j] = graphics_->GetShader(PS, pass->GetPixelShader(), pass->GetPixelShaderDefines() + " " +
-                    lightPSVariations[l] + heightFogVariations[h]);
+                pixelShaders[j] = graphics_->GetShader(PS, pass->GetPixelShader(),
+                    pass->GetPixelShaderDefines() + extraShaderDefines + lightPSVariations[l] + heightFogVariations[h]);
         }
     }
     else
@@ -1522,8 +1617,8 @@ void Renderer::LoadPassShaders(Pass* pass)
             {
                 unsigned g = j / MAX_VERTEXLIGHT_VS_VARIATIONS;
                 unsigned l = j % MAX_VERTEXLIGHT_VS_VARIATIONS;
-                vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(), pass->GetVertexShaderDefines() + " " +
-                    vertexLightVSVariations[l] + geometryVSVariations[g]);
+                vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(),
+                    pass->GetVertexShaderDefines() + extraShaderDefines + vertexLightVSVariations[l] + geometryVSVariations[g]);
             }
         }
         else
@@ -1531,16 +1626,16 @@ void Renderer::LoadPassShaders(Pass* pass)
             vertexShaders.resize(MAX_GEOMETRYTYPES);
             for (unsigned j = 0; j < MAX_GEOMETRYTYPES; ++j)
             {
-                vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(), pass->GetVertexShaderDefines() + " " +
-                    geometryVSVariations[j]);
+                vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(),
+                    pass->GetVertexShaderDefines() + extraShaderDefines + geometryVSVariations[j]);
             }
         }
 
         pixelShaders.resize(2);
         for (unsigned j = 0; j < 2; ++j)
         {
-            pixelShaders[j] = graphics_->GetShader(PS, pass->GetPixelShader(), pass->GetPixelShaderDefines() + " " +
-                heightFogVariations[j]);
+            pixelShaders[j] =
+                graphics_->GetShader(PS, pass->GetPixelShader(), pass->GetPixelShaderDefines() + extraShaderDefines + heightFogVariations[j]);
         }
     }
 
@@ -1620,7 +1715,7 @@ void Renderer::CreateGeometries()
     pointLightGeometry_->SetDrawRange(TRIANGLE_LIST, 0, plib->GetIndexCount());
 
     #if !defined(URHO3D_OPENGL) || !defined(GL_ES_VERSION_2_0)
-    if ((unsigned)graphics_->GetShadowMapFormat())
+    if (0!=graphics_->GetShadowMapFormat())
     {
         faceSelectCubeMap_ = new TextureCube(context_);
         faceSelectCubeMap_->SetNumLevels(1);
@@ -1709,6 +1804,25 @@ void Renderer::ResetBuffers()
     screenBuffers_.clear();
     screenBufferAllocations_.clear();
 }
+QString Renderer::GetShadowVariations() const
+{
+    switch (shadowQuality_)
+    {
+        case SHADOWQUALITY_SIMPLE_16BIT:
+            return "SIMPLE_SHADOW ";
+        case SHADOWQUALITY_SIMPLE_24BIT:
+            return "SIMPLE_SHADOW ";
+        case SHADOWQUALITY_PCF_16BIT:
+            return "PCF_SHADOW ";
+        case SHADOWQUALITY_PCF_24BIT:
+            return "PCF_SHADOW ";
+        case SHADOWQUALITY_VSM:
+            return "VSM_SHADOW ";
+        case SHADOWQUALITY_BLUR_VSM:
+            return "VSM_SHADOW ";
+    }
+    return "";
+};
 
 void Renderer::HandleScreenMode(StringHash eventType, VariantMap& eventData)
 {
@@ -1725,4 +1839,41 @@ void Renderer::HandleRenderUpdate(StringHash eventType, VariantMap& eventData)
     Update(eventData[P_TIMESTEP].GetFloat());
 }
 
+void Renderer::BlurShadowMap(View* view, Texture2D* shadowMap)
+{
+    graphics_->SetBlendMode(BLEND_REPLACE);
+    graphics_->SetDepthTest(CMP_ALWAYS);
+    graphics_->SetClipPlane(false);
+    graphics_->SetScissorTest(false);
+
+    // Get a temporary render buffer
+    Texture2D* tmpBuffer = static_cast<Texture2D*>(GetScreenBuffer(shadowMap->GetWidth(), shadowMap->GetHeight(), shadowMap->GetFormat(), false, false, false));
+    graphics_->SetRenderTarget(0, tmpBuffer->GetRenderSurface());
+    graphics_->SetDepthStencil(GetDepthStencil(shadowMap->GetWidth(), shadowMap->GetHeight()));
+    graphics_->SetViewport(IntRect(0, 0, shadowMap->GetWidth(), shadowMap->GetHeight()));
+
+    // Get shaders
+    static const QString shaderName("ShadowBlur");
+    ShaderVariation* vs = graphics_->GetShader(VS, shaderName);
+    ShaderVariation* ps = graphics_->GetShader(PS, shaderName);
+    graphics_->SetShaders(vs, ps);
+
+    view->SetGBufferShaderParameters(IntVector2(shadowMap->GetWidth(), shadowMap->GetHeight()), IntRect(0, 0, shadowMap->GetWidth(), shadowMap->GetHeight()));
+
+    // Horizontal blur of the shadow map
+    static const StringHash blurOffsetParam("BlurOffsets");
+    graphics_->SetShaderParameter(blurOffsetParam, Vector2(shadowSoftness_ / shadowMap->GetWidth(), 0.0f));
+
+    graphics_->SetTexture(TU_DIFFUSE, shadowMap);
+    view->DrawFullscreenQuad(false);
+
+    // Vertical blur
+    graphics_->SetRenderTarget(0, shadowMap);
+    graphics_->SetViewport(IntRect(0, 0, shadowMap->GetWidth(), shadowMap->GetHeight()));
+
+    graphics_->SetShaderParameter(blurOffsetParam, Vector2(0.0f, shadowSoftness_ / shadowMap->GetHeight()));
+
+    graphics_->SetTexture(TU_DIFFUSE, tmpBuffer);
+    view->DrawFullscreenQuad(false);
+}
 }

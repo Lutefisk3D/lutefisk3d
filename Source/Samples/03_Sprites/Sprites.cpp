@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ static const unsigned NUM_SPRITES = 100;
 // Custom variable identifier for storing sprite velocity within the UI element
 static const StringHash VAR_VELOCITY("Velocity");
 
-DEFINE_APPLICATION_MAIN(Sprites)
+URHO3D_DEFINE_APPLICATION_MAIN(Sprites)
 
 Sprites::Sprites(Context* context) :
     Sample(context)
@@ -132,7 +132,7 @@ void Sprites::MoveSprites(float timeStep)
 void Sprites::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(Sprites, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Sprites, HandleUpdate));
 }
 
 void Sprites::HandleUpdate(StringHash eventType, VariantMap& eventData)

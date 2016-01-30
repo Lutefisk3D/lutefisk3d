@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +68,10 @@ struct PhysicsRaycastResult
     }
 
     /// Test for inequality, added to prevent GCC from complaining.
-    bool operator != (const PhysicsRaycastResult& rhs) const { return position_ != rhs.position_ || normal_ != rhs.normal_ || distance_ != rhs.distance_ || body_ != rhs.body_; }
+    bool operator !=(const PhysicsRaycastResult& rhs) const
+    {
+        return position_ != rhs.position_ || normal_ != rhs.normal_ || distance_ != rhs.distance_ || body_ != rhs.body_;
+    }
 
     /// Hit worldspace position.
     Vector3 position_;
@@ -76,6 +79,8 @@ struct PhysicsRaycastResult
     Vector3 normal_;
     /// Hit distance from ray origin.
     float distance_;
+    /// Hit fraction.
+    float hitFraction_;
     /// Rigid body that was hit.
     RigidBody* body_;
 };
@@ -98,7 +103,7 @@ static const float DEFAULT_MAX_NETWORK_ANGULAR_VELOCITY = 100.0f;
 /// Physics simulation world component. Should be added only to the root scene node.
 class PhysicsWorld : public Component, public btIDebugDraw
 {
-    OBJECT(PhysicsWorld);
+    URHO3D_OBJECT(PhysicsWorld,Component);
 
     friend void InternalPreTickCallback(btDynamicsWorld *world, btScalar timeStep);
     friend void InternalTickCallback(btDynamicsWorld *world, btScalar timeStep);
@@ -140,6 +145,8 @@ public:
     void SetMaxSubSteps(int num);
     /// Set number of constraint solver iterations.
     void SetNumIterations(int num);
+    /// Enable or disable automatic physics simulation during scene update. Enabled by default.
+    void SetUpdateEnabled(bool enable);
     /// Set whether to interpolate between simulation steps.
     void SetInterpolation(bool enable);
     /// Set whether to use Bullet's internal edge utility for trimesh collisions. Disabled by default.
@@ -152,6 +159,8 @@ public:
     void Raycast(std::vector<PhysicsRaycastResult>& result, const Ray& ray, float maxDistance, unsigned collisionMask = M_MAX_UNSIGNED);
     /// Perform a physics world raycast and return the closest hit.
     void RaycastSingle(PhysicsRaycastResult& result, const Ray& ray, float maxDistance, unsigned collisionMask = M_MAX_UNSIGNED);
+    /// Perform a physics world segmented raycast and return the closest hit. Useful for big scenes with many bodies.
+    void RaycastSingleSegmented(PhysicsRaycastResult& result, const Ray& ray, float maxDistance, float segmentDistance, unsigned collisionMask = M_MAX_UNSIGNED);
     /// Perform a physics world swept sphere test and return the closest hit.
     void SphereCast(PhysicsRaycastResult& result, const Ray& ray, float radius, float maxDistance, unsigned collisionMask = M_MAX_UNSIGNED);
     /// Perform a physics world swept convex test using a user-supplied collision shape and return the first hit.
@@ -164,8 +173,10 @@ public:
     void GetRigidBodies(std::unordered_set<RigidBody*>& result, const Sphere& sphere, unsigned collisionMask = M_MAX_UNSIGNED);
     /// Return rigid bodies by a box query.
     void GetRigidBodies(std::unordered_set<RigidBody *> &result, const BoundingBox& box, unsigned collisionMask = M_MAX_UNSIGNED);
-    /// Return rigid bodies that have been in collision with a specific body on the last simulation step.
+    /// Return rigid bodies by contact test with the specified body. It needs to be active to return all contacts reliably.
     void GetRigidBodies(std::unordered_set<RigidBody*>& result, const RigidBody* body);
+    /// Return rigid bodies that have been in collision with the specified body on the last simulation step. Only returns collisions that were sent as events (depends on collision event mode) and excludes e.g. static-static collisions.
+    void GetCollidingBodies(std::unordered_set<RigidBody*>& result, const RigidBody* body);
 
     /// Return gravity.
     Vector3 GetGravity() const;
@@ -173,6 +184,8 @@ public:
     int GetMaxSubSteps() const { return maxSubSteps_; }
     /// Return number of constraint solver iterations.
     int GetNumIterations() const;
+    /// Return whether physics world will automatically simulate during scene update.
+    bool IsUpdateEnabled() const { return updateEnabled_; }
     /// Return whether interpolation between simulation steps is enabled.
     bool GetInterpolation() const { return interpolation_; }
     /// Return whether Bullet's internal edge utility for trimesh collisions is enabled.
@@ -218,18 +231,18 @@ public:
     /// Return whether node dirtying should be disregarded.
     bool IsApplyingTransforms() const { return applyingTransforms_; }
 
+    /// Return whether is currently inside the Bullet substep loop.
+    bool IsSimulating() const { return simulating_; }
 protected:
-    /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node) override;
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene * scene) override;
 
 private:
     /// Handle the scene subsystem update event, step simulation here.
     void HandleSceneSubsystemUpdate(StringHash eventType, VariantMap& eventData);
-    /// Handle collision model reload finished.
-    void HandleModelReloadFinished(StringHash eventType, VariantMap& eventData);
     /// Trigger update before each physics simulation step.
     void PreStep(float timeStep);
-    /// Trigger update after ecah physics simulation step.
+    /// Trigger update after each physics simulation step.
     void PostStep(float timeStep);
     /// Send accumulated collision events.
     void SendCollisionEvents();
@@ -247,9 +260,9 @@ private:
     /// Extra weak pointer to scene to allow for cleanup in case the world is destroyed before other components.
     WeakPtr<Scene> scene_;
     /// Rigid bodies in the world.
-    std::vector<RigidBody*> rigidBodies_;
+    std::unordered_set<RigidBody*> rigidBodies_;
     /// Collision shapes in the world.
-    std::vector<CollisionShape*> collisionShapes_;
+    std::unordered_set<CollisionShape*> collisionShapes_;
     /// Constraints in the world.
     std::vector<Constraint*> constraints_;
     /// Collision pairs on this frame.
@@ -276,18 +289,22 @@ private:
     float timeAcc_;
     /// Maximum angular velocity for network replication.
     float maxNetworkAngularVelocity_;
+    /// Automatic simulation update enabled flag.
+    bool updateEnabled_;
     /// Interpolation flag.
     bool interpolation_;
     /// Use internal edge utility flag.
     bool internalEdge_;
     /// Applying transforms flag.
     bool applyingTransforms_;
+    /// Simulating flag.
+    bool simulating_;
+    /// Debug draw depth test mode.
+    bool debugDepthTest_;
     /// Debug renderer.
     DebugRenderer* debugRenderer_;
     /// Debug draw flags.
     int debugMode_;
-    /// Debug draw depth test mode.
-    bool debugDepthTest_;
 };
 
 /// Register Physics library objects.

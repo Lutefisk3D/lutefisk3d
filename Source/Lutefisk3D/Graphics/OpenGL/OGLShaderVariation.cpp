@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -108,7 +108,7 @@ bool ShaderVariation::Create()
     unsigned verEnd = 0;
     if (verStart != -1)
     {
-        if (originalShaderCode.mid(verStart + 1, 7) == "version")
+        if (originalShaderCode.midRef(verStart + 1, 7) == "version")
         {
             verEnd = verStart + 9;
             while (verEnd < originalShaderCode.length())
@@ -145,7 +145,7 @@ bool ShaderVariation::Create()
         #ifdef _DEBUG
         QString defineCheck = defineString.mid(8, defineString.indexOf(' ', 8) - 8);
         if (originalShaderCode.indexOf(defineCheck) == -1)
-            LOGWARNING("Shader " + GetFullName() + " does not use the define " + defineCheck);
+            URHO3D_LOGWARNING("Shader " + GetFullName() + " does not use the define " + defineCheck);
         #endif
     }
 

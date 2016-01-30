@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,6 +61,7 @@ enum VariantType
     VAR_MATRIX3X4,
     VAR_MATRIX4,
     VAR_DOUBLE,
+    VAR_STRINGVECTOR,
     MAX_VAR_TYPES
 };
 
@@ -107,6 +108,7 @@ struct VariantValue
     };
 #endif
 };
+static_assert(sizeof(VariantValue)>=sizeof(QStringList),"Variant value to small");
 /// Typed resource reference.
 struct ResourceRef
 {
@@ -336,6 +338,13 @@ public:
         *this = value;
     }
 
+    /// Construct from a string vector.
+    Variant(const QStringList& value) :
+        type_ (VAR_NONE)
+    {
+        *this = value;
+    }
+
     /// Construct from an integer rect.
     Variant(const IntRect& value) :
         type_(VAR_NONE)
@@ -468,11 +477,11 @@ public:
         return *this;
     }
 
-    /// Assign from a float.
+    /// Assign from a double.
     Variant& operator = (double rhs)
     {
         SetType(VAR_DOUBLE);
-        value_.float_ = rhs;
+        *(reinterpret_cast<double*>(&value_)) = rhs;
         return *this;
     }
 
@@ -572,11 +581,18 @@ public:
         return *this;
     }
 
+    // Assign from a string vector.
+    Variant& operator =(const QStringList & rhs)
+    {
+        SetType(VAR_STRINGVECTOR);
+        *(reinterpret_cast<QStringList*>(&value_)) = rhs;
+        return *this;
+    }
     /// Assign from a variant map.
     Variant& operator = (const VariantMap& rhs)
     {
         SetType(VAR_VARIANTMAP);
-        *(reinterpret_cast<VariantMap*>(value_.ptr_)) = rhs;
+        *(reinterpret_cast<VariantMap*>(&value_)) = rhs;
         return *this;
     }
 
@@ -638,6 +654,8 @@ public:
     bool operator == (bool rhs) const { return type_ == VAR_BOOL ? value_.bool_ == rhs : false; }
     /// Test for equality with a float. To return true, both the type and value must match.
     bool operator == (float rhs) const { return type_ == VAR_FLOAT ? value_.float_ == rhs : false; }
+    /// Test for equality with a double. To return true, both the type and value must match.
+    bool operator ==(double rhs) const { return type_ == VAR_DOUBLE ? *(reinterpret_cast<const double*>(&value_)) == rhs : false; }
     /// Test for equality with a Vector2. To return true, both the type and value must match.
     bool operator == (const Vector2& rhs) const { return type_ == VAR_VECTOR2 ? *(reinterpret_cast<const Vector2*>(&value_)) == rhs : false; }
     /// Test for equality with a Vector3. To return true, both the type and value must match.
@@ -651,7 +669,7 @@ public:
     /// Test for equality with a string. To return true, both the type and value must match.
     bool operator == (const QString& rhs) const { return type_ == VAR_STRING ? *(reinterpret_cast<const QString*>(&value_)) == rhs : false; }
     /// Test for equality with a buffer. To return true, both the type and value must match.
-    bool operator == (const std::vector<unsigned char>& rhs) const { return type_ == VAR_BUFFER ? *(reinterpret_cast<const std::vector<unsigned char>*>(&value_)) == rhs : false; }
+    bool operator == (const std::vector<unsigned char>& rhs) const;
 
     /// Test for equality with a void pointer. To return true, both the type and value must match, with the exception that a RefCounted pointer is also allowed.
     bool operator == (void* rhs) const
@@ -670,6 +688,11 @@ public:
     bool operator == (const ResourceRefList& rhs) const { return type_ == VAR_RESOURCEREFLIST ? *(reinterpret_cast<const ResourceRefList*>(&value_)) == rhs : false; }
     /// Test for equality with a variant vector. To return true, both the type and value must match.
     bool operator == (const VariantVector& rhs) const { return type_ == VAR_VARIANTVECTOR ? *(reinterpret_cast<const VariantVector*>(&value_)) == rhs : false; }
+   /// Test for equality with a string vector. To return true, both the type and value must match.
+    bool operator ==(const QStringList &rhs) const
+    {
+        return type_ == VAR_STRINGVECTOR ? *(reinterpret_cast<const QStringList*>(&value_)) == rhs : false;
+    }
     /// Test for equality with a variant map. To return true, both the type and value must match.
     bool operator == (const VariantMap& rhs) const { return type_ == VAR_VARIANTMAP ? *(reinterpret_cast<const VariantMap*>(&value_)) == rhs : false; }
     /// Test for equality with an integer rect. To return true, both the type and value must match.
@@ -707,6 +730,8 @@ public:
     bool operator != (bool rhs) const { return !(*this == rhs); }
     /// Test for inequality with a float.
     bool operator != (float rhs) const { return !(*this == rhs); }
+    /// Test for inequality with a double.
+    bool operator !=(double rhs) const { return !(*this == rhs); }
     /// Test for inequality with a Vector2.
     bool operator != (const Vector2& rhs) const { return !(*this == rhs); }
     /// Test for inequality with a Vector3.
@@ -727,6 +752,8 @@ public:
     bool operator != (const ResourceRefList& rhs) const { return !(*this == rhs); }
     /// Test for inequality with a variant vector.
     bool operator != (const VariantVector& rhs) const { return !(*this == rhs); }
+    /// Test for inequality with a string vector.
+    bool operator !=(const QStringList& rhs) const { return !(*this == rhs); }
     /// Test for inequality with a variant map.
     bool operator != (const VariantMap& rhs) const { return !(*this == rhs); }
     /// Test for inequality with an integer rect.
@@ -755,18 +782,58 @@ public:
     /// Set buffer type from a memory area.
     void SetBuffer(const void* data, unsigned size);
 
-    /// Return int or zero on type mismatch.
-    int GetInt() const { return type_ == VAR_INT ? value_.int_ : 0; }
-    /// Return unsigned int or zero on type mismatch.
-    unsigned GetUInt() const { return type_ == VAR_INT ? (unsigned)value_.int_ : 0; }
+    /// Return int or zero on type mismatch. Floats and doubles are converted.
+    int GetInt() const
+    {
+        if (type_ == VAR_INT)
+            return value_.int_;
+        else if (type_ == VAR_FLOAT)
+            return (int)value_.float_;
+        else if (type_ == VAR_DOUBLE)
+            return (int)*reinterpret_cast<const double*>(&value_);
+        else
+            return 0;
+    }
+    /// Return unsigned int or zero on type mismatch. Floats and doubles are converted.
+    unsigned GetUInt() const
+    {
+        if (type_ == VAR_INT)
+            return value_.int_;
+        else if (type_ == VAR_FLOAT)
+            return (unsigned)value_.float_;
+        else if (type_ == VAR_DOUBLE)
+            return (unsigned)*reinterpret_cast<const double*>(&value_);
+        else
+            return 0;
+    }
     /// Return StringHash or zero on type mismatch.
     StringHash GetStringHash() const { return StringHash(GetUInt()); }
     /// Return bool or false on type mismatch.
     bool GetBool() const { return type_ == VAR_BOOL ? value_.bool_ : false; }
-    /// Return float or zero on type mismatch.
-    float GetFloat() const { return type_ == VAR_FLOAT ? value_.float_ : 0.0f; }
-    /// Return float or zero on type mismatch.
-    float GetDouble() const { return type_ == VAR_DOUBLE ? value_.double_ : 0.0; }
+    /// Return float or zero on type mismatch. Ints and doubles are converted.
+    float GetFloat() const
+    {
+        if (type_ == VAR_FLOAT)
+            return value_.float_;
+        else if (type_ == VAR_DOUBLE)
+            return (float)*reinterpret_cast<const double*>(&value_);
+        else if (type_ == VAR_INT)
+            return (float)value_.int_;
+        else
+            return 0.0f;
+    }
+    /// Return double or zero on type mismatch. Ints and floats are converted.
+    double GetDouble() const
+    {
+        if (type_ == VAR_DOUBLE)
+            return *reinterpret_cast<const double*>(&value_);
+        else if (type_ == VAR_FLOAT)
+            return (double)value_.float_;
+        else if (type_ == VAR_INT)
+            return (double)value_.int_;
+        else
+            return 0.0;
+    }
     /// Return Vector2 or zero on type mismatch.
     const Vector2& GetVector2() const { return type_ == VAR_VECTOR2 ? *reinterpret_cast<const Vector2*>(&value_) : Vector2::ZERO; }
     /// Return Vector3 or zero on type mismatch.
@@ -800,8 +867,16 @@ public:
     const ResourceRefList& GetResourceRefList() const { return type_ == VAR_RESOURCEREFLIST ? *reinterpret_cast<const ResourceRefList*>(&value_) : emptyResourceRefList; }
     /// Return a variant vector or empty on type mismatch.
     const VariantVector& GetVariantVector() const { return type_ == VAR_VARIANTVECTOR ? *reinterpret_cast<const VariantVector*>(&value_) : emptyVariantVector; }
+    /// Return a vector  buffer or empty on type mismatch.
+    const std::vector<unsigned char> &GetVectorBuffer() const { return type_ == VAR_BUFFER ? *reinterpret_cast<const std::vector<unsigned char>*>(&value_) : emptyBuffer; }
+
+    /// Return a string vector or empty on type mismatch.
+    const QStringList& GetStringVector() const
+    {
+        return type_ == VAR_STRINGVECTOR ? *reinterpret_cast<const QStringList*>(&value_) : emptyStringVector;
+    }
     /// Return a variant map or empty on type mismatch.
-    const VariantMap& GetVariantMap() const { return type_ == VAR_VARIANTMAP ? *reinterpret_cast<const VariantMap*>(value_.ptr_) : emptyVariantMap; }
+    const VariantMap& GetVariantMap() const { return type_ == VAR_VARIANTMAP ? *reinterpret_cast<const VariantMap*>(&value_) : emptyVariantMap; }
     /// Return an integer rect or empty on type mismatch.
     const IntRect& GetIntRect() const { return type_ == VAR_INTRECT ? *reinterpret_cast<const IntRect*>(&value_) : IntRect::ZERO; }
     /// Return an IntVector2 or empty on type mismatch.
@@ -831,6 +906,8 @@ public:
     std::vector<unsigned char>* GetBufferPtr() { return type_ == VAR_BUFFER ? reinterpret_cast<std::vector<unsigned char>*>(&value_) : nullptr; }
     /// Return a pointer to a modifiable variant vector or null on type mismatch.
     VariantVector* GetVariantVectorPtr() { return type_ == VAR_VARIANTVECTOR ? reinterpret_cast<VariantVector*>(&value_) : nullptr; }
+    /// Return a pointer to a modifiable string vector or null on type mismatch.
+    QStringList* GetStringVectorPtr() { return type_ == VAR_STRINGVECTOR ? reinterpret_cast<QStringList*>(&value_) : nullptr; }
     /// Return a pointer to a modifiable variant map or null on type mismatch.
     VariantMap* GetVariantMapPtr() { return type_ == VAR_VARIANTMAP ? reinterpret_cast<VariantMap*>(&value_) : nullptr; }
 
@@ -853,6 +930,8 @@ public:
     static const VariantMap emptyVariantMap;
     /// Empty variant vector.
     static const VariantVector emptyVariantVector;
+    /// Empty string vector.
+    static const QStringList emptyStringVector;
 
 private:
     /// Set new type and allocate/deallocate memory as necessary.
@@ -869,7 +948,7 @@ static_assert(sizeof(VariantValue)>=sizeof(VariantVector),"Variant value must be
 /// Return variant type from type.
 template<typename T> VariantType GetVariantType();
 
-/// Return variant type from concrete types.
+// Return variant type from concrete types
 template<> inline VariantType GetVariantType<int>() { return VAR_INT; }
 template<> inline VariantType GetVariantType<unsigned>() { return VAR_INT; }
 template<> inline VariantType GetVariantType<bool>() { return VAR_BOOL; }
@@ -886,6 +965,7 @@ template<> inline VariantType GetVariantType<std::vector<unsigned char> >() { re
 template<> inline VariantType GetVariantType<ResourceRef>() { return VAR_RESOURCEREF; }
 template<> inline VariantType GetVariantType<ResourceRefList>() { return VAR_RESOURCEREFLIST; }
 template<> inline VariantType GetVariantType<VariantVector>() { return VAR_VARIANTVECTOR; }
+template <> inline VariantType GetVariantType<QStringList >() { return VAR_STRINGVECTOR; }
 template<> inline VariantType GetVariantType<VariantMap>() { return VAR_VARIANTMAP; }
 template<> inline VariantType GetVariantType<IntRect>() { return VAR_INTRECT; }
 template<> inline VariantType GetVariantType<IntVector2>() { return VAR_INTVECTOR2; }

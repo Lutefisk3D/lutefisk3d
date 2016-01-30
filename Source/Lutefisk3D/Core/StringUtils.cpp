@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -323,6 +323,9 @@ Variant ToVectorVariant(const char* source)
     case 16:
         ret.FromString(VAR_MATRIX4, source);
         break;
+    default:
+        assert(false);  // Should not get here
+        break;
     }
 
     return ret;
@@ -578,5 +581,28 @@ QChar ToLower(QChar ch)
 {
     return ch.toLower();
 }
+QString GetFileSizeString(uint64_t memorySize)
+{
+    static const char* memorySizeStrings = "kMGTPE";
 
+    QString output;
+
+    if (memorySize < 1024)
+    {
+        output = QString::number(memorySize) + " b";
+    }
+    else
+    {
+        const int exponent = (int)(log((double)memorySize) / log(1024.0));
+        const double majorValue = ((double)memorySize) / pow(1024.0, exponent);
+        char buffer[64];
+        memset(buffer, 0, 64);
+        sprintf(buffer, "%.1f", majorValue);
+        output = buffer;
+        output += " ";
+        output += memorySizeStrings[exponent - 1];
+    }
+
+    return output;
+}
 }

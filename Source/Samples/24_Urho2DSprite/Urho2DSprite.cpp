@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ static const unsigned NUM_SPRITES = 200;
 static const StringHash VAR_MOVESPEED("MoveSpeed");
 static const StringHash VAR_ROTATESPEED("RotateSpeed");
 
-DEFINE_APPLICATION_MAIN(Urho2DSprite)
+URHO3D_DEFINE_APPLICATION_MAIN(Urho2DSprite)
 
 Urho2DSprite::Urho2DSprite(Context* context) :
     Sample(context)
@@ -130,7 +130,8 @@ void Urho2DSprite::CreateScene()
 
     AnimatedSprite2D* animatedSprite = spriteNode->CreateComponent<AnimatedSprite2D>();
     // Set animation
-    animatedSprite->SetAnimation(animationSet, "idle");
+    animatedSprite->SetAnimationSet(animationSet);
+    animatedSprite->SetAnimation("idle");
 }
 
 void Urho2DSprite::CreateInstructions()
@@ -195,7 +196,7 @@ void Urho2DSprite::MoveCamera(float timeStep)
 void Urho2DSprite::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(Urho2DSprite, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Urho2DSprite, HandleUpdate));
 
     // Unsubscribe the SceneUpdate event from base class to prevent camera pitch and yaw in 2D sample
     UnsubscribeFromEvent(E_SCENEUPDATE);

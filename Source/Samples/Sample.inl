@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -59,6 +59,13 @@ void Sample::Setup()
     engineParameters_["LogName"]     = GetSubsystem<FileSystem>()->GetAppPreferencesDir("urho3d", "logs") + GetTypeName() + ".log";
     engineParameters_["FullScreen"]  = false;
     engineParameters_["Headless"]    = false;
+    engineParameters_["Sound"]       = false;
+
+    // Construct a search path to find the resource prefix with two entries:
+    // The first entry is an empty path which will be substituted with program/bin directory -- this entry is for binary when it is still in build tree
+    // The second and third entries are possible relative paths from the installed program/bin directory to the asset directory -- these entries are for binary when it is in the Urho3D SDK installation location
+    if (!engineParameters_.contains("ResourcePrefixPaths"))
+        engineParameters_["ResourcePrefixPaths"] = ";../share/Resources;../share/Urho3D/Resources";
 }
 
 void Sample::Start()
@@ -68,7 +75,7 @@ void Sample::Start()
         InitTouchInput();
     else if (GetSubsystem<Input>()->GetNumJoysticks() == 0)
         // On desktop platform, do not detect touch when we already got a joystick
-        SubscribeToEvent(E_TOUCHBEGIN, HANDLER(Sample, HandleTouchBegin));
+        SubscribeToEvent(E_TOUCHBEGIN, URHO3D_HANDLER(Sample, HandleTouchBegin));
 
     // Create logo
     CreateLogo();
@@ -80,9 +87,9 @@ void Sample::Start()
     CreateConsoleAndDebugHud();
 
     // Subscribe key down event
-    SubscribeToEvent(E_KEYDOWN, HANDLER(Sample, HandleKeyDown));
+    SubscribeToEvent(E_KEYDOWN, URHO3D_HANDLER(Sample, HandleKeyDown));
     // Subscribe scene update event
-    SubscribeToEvent(E_SCENEUPDATE, HANDLER(Sample, HandleSceneUpdate));
+    SubscribeToEvent(E_SCENEUPDATE, URHO3D_HANDLER(Sample, HandleSceneUpdate));
 }
 
 void Sample::Stop()
@@ -199,7 +206,21 @@ void Sample::HandleKeyDown(StringHash eventType, VariantMap& eventData)
 
     // Toggle debug HUD with F2
     else if (key == KEY_F2)
-        GetSubsystem<DebugHud>()->ToggleAll();
+    {
+        DebugHud* debugHud = GetSubsystem<DebugHud>();
+        if (debugHud->GetMode() == 0 || debugHud->GetMode() == DEBUGHUD_SHOW_ALL_MEMORY)
+            debugHud->SetMode(DEBUGHUD_SHOW_ALL);
+        else
+            debugHud->SetMode(DEBUGHUD_SHOW_NONE);
+    }
+    else if (key == KEY_F3)
+    {
+        DebugHud* debugHud = GetSubsystem<DebugHud>();
+        if (debugHud->GetMode() == 0 || debugHud->GetMode() == DEBUGHUD_SHOW_ALL)
+            debugHud->SetMode(DEBUGHUD_SHOW_ALL_MEMORY);
+        else
+            debugHud->SetMode(DEBUGHUD_SHOW_NONE);
+    }
 
     // Common rendering quality controls, only when UI has no focused element
     else if (!GetSubsystem<UI>()->GetFocusElement())
@@ -263,10 +284,10 @@ void Sample::HandleKeyDown(StringHash eventType, VariantMap& eventData)
         // Shadow depth and filtering quality
         else if (key == '6')
         {
-            int quality = renderer->GetShadowQuality();
-            ++quality;
-            if (quality > SHADOWQUALITY_HIGH_24BIT)
-                quality = SHADOWQUALITY_LOW_16BIT;
+            ShadowQuality quality = renderer->GetShadowQuality();
+            quality = (ShadowQuality)(quality + 1);
+            if (quality > SHADOWQUALITY_BLUR_VSM)
+                quality = SHADOWQUALITY_SIMPLE_16BIT;
             renderer->SetShadowQuality(quality);
         }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../../Math/Color.h"
 #include "../../Graphics/GPUObject.h"
 #include "../../Graphics/GraphicsDefs.h"
+#include "../../Math/Color.h"
 #include "../../Resource/Resource.h"
 
 namespace gl {
@@ -63,7 +63,7 @@ public:
     /// Set backup texture to use when rendering to this texture.
     void SetBackupTexture(Texture* texture);
     /// Set mip levels to skip on a quality setting when loading. Ensures higher quality levels do not skip more.
-    void SetMipsToSkip(int quality, int mips);
+    void SetMipsToSkip(int quality, int toSkip);
     /// Dirty the parameters.
     void SetParametersDirty();
     /// Update changed parameters to OpenGL. Called by Graphics when binding the texture.
@@ -113,6 +113,8 @@ public:
     unsigned GetDataSize(int width, int height, int depth) const;
     /// Return data size in bytes for a pixel or block row.
     unsigned GetRowDataSize(int width) const;
+    /// Return number of image components required to receive pixel data from GetData(), or 0 for compressed images.
+    unsigned GetComponents() const;
     /// Return the non-internal texture format corresponding to an OpenGL internal format.
     static gl::GLenum GetExternalFormat(gl::GLenum format);
     /// Return the data type corresponding to an OpenGL internal format.

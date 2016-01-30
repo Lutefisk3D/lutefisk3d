@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@ class TmxFile2D;
 /// Tile map component.
 class TileMap2D : public Component
 {
-    OBJECT(TileMap2D);
+    URHO3D_OBJECT(TileMap2D,Component);
 
 public:
     /// Construct.
@@ -45,7 +45,7 @@ public:
     static void RegisterObject(Context* context);
 
     /// Visualize the component as debug geometry.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest);
+    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
     /// Set tmx file.
     void SetTmxFile(TmxFile2D* tmxFile);
@@ -71,8 +71,6 @@ public:
     ResourceRef GetTmxFileAttr() const;
 
 private:
-    /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node);
 
     /// Tmx file.
     SharedPtr<TmxFile2D> tmxFile_;

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Math/Color.h"
 #include "../Graphics/Drawable.h"
 #include "../Graphics/Texture.h"
+#include "../Math/Color.h"
 
 namespace Urho3D
 {
@@ -32,7 +32,7 @@ namespace Urho3D
 /// %Component that describes global rendering properties.
 class Zone : public Drawable
 {
-    OBJECT(Zone);
+    URHO3D_OBJECT(Zone,Drawable);
 
 public:
     /// Construct.

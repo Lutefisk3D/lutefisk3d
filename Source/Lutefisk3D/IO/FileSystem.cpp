@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -172,7 +172,7 @@ FileSystem::FileSystem(Context* context) :
     nextAsyncExecID_(1),
     executeConsoleCommands_(false)
 {
-    SubscribeToEvent(E_BEGINFRAME, HANDLER(FileSystem, HandleBeginFrame));
+    SubscribeToEvent(E_BEGINFRAME, URHO3D_HANDLER(FileSystem, HandleBeginFrame));
 
     // Subscribe to console commands
     SetExecuteConsoleCommands(true);
@@ -194,12 +194,12 @@ bool FileSystem::SetCurrentDir(const QString& pathName)
 {
     if (!CheckAccess(pathName))
     {
-        LOGERROR("Access denied to " + pathName);
+        URHO3D_LOGERROR("Access denied to " + pathName);
         return false;
     }
     if (!QDir::setCurrent(pathName))
     {
-        LOGERROR("Failed to change directory to " + pathName);
+        URHO3D_LOGERROR("Failed to change directory to " + pathName);
         return false;
     }
 
@@ -210,7 +210,7 @@ bool FileSystem::CreateDir(const QString& pathName)
 {
     if (!CheckAccess(pathName))
     {
-        LOGERROR("Access denied to " + pathName);
+        URHO3D_LOGERROR("Access denied to " + pathName);
         return false;
     }
 
@@ -219,9 +219,9 @@ bool FileSystem::CreateDir(const QString& pathName)
     bool success = dir.mkpath("."); //NOTE: If directory exists already, this will return true
 
     if (success)
-        LOGDEBUG("Created directory " + pathName);
+        URHO3D_LOGDEBUG("Created directory " + pathName);
     else
-        LOGERROR("Failed to create directory " + pathName);
+        URHO3D_LOGERROR("Failed to create directory " + pathName);
 
     return success;
 }
@@ -233,7 +233,7 @@ void FileSystem::SetExecuteConsoleCommands(bool enable)
 
     executeConsoleCommands_ = enable;
     if (enable)
-        SubscribeToEvent(E_CONSOLECOMMAND, HANDLER(FileSystem, HandleConsoleCommand));
+        SubscribeToEvent(E_CONSOLECOMMAND, URHO3D_HANDLER(FileSystem, HandleConsoleCommand));
     else
         UnsubscribeFromEvent(E_CONSOLECOMMAND);
 }
@@ -244,7 +244,7 @@ int FileSystem::SystemCommand(const QString& commandLine, bool redirectStdOutToL
         return DoSystemCommand(commandLine, redirectStdOutToLog, context_);
     else
     {
-        LOGERROR("Executing an external command is not allowed");
+        URHO3D_LOGERROR("Executing an external command is not allowed");
         return -1;
     }
 }
@@ -255,7 +255,7 @@ int FileSystem::SystemRun(const QString& fileName, const QStringList& arguments)
         return DoSystemRun(fileName, arguments);
     else
     {
-        LOGERROR("Executing an external command is not allowed");
+        URHO3D_LOGERROR("Executing an external command is not allowed");
         return -1;
     }
 }
@@ -271,7 +271,7 @@ unsigned FileSystem::SystemCommandAsync(const QString& commandLine)
     }
     else
     {
-        LOGERROR("Executing an external command is not allowed");
+        URHO3D_LOGERROR("Executing an external command is not allowed");
         return M_MAX_UNSIGNED;
     }
 }
@@ -287,7 +287,7 @@ unsigned FileSystem::SystemRunAsync(const QString& fileName, const QStringList& 
     }
     else
     {
-        LOGERROR("Executing an external command is not allowed");
+        URHO3D_LOGERROR("Executing an external command is not allowed");
         return M_MAX_UNSIGNED;
     }
 }
@@ -298,18 +298,18 @@ bool FileSystem::SystemOpen(const QString& fileName, const QString& mode)
     {
         if (!FileExists(fileName) && !DirExists(fileName))
         {
-            LOGERROR("File or directory " + fileName + " not found");
+            URHO3D_LOGERROR("File or directory " + fileName + " not found");
             return false;
         }
 
         bool success = QDesktopServices::openUrl(QUrl("file:///"+fileName, QUrl::TolerantMode));
         if (!success)
-            LOGERROR("Failed to open " + fileName + " externally");
+            URHO3D_LOGERROR("Failed to open " + fileName + " externally");
         return success;
     }
     else
     {
-        LOGERROR("Opening a file externally is not allowed");
+        URHO3D_LOGERROR("Opening a file externally is not allowed");
         return false;
     }
 }
@@ -318,12 +318,12 @@ bool FileSystem::Copy(const QString& srcFileName, const QString& destFileName)
 {
     if (!CheckAccess(GetPath(srcFileName)))
     {
-        LOGERROR("Access denied to " + srcFileName);
+        URHO3D_LOGERROR("Access denied to " + srcFileName);
         return false;
     }
     if (!CheckAccess(GetPath(destFileName)))
     {
-        LOGERROR("Access denied to " + destFileName);
+        URHO3D_LOGERROR("Access denied to " + destFileName);
         return false;
     }
 
@@ -346,12 +346,12 @@ bool FileSystem::Rename(const QString& srcFileName, const QString& destFileName)
 {
     if (!CheckAccess(GetPath(srcFileName)))
     {
-        LOGERROR("Access denied to " + srcFileName);
+        URHO3D_LOGERROR("Access denied to " + srcFileName);
         return false;
     }
     if (!CheckAccess(GetPath(destFileName)))
     {
-        LOGERROR("Access denied to " + destFileName);
+        URHO3D_LOGERROR("Access denied to " + destFileName);
         return false;
     }
 
@@ -362,7 +362,7 @@ bool FileSystem::Delete(const QString& fileName)
 {
     if (!CheckAccess(GetPath(fileName)))
     {
-        LOGERROR("Access denied to " + fileName);
+        URHO3D_LOGERROR("Access denied to " + fileName);
         return false;
     }
 
@@ -389,7 +389,7 @@ bool FileSystem::CheckAccess(const QString& pathName) const
     // Check if the path is a partial match of any of the allowed directories
     for (const QString &i : allowedPaths_)
     {
-        if (fixedPath.indexOf(i) == 0)
+        if (fixedPath.startsWith(i))
             return true;
     }
 
@@ -472,7 +472,7 @@ QString FileSystem::GetProgramDir() const
     #if defined(ANDROID)
     // This is an internal directory specifier pointing to the assets in the .apk
     // Files from this directory will be opened using special handling
-    programDir_ = "/apk/";
+    programDir_ = APK;
     return programDir_;
     #elif defined(IOS)
     programDir_ = AddTrailingSlash(SDL_IOS_GetResourceDir());
@@ -516,17 +516,6 @@ QString FileSystem::GetUserDocumentsDir() const
 QString FileSystem::GetAppPreferencesDir(const QString& org, const QString& app) const
 {
     return AddTrailingSlash(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation));
-//    QString dir;
-//    char* prefPath = SDL_GetPrefPath(qPrintable(org), qPrintable(app));
-//    if (prefPath)
-//    {
-//        dir = GetInternalPath(QString(prefPath));
-//        SDL_free(prefPath);
-//    }
-//    else
-//        LOGWARNING("Could not get application preferences directory");
-
-//    return dir;
 }
 
 void FileSystem::RegisterPath(const QString& pathName)
@@ -573,6 +562,41 @@ void FileSystem::ScanDirInternal(QStringList& result, QString path, const QStrin
     if (filterExtension.contains('*'))
         filterExtension.clear();
 
+#ifdef ANDROID
+    if (IS_ASSET(path))
+    {
+        QString assetPath(ASSET(path));
+        assetPath.Resize(assetPath.Length() - 1);       // AssetManager.list() does not like trailing slash
+        int count;
+        char** list = SDL_Android_GetFileList(assetPath.CString(), &count);
+        for (int i = 0; i < count; ++i)
+        {
+            QString fileName(list[i]);
+            if (!(flags & SCAN_HIDDEN) && fileName.StartsWith("."))
+                continue;
+
+#ifdef ASSET_DIR_INDICATOR
+            // Patch the directory name back after retrieving the directory flag
+            bool isDirectory = fileName.EndsWith(ASSET_DIR_INDICATOR);
+            if (isDirectory)
+            {
+                fileName.Resize(fileName.Length() - sizeof(ASSET_DIR_INDICATOR) / sizeof(char) + 1);
+                if (flags & SCAN_DIRS)
+                    result.Push(deltaPath + fileName);
+                if (recursive)
+                    ScanDirInternal(result, path + fileName, startPath, filter, flags, recursive);
+            }
+            else if (flags & SCAN_FILES)
+#endif
+            {
+                if (filterExtension.Empty() || fileName.EndsWith(filterExtension))
+                    result.Push(deltaPath + fileName);
+            }
+        }
+        SDL_Android_FreeFileList(&list, &count);
+        return;
+    }
+#endif
     #ifdef WIN32
     WIN32_FIND_DATAW info;
     std::wstring path_w(path.toStdWString());
@@ -650,10 +674,10 @@ void FileSystem::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
         {
             using namespace AsyncExecFinished;
 
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_REQUESTID] = request->GetRequestID();
-            eventData[P_EXITCODE] = request->GetExitCode();
-            SendEvent(E_ASYNCEXECFINISHED, eventData);
+            VariantMap& newEventData = GetEventDataMap();
+            newEventData[P_REQUESTID] = request->GetRequestID();
+            newEventData[P_EXITCODE] = request->GetExitCode();
+            SendEvent(E_ASYNCEXECFINISHED, newEventData);
 
             delete request;
             i = asyncExecQueue_.erase(i);

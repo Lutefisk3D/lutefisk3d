@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,9 @@ class Texture;
 class Texture2D;
 class TextureCube;
 class ValueAnimationInfo;
+class JSONFile;
+
+static const constexpr uint8_t DEFAULT_RENDER_ORDER = 128;
 
 /// %Material's shader parameter definition.
 struct MaterialShaderParameter
@@ -103,7 +106,7 @@ private:
 /// Describes how to render 3D geometries.
 class Material : public Resource
 {
-    OBJECT(Material);
+    URHO3D_OBJECT(Material,Resource);
 
 public:
     /// Construct.
@@ -124,6 +127,10 @@ public:
     bool Load(const XMLElement& source);
     /// Save to an XML element. Return true if successful.
     bool Save(XMLElement& dest) const;
+    /// Load from a JSON value. Return true if successful.
+    bool Load(const JSONValue& source);
+    /// Save to a JSON value. Return true if successful.
+    bool Save(JSONValue& dest) const;
     /// Set number of techniques.
     void SetNumTechniques(unsigned num);
     /// Set technique.
@@ -150,6 +157,8 @@ public:
     void SetFillMode(FillMode mode);
     /// Set depth bias.
     void SetDepthBias(const BiasParameters& parameters);
+    /// Set 8-bit render order within pass. Default 128. Lower values will render earlier and higher values later, taking precedence over e.g. state and distance sorting.
+    void SetRenderOrder(uint8_t order);
     /// Associate the material with a scene to ensure that shader parameter animation happens in sync with scene update, respecting the scene time scale. If no scene is set, the global update events will be used.
     void SetScene(Scene* scene);
     /// Remove shader parameter.
@@ -195,6 +204,8 @@ public:
     FillMode GetFillMode() const { return fillMode_; }
     /// Return depth bias.
     const BiasParameters& GetDepthBias() const { return depthBias_; }
+    /// Return render order.
+    unsigned char GetRenderOrder() const { return renderOrder_; }
     /// Return last auxiliary view rendered frame number.
     unsigned GetAuxViewFrameNumber() const { return auxViewFrameNumber_; }
     /// Return whether should render occlusion.
@@ -208,10 +219,14 @@ public:
 
     /// Return name for texture unit.
     static QString GetTextureUnitName(TextureUnit unit);
-    /// Parse a shader parameter value from a string. Retunrs either a bool, a float, or a 2 to 4-component vector.
+    /// Parse a shader parameter value from a string. Returns either a bool, a float, or a 2 to 4-component vector.
     static Variant ParseShaderParameterValue(const QString& value);
 
 private:
+    /// Helper function for loading JSON files
+    bool BeginLoadJSON(Deserializer& source);
+    /// Helper function for loading XML files
+    bool BeginLoadXML(Deserializer& source);
     /// Re-evaluate occlusion rendering.
     void CheckOcclusion();
     /// Reset to defaults.
@@ -243,6 +258,8 @@ private:
     FillMode fillMode_;
     /// Depth bias parameters.
     BiasParameters depthBias_;
+    /// Render order value.
+    unsigned char renderOrder_;
     /// Last auxiliary view rendered frame number.
     unsigned auxViewFrameNumber_;
     /// Shader parameter hash value.
@@ -257,6 +274,8 @@ private:
     bool batchedParameterUpdate_;
     /// XML file used while loading.
     SharedPtr<XMLFile> loadXMLFile_;
+    /// JSON file used while loading.
+    SharedPtr<JSONFile> loadJSONFile_;
     /// Associated scene for shader parameter animation updates.
     WeakPtr<Scene> scene_;
 };

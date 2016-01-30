@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -81,7 +81,7 @@ public:
     }
 
     /// Construct from a float array.
-    Vector3(const float* data) :
+    explicit Vector3(const float* data) :
         x_(data[0]),
         y_(data[1]),
         z_(data[2])
@@ -191,7 +191,10 @@ public:
     /// Calculate dot product.
     float DotProduct(const Vector3& rhs) const { return x_ * rhs.x_ + y_ * rhs.y_ + z_ * rhs.z_; }
     /// Calculate absolute dot product.
-    float AbsDotProduct(const Vector3& rhs) const { return Urho3D::Abs(x_ * rhs.x_) + Urho3D::Abs(y_ * rhs.y_) + Urho3D::Abs(z_ * rhs.z_); }
+    float AbsDotProduct(const Vector3& rhs) const
+    {
+        return Urho3D::Abs(x_ * rhs.x_) + Urho3D::Abs(y_ * rhs.y_) + Urho3D::Abs(z_ * rhs.z_);
+    }
 
     /// Calculate cross product.
     Vector3 CrossProduct(const Vector3& rhs) const
@@ -208,7 +211,10 @@ public:
     /// Linear interpolation with another vector.
     Vector3 Lerp(const Vector3& rhs, float t) const { return *this * (1.0f - t) + rhs * t; }
     /// Test for equality with another vector with epsilon.
-    bool Equals(const Vector3& rhs) const { return Urho3D::Equals(x_, rhs.x_) && Urho3D::Equals(y_, rhs.y_) && Urho3D::Equals(z_, rhs.z_); }
+    bool Equals(const Vector3& rhs) const
+    {
+        return Urho3D::Equals(x_, rhs.x_) && Urho3D::Equals(y_, rhs.y_) && Urho3D::Equals(z_, rhs.z_);
+    }
     /// Returns the angle between this vector and another vector in degrees.
     float Angle(const Vector3& rhs) const { return Urho3D::Acos(DotProduct(rhs) / (Length() * rhs.Length() ) ); }
     /// Return whether is NaN.

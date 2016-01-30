@@ -72,6 +72,23 @@ const StringHash XML_TYPE_TEXTURE_3D("texture3d");
 const StringHash XML_TYPE_CUBEMAP("cubemap");
 const StringHash XML_TYPE_SPRITER_DATA("spriter_data");
 
+const StringHash JSON_TYPE_SCENE("scene");
+const StringHash JSON_TYPE_NODE("node");
+const StringHash JSON_TYPE_MATERIAL("material");
+const StringHash JSON_TYPE_TECHNIQUE("technique");
+const StringHash JSON_TYPE_PARTICLEEFFECT("particleeffect");
+const StringHash JSON_TYPE_PARTICLEEMITTER("particleemitter");
+const StringHash JSON_TYPE_TEXTURE("texture");
+const StringHash JSON_TYPE_ELEMENT("element");
+const StringHash JSON_TYPE_ELEMENTS("elements");
+const StringHash JSON_TYPE_ANIMATION_SETTINGS("animation");
+const StringHash JSON_TYPE_RENDERPATH("renderpath");
+const StringHash JSON_TYPE_TEXTURE_ATLAS("TextureAtlas");
+const StringHash JSON_TYPE_2D_PARTICLE_EFFECT("particleEmitterConfig");
+const StringHash JSON_TYPE_TEXTURE_3D("texture3d");
+const StringHash JSON_TYPE_CUBEMAP("cubemap");
+const StringHash JSON_TYPE_SPRITER_DATA("spriter_data");
+
 const StringHash BINARY_TYPE_SCENE("USCN");
 const StringHash BINARY_TYPE_PACKAGE("UPAK");
 const StringHash BINARY_TYPE_COMPRESSED_PACKAGE("ULZ4");
@@ -88,7 +105,10 @@ const StringHash EXTENSION_TYPE_DDS(".dds");
 const StringHash EXTENSION_TYPE_PNG(".png");
 const StringHash EXTENSION_TYPE_JPG(".jpg");
 const StringHash EXTENSION_TYPE_JPEG(".jpeg");
+const StringHash EXTENSION_TYPE_BMP(".bmp");
 const StringHash EXTENSION_TYPE_TGA(".tga");
+const StringHash EXTENSION_TYPE_KTX(".ktx");
+const StringHash EXTENSION_TYPE_PVR(".pvr");
 const StringHash EXTENSION_TYPE_OBJ(".obj");
 const StringHash EXTENSION_TYPE_FBX(".fbx");
 const StringHash EXTENSION_TYPE_COLLADA(".dae");
@@ -184,9 +204,9 @@ void DoResourceBrowserWork()
     }
 
     if (browserFilesToScan.length > 0)
-        browserStatusMessage.text = "Files left to scan: " + browserFilesToScan.length;
+        browserStatusMessage.text = localization.Get("Files left to scan: " )+ browserFilesToScan.length;
     else
-        browserStatusMessage.text = "Scan complete";
+        browserStatusMessage.text = localization.Get("Scan complete");
 
 }
 
@@ -279,7 +299,7 @@ void CreateDirList(BrowserDir@ dir, UIElement@ parentUI = null)
     Text@ dirText = Text();
     browserDirList.InsertItem(browserDirList.numItems, dirText, parentUI);
     dirText.style = "FileSelectorListText";
-    dirText.text = dir.resourceKey.empty ? "Root" : dir.name;
+    dirText.text = dir.resourceKey.empty ? localization.Get("Root") : dir.name;
     dirText.name = dir.resourceKey;
     dirText.vars[TEXT_VAR_DIR_ID] = dir.resourceKey;
 
@@ -511,17 +531,25 @@ void ScanResourceDirFiles(String path, uint resourceDirIndex)
     }
 }
 
-void HideResourceBrowserWindow()
+bool ToggleResourceBrowserWindow()
 {
-    browserWindow.visible = false;
+    if (browserWindow.visible == false)
+        ShowResourceBrowserWindow();
+    else
+        HideResourceBrowserWindow();
+    return true;
 }
 
-bool ShowResourceBrowserWindow()
+void ShowResourceBrowserWindow()
 {
     browserWindow.visible = true;
     browserWindow.BringToFront();
     ui.focusElement = browserSearch;
-    return true;
+}
+
+void HideResourceBrowserWindow()
+{
+    browserWindow.visible = false;
 }
 
 void ToggleResourceFilterWindow()
@@ -560,7 +588,7 @@ void PopulateResourceDirFilters()
 
         Text@ label = Text();
         label.style = "EditorAttributeText";
-        label.text = String(cache.resourceDirs[i]).Replace(fileSystem.programDir, "");
+        label.text = cache.resourceDirs[i].Replaced(fileSystem.programDir, "");
         CheckBox@ checkbox = CheckBox();
         checkbox.name = i;
         checkbox.SetStyleAuto();
@@ -601,7 +629,7 @@ void PopulateResourceBrowserFilesByDirectory(BrowserDir@ dir)
     browserSearchSortMode = BROWSER_SORT_MODE_ALPHA;
     files.Sort();
     PopulateResourceBrowserResults(files);
-    browserResultsMessage.text = "Showing " + files.length + " files";
+    browserResultsMessage.text = localization.Get("Showing files: ") + files.length;
 }
 
 
@@ -624,7 +652,7 @@ void PopulateResourceBrowserBySearch()
             if (activeResourceDirFilters.Find(file.resourceSourceIndex) > -1)
                 continue;
 
-            int find = file.fullname.Find(query, 0, Qt::CaseInsensitive);
+            int find = file.fullname.Find(query, 0, false);
             if (find > -1)
             {
                 int fudge = query.length - file.fullname.length;
@@ -1076,6 +1104,40 @@ int GetResourceType(StringHash fileType)
         return RESOURCE_TYPE_CUBEMAP;
     else if (fileType == XML_TYPE_SPRITER_DATA)
         return RESOURCE_TYPE_2D_ANIMATION_SET;
+   
+    // JSON fileTypes
+    else if (fileType == JSON_TYPE_SCENE)
+        return RESOURCE_TYPE_SCENE;
+    else if (fileType == JSON_TYPE_NODE)
+        return RESOURCE_TYPE_PREFAB;
+    else if(fileType == JSON_TYPE_MATERIAL)
+        return RESOURCE_TYPE_MATERIAL;
+    else if(fileType == JSON_TYPE_TECHNIQUE)
+        return RESOURCE_TYPE_TECHNIQUE;
+    else if(fileType == JSON_TYPE_PARTICLEEFFECT)
+        return RESOURCE_TYPE_PARTICLEEFFECT;
+    else if(fileType == JSON_TYPE_PARTICLEEMITTER)
+        return RESOURCE_TYPE_PARTICLEEMITTER;
+    else if(fileType == JSON_TYPE_TEXTURE)
+        return RESOURCE_TYPE_TEXTURE;
+    else if(fileType == JSON_TYPE_ELEMENT)
+        return RESOURCE_TYPE_UIELEMENT;
+    else if(fileType == JSON_TYPE_ELEMENTS)
+        return RESOURCE_TYPE_UIELEMENTS;
+    else if (fileType == JSON_TYPE_ANIMATION_SETTINGS)
+        return RESOURCE_TYPE_ANIMATION_SETTINGS;
+    else if (fileType == JSON_TYPE_RENDERPATH)
+        return RESOURCE_TYPE_RENDERPATH;
+    else if (fileType == JSON_TYPE_TEXTURE_ATLAS)
+        return RESOURCE_TYPE_TEXTURE_ATLAS;
+    else if (fileType == JSON_TYPE_2D_PARTICLE_EFFECT)
+        return RESOURCE_TYPE_2D_PARTICLE_EFFECT;
+    else if (fileType == JSON_TYPE_TEXTURE_3D)
+        return RESOURCE_TYPE_TEXTURE_3D;
+    else if (fileType == JSON_TYPE_CUBEMAP)
+        return RESOURCE_TYPE_CUBEMAP;
+    else if (fileType == JSON_TYPE_SPRITER_DATA)
+        return RESOURCE_TYPE_2D_ANIMATION_SET;
 
     // extension fileTypes
     else if (fileType == EXTENSION_TYPE_TTF)
@@ -1094,7 +1156,13 @@ int GetResourceType(StringHash fileType)
         return RESOURCE_TYPE_IMAGE;
     else if(fileType == EXTENSION_TYPE_JPEG)
         return RESOURCE_TYPE_IMAGE;
+    else if(fileType == EXTENSION_TYPE_BMP)
+        return RESOURCE_TYPE_IMAGE;
     else if(fileType == EXTENSION_TYPE_TGA)
+        return RESOURCE_TYPE_IMAGE;
+    else if(fileType == EXTENSION_TYPE_KTX)
+        return RESOURCE_TYPE_IMAGE;
+    else if(fileType == EXTENSION_TYPE_PVR)
         return RESOURCE_TYPE_IMAGE;
     else if(fileType == EXTENSION_TYPE_OBJ)
         return RESOURCE_TYPE_UNUSABLE;
@@ -1127,6 +1195,8 @@ bool GetExtensionType(String path, StringHash &out fileType)
     StringHash type = StringHash(GetExtension(path));
     if (type == EXTENSION_TYPE_TTF)
         fileType = EXTENSION_TYPE_TTF;
+    else if (type == EXTENSION_TYPE_OTF)
+        fileType = EXTENSION_TYPE_OTF;
     else if (type == EXTENSION_TYPE_OGG)
         fileType = EXTENSION_TYPE_OGG;
     else if(type == EXTENSION_TYPE_WAV)
@@ -1139,8 +1209,14 @@ bool GetExtensionType(String path, StringHash &out fileType)
         fileType = EXTENSION_TYPE_JPG;
     else if(type == EXTENSION_TYPE_JPEG)
         fileType = EXTENSION_TYPE_JPEG;
+    else if(type == EXTENSION_TYPE_BMP)
+        fileType = EXTENSION_TYPE_BMP;
     else if(type == EXTENSION_TYPE_TGA)
         fileType = EXTENSION_TYPE_TGA;
+    else if(type == EXTENSION_TYPE_KTX)
+        fileType = EXTENSION_TYPE_KTX;
+    else if(type == EXTENSION_TYPE_PVR)
+        fileType = EXTENSION_TYPE_PVR;
     else if(type == EXTENSION_TYPE_OBJ)
         fileType = EXTENSION_TYPE_OBJ;
     else if(type == EXTENSION_TYPE_FBX)
@@ -1218,7 +1294,7 @@ bool GetBinaryType(String path, StringHash &out fileType, bool useCache = false)
 bool GetXmlType(String path, StringHash &out fileType, bool useCache = false)
 {
     String extension = GetExtension(path);
-    if (extension == ".txt" || extension == ".json" || extension == ".icns")
+    if (extension == ".txt" || extension == ".json" || extension == ".icns" || extension == ".atlas")
         return false;
 
     String name;
@@ -1242,7 +1318,7 @@ bool GetXmlType(String path, StringHash &out fileType, bool useCache = false)
         XMLFile@ xml = XMLFile();
         if (xml.Load(file))
             name = xml.root.name;
-        else 
+        else
             return false;
     }
 

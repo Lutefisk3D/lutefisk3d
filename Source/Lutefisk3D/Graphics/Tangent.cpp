@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -95,10 +95,8 @@ void GenerateTangents(void* vertexData, unsigned vertexSize, const void* indexDa
         float t2 = w3.y_ - w1.y_;
 
         float r = 1.0f / (s1 * t2 - s2 * t1);
-        Vector3 sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r,
-                (t2 * z1 - t1 * z2) * r);
-        Vector3 tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r,
-                (s1 * z2 - s2 * z1) * r);
+        Vector3 sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
+        Vector3 tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
 
         tan1[i1] += sdir;
         tan1[i2] += sdir;

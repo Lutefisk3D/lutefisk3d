@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,17 +20,18 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/Camera.h"
+#include "Light.h"
 #include "../Core/Context.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../Graphics/Graphics.h"
-#include "../Graphics/Light.h"
-#include "../Scene/Node.h"
-#include "../Graphics/OctreeQuery.h"
 #include "../Core/Profiler.h"
+#include "../Scene/Node.h"
+#include "../IO/Log.h"
 #include "../Resource/ResourceCache.h"
-#include "../Graphics/Texture2D.h"
-#include "../Graphics/TextureCube.h"
+#include "Camera.h"
+#include "DebugRenderer.h"
+#include "Graphics.h"
+#include "OctreeQuery.h"
+#include "Texture2D.h"
+#include "TextureCube.h"
 
 namespace Urho3D
 {
@@ -107,38 +108,38 @@ void Light::RegisterObject(Context* context)
 {
     context->RegisterFactory<Light>(SCENE_CATEGORY);
 
-    ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    ENUM_ACCESSOR_ATTRIBUTE("Light Type", GetLightType, SetLightType, LightType, typeNames, DEFAULT_LIGHTTYPE, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Color", GetColor, SetColor, Color, Color::WHITE, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Specular Intensity", GetSpecularIntensity, SetSpecularIntensity, float, DEFAULT_SPECULARINTENSITY, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Brightness Multiplier", GetBrightness, SetBrightness, float, DEFAULT_BRIGHTNESS, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Range", GetRange, SetRange, float, DEFAULT_RANGE, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Spot FOV", GetFov, SetFov, float, DEFAULT_LIGHT_FOV, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Spot Aspect Ratio", GetAspectRatio, SetAspectRatio, float, 1.0f, AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Attenuation Texture", GetRampTextureAttr, SetRampTextureAttr, ResourceRef, ResourceRef(Texture2D::GetTypeStatic()), AM_DEFAULT);
-    MIXED_ACCESSOR_ATTRIBUTE("Light Shape Texture", GetShapeTextureAttr, SetShapeTextureAttr, ResourceRef, ResourceRef(Texture2D::GetTypeStatic()), AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
-    ATTRIBUTE("Cast Shadows", bool, castShadows_, false, AM_DEFAULT);
-    ATTRIBUTE("Per Vertex", bool, perVertex_, false, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Draw Distance", GetDrawDistance, SetDrawDistance, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Fade Distance", GetFadeDistance, SetFadeDistance, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Shadow Distance", GetShadowDistance, SetShadowDistance, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Shadow Fade Distance", GetShadowFadeDistance, SetShadowFadeDistance, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Shadow Intensity", GetShadowIntensity, SetShadowIntensity, float, 0.0f, AM_DEFAULT);
-    ACCESSOR_ATTRIBUTE("Shadow Resolution", GetShadowResolution, SetShadowResolution, float, 1.0f, AM_DEFAULT);
-    ATTRIBUTE("Focus To Scene", bool, shadowFocus_.focus_, true, AM_DEFAULT);
-    ATTRIBUTE("Non-uniform View", bool, shadowFocus_.nonUniform_, true, AM_DEFAULT);
-    ATTRIBUTE("Auto-Reduce Size", bool, shadowFocus_.autoSize_, true, AM_DEFAULT);
-    ATTRIBUTE("CSM Splits", Vector4, shadowCascade_.splits_, Vector4(DEFAULT_SHADOWSPLIT, 0.0f, 0.0f, 0.0f), AM_DEFAULT);
-    ATTRIBUTE("CSM Fade Start", float, shadowCascade_.fadeStart_, DEFAULT_SHADOWFADESTART, AM_DEFAULT);
-    ATTRIBUTE("CSM Bias Auto Adjust", float, shadowCascade_.biasAutoAdjust_, DEFAULT_BIASAUTOADJUST, AM_DEFAULT);
-    ATTRIBUTE("View Size Quantize", float, shadowFocus_.quantize_, DEFAULT_SHADOWQUANTIZE, AM_DEFAULT);
-    ATTRIBUTE("View Size Minimum", float, shadowFocus_.minView_, DEFAULT_SHADOWMINVIEW, AM_DEFAULT);
-    ATTRIBUTE("Depth Constant Bias", float, shadowBias_.constantBias_, DEFAULT_CONSTANTBIAS, AM_DEFAULT);
-    ATTRIBUTE("Depth Slope Bias", float, shadowBias_.slopeScaledBias_, DEFAULT_SLOPESCALEDBIAS, AM_DEFAULT);
-    ATTRIBUTE("Near/Farclip Ratio", float, shadowNearFarRatio_, DEFAULT_SHADOWNEARFARRATIO, AM_DEFAULT);
-    ATTRIBUTE("View Mask", int, viewMask_, DEFAULT_VIEWMASK, AM_DEFAULT);
-    ATTRIBUTE("Light Mask", int, lightMask_, DEFAULT_LIGHTMASK, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
+    URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Light Type", GetLightType, SetLightType, LightType, typeNames, DEFAULT_LIGHTTYPE, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Color", GetColor, SetColor, Color, Color::WHITE, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Specular Intensity", GetSpecularIntensity, SetSpecularIntensity, float, DEFAULT_SPECULARINTENSITY, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Brightness Multiplier", GetBrightness, SetBrightness, float, DEFAULT_BRIGHTNESS, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Range", GetRange, SetRange, float, DEFAULT_RANGE, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Spot FOV", GetFov, SetFov, float, DEFAULT_LIGHT_FOV, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Spot Aspect Ratio", GetAspectRatio, SetAspectRatio, float, 1.0f, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Attenuation Texture", GetRampTextureAttr, SetRampTextureAttr, ResourceRef, ResourceRef(Texture2D::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Light Shape Texture", GetShapeTextureAttr, SetShapeTextureAttr, ResourceRef, ResourceRef(Texture2D::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Cast Shadows", bool, castShadows_, false, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Per Vertex", bool, perVertex_, false, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Draw Distance", GetDrawDistance, SetDrawDistance, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Fade Distance", GetFadeDistance, SetFadeDistance, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Shadow Distance", GetShadowDistance, SetShadowDistance, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Shadow Fade Distance", GetShadowFadeDistance, SetShadowFadeDistance, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Shadow Intensity", GetShadowIntensity, SetShadowIntensity, float, 0.0f, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Shadow Resolution", GetShadowResolution, SetShadowResolution, float, 1.0f, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Focus To Scene", bool, shadowFocus_.focus_, true, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Non-uniform View", bool, shadowFocus_.nonUniform_, true, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Auto-Reduce Size", bool, shadowFocus_.autoSize_, true, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("CSM Splits", Vector4, shadowCascade_.splits_, Vector4(DEFAULT_SHADOWSPLIT, 0.0f, 0.0f, 0.0f), AM_DEFAULT);
+    URHO3D_ATTRIBUTE("CSM Fade Start", float, shadowCascade_.fadeStart_, DEFAULT_SHADOWFADESTART, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("CSM Bias Auto Adjust", float, shadowCascade_.biasAutoAdjust_, DEFAULT_BIASAUTOADJUST, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("View Size Quantize", float, shadowFocus_.quantize_, DEFAULT_SHADOWQUANTIZE, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("View Size Minimum", float, shadowFocus_.minView_, DEFAULT_SHADOWMINVIEW, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Depth Constant Bias", float, shadowBias_.constantBias_, DEFAULT_CONSTANTBIAS, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Depth Slope Bias", float, shadowBias_.slopeScaledBias_, DEFAULT_SLOPESCALEDBIAS, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Near/Farclip Ratio", float, shadowNearFarRatio_, DEFAULT_SHADOWNEARFARRATIO, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("View Mask", int, viewMask_, DEFAULT_VIEWMASK, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Light Mask", int, lightMask_, DEFAULT_LIGHTMASK, AM_DEFAULT);
 }
 
 void Light::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
@@ -160,7 +161,7 @@ void Light::ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryRes
     if (lightType_ == LIGHT_DIRECTIONAL)
         return;
 
-    float distance;
+    float distance = query.maxDistance_;
     switch (query.level_)
     {
     case RAY_AABB:
@@ -191,6 +192,9 @@ void Light::ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryRes
                 return;
         }
         break;
+    case RAY_TRIANGLE_UV:
+        URHO3D_LOGWARNING("RAY_TRIANGLE_UV query level is not supported for Light component");
+        return;
     }
 
     // If the code reaches here then we have a hit
@@ -413,8 +417,8 @@ const Matrix3x4& Light::GetVolumeTransform(Camera* camera)
             quadTransform.SetTranslation(Vector3(0.0f, 0.0f, (camera->GetNearClip() + camera->GetFarClip()) * 0.5f));
             quadTransform.SetScale(Vector3(far.x_, far.y_, 1.0f)); // Will be oversized, but doesn't matter (gets frustum clipped)
             volumeTransform_ = camera->GetEffectiveWorldTransform() * quadTransform;
-            break;
         }
+        break;
 
     case LIGHT_SPOT:
         {

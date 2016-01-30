@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,14 +28,20 @@
 
 #include <exception>
 
-#include <QObject>
-struct Fl {
-    Q_OBJECT_CHECK
-};
 
 namespace Urho3D
 {
 
+#if defined(IOS) || defined(__EMSCRIPTEN__)
+// Code for supporting SDL_iPhoneSetAnimationCallback() and emscripten_set_main_loop_arg()
+#if defined(__EMSCRIPTEN__)
+#include <emscripten/emscripten.h>
+#endif
+void RunFrame(void* data)
+{
+    static_cast<Engine*>(data)->RunFrame();
+}
+#endif
 Application::Application(Context* context) :
     Object(context),
     exitCode_(EXIT_SUCCESS)
@@ -46,7 +52,7 @@ Application::Application(Context* context) :
     engine_ = new Engine(context);
 
     // Subscribe to log messages so that can show errors if ErrorExit() is called with empty message
-    SubscribeToEvent(E_LOGMESSAGE, HANDLER(Application, HandleLogMessage));
+    SubscribeToEvent(E_LOGMESSAGE, URHO3D_HANDLER(Application, HandleLogMessage));
 }
 
 int Application::Run()
@@ -70,8 +76,8 @@ int Application::Run()
         if (exitCode_)
             return exitCode_;
 
-        // Platforms other than iOS and EMSCRIPTEN run a blocking main loop
-        #if !defined(IOS) && !defined(EMSCRIPTEN)
+        // Platforms other than iOS and Emscripten run a blocking main loop
+        #if !defined(IOS) && !defined(__EMSCRIPTEN__)
         while (!engine_->IsExiting())
             engine_->RunFrame();
 
@@ -81,14 +87,14 @@ int Application::Run()
         #else
         #if defined(IOS)
         SDL_iPhoneSetAnimationCallback(GetSubsystem<Graphics>()->GetImpl()->GetWindow(), 1, &RunFrame, engine_);
-        #elif defined(EMSCRIPTEN)
+        #elif defined(__EMSCRIPTEN__)
         emscripten_set_main_loop_arg(RunFrame, engine_, 0, 1);
         #endif
         #endif
 
         return exitCode_;
     }
-    catch (std::bad_alloc&)
+    catch (std::bad_alloc& e)
     {
         ErrorDialog(GetTypeName(), "An out-of-memory error occurred. The application will now exit.");
         return EXIT_FAILURE;
@@ -100,13 +106,10 @@ void Application::ErrorExit(const QString& message)
     engine_->Exit(); // Close the rendering window
     exitCode_ = EXIT_FAILURE;
 
-    // Only for WIN32, otherwise the error messages would be double posted on Mac OS X and Linux platforms
     if (!message.length())
     {
-        #ifdef WIN32
         ErrorDialog(GetTypeName(), startupErrors_.length() ? startupErrors_ :
             "Application has been terminated due to unexpected error.");
-        #endif
     }
     else
         ErrorDialog(GetTypeName(), message);

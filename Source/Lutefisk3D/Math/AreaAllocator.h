@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,7 @@ public:
 
 private:
     /// Remove space from a free rectangle. Return true if the original rectangle should be erased from the free list. Not called in fast mode.
-    bool SplitRect(IntRect original, const IntRect& reserve);
+    bool SplitRect(unsigned freeAreaIndex, const IntRect &reserve);
     /// Clean up redundant free space. Not called in fast mode.
     void Cleanup();
 

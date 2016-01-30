@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,13 @@
 // THE SOFTWARE.
 //
 
+#include "Sprite2D.h"
+
+#include "Drawable2D.h"
+#include "SpriteSheet2D.h"
 #include "../Core/Context.h"
 #include "../IO/Deserializer.h"
 #include "../Resource/ResourceCache.h"
-#include "../Urho2D/Drawable2D.h"
-#include "../Urho2D/Sprite2D.h"
-#include "../Urho2D/SpriteSheet2D.h"
 #include "../Graphics/Texture2D.h"
 
 
@@ -104,6 +105,15 @@ bool Sprite2D::EndLoad()
 void Sprite2D::SetTexture(Texture2D* texture)
 {
     texture_ = texture;
+    // Ensure the texture doesn't have wrap addressing as that will cause bleeding bugs on the edges.
+    // Could also choose border mode, but in that case a universally good border color (without alpha bugs)
+    // would be hard to choose. Ideal is for the user to configure the texture parameters in its parameter
+    // XML file.
+    if (texture_->GetAddressMode(COORD_U) == ADDRESS_WRAP)
+    {
+        texture_->SetAddressMode(COORD_U, ADDRESS_CLAMP);
+        texture_->SetAddressMode(COORD_V, ADDRESS_CLAMP);
+    }
 }
 
 void Sprite2D::SetRectangle(const IntRect& rectangle)
@@ -142,18 +152,10 @@ bool Sprite2D::GetDrawRectangle(Rect& rect, const Vector2& hotSpot, bool flipX, 
     float hotSpotX = flipX ? (1.0f - hotSpot.x_) : hotSpot.x_;
     float hotSpotY = flipY ? (1.0f - hotSpot.y_) : hotSpot.y_;
 
-#ifdef URHO3D_OPENGL
     rect.min_.x_ = -width * hotSpotX;
     rect.max_.x_ = width * (1.0f - hotSpotX);
     rect.min_.y_ = -height * hotSpotY;
     rect.max_.y_ = height * (1.0f - hotSpotY);
-#else
-    const float halfPixelOffset = 0.5f * PIXEL_SIZE;
-    rect.min_.x_ = -width * hotSpotX + halfPixelOffset;
-    rect.max_.x_ = width * (1.0f - hotSpotX) + halfPixelOffset;
-    rect.min_.y_ = -height * hotSpotY + halfPixelOffset;
-    rect.max_.y_ = height * (1.0f - hotSpotY) + halfPixelOffset;
-#endif
     return true;
 }
 

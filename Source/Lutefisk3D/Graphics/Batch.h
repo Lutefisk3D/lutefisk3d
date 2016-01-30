@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 #pragma once
 
 #include "../Graphics/Drawable.h"
+#include "../Graphics/Material.h"
 #include "../Math/MathDefs.h"
 #include "../Math/Matrix3x4.h"
 #include "../Container/Ptr.h"
@@ -58,39 +59,40 @@ struct Batch
     /// Construct with defaults.
     Batch() :
         geometry_(nullptr),
-        lightQueue_(nullptr),
-        isBase_(false)
+        isBase_(false),
+        lightQueue_(nullptr)
     {
     }
 
     /// Construct from a drawable's source batch.
     Batch(const SourceBatch& rhs,bool is_base=false) :
         distance_(rhs.distance_),
+        renderOrder_(rhs.material_ ? rhs.material_->GetRenderOrder() : DEFAULT_RENDER_ORDER),
+        isBase_(is_base),
         geometry_(rhs.geometry_),
         material_(rhs.material_),
         worldTransform_(rhs.worldTransform_),
         numWorldTransforms_(rhs.numWorldTransforms_),
         lightQueue_(nullptr),
-        geometryType_(rhs.geometryType_),
-        isBase_(is_base)
+        geometryType_(rhs.geometryType_)
     {
     }
-    Batch(const SourceBatch& rhs, Camera *cam,Zone *z, LightBatchQueue *l, Pass *p,
+    Batch(const SourceBatch& rhs, Zone *z, LightBatchQueue *l, Pass *p,
           uint8_t lmask=uint8_t(DEFAULT_LIGHTMASK),bool is_base=false) :
         sortKey_(0),
         distance_(rhs.distance_),
+        renderOrder_(rhs.material_ ? rhs.material_->GetRenderOrder() : DEFAULT_RENDER_ORDER),
+        isBase_(is_base),
         geometry_(rhs.geometry_),
         material_(rhs.material_),
         worldTransform_(rhs.worldTransform_),
         numWorldTransforms_(rhs.numWorldTransforms_),
-        camera_(cam),
         zone_(z),
         lightQueue_(l),
         pass_(p),
         vertexShader_(nullptr),
         pixelShader_(nullptr),
         geometryType_(rhs.geometryType_),
-        isBase_(is_base),
         lightMask_(lmask)
     {
     }
@@ -98,9 +100,9 @@ struct Batch
     /// Calculate state sorting key, which consists of base pass flag, light, pass and geometry.
     void CalculateSortKey();
     /// Prepare for rendering.
-    void Prepare(View* view, bool setModelTransform, bool allowDepthWrite) const;
+    void Prepare(View* view, Camera* camera, bool setModelTransform, bool allowDepthWrite) const;
     /// Prepare and draw.
-    void Draw(View* view, bool allowDepthWrite) const;
+    void Draw(View* view, Camera* camera, bool allowDepthWrite) const;
 
     /// State sorting key.
     unsigned long long sortKey_;
@@ -114,8 +116,6 @@ struct Batch
     const Matrix3x4* worldTransform_;
     /// Number of world transforms.
     unsigned numWorldTransforms_;
-    /// Camera.
-    Camera* camera_;
     /// Zone.
     Zone* zone_;
     /// Light properties.
@@ -128,10 +128,12 @@ struct Batch
     ShaderVariation* pixelShader_;
     /// %Geometry type.
     GeometryType geometryType_;
-    /// Base batch flag. This tells to draw the object fully without light optimizations.
-    bool isBase_;
+    /// 8-bit render order modifier from material.
+    uint8_t renderOrder_;
     /// 8-bit light mask for stencil marking in deferred rendering.
     uint8_t lightMask_;
+    /// Base batch flag. This tells to draw the object fully without light optimizations.
+    bool isBase_;
 };
 
 /// Data for one geometry instance.
@@ -186,7 +188,7 @@ struct BatchGroup : public Batch
     /// Pre-set the instance transforms. Buffer must be big enough to hold all transforms.
     void SetTransforms(void* lockedData, unsigned& freeIndex);
     /// Prepare and draw.
-    void Draw(View* view, bool allowDepthWrite) const;
+    void Draw(View* view, Camera* camera, bool allowDepthWrite) const;
 
     /// Instance data.
     std::vector<InstanceData> instances_;
@@ -207,20 +209,29 @@ struct BatchGroupKey
         pass_(batch.pass_),
         material_(batch.material_),
         geometry_(batch.geometry_),
-        hashCode_ ( (uintptr_t(pass_) >>1) ^
-                    (uintptr_t(material_) >>3) ^
-                    (uintptr_t(geometry_) >>5) ^
-                    (uintptr_t(zone_)>>7) ^
-                    (uintptr_t(lightQueue_)>>9) )
+        renderOrder_(batch.renderOrder_),
+        hashCode_ ( (uintptr_t(batch.pass_) >>1) ^
+                    (uintptr_t(batch.material_) >>3) ^
+                    (uintptr_t(batch.geometry_) >>5) ^
+                    (uintptr_t(batch.zone_)>>7) ^
+                    (uintptr_t(batch.lightQueue_)>>9) ^ batch.renderOrder_)
     {
     }
     /// Test for equality with another batch group key.
-    constexpr bool operator == (const BatchGroupKey& rhs) const { return hashCode_ == rhs.hashCode_ && zone_ == rhs.zone_ && lightQueue_ == rhs.lightQueue_ && pass_ == rhs.pass_ && material_ == rhs.material_ && geometry_ == rhs.geometry_; }
+    constexpr bool operator == (const BatchGroupKey& rhs) const {
+        return hashCode_ == rhs.hashCode_ &&
+                zone_ == rhs.zone_ &&
+                lightQueue_ == rhs.lightQueue_ &&
+                pass_ == rhs.pass_ &&
+                material_ == rhs.material_ &&
+                geometry_ == rhs.geometry_ &&
+                renderOrder_ == rhs.renderOrder_; }
     /// Test for inequality with another batch group key.
-    constexpr bool operator != (const BatchGroupKey& rhs) const { return hashCode_ != rhs.hashCode_ || zone_ != rhs.zone_ || lightQueue_ != rhs.lightQueue_ || pass_ != rhs.pass_ || material_ != rhs.material_ || geometry_ != rhs.geometry_; }
+    constexpr bool operator != (const BatchGroupKey& rhs) const { return !(*this==rhs); }
 
     /// Return hash value.
     constexpr unsigned ToHash() const { return  hashCode_; }
+
 private:
     /// Zone.
     Zone* zone_;
@@ -233,6 +244,8 @@ private:
     /// Geometry.
     Geometry* geometry_;
     uintptr_t hashCode_;
+    /// 8-bit render order modifier from material.
+    uint8_t renderOrder_;
 
 
 };
@@ -265,7 +278,7 @@ public:
     /// Pre-set instance transforms of all groups. The vertex buffer must be big enough to hold all transforms.
     void SetTransforms(void* lockedData, unsigned& freeIndex);
     /// Draw.
-    void Draw(View* view, bool markToStencil, bool usingLightOptimization, bool allowDepthWrite) const;
+    void Draw(View* view, Camera* camera, bool markToStencil, bool usingLightOptimization, bool allowDepthWrite) const;
     /// Return the combined amount of instances.
     unsigned GetNumInstances() const;
     /// Return whether the batch group is empty.

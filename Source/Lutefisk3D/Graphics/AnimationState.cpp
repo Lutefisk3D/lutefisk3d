@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -71,14 +71,14 @@ AnimationState::AnimationState(Node* node, Animation* animation) :
         // Setup animation track to scene node mapping
         if (node_)
         {
-            const std::vector<AnimationTrack>& tracks = animation_->GetTracks();
+            const HashMap<StringHash, AnimationTrack>& tracks = animation_->GetTracks();
             stateTracks_.clear();
 
-            for (unsigned i = 0; i < tracks.size(); ++i)
+            for (HashMap<StringHash, AnimationTrack>::const_iterator i = tracks.begin(); i != tracks.end(); ++i)
             {
-                const StringHash& nameHash = tracks[i].nameHash_;
+                const StringHash& nameHash = MAP_VALUE(i).nameHash_;
                 AnimationStateTrack stateTrack;
-                stateTrack.track_ = &tracks[i];
+                stateTrack.track_ = &MAP_VALUE(i);
 
                 if (node_->GetNameHash() == nameHash || tracks.size() == 1)
                     stateTrack.node_ = node_;
@@ -88,7 +88,7 @@ AnimationState::AnimationState(Node* node, Animation* animation) :
                     if (targetNode)
                         stateTrack.node_ = targetNode;
                     else
-                        LOGWARNING("Node " + tracks[i].name_ + " not found for node animation " + animation_->GetName());
+                        URHO3D_LOGWARNING("Node " + MAP_VALUE(i).name_ + " not found for node animation " + animation_->GetName());
                 }
 
                 if (stateTrack.node_)
@@ -123,20 +123,20 @@ void AnimationState::SetStartBone(Bone* startBone)
 
     startBone_ = startBone;
 
-    const std::vector<AnimationTrack>& tracks = animation_->GetTracks();
+    const HashMap<StringHash, AnimationTrack>& tracks = animation_->GetTracks();
     stateTracks_.clear();
 
     if (!startBone->node_)
         return;
 
-    for (unsigned i = 0; i < tracks.size(); ++i)
+    for (HashMap<StringHash, AnimationTrack>::const_iterator i = tracks.begin(); i != tracks.end(); ++i)
     {
         AnimationStateTrack stateTrack;
-        stateTrack.track_ = &tracks[i];
+        stateTrack.track_ = &MAP_VALUE(i);
 
         // Include those tracks that are either the start bone itself, or its children
         Bone* trackBone = nullptr;
-        const StringHash& nameHash = tracks[i].nameHash_;
+        const StringHash& nameHash = MAP_VALUE(i).nameHash_;
 
         if (nameHash == startBone->nameHash_)
             trackBone = startBone;
@@ -247,19 +247,53 @@ void AnimationState::AddTime(float delta)
     float length = animation_->GetLength();
     if (delta == 0.0f || length == 0.0f)
         return;
+    bool sendFinishEvent = false;
 
     float oldTime = GetTime();
     float time = oldTime + delta;
     if (looped_)
     {
         while (time >= length)
+        {
             time -= length;
+            sendFinishEvent = true;
+        }
         while (time < 0.0f)
+        {
             time += length;
+            sendFinishEvent = true;
+        }
     }
 
     SetTime(time);
 
+    if (!looped_)
+    {
+        if (delta > 0.0f && oldTime < length && GetTime() == length)
+            sendFinishEvent = true;
+        else if (delta < 0.0f && oldTime > 0.0f && GetTime() == 0.0f)
+            sendFinishEvent = true;
+    }
+
+    // Process finish event
+    if (sendFinishEvent)
+    {
+        using namespace AnimationFinished;
+
+        WeakPtr<AnimationState> self(this);
+        WeakPtr<Node> senderNode(model_ ? model_->GetNode() : node_);
+
+        VariantMap& eventData = senderNode->GetEventDataMap();
+        eventData[P_NODE] = senderNode;
+        eventData[P_ANIMATION] = animation_;
+        eventData[P_NAME] = animation_->GetAnimationName();
+        eventData[P_LOOPED] = looped_;
+
+        // Note: this may cause arbitrary deletion of animation states, including the one we are currently processing
+        senderNode->SendEvent(E_ANIMATIONFINISHED, eventData);
+        if (senderNode.Expired() || self.Expired())
+            return;
+    }
     // Process animation triggers
     if (animation_->GetNumTriggers())
     {
@@ -295,14 +329,19 @@ void AnimationState::AddTime(float delta)
             {
                 using namespace AnimationTrigger;
 
-                Node* senderNode = model_ ? model_->GetNode() : node_;
+                WeakPtr<AnimationState> self(this);
+                WeakPtr<Node> senderNode(model_ ? model_->GetNode() : node_);
 
                 VariantMap& eventData = senderNode->GetEventDataMap();
                 eventData[P_NODE] = senderNode;
+                eventData[P_ANIMATION] = animation_;
                 eventData[P_NAME] = animation_->GetAnimationName();
                 eventData[P_TIME] = trigger.time_;
                 eventData[P_DATA] = trigger.data_;
+                // Note: this may cause arbitrary deletion of animation states, including the one we are currently processing
                 senderNode->SendEvent(E_ANIMATIONTRIGGER, eventData);
+                if (senderNode.Expired() || self.Expired())
+                    return;
             }
         }
     }

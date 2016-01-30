@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 
 
 // Expands to this example's entry-point
-DEFINE_APPLICATION_MAIN(HelloWorld)
+URHO3D_DEFINE_APPLICATION_MAIN(HelloWorld)
 
 HelloWorld::HelloWorld(Context* context) :
     Sample(context)
@@ -78,7 +78,7 @@ void HelloWorld::CreateText()
 void HelloWorld::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, HANDLER(HelloWorld, HandleUpdate));
+    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(HelloWorld, HandleUpdate));
 }
 
 void HelloWorld::HandleUpdate(StringHash eventType, VariantMap& eventData)

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,7 @@ static const int MAX_VERTEX_LIGHTS = 4;
 static const float ANIMATION_LOD_BASESCALE = 2500.0f;
 
 class Camera;
+class File;
 class Geometry;
 class Light;
 class Material;
@@ -79,9 +80,13 @@ struct SourceBatch
 {
     /// Construct with defaults.
     SourceBatch();
+    /// Copy-construct.
+    SourceBatch(const SourceBatch& batch);
     /// Destruct.
     ~SourceBatch();
 
+    /// Assignment operator.
+    SourceBatch& operator =(const SourceBatch& rhs);
     /// Distance from camera.
     float distance_;
     /// Geometry.
@@ -99,7 +104,7 @@ struct SourceBatch
 /// Base class for visible components.
 class Drawable : public Component
 {
-    OBJECT(Drawable);
+    URHO3D_OBJECT(Drawable,Component);
 
     friend class Octant;
     friend class Octree;
@@ -260,6 +265,8 @@ public:
 protected:
     /// Handle node being assigned.
     virtual void OnNodeSet(Node* node) override;
+    /// Handle scene being assigned.
+    virtual void OnSceneSet(Scene* scene) override;
     /// Handle node transform being dirtied.
     virtual void OnMarkedDirty(Node* node) override;
     /// Recalculate the world-space bounding box.
@@ -341,5 +348,6 @@ inline bool CompareDrawables(Drawable* lhs, Drawable* rhs)
 {
     return lhs->GetSortValue() < rhs->GetSortValue();
 }
+ bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, bool asZUp, bool asRightHanded, bool writeLightmapUV = false);
 
 }

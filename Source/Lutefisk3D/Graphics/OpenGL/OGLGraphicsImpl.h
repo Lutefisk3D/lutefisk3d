@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,33 +30,6 @@
 #include "glbinding/gl33ext/enum.h"
 #include "glbinding/gl33ext/functions.h"
 
-
-//#ifndef GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
-//#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x83f1
-//#endif
-//#ifndef GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
-//#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83f2
-//#endif
-//#ifndef GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
-//#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x83f3
-//#endif
-
-// mobile gpus
-//#ifndef GL_ETC1_RGB8_OES
-//#define GL_ETC1_RGB8_OES 0x8d64
-//#endif
-//#ifndef COMPRESSED_RGB_PVRTC_4BPPV1_IMG
-//#define COMPRESSED_RGB_PVRTC_4BPPV1_IMG 0x8c00
-//#endif
-//#ifndef COMPRESSED_RGB_PVRTC_2BPPV1_IMG
-//#define COMPRESSED_RGB_PVRTC_2BPPV1_IMG 0x8c01
-//#endif
-//#ifndef COMPRESSED_RGBA_PVRTC_4BPPV1_IMG
-//#define COMPRESSED_RGBA_PVRTC_4BPPV1_IMG 0x8c02
-//#endif
-//#ifndef COMPRESSED_RGBA_PVRTC_2BPPV1_IMG
-//#define COMPRESSED_RGBA_PVRTC_2BPPV1_IMG 0x8c03
-//#endif
 
 #include "SDL2/SDL.h"
 
@@ -100,6 +73,8 @@ public:
     GraphicsImpl();
     /// Return the SDL window.
     SDL_Window* GetWindow() const { return window_; }
+    /// Return the GL Context.
+    const SDL_GLContext& GetGLContext() { return context_; }
 
 private:
     /// SDL window.

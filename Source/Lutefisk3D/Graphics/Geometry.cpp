@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2015 the Urho3D project.
+// Copyright (c) 2008-2016 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,10 @@
 #include "../Graphics/Geometry.h"
 #include "../Graphics/Graphics.h"
 #include "../Graphics/IndexBuffer.h"
+#include "../Graphics/VertexBuffer.h"
 #include "../IO/Log.h"
 #include "../Math/Ray.h"
-#include "../Graphics/VertexBuffer.h"
+
 
 namespace Urho3D
 {
@@ -54,7 +55,7 @@ bool Geometry::SetNumVertexBuffers(unsigned num)
 {
     if (num >= MAX_VERTEX_STREAMS)
     {
-        LOGERROR("Too many vertex streams");
+        URHO3D_LOGERROR("Too many vertex streams");
         return false;
     }
 
@@ -73,7 +74,7 @@ bool Geometry::SetVertexBuffer(unsigned index, VertexBuffer* buffer, unsigned el
 {
     if (index >= vertexBuffers_.size())
     {
-        LOGERROR("Stream index out of bounds");
+        URHO3D_LOGERROR("Stream index out of bounds");
         return false;
     }
 
@@ -100,12 +101,12 @@ bool Geometry::SetDrawRange(PrimitiveType type, unsigned indexStart, unsigned in
 {
     if (!indexBuffer_ && !rawIndexData_)
     {
-        LOGERROR("Null index buffer and no raw index data, can not define indexed draw range");
+        URHO3D_LOGERROR("Null index buffer and no raw index data, can not define indexed draw range");
         return false;
     }
     if (indexBuffer_ && indexStart + indexCount > indexBuffer_->GetIndexCount())
     {
-        LOGERROR(QString("Illegal draw range %1 to %2, index buffer has %3 indices")
+        URHO3D_LOGERROR(QString("Illegal draw range %1 to %2, index buffer has %3 indices")
                  .arg(indexStart)
                  .arg(indexStart + indexCount - 1)
                  .arg(indexBuffer_->GetIndexCount()));
@@ -141,7 +142,7 @@ bool Geometry::SetDrawRange(PrimitiveType type, unsigned indexStart, unsigned in
         // We can allow setting an illegal draw range now if the caller guarantees to resize / fill the buffer later
         if (checkIllegal && indexStart + indexCount > indexBuffer_->GetIndexCount())
         {
-            LOGERROR(QString("Illegal draw range %1 to %2, index buffer has %3 indices")
+            URHO3D_LOGERROR(QString("Illegal draw range %1 to %2, index buffer has %3 indices")
                      .arg(indexStart)
                      .arg(indexStart + indexCount - 1)
                      .arg(indexBuffer_->GetIndexCount()));
@@ -346,19 +347,23 @@ float Geometry::GetHitDistance(const Ray& ray, Vector3* outNormal, Vector2 * out
     unsigned elementMask;
     unsigned uvOffset=0;
     GetRawData(vertexData, vertexSize, indexData, indexSize, elementMask);
-    if(outUV) {
-        if( 0 == (elementMask & MASK_TEXCOORD1) ) {
+    if (vertexData)
+    {
+        if (outUV)
+        {
+            if ((elementMask & MASK_TEXCOORD1) == 0)
+            {
             // requested UV output, but no texture data in vertex buffer
-            LOGWARNING("Illegal GetHitDistance call: UV return requested on vertex buffer without UV coords");
-            outUV = nullptr;
+            URHO3D_LOGWARNING("Illegal GetHitDistance call: UV return requested on vertex buffer without UV coords");
+                *outUV = Vector2::ZERO;
+                outUV = 0;
         }
         else
-            uvOffset = VertexBuffer::GetElementOffset(elementMask,VertexElement::ELEMENT_TEXCOORD1);
+                uvOffset = VertexBuffer::GetElementOffset(elementMask, ELEMENT_TEXCOORD1);
     }
-    if (vertexData) {
-        if(indexData)
-            return ray.HitDistance(vertexData, vertexSize, indexData, indexSize, indexStart_, indexCount_, outNormal,outUV,uvOffset);
-        return ray.HitDistance(vertexData, vertexSize, vertexStart_, vertexCount_, outNormal,outUV,uvOffset);
+        return indexData ? ray.HitDistance(vertexData, vertexSize, indexData, indexSize, indexStart_, indexCount_, outNormal, outUV,
+            uvOffset) :
+               ray.HitDistance(vertexData, vertexSize, vertexStart_, vertexCount_, outNormal, outUV, uvOffset);
     }
     return M_INFINITY;
 }
@@ -373,12 +378,8 @@ bool Geometry::IsInside(const Ray& ray) const
 
     GetRawData(vertexData, vertexSize, indexData, indexSize, elementMask);
 
-    if (vertexData && indexData)
-        return ray.InsideGeometry(vertexData, vertexSize, indexData, indexSize, indexStart_, indexCount_);
-    else if (vertexData)
-        return ray.InsideGeometry(vertexData, vertexSize, vertexStart_, vertexCount_);
-    else
-        return false;
+    return vertexData ? (indexData ? ray.InsideGeometry(vertexData, vertexSize, indexData, indexSize, indexStart_, indexCount_) :
+                         ray.InsideGeometry(vertexData, vertexSize, vertexStart_, vertexCount_)) : false;
 }
 
 void Geometry::GetPositionBufferIndex()

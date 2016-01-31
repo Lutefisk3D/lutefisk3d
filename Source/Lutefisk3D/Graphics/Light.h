@@ -44,11 +44,7 @@ enum LightType
 static constexpr const float SHADOW_MIN_QUANTIZE = 0.1f;
 static constexpr const float SHADOW_MIN_VIEW = 1.0f;
 static constexpr const int MAX_LIGHT_SPLITS = 6;
-#ifdef DESKTOP_GRAPHICS
-static const int MAX_CASCADE_SPLITS = 4;
-#else
-static const int MAX_CASCADE_SPLITS = 1;
-#endif
+static constexpr const int MAX_CASCADE_SPLITS = 4;
 
 /// Shadow depth bias parameters.
 struct BiasParameters

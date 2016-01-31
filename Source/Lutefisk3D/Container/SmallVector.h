@@ -175,6 +175,7 @@ public:
         assert(!empty());
         return end()[-1];
     }
+
 };
 
 /// SmallVectorTemplateBase<isPodLike = false> - This is where we put method
@@ -256,6 +257,10 @@ Retry:
         goto Retry;
     }
 
+    void pop_back() {
+        this->setEnd(this->end()-1);
+        this->end()->~T();
+    }
     template <class... Args>
     void emplace_back(Args&&... As) {
         if (this->EndX < this->CapacityX) {
@@ -266,11 +271,6 @@ Retry:
         }
         this->grow();
         goto Retry;
-    }
-
-    void pop_back() {
-        this->setEnd(this->end()-1);
-        this->end()->~T();
     }
 };
 
@@ -718,6 +718,17 @@ Retry:
     void set_size(unsigned N) {
         assert(N <= this->capacity());
         this->setEnd(this->begin() + N);
+    }
+    template <class... Args>
+    void emplace_back(Args&&... As) {
+        if (this->EndX < this->CapacityX) {
+Retry:
+            ::new ((void*) this->end()) T(::std::forward<Args>(As)...);
+            this->setEnd(this->end()+1);
+            return;
+        }
+        this->grow();
+        goto Retry;
     }
 };
 

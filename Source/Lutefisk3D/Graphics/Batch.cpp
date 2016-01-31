@@ -28,16 +28,16 @@
 #include "GraphicsDefs.h"
 #include "GraphicsImpl.h"
 #include "Material.h"
-#include "../Scene/Node.h"
 #include "Renderer.h"
-#include "../Core/Profiler.h"
-#include "../Scene/Scene.h"
 #include "ShaderVariation.h"
 #include "Technique.h"
 #include "Texture2D.h"
 #include "VertexBuffer.h"
 #include "View.h"
 #include "Zone.h"
+#include "../Core/Profiler.h"
+#include "../Scene/Node.h"
+#include "../Scene/Scene.h"
 
 
 namespace Urho3D
@@ -47,30 +47,27 @@ inline bool CompareBatchesState(Batch* lhs, Batch* rhs)
 {
     if (lhs->renderOrder_ != rhs->renderOrder_)
         return lhs->renderOrder_ < rhs->renderOrder_;
-    else if (lhs->sortKey_ != rhs->sortKey_)
+    if (lhs->sortKey_ != rhs->sortKey_)
         return lhs->sortKey_ < rhs->sortKey_;
-    else
-        return lhs->distance_ < rhs->distance_;
+    return lhs->distance_ < rhs->distance_;
 }
 
 inline bool CompareBatchesFrontToBack(Batch* lhs, Batch* rhs)
 {
     if (lhs->renderOrder_ != rhs->renderOrder_)
         return lhs->renderOrder_ < rhs->renderOrder_;
-    else if (lhs->distance_ != rhs->distance_)
+    if (lhs->distance_ != rhs->distance_)
         return lhs->distance_ < rhs->distance_;
-    else
-        return lhs->sortKey_ < rhs->sortKey_;
+    return lhs->sortKey_ < rhs->sortKey_;
 }
 
 inline bool CompareBatchesBackToFront(Batch* lhs, Batch* rhs)
 {
     if (lhs->renderOrder_ != rhs->renderOrder_)
         return lhs->renderOrder_ < rhs->renderOrder_;
-    else if (lhs->distance_ != rhs->distance_)
+    if (lhs->distance_ != rhs->distance_)
         return lhs->distance_ > rhs->distance_;
-    else
-        return lhs->sortKey_ < rhs->sortKey_;
+    return lhs->sortKey_ < rhs->sortKey_;
 }
 
 inline bool CompareInstancesFrontToBack(const InstanceData& lhs, const InstanceData& rhs)
@@ -94,7 +91,7 @@ void CalculateShadowMatrix(Matrix4& dest, LightBatchQueue* queue, unsigned split
     Matrix4 texAdjust(Matrix4::IDENTITY);
 
     Texture2D* shadowMap = queue->shadowMap_;
-    if (!shadowMap)
+    if (nullptr==shadowMap)
         return;
 
     float width = (float)shadowMap->GetWidth();
@@ -156,40 +153,41 @@ void CalculateSpotMatrix(Matrix4& dest, Light* light, const Vector3& translation
 
 void Batch::CalculateSortKey()
 {
-    unsigned shaderID = ((*((unsigned*)&vertexShader_) / sizeof(ShaderVariation)) + (*((unsigned*)&pixelShader_) / sizeof(ShaderVariation))) & 0x3fff;
+    unsigned shaderID = ((*((unsigned *)&vertexShader_) / sizeof(ShaderVariation)) +
+                         (*((unsigned *)&pixelShader_) / sizeof(ShaderVariation))) &
+                        0x3fff;
     if (!isBase_)
         shaderID |= 0x8000;
-    if (pass_ && pass_->GetAlphaMask())
+    if (nullptr != pass_ && pass_->GetAlphaMask())
         shaderID |= 0x4000;
 
-    unsigned lightQueueID = (*((unsigned*)&lightQueue_) / sizeof(LightBatchQueue)) & 0xffff;
-    unsigned materialID = (*((unsigned*)&material_) / sizeof(Material)) & 0xffff;
-    unsigned geometryID = (*((unsigned*)&geometry_) / sizeof(Geometry)) & 0xffff;
+    unsigned lightQueueID = (*((unsigned *)&lightQueue_) / sizeof(LightBatchQueue)) & 0xffff;
+    unsigned materialID   = (*((unsigned *)&material_) / sizeof(Material)) & 0xffff;
+    unsigned geometryID   = (*((unsigned *)&geometry_) / sizeof(Geometry)) & 0xffff;
 
-    sortKey_ = (((unsigned long long)shaderID) << 48) | (((unsigned long long)lightQueueID) << 32) |
-            (((unsigned long long)materialID) << 16) | geometryID;
+    sortKey_ = (uint64_t(shaderID) << 48) | (uint64_t(lightQueueID) << 32) | (uint64_t(materialID) << 16) | geometryID;
 }
 
-void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool allowDepthWrite) const
+void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bool allowDepthWrite) const
 {
-    if (!vertexShader_ || !pixelShader_)
+    if (nullptr==vertexShader_ || nullptr==pixelShader_)
         return;
 
     Graphics* graphics = view->GetGraphics();
     Renderer* renderer = view->GetRenderer();
-    Node* cameraNode = camera ? camera->GetNode() : nullptr;
+    Node* cameraNode = camera!=nullptr ? camera->GetNode() : nullptr;
     Light* light = lightQueue_ ? lightQueue_->light_ : nullptr;
     Texture2D* shadowMap = lightQueue_ ? lightQueue_->shadowMap_ : nullptr;
     // Set shaders first. The available shader parameters and their register/uniform positions depend on the currently set shaders
     graphics->SetShaders(vertexShader_, pixelShader_);
 
     // Set pass / material-specific renderstates
-    if (pass_ && material_)
+    if (pass_!=nullptr && nullptr!=material_)
     {
-
+        assert(camera!=nullptr);
         BlendMode blend = pass_->GetBlendMode();
         // Turn additive blending into subtract if the light is negative
-        if (light && light->IsNegative())
+        if (nullptr!=light && light->IsNegative())
         {
             if (blend == BLEND_ADD)
                 blend = BLEND_SUBTRACT;
@@ -224,7 +222,8 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
 
     if (graphics->NeedParameterUpdate(SP_CAMERA, reinterpret_cast<const void*>(cameraHash + viewportHash)))
     {
-        view->SetCameraShaderParameters(camera, true);
+        if(camera)
+            view->SetCameraShaderParameters(*camera, true);
         // During renderpath commands the G-Buffer or viewport texture is assumed to always be viewport-sized
         view->SetGBufferShaderParameters(viewSize, IntRect(0, 0, viewSize.x_, viewSize.y_));
     }
@@ -232,10 +231,10 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
     // Set model or skinning transforms
     if (setModelTransform && graphics->NeedParameterUpdate(SP_OBJECT, worldTransform_))
     {
+        assert(camera);
         if (geometryType_ == GEOM_SKINNED)
         {
-            graphics->SetShaderParameter(VSP_SKINMATRICES, reinterpret_cast<const float*>(worldTransform_),
-                                         12 * numWorldTransforms_);
+            graphics->SetShaderParameter(VSP_SKINMATRICES, worldTransform_->Data(), 12 * numWorldTransforms_);
         }
         else
             graphics->SetShaderParameter(VSP_MODEL, *worldTransform_);
@@ -257,8 +256,9 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
     unsigned zoneHash = (unsigned)(size_t)zone_;
     if (overrideFogColorToBlack)
         zoneHash += 0x80000000;
-    if (zone_ && graphics->NeedParameterUpdate(SP_ZONE, reinterpret_cast<const void*>(zoneHash)))
+    if (zone_!=nullptr && graphics->NeedParameterUpdate(SP_ZONE, reinterpret_cast<const void*>(zoneHash)))
     {
+        assert(camera!=nullptr);
         graphics->SetShaderParameter(VSP_AMBIENTSTARTCOLOR, zone_->GetAmbientStartColor());
         graphics->SetShaderParameter(VSP_AMBIENTENDCOLOR, zone_->GetAmbientEndColor().ToVector4() - zone_->GetAmbientStartColor().ToVector4());
 
@@ -293,12 +293,13 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
     }
 
     // Set light-related shader parameters
-    if (lightQueue_)
+    if (nullptr!=lightQueue_)
     {
         if (light && graphics->NeedParameterUpdate(SP_LIGHT, lightQueue_))
         {
+            assert(camera!=nullptr);
             // Deferred light volume batches operate in a camera-centered space. Detect from material, zone & pass all being null
-            bool isLightVolume = !material_ && !pass_ && !zone_;
+            bool isLightVolume = nullptr==material_ && nullptr==pass_ && nullptr==zone_;
 
             Matrix3x4 cameraEffectiveTransform = camera->GetEffectiveWorldTransform();
             Vector3 cameraEffectivePos = cameraEffectiveTransform.Translation();
@@ -331,7 +332,7 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
                     Matrix4 shadowMatrices[2];
 
                     CalculateSpotMatrix(shadowMatrices[0], light, Vector3::ZERO);
-                    bool isShadowed = shadowMap && graphics->HasTextureUnit(TU_SHADOWMAP);
+                    bool isShadowed = shadowMap!=nullptr && graphics->HasTextureUnit(TU_SHADOWMAP);
                     if (isShadowed)
                         CalculateShadowMatrix(shadowMatrices[1], lightQueue_, 0, renderer, Vector3::ZERO);
 
@@ -408,7 +409,7 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
             }
 
             // Set shadow mapping shader parameters
-            if (shadowMap)
+            if (nullptr!=shadowMap)
             {
                 {
                     // Calculate point light shadow sampling offsets (unrolled cube map)
@@ -480,7 +481,7 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
                     graphics->SetShaderParameter(PSP_VSMSHADOWPARAMS, renderer->GetVSMShadowParameters());
             }
         }
-        else if (lightQueue_->vertexLights_.size() && graphics->HasShaderParameter(VSP_VERTEXLIGHTS) &&
+        else if (!lightQueue_->vertexLights_.empty() && graphics->HasShaderParameter(VSP_VERTEXLIGHTS) &&
                  graphics->NeedParameterUpdate(SP_LIGHT, lightQueue_))
         {
             Vector4 vertexLights[MAX_VERTEX_LIGHTS * 3];
@@ -533,7 +534,7 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
     }
 
     // Set material-specific shader parameters and textures
-    if (material_)
+    if (nullptr!=material_)
     {
         if (graphics->NeedParameterUpdate(SP_MATERIAL, reinterpret_cast<const void*>(material_->GetShaderParameterHash())))
         {
@@ -551,31 +552,29 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
     }
 
     // Set light-related textures
-    if (light)
+    if (nullptr!=light)
     {
-        if (shadowMap && graphics->HasTextureUnit(TU_SHADOWMAP))
+        if (nullptr!=shadowMap && graphics->HasTextureUnit(TU_SHADOWMAP))
             graphics->SetTexture(TU_SHADOWMAP, shadowMap);
         if (graphics->HasTextureUnit(TU_LIGHTRAMP))
         {
             Texture* rampTexture = light->GetRampTexture();
-            if (!rampTexture)
+            if (nullptr==rampTexture)
                 rampTexture = renderer->GetDefaultLightRamp();
             graphics->SetTexture(TU_LIGHTRAMP, rampTexture);
         }
         if (graphics->HasTextureUnit(TU_LIGHTSHAPE))
         {
             Texture* shapeTexture = light->GetShapeTexture();
-            if (!shapeTexture && light->GetLightType() == LIGHT_SPOT)
+            if (nullptr==shapeTexture && light->GetLightType() == LIGHT_SPOT)
                 shapeTexture = renderer->GetDefaultLightSpot();
             graphics->SetTexture(TU_LIGHTSHAPE, shapeTexture);
         }
     }
 
     // Set zone texture if necessary
-#ifdef DESKTOP_GRAPHICS
-    if (zone_ && graphics->HasTextureUnit(TU_ZONE))
+    if (nullptr!=zone_ && graphics->HasTextureUnit(TU_ZONE))
         graphics->SetTexture(TU_ZONE, zone_->GetZoneTexture());
-#endif
 }
 
 void Batch::Draw(View* view, Camera* camera, bool allowDepthWrite) const
@@ -587,14 +586,14 @@ void Batch::Draw(View* view, Camera* camera, bool allowDepthWrite) const
     }
 }
 
-void BatchGroup::SetTransforms(void* lockedData, unsigned& freeIndex)
+void BatchGroup::SetTransforms(void *lockedData, unsigned &freeIndex)
 {
     // Do not use up buffer space if not going to draw as instanced
     if (geometryType_ != GEOM_INSTANCED)
         return;
 
-    startIndex_ = freeIndex;
-    Matrix3x4* dest = (Matrix3x4*)lockedData;
+    startIndex_     = freeIndex;
+    Matrix3x4 *dest = (Matrix3x4 *)lockedData;
     dest += freeIndex;
 
     for (InstanceData &elem : instances_)
@@ -603,52 +602,53 @@ void BatchGroup::SetTransforms(void* lockedData, unsigned& freeIndex)
     freeIndex += instances_.size();
 }
 
-void BatchGroup::Draw(View* view, Camera* camera, bool allowDepthWrite) const
+void BatchGroup::Draw(View *view, Camera *camera, bool allowDepthWrite) const
 {
-    Graphics* graphics = view->GetGraphics();
-    Renderer* renderer = view->GetRenderer();
 
-    if (instances_.size() && !geometry_->IsEmpty())
+    if (instances_.empty() || geometry_->IsEmpty())
+        return;
+
+    Graphics *graphics = view->GetGraphics();
+    Renderer *renderer = view->GetRenderer();
+
+    // Draw as individual objects if instancing not supported or could not fill the instancing buffer
+    VertexBuffer *instanceBuffer = renderer->GetInstancingBuffer();
+    if (nullptr==instanceBuffer || geometryType_ != GEOM_INSTANCED || startIndex_ == M_MAX_UNSIGNED)
     {
-        // Draw as individual objects if instancing not supported or could not fill the instancing buffer
-        VertexBuffer* instanceBuffer = renderer->GetInstancingBuffer();
-        if (!instanceBuffer || geometryType_ != GEOM_INSTANCED || startIndex_ == M_MAX_UNSIGNED)
+        Batch::Prepare(view, camera, false, allowDepthWrite);
+
+        graphics->SetIndexBuffer(geometry_->GetIndexBuffer());
+        graphics->SetVertexBuffers(geometry_->GetVertexBuffers(), geometry_->GetVertexElementMasks());
+
+        for (unsigned i = 0; i < instances_.size(); ++i)
         {
-            Batch::Prepare(view, camera, false, allowDepthWrite);
+            if (graphics->NeedParameterUpdate(SP_OBJECT, instances_[i].worldTransform_))
+                graphics->SetShaderParameter(VSP_MODEL, *instances_[i].worldTransform_);
 
-            graphics->SetIndexBuffer(geometry_->GetIndexBuffer());
-            graphics->SetVertexBuffers(geometry_->GetVertexBuffers(), geometry_->GetVertexElementMasks());
-
-            for (unsigned i = 0; i < instances_.size(); ++i)
-            {
-                if (graphics->NeedParameterUpdate(SP_OBJECT, instances_[i].worldTransform_))
-                    graphics->SetShaderParameter(VSP_MODEL, *instances_[i].worldTransform_);
-
-                graphics->Draw(geometry_->GetPrimitiveType(), geometry_->GetIndexStart(), geometry_->GetIndexCount(),
-                               geometry_->GetVertexStart(), geometry_->GetVertexCount());
-            }
+            graphics->Draw(geometry_->GetPrimitiveType(), geometry_->GetIndexStart(), geometry_->GetIndexCount(),
+                           geometry_->GetVertexStart(), geometry_->GetVertexCount());
         }
-        else
-        {
-            Batch::Prepare(view, camera, false, allowDepthWrite);
+    }
+    else
+    {
+        Batch::Prepare(view, camera, false, allowDepthWrite);
 
-            // Get the geometry vertex buffers, then add the instancing stream buffer
-            // Hack: use a const_cast to avoid dynamic allocation of new temp vectors
-            std::vector<SharedPtr<VertexBuffer> >& vertexBuffers = const_cast<std::vector<SharedPtr<VertexBuffer> >&>
-                    (geometry_->GetVertexBuffers());
-            std::vector<unsigned>& elementMasks = const_cast<std::vector<unsigned>&>(geometry_->GetVertexElementMasks());
-            vertexBuffers.push_back(SharedPtr<VertexBuffer>(instanceBuffer));
-            elementMasks.push_back(instanceBuffer->GetElementMask());
+        // Get the geometry vertex buffers, then add the instancing stream buffer
+        // Hack: use a const_cast to avoid dynamic allocation of new temp vectors
+        std::vector<SharedPtr<VertexBuffer>> &vertexBuffers =
+            const_cast<std::vector<SharedPtr<VertexBuffer>> &>(geometry_->GetVertexBuffers());
+        std::vector<unsigned> &elementMasks = const_cast<std::vector<unsigned> &>(geometry_->GetVertexElementMasks());
+        vertexBuffers.push_back(SharedPtr<VertexBuffer>(instanceBuffer));
+        elementMasks.push_back(instanceBuffer->GetElementMask());
 
-            graphics->SetIndexBuffer(geometry_->GetIndexBuffer());
-            graphics->SetVertexBuffers(vertexBuffers, elementMasks, startIndex_);
-            graphics->DrawInstanced(geometry_->GetPrimitiveType(), geometry_->GetIndexStart(), geometry_->GetIndexCount(),
-                                    geometry_->GetVertexStart(), geometry_->GetVertexCount(), instances_.size());
+        graphics->SetIndexBuffer(geometry_->GetIndexBuffer());
+        graphics->SetVertexBuffers(vertexBuffers, elementMasks, startIndex_);
+        graphics->DrawInstanced(geometry_->GetPrimitiveType(), geometry_->GetIndexStart(), geometry_->GetIndexCount(),
+                                geometry_->GetVertexStart(), geometry_->GetVertexCount(), instances_.size());
 
-            // Remove the instancing buffer & element mask now
-            vertexBuffers.pop_back();
-            elementMasks.pop_back();
-        }
+        // Remove the instancing buffer & element mask now
+        vertexBuffers.pop_back();
+        elementMasks.pop_back();
     }
 }
 
@@ -667,15 +667,16 @@ void BatchQueue::SortBackToFront()
     sortedBatches_.resize(batches_.size());
 
     for (unsigned i = 0; i < batches_.size(); ++i)
+    {
         sortedBatches_[i] = &batches_[i];
+    }
 
     std::sort(sortedBatches_.begin(), sortedBatches_.end(), CompareBatchesBackToFront);
-
 
     sortedBatchGroups_.resize(batchGroupStorage_.size());
 
     unsigned index = 0;
-    for (BatchGroup & elem: batchGroupStorage_)
+    for (BatchGroup &elem : batchGroupStorage_)
         sortedBatchGroups_[index++] = &elem;
 
     std::sort(sortedBatchGroups_.begin(), sortedBatchGroups_.end(), CompareBatchGroupOrder);
@@ -683,38 +684,42 @@ void BatchQueue::SortBackToFront()
 
 void BatchQueue::SortFrontToBack()
 {
-    sortedBatches_.clear();
+    sortedBatches_.resize(batches_.size());
 
-    for (Batch &b : batches_)
-        sortedBatches_.push_back(&b);
+    for (unsigned i = 0; i < batches_.size(); ++i)
+    {
+        sortedBatches_[i] = &batches_[i];
+    }
 
     SortFrontToBack2Pass(sortedBatches_);
 
     // Sort each group front to back
-    for (BatchGroup & elem : batchGroupStorage_)
+    for (BatchGroup &elem : batchGroupStorage_)
     {
         if (elem.instances_.size() <= maxSortedInstances_)
         {
-            std::sort(elem.instances_.begin(), elem.instances_.end(), CompareInstancesFrontToBack);
-            if (elem.instances_.size())
+            if (!elem.instances_.empty())
+            {
+                std::sort(elem.instances_.begin(), elem.instances_.end(), CompareInstancesFrontToBack);
                 elem.distance_ = elem.instances_[0].distance_;
+            }
         }
         else
         {
             float minDistance = M_INFINITY;
-            for (const InstanceData & j : elem.instances_)
+            for (const InstanceData &j : elem.instances_)
                 minDistance = Min(minDistance, j.distance_);
-            elem.distance_ = minDistance;
+            elem.distance_  = minDistance;
         }
     }
 
     sortedBatchGroups_.resize(batchGroupStorage_.size());
 
     unsigned index = 0;
-    for (BatchGroup & elem : batchGroupStorage_)
+    for (BatchGroup &elem : batchGroupStorage_)
         sortedBatchGroups_[index++] = &elem;
 
-    SortFrontToBack2Pass(reinterpret_cast<std::vector<Batch*>& >(sortedBatchGroups_));
+    SortFrontToBack2Pass(reinterpret_cast<std::vector<Batch *> &>(sortedBatchGroups_));
 }
 
 void BatchQueue::SortFrontToBack2Pass(std::vector<Batch*>& batches)
@@ -728,8 +733,6 @@ void BatchQueue::SortFrontToBack2Pass(std::vector<Batch*>& batches)
 
     for (Batch* batch : batches)
     {
-
-
         unsigned shaderID = (batch->sortKey_ >> 32);
         HashMap<unsigned, unsigned>::const_iterator j = shaderRemapping_.find(shaderID);
         if (j != shaderRemapping_.end())
@@ -810,7 +813,7 @@ void BatchQueue::Draw(View* view, Camera* camera, bool markToStencil, bool using
         if (!usingLightOptimization)
         {
             // If drawing an alpha batch, we can optimize fillrate by scissor test
-            if (!batch->isBase_ && batch->lightQueue_)
+            if (!batch->isBase_ && batch->lightQueue_!=nullptr)
                 renderer->OptimizeLightByScissor(batch->lightQueue_->light_, camera);
             else
                 graphics->SetScissorTest(false);

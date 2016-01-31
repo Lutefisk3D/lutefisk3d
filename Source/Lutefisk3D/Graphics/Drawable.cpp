@@ -233,6 +233,7 @@ void Drawable::SetZoneMask(unsigned mask)
 void Drawable::SetMaxLights(unsigned num)
 {
     maxLights_ = num;
+    lights_.reserve(num);
     MarkNetworkUpdate();
 }
 
@@ -304,11 +305,6 @@ void Drawable::SetZone(Zone* zone, bool temporary)
     zoneDirty_ = temporary;
 }
 
-void Drawable::SetSortValue(float value)
-{
-    sortValue_ = value;
-}
-
 void Drawable::MarkInView(unsigned frameNumber, Camera* camera)
 {
     if (frameNumber != viewFrameNumber_)
@@ -316,8 +312,9 @@ void Drawable::MarkInView(unsigned frameNumber, Camera* camera)
         viewFrameNumber_ = frameNumber;
         viewCameras_.clear();
     }
-    if (camera)
+    if (camera) {
         viewCameras_.insert(camera);
+    }
     basePassFlags_ = 0;
     firstLight_ = nullptr;
     lights_.clear();

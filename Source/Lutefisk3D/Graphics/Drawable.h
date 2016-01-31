@@ -202,7 +202,7 @@ public:
     /// Set new zone. Zone assignment may optionally be temporary, meaning it needs to be re-evaluated on the next frame.
     void SetZone(Zone* zone, bool temporary = false);
     /// Set sorting value.
-    void SetSortValue(float value);
+    void SetSortValue(float value) { sortValue_ = value; }
     /// Set view-space depth bounds.
     void SetMinMaxZ(float minZ, float maxZ) { minZ_ = minZ; maxZ_ = maxZ; }
     /// Mark in view. Also clear the light list.
@@ -248,8 +248,7 @@ public:
     // Add a per-pixel light affecting the object this frame.
     void AddLight(Light* light)
     {
-        if(!firstLight_)
-            firstLight_ = light;
+        firstLight_ = firstLight_ ? firstLight_ : light;
         // Need to store into the light list only if the per-pixel lights are being limited.
         // Otherwise recording the first light is enough
         if (maxLights_)

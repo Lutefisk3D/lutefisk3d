@@ -55,7 +55,6 @@ static const char* textureUnitNames[] =
     "specular",
     "emissive",
     "environment",
-    #ifdef DESKTOP_GRAPHICS
     "volume",
     "custom1",
     "custom2",
@@ -68,12 +67,6 @@ static const char* textureUnitNames[] =
     "light",
     "zone",
     nullptr
-    #else
-    "lightramp",
-    "lightshape",
-    "shadowmap",
-    0
-    #endif
 };
 
 static const char* cullModeNames[] =
@@ -277,14 +270,12 @@ bool Material::BeginLoadXML(Deserializer& source)
                 /// \todo Differentiate with 3D textures by actually reading the XML content
                 if (GetExtension(name) == ".xml")
                 {
-#ifdef DESKTOP_GRAPHICS
                     TextureUnit unit = TU_DIFFUSE;
                     if (textureElem.HasAttribute("unit"))
                         unit = ParseTextureUnitName(textureElem.GetAttribute("unit"));
                     if (unit == TU_VOLUMEMAP)
                         cache->BackgroundLoadResource<Texture3D>(name, true, this);
                     else
-#endif
                         cache->BackgroundLoadResource<TextureCube>(name, true, this);
                 }
                 else
@@ -407,11 +398,9 @@ bool Material::Load(const XMLElement& source)
             /// \todo Differentiate with 3D textures by actually reading the XML content
             if (GetExtension(name) == ".xml")
             {
-#ifdef DESKTOP_GRAPHICS
                 if (unit == TU_VOLUMEMAP)
                     SetTexture(unit, cache->GetResource<Texture3D>(name));
                 else
-#endif
                     SetTexture(unit, cache->GetResource<TextureCube>(name));
             }
             else

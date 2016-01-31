@@ -1049,9 +1049,8 @@ void AnimatedModel::CloneGeometries()
             // data comes from the original vertex buffer(s)
             const std::vector<SharedPtr<VertexBuffer> >& originalBuffers = original->GetVertexBuffers();
             unsigned totalBuf = originalBuffers.size();
-            for (unsigned k = 0; k < originalBuffers.size(); ++k)
+            for (VertexBuffer* originalBuffer : originalBuffers)
             {
-                VertexBuffer* originalBuffer = originalBuffers[k];
                 if (clonedVertexBuffers.contains(originalBuffer))
                     ++totalBuf;
             }
@@ -1086,40 +1085,41 @@ void AnimatedModel::CloneGeometries()
     MarkMorphsDirty();
 }
 
-void AnimatedModel::CopyMorphVertices(void* destVertexData, void* srcVertexData, unsigned vertexCount, VertexBuffer* destBuffer, VertexBuffer* srcBuffer)
+void AnimatedModel::CopyMorphVertices(void *destVertexData, void *srcVertexData, unsigned vertexCount,
+                                      VertexBuffer *destBuffer, VertexBuffer *srcBuffer)
 {
-    unsigned mask = destBuffer->GetElementMask() & srcBuffer->GetElementMask();
-    unsigned normalOffset = srcBuffer->GetElementOffset(ELEMENT_NORMAL);
-    unsigned tangentOffset = srcBuffer->GetElementOffset(ELEMENT_TANGENT);
-    unsigned vertexSize = srcBuffer->GetVertexSize();
-    float* dest = (float*)destVertexData;
-    unsigned char* src = (unsigned char*)srcVertexData;
+    unsigned       mask          = destBuffer->GetElementMask() & srcBuffer->GetElementMask();
+    unsigned       normalOffset  = srcBuffer->GetElementOffset(ELEMENT_NORMAL);
+    unsigned       tangentOffset = srcBuffer->GetElementOffset(ELEMENT_TANGENT);
+    unsigned       vertexSize    = srcBuffer->GetVertexSize();
+    float *        dest          = (float *)destVertexData;
+    unsigned char *src           = (unsigned char *)srcVertexData;
 
     while (vertexCount--)
     {
         if (mask & MASK_POSITION)
         {
-            float* posSrc = (float*)src;
-            dest[0] = posSrc[0];
-            dest[1] = posSrc[1];
-            dest[2] = posSrc[2];
+            float *posSrc = (float *)src;
+            dest[0]       = posSrc[0];
+            dest[1]       = posSrc[1];
+            dest[2]       = posSrc[2];
             dest += 3;
         }
         if (mask & MASK_NORMAL)
         {
-            float* normalSrc = (float*)(src + normalOffset);
-            dest[0] = normalSrc[0];
-            dest[1] = normalSrc[1];
-            dest[2] = normalSrc[2];
+            float *normalSrc = (float *)(src + normalOffset);
+            dest[0]          = normalSrc[0];
+            dest[1]          = normalSrc[1];
+            dest[2]          = normalSrc[2];
             dest += 3;
         }
         if (mask & MASK_TANGENT)
         {
-            float* tangentSrc = (float*)(src + tangentOffset);
-            dest[0] = tangentSrc[0];
-            dest[1] = tangentSrc[1];
-            dest[2] = tangentSrc[2];
-            dest[3] = tangentSrc[3];
+            float *tangentSrc = (float *)(src + tangentOffset);
+            dest[0]           = tangentSrc[0];
+            dest[1]           = tangentSrc[1];
+            dest[2]           = tangentSrc[2];
+            dest[3]           = tangentSrc[3];
             dest += 4;
         }
 
@@ -1132,14 +1132,17 @@ void AnimatedModel::SetGeometryBoneMappings()
     geometrySkinMatrices_.clear();
     geometrySkinMatrixPtrs_.clear();
 
-    if (!geometryBoneMappings_.size())
+    if (geometryBoneMappings_.empty())
         return;
 
     // Check if all mappings are empty, then we do not need to use mapped skinning
     bool allEmpty = true;
-    for (unsigned i = 0; i < geometryBoneMappings_.size(); ++i)
-        if (geometryBoneMappings_[i].size())
+    for (auto &v: geometryBoneMappings_) {
+        if (!v.empty()) {
             allEmpty = false;
+            break;
+        }
+    }
 
     if (allEmpty)
         return;

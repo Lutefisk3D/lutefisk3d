@@ -161,7 +161,7 @@ class SmallMembershipSet {
     PODVectorN<T,N> members;
 public:
     bool contains(const T &v) const {
-        for(const T&elem : members)
+        for(const T & elem : members)
             if(v==elem)
                 return true;
         return false;
@@ -169,7 +169,7 @@ public:
     /// Erase an element if found.
     void clear()
     {
-        members.resize(0);
+        members.clear();
     }
     void insert(const T &val) {
         if(!members.empty() && contains(val))

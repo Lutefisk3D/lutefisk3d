@@ -165,77 +165,75 @@ public:
     /// Occlusion buffer.
     OcclusionBuffer* buffer_;
 };
-
-void CheckVisibilityWork(const WorkItem* item, unsigned threadIndex)
+void CheckVisibilityWork(const WorkItem *item, unsigned threadIndex)
 {
-    View* view = reinterpret_cast<View*>(item->aux_);
-    const FrameInfo &fi(view->frame_);
-    Drawable** start = reinterpret_cast<Drawable**>(item->start_);
-    Drawable** end = reinterpret_cast<Drawable**>(item->end_);
-    OcclusionBuffer* buffer = view->occlusionBuffer_;
-    const Matrix3x4& viewMatrix = view->cullCamera_->GetView();
-    Vector3 viewZ = Vector3(viewMatrix.m20_, viewMatrix.m21_, viewMatrix.m22_);
-    Vector3 absViewZ = viewZ.Abs();
-    unsigned cameraViewMask = view->cullCamera_->GetViewMask();
-    bool cameraZoneOverride = view->cameraZoneOverride_;
-    PerThreadSceneResult& result = view->sceneResults_[threadIndex];
-    result.geometries_.reserve(std::distance(start,end));
+    View *                 view = reinterpret_cast<View *>(item->aux_);
+    const FrameInfo &      frame_info(view->GetFrameInfo());
+    Drawable **            start              = reinterpret_cast<Drawable **>(item->start_);
+    Drawable **            end                = reinterpret_cast<Drawable **>(item->end_);
+    OcclusionBuffer *const occlusion_buffer   = view->GetOcclusionBuffer();
+    const Matrix3x4 &      viewMatrix         = view->GetCullCamera()->GetView();
+    Vector3                viewZ              = Vector3(viewMatrix.m20_, viewMatrix.m21_, viewMatrix.m22_);
+    Vector3                absViewZ           = viewZ.Abs();
+    unsigned               cameraViewMask     = view->GetCullCamera()->GetViewMask();
+    bool                   cameraZoneOverride = view->cameraZoneOverride_;
+    PerThreadSceneResult & result             = view->sceneResults_[threadIndex];
+    result.geometries_.reserve(std::distance(start, end));
     while (start != end)
     {
-        Drawable* drawable = *start++;
-        bool batchesUpdated = false;
+        Drawable *const drawable       = *start++;
+        bool            batchesUpdated = false;
         // If draw distance non-zero, update and check it
         float maxDistance = drawable->GetDrawDistance();
         if (maxDistance > 0.0f)
         {
-            drawable->UpdateBatches(fi);
+            drawable->UpdateBatches(frame_info);
             batchesUpdated = true;
             if (drawable->GetDistance() > maxDistance)
                 continue;
         }
-        const BoundingBox& geomBox(drawable->GetWorldBoundingBox());
+        const BoundingBox &geomBox(drawable->GetWorldBoundingBox());
 
         uint8_t drawableFlags = drawable->GetDrawableFlags();
-        if (!buffer || !drawable->IsOccludee() || buffer->IsVisible(geomBox))
+        if (occlusion_buffer && drawable->IsOccludee() && !occlusion_buffer->IsVisible(geomBox))
+            continue;
+        if (!batchesUpdated)
+            drawable->UpdateBatches(frame_info);
+        drawable->MarkInView(frame_info);
+
+        // For geometries, find zone, clear lights and calculate view space Z range
+        if (drawableFlags & DRAWABLE_GEOMETRY)
         {
-            if (!batchesUpdated)
-                drawable->UpdateBatches(fi);
-            drawable->MarkInView(fi);
+            Zone *const drawableZone = drawable->GetZone();
+            if (!cameraZoneOverride &&
+                (drawable->IsZoneDirty() || !drawableZone || (drawableZone->GetViewMask() & cameraViewMask) == 0))
+                view->FindZone(drawable);
 
-            // For geometries, find zone, clear lights and calculate view space Z range
-            if (drawableFlags & DRAWABLE_GEOMETRY)
+            const Vector3 edge = geomBox.size() * 0.5f;
+
+            // Do not add "infinite" objects like skybox to prevent shadow map focusing behaving erroneously
+            if (edge.LengthSquared() < M_LARGE_VALUE * M_LARGE_VALUE)
             {
-                Zone* drawableZone = drawable->GetZone();
-                if (!cameraZoneOverride &&
-                        (drawable->IsZoneDirty() || !drawableZone || (drawableZone->GetViewMask() & cameraViewMask) == 0))
-                    view->FindZone(drawable);
-
-                const Vector3 edge = geomBox.size() * 0.5f;
-
-                // Do not add "infinite" objects like skybox to prevent shadow map focusing behaving erroneously
-                if (edge.LengthSquared() < M_LARGE_VALUE * M_LARGE_VALUE)
-                {
-                    Vector3 center = geomBox.Center();
-                    float viewCenterZ = viewZ.DotProduct(center) + viewMatrix.m23_;
-                    float viewEdgeZ = absViewZ.DotProduct(edge);
-                    float minZ = viewCenterZ - viewEdgeZ;
-                    float maxZ = viewCenterZ + viewEdgeZ;
-                    drawable->SetMinMaxZ(viewCenterZ - viewEdgeZ, viewCenterZ + viewEdgeZ);
-                    result.minZ_ = std::min(result.minZ_, minZ);
-                    result.maxZ_ = std::max(result.maxZ_, maxZ);
-                }
-                else
-                    drawable->SetMinMaxZ(M_LARGE_VALUE, M_LARGE_VALUE);
-
-                result.geometries_.push_back(drawable);
+                Vector3 center      = geomBox.Center();
+                float   viewCenterZ = viewZ.DotProduct(center) + viewMatrix.m23_;
+                float   viewEdgeZ   = absViewZ.DotProduct(edge);
+                float   minZ        = viewCenterZ - viewEdgeZ;
+                float   maxZ        = viewCenterZ + viewEdgeZ;
+                drawable->SetMinMaxZ(viewCenterZ - viewEdgeZ, viewCenterZ + viewEdgeZ);
+                result.minZ_ = std::min(result.minZ_, minZ);
+                result.maxZ_ = std::max(result.maxZ_, maxZ);
             }
-            else if (drawableFlags & DRAWABLE_LIGHT)
-            {
-                Light* light = static_cast<Light*>(drawable);
-                // Skip lights with zero brightness or black color
-                if (!light->GetEffectiveColor().Equals(Color::BLACK))
-                    result.lights_.push_back(light);
-            }
+            else
+                drawable->SetMinMaxZ(M_LARGE_VALUE, M_LARGE_VALUE);
+
+            result.geometries_.push_back(drawable);
+        }
+        else if (drawableFlags & DRAWABLE_LIGHT)
+        {
+            Light *light = static_cast<Light *>(drawable);
+            // Skip lights with zero brightness or black color
+            if (!light->GetEffectiveColor().Equals(Color::BLACK))
+                result.lights_.push_back(light);
         }
     }
 }
@@ -247,6 +245,7 @@ void ProcessLightWork(const WorkItem* item, unsigned threadIndex)
 
     view->ProcessLight(*query, threadIndex);
 }
+namespace {
 
 void UpdateDrawableGeometriesWork(const WorkItem* item, unsigned threadIndex)
 {
@@ -284,37 +283,33 @@ void SortLightQueueWork(const WorkItem* item, unsigned threadIndex)
     start->litBatches_.SortFrontToBack();
 }
 
-void SortShadowQueueWork(const WorkItem* item, unsigned threadIndex)
+void SortShadowQueueWork(const WorkItem *item, unsigned threadIndex)
 {
-    LightBatchQueue* start = reinterpret_cast<LightBatchQueue*>(item->start_);
+    LightBatchQueue *start = reinterpret_cast<LightBatchQueue *>(item->start_);
     for (unsigned i = 0; i < start->shadowSplits_.size(); ++i)
         start->shadowSplits_[i].shadowBatches_.SortFrontToBack();
 }
-
-View::View(Context* context) :
-    Object(context),
-    graphics_(GetSubsystem<Graphics>()),
-    renderer_(GetSubsystem<Renderer>()),
-    scene_(nullptr),
-    octree_(nullptr),
-    cullCamera_(nullptr),
-    camera_(nullptr),
-    sourceView_(nullptr),
-    cameraZone_(nullptr),
-    farClipZone_(nullptr),
-    occlusionBuffer_(nullptr),
-    renderTarget_(nullptr),
-    substituteRenderTarget_(nullptr)
+} // anonymous namespace
+View::View(Context *context)
+    : Object(context),
+      graphics_(GetSubsystem<Graphics>()),
+      renderer_(GetSubsystem<Renderer>()),
+      scene_(nullptr),
+      octree_(nullptr),
+      camera_(nullptr),
+      cullCamera_(nullptr),
+      sourceView_(nullptr),
+      cameraZone_(nullptr),
+      farClipZone_(nullptr),
+      occlusionBuffer_(nullptr),
+      renderTarget_(nullptr),
+      substituteRenderTarget_(nullptr)
 {
     // Create octree query and scene results vector for each thread
     unsigned numThreads = GetSubsystem<WorkQueue>()->GetNumThreads() + 1; // Worker threads + main thread
     tempDrawables_.resize(numThreads);
     sceneResults_.resize(numThreads);
     frame_.camera_ = nullptr;
-}
-
-View::~View()
-{
 }
 
 bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
@@ -699,55 +694,52 @@ void View::SetGlobalShaderParameters()
     }
 }
 
-void View::SetCameraShaderParameters(Camera* camera, bool setProjection)
+void View::SetCameraShaderParameters(const Camera &camera, bool setProjection)
 {
-    if (!camera)
-        return;
-
-    Matrix3x4 cameraEffectiveTransform = camera->GetEffectiveWorldTransform();
+    Matrix3x4 cameraEffectiveTransform = camera.GetEffectiveWorldTransform();
 
     graphics_->SetShaderParameter(VSP_CAMERAPOS, cameraEffectiveTransform.Translation());
     graphics_->SetShaderParameter(VSP_CAMERAROT, cameraEffectiveTransform.RotationMatrix());
     graphics_->SetShaderParameter(PSP_CAMERAPOS, cameraEffectiveTransform.Translation());
 
-    float nearClip = camera->GetNearClip();
-    float farClip = camera->GetFarClip();
+    float nearClip = camera.GetNearClip();
+    float farClip  = camera.GetFarClip();
     graphics_->SetShaderParameter(VSP_NEARCLIP, nearClip);
     graphics_->SetShaderParameter(VSP_FARCLIP, farClip);
     graphics_->SetShaderParameter(PSP_NEARCLIP, nearClip);
     graphics_->SetShaderParameter(PSP_FARCLIP, farClip);
 
     Vector4 depthMode = Vector4::ZERO;
-    if (camera->IsOrthographic())
+    if (camera.IsOrthographic())
     {
         depthMode.x_ = 1.0f;
         depthMode.z_ = 0.5f;
         depthMode.w_ = 0.5f;
     }
     else
-        depthMode.w_ = 1.0f / camera->GetFarClip();
+        depthMode.w_ = 1.0f / farClip;
 
     graphics_->SetShaderParameter(VSP_DEPTHMODE, depthMode);
 
-    Vector4 depthReconstruct(farClip / (farClip - nearClip), -nearClip / (farClip - nearClip), camera->IsOrthographic() ? 1.0f :
-                                                                                                                          0.0f, camera->IsOrthographic() ? 0.0f : 1.0f);
+    Vector4 depthReconstruct(farClip / (farClip - nearClip), -nearClip / (farClip - nearClip),
+                             camera.IsOrthographic() ? 1.0f : 0.0f, camera.IsOrthographic() ? 0.0f : 1.0f);
     graphics_->SetShaderParameter(PSP_DEPTHRECONSTRUCT, depthReconstruct);
 
     Vector3 nearVector, farVector;
-    camera->GetFrustumSize(nearVector, farVector);
+    camera.GetFrustumSize(nearVector, farVector);
     graphics_->SetShaderParameter(VSP_FRUSTUMSIZE, farVector);
 
     if (setProjection)
     {
-        Matrix4 projection = camera->GetProjection();
+        Matrix4 projection = camera.GetProjection();
         // Add constant depth bias manually to the projection matrix due to glPolygonOffset() inconsistency
         float constantBias = 2.0f * graphics_->GetDepthConstantBias();
         projection.m22_ += projection.m32_ * constantBias;
         projection.m23_ += projection.m33_ * constantBias;
 
-        graphics_->SetShaderParameter(VSP_VIEWINV, camera->GetEffectiveWorldTransform());
-        graphics_->SetShaderParameter(VSP_VIEW, camera->GetView());
-        graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * camera->GetView());
+        graphics_->SetShaderParameter(VSP_VIEWINV, camera.GetEffectiveWorldTransform());
+        graphics_->SetShaderParameter(VSP_VIEW, camera.GetView());
+        graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * camera.GetView());
     }
 }
 
@@ -1142,7 +1134,7 @@ void View::GetLightBatches(Technique *default_tech)
         {
             Zone *zone=GetZone(drawable);
             drawable->LimitLights();
-            const std::vector<Light*>& lights(drawable->GetLights());
+            const auto& lights(drawable->GetLights());
 
             for (Light* light : lights)
             {
@@ -1343,17 +1335,17 @@ void View::UpdateGeometries()
 void View::GetLitBatches(Drawable* drawable, Zone *zone,LightBatchQueue& lightQueue,
                          BatchQueue* availableQueues[3], Technique *default_tech)
 {
-    Light* light = lightQueue.light_;
+    const Light* light = lightQueue.light_;
     const std::vector<SourceBatch>& batches(drawable->GetBatches());
 
     // Shadows on transparencies can only be rendered if shadow maps are not reused
-    bool allowTransparentShadows = !renderer_->GetReuseShadowMaps();
-    bool allowLitBase = useLitBase_ && !lightQueue.negative_ && light == drawable->GetFirstLight() &&
+    const bool allowTransparentShadows = !renderer_->GetReuseShadowMaps();
+    const bool allowLitBase = useLitBase_ && !lightQueue.negative_ && light == drawable->GetFirstLight() &&
             drawable->GetVertexLights().empty() && !zone->GetAmbientGradient();
-    bool hasAlphaQueue = availableQueues[2]!=nullptr;
+    const bool hasAlphaQueue = availableQueues[2]!=nullptr;
     int i=-1;
     int queueIndex;
-
+    const bool hasG_BUFFER_PASS = gBufferPassIndex_ != M_MAX_UNSIGNED;
     if(allowLitBase) {
         for (const SourceBatch& srcBatch : batches)
         {
@@ -1363,7 +1355,7 @@ void View::GetLitBatches(Drawable* drawable, Zone *zone,LightBatchQueue& lightQu
                 continue;
 
             // Do not create pixel lit forward passes for materials that render into the G-buffer
-            if (gBufferPassIndex_ != M_MAX_UNSIGNED && tech->HasPass(gBufferPassIndex_))
+            if (hasG_BUFFER_PASS && tech->HasPass(gBufferPassIndex_))
                 continue;
 
             bool useInstancing = true;
@@ -1432,7 +1424,7 @@ void View::GetLitBatches(Drawable* drawable, Zone *zone,LightBatchQueue& lightQu
                 queueIndex = 2;
             }
             AddBatchToQueue(*availableQueues[queueIndex],
-                            Batch {srcBatch,zone,&lightQueue,dest_pass}, tech,
+                            Batch(srcBatch,zone,&lightQueue,dest_pass), tech,
                             useInstancing, allowTransparentShadows);
         }
     }
@@ -1754,11 +1746,7 @@ bool View::SetTextures(RenderPathCommand& command)
             continue;
         }
 
-#ifdef DESKTOP_GRAPHICS
         Texture* texture = FindNamedTexture(command.textureNames_[i], false, i == TU_VOLUMEMAP);
-#else
-        Texture* texture = FindNamedTexture(command.textureNames_[i], false, false);
-#endif
 
         if (texture)
         {
@@ -1798,7 +1786,8 @@ void View::RenderQuad(RenderPathCommand& command)
         graphics_->SetShaderParameter(MAP_KEY(parameter), MAP_VALUE(parameter));
 
     SetGlobalShaderParameters();
-    SetCameraShaderParameters(camera_, false);
+    if(camera_)
+        SetCameraShaderParameters(*camera_, false);
 
     // During renderpath commands the G-Buffer or viewport texture is assumed to always be viewport-sized
     IntRect viewport = graphics_->GetViewport();
@@ -2755,7 +2744,7 @@ void View::CheckMaterialForAuxView(Material* material)
     material->MarkForAuxView(frame_.frameNumber_);
 }
 
-void View::AddBatchToQueue(BatchQueue& batchQueue, Batch  batch, const Technique* tech, bool allowInstancing, bool allowShadows)
+void View::AddBatchToQueue(BatchQueue& batchQueue, Batch batch, const Technique* tech, bool allowInstancing, bool allowShadows)
 {
 
     assert(batchQueue.batchGroups_.size()>=batchQueue.batchGroupStorage_.size());
@@ -3039,11 +3028,9 @@ Texture* View::FindNamedTexture(const QString& name, bool isRenderTarget, bool i
         if (GetExtension(name) == ".xml")
         {
             // Assume 3D textures are only bound to the volume map unit, otherwise it's a cube texture
-#ifdef DESKTOP_GRAPHICS
             if (isVolumeMap)
                 return cache->GetResource<Texture3D>(name);
             else
-#endif
                 return cache->GetResource<TextureCube>(name);
         }
         else

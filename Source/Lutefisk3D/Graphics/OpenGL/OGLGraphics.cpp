@@ -349,7 +349,6 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     }
 
     // Check fullscreen mode validity (desktop only). Use a closest match if not found
-#ifdef DESKTOP_GRAPHICS
     if (fullscreen)
     {
         std::vector<IntVector2> resolutions = GetResolutions();
@@ -374,9 +373,6 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
             height = resolutions[best].y_;
         }
     }
-#endif
-
-    QString extensions;
 
     // With an external window, only the size can change after initial setup, so do not recreate context
     if (!externalWindow_ || !impl_->context_)
@@ -3022,7 +3018,6 @@ void Graphics::SetTextureUnitMappings()
     textureUnits_["LightSpotMap"] = TU_LIGHTSHAPE;
     textureUnits_["LightCubeMap"]  = TU_LIGHTSHAPE;
     textureUnits_["ShadowMap"] = TU_SHADOWMAP;
-#ifdef DESKTOP_GRAPHICS
     textureUnits_["VolumeMap"] = TU_VOLUMEMAP;
     textureUnits_["FaceSelectCubeMap"] = TU_FACESELECT;
     textureUnits_["IndirectionCubeMap"] = TU_INDIRECTION;
@@ -3030,7 +3025,6 @@ void Graphics::SetTextureUnitMappings()
     textureUnits_["LightBuffer"] = TU_LIGHTBUFFER;
     textureUnits_["ZoneCubeMap"] = TU_ZONE;
     textureUnits_["ZoneVolumeMap"] = TU_ZONE;
-#endif
 }
 
 unsigned Graphics::CreateFramebuffer()

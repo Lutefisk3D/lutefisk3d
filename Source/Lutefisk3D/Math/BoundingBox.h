@@ -25,7 +25,7 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector3.h"
 
-#ifdef LUTEFISK_SSE
+#ifdef LUTEFISK3D_SSE
 #include <xmmintrin.h>
 #endif
 namespace Urho3D

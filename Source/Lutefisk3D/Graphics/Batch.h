@@ -59,8 +59,8 @@ struct Batch
     /// Construct with defaults.
     Batch() :
         geometry_(nullptr),
-        isBase_(false),
-        lightQueue_(nullptr)
+        lightQueue_(nullptr),
+        isBase_(false)
     {
     }
 
@@ -68,13 +68,13 @@ struct Batch
     Batch(const SourceBatch& rhs,bool is_base=false) :
         distance_(rhs.distance_),
         renderOrder_(rhs.material_ ? rhs.material_->GetRenderOrder() : DEFAULT_RENDER_ORDER),
-        isBase_(is_base),
         geometry_(rhs.geometry_),
         material_(rhs.material_),
         worldTransform_(rhs.worldTransform_),
         numWorldTransforms_(rhs.numWorldTransforms_),
         lightQueue_(nullptr),
-        geometryType_(rhs.geometryType_)
+        geometryType_(rhs.geometryType_),
+        isBase_(is_base)
     {
     }
     Batch(const SourceBatch& rhs, Zone *z, LightBatchQueue *l, Pass *p,
@@ -82,7 +82,6 @@ struct Batch
         sortKey_(0),
         distance_(rhs.distance_),
         renderOrder_(rhs.material_ ? rhs.material_->GetRenderOrder() : DEFAULT_RENDER_ORDER),
-        isBase_(is_base),
         geometry_(rhs.geometry_),
         material_(rhs.material_),
         worldTransform_(rhs.worldTransform_),
@@ -93,19 +92,20 @@ struct Batch
         vertexShader_(nullptr),
         pixelShader_(nullptr),
         geometryType_(rhs.geometryType_),
-        lightMask_(lmask)
+        lightMask_(lmask),
+        isBase_(is_base)
     {
     }
 
     /// Calculate state sorting key, which consists of base pass flag, light, pass and geometry.
     void CalculateSortKey();
     /// Prepare for rendering.
-    void Prepare(View* view, Camera* camera, bool setModelTransform, bool allowDepthWrite) const;
+    void Prepare(View* view, const Camera *camera, bool setModelTransform, bool allowDepthWrite) const;
     /// Prepare and draw.
     void Draw(View* view, Camera* camera, bool allowDepthWrite) const;
 
     /// State sorting key.
-    unsigned long long sortKey_;
+    uint64_t sortKey_;
     /// Distance from camera.
     float distance_;
     /// Geometry.
@@ -159,22 +159,16 @@ struct InstanceData
 struct BatchGroup : public Batch
 {
     /// Construct with defaults.
-    BatchGroup() :
-        startIndex_(M_MAX_UNSIGNED)
-    {
-    }
+    BatchGroup() = default;
 
     /// Construct from a batch.
     BatchGroup(const Batch &batch) :
-        Batch(batch),
-        startIndex_(M_MAX_UNSIGNED)
+        Batch(batch)
     {
     }
 
     /// Destruct.
-    ~BatchGroup()
-    {
-    }
+    ~BatchGroup() = default;
 
     /// Add world transform(s) from a batch.
     void AddTransforms(float distance,unsigned int numTransforms,const Matrix3x4 *transforms)
@@ -191,9 +185,10 @@ struct BatchGroup : public Batch
     void Draw(View* view, Camera* camera, bool allowDepthWrite) const;
 
     /// Instance data.
-    std::vector<InstanceData> instances_;
+    PODVectorN<InstanceData,32> instances_;
+    //std::vector<InstanceData> instances_;
     /// Instance stream start index, or M_MAX_UNSIGNED if transforms not pre-set.
-    unsigned startIndex_;
+    unsigned startIndex_=M_MAX_UNSIGNED;
 };
 
 /// Instanced draw call grouping key.
@@ -203,57 +198,50 @@ struct BatchGroupKey
     BatchGroupKey() = default;
 
     /// Construct from a batch.
-    BatchGroupKey(const Batch& batch) :
-        zone_(batch.zone_),
-        lightQueue_(batch.lightQueue_),
-        pass_(batch.pass_),
-        material_(batch.material_),
-        geometry_(batch.geometry_),
-        renderOrder_(batch.renderOrder_),
-        hashCode_ ( (uintptr_t(batch.pass_) >>1) ^
-                    (uintptr_t(batch.material_) >>3) ^
-                    (uintptr_t(batch.geometry_) >>5) ^
-                    (uintptr_t(batch.zone_)>>7) ^
-                    (uintptr_t(batch.lightQueue_)>>9) ^ batch.renderOrder_)
+    BatchGroupKey(const Batch &batch)
+        : zone_(batch.zone_),
+          lightQueue_(batch.lightQueue_),
+          pass_(batch.pass_),
+          material_(batch.material_),
+          geometry_(batch.geometry_),
+          renderOrder_(batch.renderOrder_)
     {
     }
     /// Test for equality with another batch group key.
-    constexpr bool operator == (const BatchGroupKey& rhs) const {
-        return hashCode_ == rhs.hashCode_ &&
-                zone_ == rhs.zone_ &&
-                lightQueue_ == rhs.lightQueue_ &&
-                pass_ == rhs.pass_ &&
-                material_ == rhs.material_ &&
-                geometry_ == rhs.geometry_ &&
-                renderOrder_ == rhs.renderOrder_; }
+    constexpr bool operator==(const BatchGroupKey &rhs) const
+    {
+        return zone_ == rhs.zone_ && lightQueue_ == rhs.lightQueue_ && pass_ == rhs.pass_ &&
+               material_ == rhs.material_ && geometry_ == rhs.geometry_ && renderOrder_ == rhs.renderOrder_;
+    }
     /// Test for inequality with another batch group key.
-    constexpr bool operator != (const BatchGroupKey& rhs) const { return !(*this==rhs); }
+    constexpr bool operator!=(const BatchGroupKey &rhs) const { return !(*this == rhs); }
 
     /// Return hash value.
-    constexpr unsigned ToHash() const { return  hashCode_; }
+    unsigned ToHash() const
+    {
+        return (uintptr_t(pass_) >> 1) ^ (uintptr_t(material_) >> 3) ^ (uintptr_t(geometry_) >> 5) ^
+               (uintptr_t(zone_) >> 7) ^ (uintptr_t(lightQueue_) >> 9) ^ renderOrder_;
+    }
 
 private:
     /// Zone.
-    Zone* zone_;
+    Zone *zone_;
     /// Light properties.
-    LightBatchQueue* lightQueue_;
+    LightBatchQueue *lightQueue_;
     /// Material pass.
-    Pass* pass_;
+    Pass *pass_;
     /// Material.
-    Material* material_;
+    Material *material_;
     /// Geometry.
-    Geometry* geometry_;
-    uintptr_t hashCode_;
+    Geometry *geometry_;
     /// 8-bit render order modifier from material.
     uint8_t renderOrder_;
-
-
 };
 
 }
 namespace std {
 template<> struct hash<Urho3D::BatchGroupKey> {
-    constexpr inline size_t operator()(const Urho3D::BatchGroupKey & key) const
+    inline size_t operator()(const Urho3D::BatchGroupKey & key) const
     {
         return key.ToHash();
     }

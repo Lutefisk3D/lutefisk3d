@@ -172,11 +172,7 @@ Technique::Technique(Context* context) :
     Resource(context),
     isDesktop_(false)
 {
-#ifdef DESKTOP_GRAPHICS
     desktopSupport_ = true;
-#else
-    desktopSupport_ = false;
-#endif
 }
 
 Technique::~Technique()

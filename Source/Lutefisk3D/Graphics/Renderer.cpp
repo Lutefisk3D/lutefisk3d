@@ -1290,7 +1290,7 @@ void Renderer::SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const QS
     batch.pixelShader_ = graphics_->GetShader(PS, psName, deferredLightPSVariations_[psi]);
 }
 
-void Renderer::SetCullMode(CullMode mode, Camera* camera)
+void Renderer::SetCullMode(CullMode mode, const Camera *camera)
 {
     // If a camera is specified, check whether it reverses culling due to vertical flipping or reflection
     if (camera && camera->GetReverseCulling())

@@ -336,7 +336,7 @@ public:
     /// Choose shaders for a deferred light volume batch.
     void SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const QString& vsName, const QString& psName, const QString& vsDefines, const QString& psDefines);
     /// Set cull mode while taking possible projection flipping into account.
-    void SetCullMode(CullMode mode, Camera* camera);
+    void SetCullMode(CullMode mode, const Urho3D::Camera *camera);
     /// Ensure sufficient size of the instancing vertex buffer. Return true if successful.
     bool ResizeInstancingBuffer(unsigned numInstances);
     /// Save the screen buffer allocation status. Called by View.

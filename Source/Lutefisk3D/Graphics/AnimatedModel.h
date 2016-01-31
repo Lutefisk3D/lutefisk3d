@@ -179,7 +179,7 @@ private:
     /// Clone geometries for vertex morphing.
     void CloneGeometries();
     /// Copy morph vertices.
-    void CopyMorphVertices(void* dest, void* src, unsigned vertexCount, VertexBuffer* clone, VertexBuffer* original);
+    void CopyMorphVertices(void* destVertexData, void* srcVertexData, unsigned vertexCount, VertexBuffer* clone, VertexBuffer* original);
     /// Recalculate animations. Called from Update().
     void UpdateAnimation(const FrameInfo& frame);
     /// Recalculate skinning.

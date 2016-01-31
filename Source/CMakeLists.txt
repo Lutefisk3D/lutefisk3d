@@ -9,6 +9,7 @@ LINK_DIRECTORIES(${PROJECT_BINARY_DIR}/ThirdParty_Builds/lib)
 set(ThirdParty_requisites)
 
 add_definitions(-DLUTEFISK3D_LOGGING)
+option(LUTEFISK3D_SSE "Use SSE " ON)
 option(LUTEFISK3D_HEADLESS "Build without renderer component" OFF)
 option(LUTEFISK3D_SOUNDLESS "Build without audio component" OFF)
 option(LUTEFISK3D_INPUTLESS "Build without input component" OFF)
@@ -23,7 +24,9 @@ if(LUTEFISK3D_PROFILING_SUPPORT)
     add_definitions(-DLUTEFISK3D_PROFILING)
 endif()
 
-
+if(LUTEFISK3D_SSE)
+    add_definitions(-DLUTEFISK3D_SSE)
+endif()
 if(NOT LUTEFISK3D_INPUTLESS)
     add_definitions(-DLUTEFISK3D_INPUT)
 endif()

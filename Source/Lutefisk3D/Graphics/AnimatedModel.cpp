@@ -707,17 +707,10 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
 
         skeleton_.Define(skeleton);
 
-        // Remove collision information from dummy bones that do not affect skinning, to prevent them from being merged
-        // to the bounding box
-        std::vector<Bone>& bones = skeleton_.GetModifiableBones();
-        for (Bone &bone : bones)
-        {
-            if (bone.collisionMask_ & BONECOLLISION_BOX && bone.boundingBox_.size().Length() < M_EPSILON)
-                bone.collisionMask_ &= ~BONECOLLISION_BOX;
-            if (bone.collisionMask_ & BONECOLLISION_SPHERE && bone.radius_ < M_EPSILON)
-                bone.collisionMask_ &= ~BONECOLLISION_SPHERE;
-        }
+        // Merge bounding boxes from non-master models
+        FinalizeBoneBoundingBoxes();
 
+        std::vector<Bone>& bones = skeleton_.GetModifiableBones();
         // Create scene nodes for the bones
         if (createBones)
         {
@@ -750,6 +743,11 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
     {
         // For non-master models: use the bone nodes of the master model
         skeleton_.Define(skeleton);
+
+        // Instruct the master model to refresh (merge) its bone bounding boxes
+        AnimatedModel* master = node_->GetComponent<AnimatedModel>();
+        if (master && master != this)
+            master->FinalizeBoneBoundingBoxes();
 
         if (createBones)
         {
@@ -980,6 +978,67 @@ void AnimatedModel::AssignBoneNodes()
     }
 }
 
+void AnimatedModel::FinalizeBoneBoundingBoxes()
+{
+    std::vector<Bone>& bones = skeleton_.GetModifiableBones();
+    std::vector<AnimatedModel*> models;
+    GetComponents<AnimatedModel>(models);
+
+    if (models.size() > 1)
+    {
+        // Reset first to the model resource's original bone bounding information if available (should be)
+        if (model_)
+        {
+            const std::vector<Bone>& modelBones = model_->GetSkeleton().GetBones();
+            for (unsigned i = 0; i < bones.size() && i < modelBones.size(); ++i)
+            {
+                bones[i].collisionMask_ = modelBones[i].collisionMask_;
+                bones[i].radius_ = modelBones[i].radius_;
+                bones[i].boundingBox_ = modelBones[i].boundingBox_;
+            }
+        }
+
+        // Get matching bones from all non-master models and merge their bone bounding information
+        // to prevent culling errors (master model may not have geometry in all bones, or the bounds are smaller)
+        for (AnimatedModel* model : models)
+        {
+            if (model == this)
+                continue;
+
+            Skeleton& otherSkeleton = model->GetSkeleton();
+            for (Bone & b : bones)
+            {
+                Bone* otherBone = otherSkeleton.GetBone(b.nameHash_);
+                if (otherBone)
+                {
+                    if (otherBone->collisionMask_ & BONECOLLISION_SPHERE)
+                    {
+                        b.collisionMask_ |= BONECOLLISION_SPHERE;
+                        b.radius_ = Max(b.radius_, otherBone->radius_);
+                    }
+                    if (otherBone->collisionMask_ & BONECOLLISION_BOX)
+                    {
+                        b.collisionMask_ |= BONECOLLISION_BOX;
+                        if (b.boundingBox_.Defined())
+                            b.boundingBox_.Merge(otherBone->boundingBox_);
+                        else
+                            b.boundingBox_.Define(otherBone->boundingBox_);
+                    }
+                }
+            }
+        }
+    }
+
+    // Remove collision information from dummy bones that do not affect skinning, to prevent them from being merged
+    // to the bounding box and making it artificially large
+    for (Bone & b : bones)
+    {
+        if (b.collisionMask_ & BONECOLLISION_BOX && b.boundingBox_.size().Length() < M_EPSILON)
+            b.collisionMask_ &= ~BONECOLLISION_BOX;
+        if (b.collisionMask_ & BONECOLLISION_SPHERE && b.radius_ < M_EPSILON)
+            b.collisionMask_ &= ~BONECOLLISION_SPHERE;
+    }
+}
 void AnimatedModel::RemoveRootBone()
 {
     Bone* rootBone = skeleton_.GetRootBone();

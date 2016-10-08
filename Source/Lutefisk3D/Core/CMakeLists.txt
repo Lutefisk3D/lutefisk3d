@@ -28,7 +28,7 @@ set(SOURCE
     Variant.cpp
 )
 add_library(Lutefisk3D_Core OBJECT ${SOURCE} ${INCLUDES})
-add_dependencies(Lutefisk3D_Core LibCpuId)
+#add_dependencies(Lutefisk3D_Core LibCpuId)
 target_include_directories(Lutefisk3D_Core PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Core PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Core PROPERTY POSITION_INDEPENDENT_CODE ON)

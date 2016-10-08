@@ -91,15 +91,9 @@ Engine::Engine(Context* context) :
     timeStep_(0.0f),
     timeStepSmoothing_(2),
     minFps_(10),
-    #if defined(ANDROID) || defined(IOS) || defined(RPI)
-    maxFps_(60),
-    maxInactiveFps_(10),
-    pauseMinimized_(true),
-    #else
     maxFps_(200),
     maxInactiveFps_(60),
     pauseMinimized_(false),
-    #endif
     #ifdef LUTEFISK3D_TESTING
     timeOut_(0),
     #endif

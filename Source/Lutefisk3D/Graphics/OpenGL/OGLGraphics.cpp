@@ -71,7 +71,7 @@
 
 #include <stdio.h>
 using namespace gl;
-#ifdef WIN32
+#ifdef _WIN32
 // Prefer the high-performance GPU on switchable GPU systems
 #include <windows.h>
 extern "C"
@@ -445,11 +445,9 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
                 impl_->window_ = SDL_CreateWindow(qPrintable(windowTitle_), x, y, width, height, flags);
             else
             {
-#ifndef __EMSCRIPTEN__
                 if (!impl_->window_)
                     impl_->window_ = SDL_CreateWindowFrom(externalWindow_);
                 fullscreen = false;
-#endif
             }
 
             if (impl_->window_)

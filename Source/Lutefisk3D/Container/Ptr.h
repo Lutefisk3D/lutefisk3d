@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "../Container/RefCounted.h"
-
 #include <cassert>
 #include <cstddef>
 #include <memory>
+
+#include "../Container/RefCounted.h"
 
 namespace Urho3D
 {

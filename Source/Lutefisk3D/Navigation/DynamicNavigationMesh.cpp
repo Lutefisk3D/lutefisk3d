@@ -51,7 +51,7 @@
 #include <Recast/RecastAlloc.h>
 
 
-#define TILECACHE_MAXLAYERS 255
+static constexpr const unsigned TILECACHE_MAXLAYERS = 255;
 
 namespace Urho3D
 {
@@ -672,7 +672,7 @@ void DynamicNavigationMesh::SetMaxLayers(unsigned maxLayers)
 {
     // Set 3 as a minimum due to the tendency of layers to be constructed inside the hollow space of stacked objects
     // That behavior is unlikely to be expected by the end user
-    maxLayers_ = Max(3, Min(maxLayers, TILECACHE_MAXLAYERS));
+    maxLayers_ = Clamp(maxLayers,3U , TILECACHE_MAXLAYERS);
 }
 
 int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geometryList, int x, int z, TileCacheData* tiles)

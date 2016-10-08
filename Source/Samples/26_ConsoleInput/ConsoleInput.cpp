@@ -114,7 +114,7 @@ void ConsoleInput::HandleUpdate(StringHash eventType, VariantMap& eventData)
 void ConsoleInput::HandleEscKeyDown(StringHash eventType, VariantMap& eventData)
 {
     // Unlike the other samples, exiting the engine when ESC is pressed instead of just closing the console
-    if (eventData[KeyDown::P_KEY].GetInt() == KEY_ESC)
+    if (eventData[KeyDown::P_KEY].GetInt() == KEY_ESCAPE)
         engine_->Exit();
 }
 

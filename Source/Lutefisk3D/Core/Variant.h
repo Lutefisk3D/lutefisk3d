@@ -842,8 +842,8 @@ public:
     const Vector4& GetVector4() const { return type_ == VAR_VECTOR4 ? *reinterpret_cast<const Vector4*>(&value_) : Vector4::ZERO; }
     /// Return quaternion or identity on type mismatch.
     const Quaternion& GetQuaternion() const { return type_ == VAR_QUATERNION ? *reinterpret_cast<const Quaternion*>(&value_) : Quaternion::IDENTITY; }
-    /// Return color or default on type mismatch.
-    const Color& GetColor() const { return type_ == VAR_COLOR ? *reinterpret_cast<const Color*>(&value_) : Color::WHITE; }
+    /// Return color or default on type mismatch. Vector4 is aliased to Color if necessary.
+    const Color& GetColor() const { return (type_ == VAR_COLOR || type_ == VAR_VECTOR4) ? *reinterpret_cast<const Color*>(&value_) : Color::WHITE; }
     /// Return string or empty on type mismatch.
     const QString &GetString() const {
         return type_ == VAR_STRING ? *reinterpret_cast<const QString*>(&value_) : s_dummy; }

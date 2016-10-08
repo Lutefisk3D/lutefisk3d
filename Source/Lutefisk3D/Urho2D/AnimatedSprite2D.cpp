@@ -133,12 +133,12 @@ void AnimatedSprite2D::SetAnimationSet(AnimationSet2D* animationSet)
     {
         spriterInstance_ = new Spriter::SpriterInstance(animationSet_->GetSpriterData());
 
-        if (animationSet_->GetSpriterData()->entities_.empty())
+        if (!animationSet_->GetSpriterData()->entities_.empty())
 {
             // If entity is empty use first entity in spriter
             if (entity_.isEmpty())
                 entity_ = animationSet_->GetSpriterData()->entities_[0]->name_;
-            spriterInstance_->SetEntity(qPrintable(entity_));
+            spriterInstance_->SetEntity(entity_);
         }
     }
 

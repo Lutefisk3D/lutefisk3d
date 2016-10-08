@@ -201,10 +201,10 @@ private:
     /// Handle render update in case of headless execution.
     void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
 
+    /// Drawable objects that were inserted during threaded update phase.
+    std::vector<Drawable*> threadedDrawableUpdates_;
     /// Drawable objects that require update.
     std::vector<Drawable*> drawableUpdates_;
-    /// Drawable objects that require reinsertion.
-    std::vector<Drawable*> drawableReinsertions_;
     /// Mutex for octree reinsertions.
     Mutex octreeMutex_;
     /// Ray query temporary list of drawables.

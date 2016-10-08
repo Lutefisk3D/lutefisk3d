@@ -327,7 +327,6 @@ Octree::~Octree()
 {
     // Reset root pointer from all child octants now so that they do not move their drawables to root
     drawableUpdates_.clear();
-    drawableReinsertions_.clear();
     ResetRoot();
 }
 
@@ -375,6 +374,12 @@ void Octree::SetSize(const BoundingBox& box, unsigned numLevels)
 
 void Octree::Update(const FrameInfo& frame)
 {
+    if (!Thread::IsMainThread())
+    {
+        URHO3D_LOGERROR("Octree::Update() can not be called from worker threads");
+        return;
+    }
+
     // Let drawables update themselves before reinsertion. This can be used for animation
     if (!drawableUpdates_.empty())
     {
@@ -415,6 +420,22 @@ void Octree::Update(const FrameInfo& frame)
         scene->EndThreadedUpdate();
     }
 
+        // If any drawables were inserted during threaded update, update them now from the main thread
+        if (!threadedDrawableUpdates_.empty())
+        {
+            URHO3D_PROFILE(UpdateDrawablesQueuedDuringUpdate);
+
+            for (Drawable* drawable : threadedDrawableUpdates_)
+            {
+                if (drawable)
+                {
+                    drawable->Update(frame);
+                    drawableUpdates_.push_back(drawable);
+                }
+            }
+
+            threadedDrawableUpdates_.clear();
+        }
     // Notify drawable update being finished. Custom animation (eg. IK) can be done at this point
     Scene* scene = GetScene();
     if (scene)
@@ -545,7 +566,7 @@ void Octree::QueueUpdate(Drawable* drawable)
     if (scene && scene->IsThreadedUpdate())
     {
         MutexLock lock(octreeMutex_);
-        drawableUpdates_.push_back(drawable);
+        threadedDrawableUpdates_.push_back(drawable);
     }
     else
         drawableUpdates_.push_back(drawable);
@@ -555,6 +576,9 @@ void Octree::QueueUpdate(Drawable* drawable)
 
 void Octree::CancelUpdate(Drawable* drawable)
 {
+    // This doesn't have to take into account scene being in threaded update, because it is called only
+    // when removing a drawable from octree, which should only ever happen from the main thread.
+
     auto iter = std::find(drawableUpdates_.begin(),drawableUpdates_.end(),drawable);
     if(iter!=drawableUpdates_.end())
         drawableUpdates_.erase(iter);

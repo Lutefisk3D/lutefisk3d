@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <array>
@@ -6,41 +7,141 @@
 
 #include <glbinding/glbinding_api.h>
 
-#include <glbinding/gl/types.h>
-
 #include <glbinding/ContextHandle.h>
 #include <glbinding/Function.h>
+
+#include <glbinding/gl/types.h>
 
 
 namespace glbinding
 {
 
+
+/**
+ * @brief
+ *   The main interface to handle additional features to OpenGL functions besides regular function calls.
+ *
+ * Additional features include binding initialization (even for multi-threaded environments), additional function registration,
+ * context switches (for multi-context environments) and basic reflection in form of accessors to the full list of functions.
+ */
 class GLBINDING_API Binding
 {
 public:
-    using array_t = std::array<AbstractFunction *, 2805>;
-    using ContextSwitchCallback = std::function<void(ContextHandle)>;
+    using array_t = std::array<AbstractFunction *, 2852>; ///< The type of the build-in functions collection.
+    using ContextSwitchCallback = std::function<void(ContextHandle)>; ///< The signature of the context switch callback.
 
+    /**
+     * @brief
+     *   Deleted Constructor as all functions are static.
+     */
     Binding() = delete;
 
+    /**
+     * @brief
+     *   Initializes the binding for the current active OpenGL context.
+     *
+     * @param[in] resolveFunctions (optional)
+     *   Whether to resolve function pointers lazy (resolveFunctions = false) or immediately.
+     *
+     * After this call, the initialized context is already set active for the current thread.
+     */
     static void initialize(bool resolveFunctions = true);
+    
+    /**
+     * @brief
+     *   Initializes the binding for the current active OpenGL context.
+     *
+     * @param[in] context
+     *   The context handle of the context to initialize.
+     * @param[in] useContext
+     *   Whether to set the context active (useContext = true) after the initialization.
+     * @param[in] resolveFunctions (optional)
+     *   Whether to resolve function pointers lazy (resolveFunctions = false) or immediately.
+     */
     static void initialize(ContextHandle context, bool useContext = true, bool resolveFunctions = true);
     
+    /**
+     * @brief
+     *   Registers an additional function for the additional features.
+     *
+     * @param[in] function
+     *   The function to register.
+     *
+     * The additional features are callbacks, and use in multi-context environments.
+     */
     static void registerAdditionalFunction(AbstractFunction * function);
 
+    /**
+     * @brief
+     *   Resolves the funtion pointers of all registered OpenGL functions immediately for the current context.
+     */
     static void resolveFunctions();
-
+    
+    /**
+     * @brief
+     *   Update the current context state in glbinding.
+     *   This function queries the driver for the current OpenGL context.
+     */
     static void useCurrentContext();
+    
+    /**
+     * @brief
+     *   Update the current context state in glbinding.
+     *
+     * @param[in] context
+     *   The context handle of the context to set current.
+     */
     static void useContext(ContextHandle context);
 
+    /**
+     * @brief
+     *   Removes the current context from the state of glbinding.
+     *   This function queries the driver for the current OpenGL context.
+     */
     static void releaseCurrentContext();
+    
+    /**
+     * @brief
+     *   Removes the current context from the state of glbinding.
+     *
+     * @param[in] context
+     *   The context handle of the context to remove.
+     */
     static void releaseContext(ContextHandle context);
     
+    /**
+     * @brief
+     *   Registers an additional callback that gets called each time the context is switched using the useContext method.
+     *
+     * There may be multiple context switch callbacks registered at once.
+     */
     static void addContextSwitchCallback(ContextSwitchCallback callback);
 
+    /**
+     * @brief
+     *   The accessor for the number of all registered functions (build-in and additional).
+     *
+     * @return
+     *   The number of all registered functions.
+     */
     static size_t size();
 
+    /**
+     * @brief
+     *   The accessor for all build-in functions.
+     *
+     * @return
+     *   The list of all build-in functions.
+     */
     static const array_t & functions();
+    
+    /**
+     * @brief
+     *   The accessor for all additional functions.
+     *
+     * @return
+     *   The list of all additional functions.
+     */
     static const std::vector<AbstractFunction *> & additionalFunctions();
 
 public:
@@ -57,6 +158,7 @@ public:
     static Function<void, gl::GLenum, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint> AlphaFragmentOp3ATI;
     static Function<void, gl::GLenum, gl::GLfloat> AlphaFunc;
     static Function<void, gl::GLenum, gl::GLfixed> AlphaFuncxOES;
+    static Function<void> ApplyFramebufferAttachmentCMAAINTEL;
     static Function<void, gl::GLenum> ApplyTextureEXT;
     static Function<gl::GLboolean, gl::GLsizei, const gl::GLuint *, gl::GLboolean *> AreProgramsResidentNV;
     static Function<gl::GLboolean, gl::GLsizei, const gl::GLuint *, gl::GLboolean *> AreTexturesResident;
@@ -214,7 +316,7 @@ public:
     static Function<void, gl::GLuint, gl::GLenum, gl::GLenum, gl::GLenum, const void *> ClearNamedBufferDataEXT;
     static Function<void, gl::GLuint, gl::GLenum, gl::GLintptr, gl::GLsizeiptr, gl::GLenum, gl::GLenum, const void *> ClearNamedBufferSubData;
     static Function<void, gl::GLuint, gl::GLenum, gl::GLsizeiptr, gl::GLsizeiptr, gl::GLenum, gl::GLenum, const void *> ClearNamedBufferSubDataEXT;
-    static Function<void, gl::GLuint, gl::GLenum, const gl::GLfloat, gl::GLint> ClearNamedFramebufferfi;
+    static Function<void, gl::GLuint, gl::GLenum, gl::GLint, gl::GLfloat, gl::GLint> ClearNamedFramebufferfi;
     static Function<void, gl::GLuint, gl::GLenum, gl::GLint, const gl::GLfloat *> ClearNamedFramebufferfv;
     static Function<void, gl::GLuint, gl::GLenum, gl::GLint, const gl::GLint *> ClearNamedFramebufferiv;
     static Function<void, gl::GLuint, gl::GLenum, gl::GLint, const gl::GLuint *> ClearNamedFramebufferuiv;
@@ -342,6 +444,8 @@ public:
     static Function<void, gl::GLuint, gl::GLenum, gl::GLint, gl::GLint, gl::GLint, gl::GLsizei, gl::GLsizei, gl::GLenum, gl::GLsizei, const void *> CompressedTextureSubImage2DEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint, gl::GLint, gl::GLint, gl::GLsizei, gl::GLsizei, gl::GLsizei, gl::GLenum, gl::GLsizei, const void *> CompressedTextureSubImage3D;
     static Function<void, gl::GLuint, gl::GLenum, gl::GLint, gl::GLint, gl::GLint, gl::GLint, gl::GLsizei, gl::GLsizei, gl::GLsizei, gl::GLenum, gl::GLsizei, const void *> CompressedTextureSubImage3DEXT;
+    static Function<void, gl::GLenum, gl::GLfloat> ConservativeRasterParameterfNV;
+    static Function<void, gl::GLenum, gl::GLint> ConservativeRasterParameteriNV;
     static Function<void, gl::GLenum, gl::GLenum, gl::GLsizei, gl::GLenum, gl::GLenum, const void *> ConvolutionFilter1D;
     static Function<void, gl::GLenum, gl::GLenum, gl::GLsizei, gl::GLenum, gl::GLenum, const void *> ConvolutionFilter1DEXT;
     static Function<void, gl::GLenum, gl::GLenum, gl::GLsizei, gl::GLsizei, gl::GLenum, gl::GLenum, const void *> ConvolutionFilter2D;
@@ -594,6 +698,7 @@ public:
     static Function<void, gl::GLenum, gl::GLint, gl::GLint, gl::GLint, gl::GLint> EvalMesh2;
     static Function<void, gl::GLint> EvalPoint1;
     static Function<void, gl::GLint, gl::GLint> EvalPoint2;
+    static Function<void> EvaluateDepthValuesARB;
     static Function<void, gl::GLenum, gl::GLuint, const gl::GLfloat *> ExecuteProgramNV;
     static Function<void, gl::GLuint, gl::GLuint, gl::GLuint> ExtractComponentEXT;
     static Function<void, gl::GLsizei, gl::GLenum, gl::GLfloat *> FeedbackBuffer;
@@ -659,6 +764,7 @@ public:
     static Function<void, gl::GLuint, gl::GLenum> FramebufferReadBufferEXT;
     static Function<void, gl::GLenum, gl::GLenum, gl::GLenum, gl::GLuint> FramebufferRenderbuffer;
     static Function<void, gl::GLenum, gl::GLenum, gl::GLenum, gl::GLuint> FramebufferRenderbufferEXT;
+    static Function<void, gl::GLenum, gl::GLuint, gl::GLsizei, const gl::GLfloat *> FramebufferSampleLocationsfvARB;
     static Function<void, gl::GLenum, gl::GLuint, gl::GLsizei, const gl::GLfloat *> FramebufferSampleLocationsfvNV;
     static Function<void, gl::GLenum, gl::GLenum, gl::GLuint, gl::GLint> FramebufferTexture;
     static Function<void, gl::GLenum, gl::GLenum, gl::GLenum, gl::GLuint, gl::GLint> FramebufferTexture1D;
@@ -1067,9 +1173,11 @@ public:
     static Function<void, gl::GLuint, gl::GLint, gl::GLdouble *> GetUniformdv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLfloat *> GetUniformfv;
     static Function<void, gl::GLhandleARB, gl::GLint, gl::GLfloat *> GetUniformfvARB;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLint64 *> GetUniformi64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint64EXT *> GetUniformi64vNV;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint *> GetUniformiv;
     static Function<void, gl::GLhandleARB, gl::GLint, gl::GLint *> GetUniformivARB;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLuint64 *> GetUniformui64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint64EXT *> GetUniformui64vNV;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint *> GetUniformuiv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint *> GetUniformuivEXT;
@@ -1150,8 +1258,10 @@ public:
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, gl::GLdouble *> GetnUniformdvARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, gl::GLfloat *> GetnUniformfv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, gl::GLfloat *> GetnUniformfvARB;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, gl::GLint64 *> GetnUniformi64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, gl::GLint *> GetnUniformiv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, gl::GLint *> GetnUniformivARB;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, gl::GLuint64 *> GetnUniformui64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, gl::GLuint *> GetnUniformuiv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, gl::GLuint *> GetnUniformuivARB;
     static Function<void, gl::GLbyte> GlobalAlphaFactorbSUN;
@@ -1365,6 +1475,7 @@ public:
     static Function<void, gl::GLenum, gl::GLfloat, gl::GLfloat, gl::GLfloat> MatrixScalefEXT;
     static Function<void, gl::GLenum, gl::GLdouble, gl::GLdouble, gl::GLdouble> MatrixTranslatedEXT;
     static Function<void, gl::GLenum, gl::GLfloat, gl::GLfloat, gl::GLfloat> MatrixTranslatefEXT;
+    static Function<void, gl::GLuint> MaxShaderCompilerThreadsARB;
     static Function<void, gl::MemoryBarrierMask> MemoryBarrier;
     static Function<void, gl::MemoryBarrierMask> MemoryBarrierByRegion;
     static Function<void, gl::MemoryBarrierMask> MemoryBarrierEXT;
@@ -1536,6 +1647,7 @@ public:
     static Function<void, gl::GLuint, gl::GLenum> NamedFramebufferReadBuffer;
     static Function<void, gl::GLuint, gl::GLenum, gl::GLenum, gl::GLuint> NamedFramebufferRenderbuffer;
     static Function<void, gl::GLuint, gl::GLenum, gl::GLenum, gl::GLuint> NamedFramebufferRenderbufferEXT;
+    static Function<void, gl::GLuint, gl::GLuint, gl::GLsizei, const gl::GLfloat *> NamedFramebufferSampleLocationsfvARB;
     static Function<void, gl::GLuint, gl::GLuint, gl::GLsizei, const gl::GLfloat *> NamedFramebufferSampleLocationsfvNV;
     static Function<void, gl::GLuint, gl::GLenum, gl::GLuint, gl::GLint> NamedFramebufferTexture;
     static Function<void, gl::GLuint, gl::GLenum, gl::GLenum, gl::GLuint, gl::GLint> NamedFramebufferTexture1DEXT;
@@ -1689,6 +1801,7 @@ public:
     static Function<void> PopName;
     static Function<void, gl::GLuint, gl::GLuint64EXT, gl::GLuint, gl::GLuint, gl::GLenum, gl::GLenum, gl::GLuint, gl::GLenum, gl::GLuint, gl::GLenum, gl::GLuint, gl::GLenum, gl::GLuint> PresentFrameDualFillNV;
     static Function<void, gl::GLuint, gl::GLuint64EXT, gl::GLuint, gl::GLuint, gl::GLenum, gl::GLenum, gl::GLuint, gl::GLuint, gl::GLenum, gl::GLuint, gl::GLuint> PresentFrameKeyedNV;
+    static Function<void, gl::GLfloat, gl::GLfloat, gl::GLfloat, gl::GLfloat, gl::GLfloat, gl::GLfloat, gl::GLfloat, gl::GLfloat> PrimitiveBoundingBoxARB;
     static Function<void, gl::GLuint> PrimitiveRestartIndex;
     static Function<void, gl::GLuint> PrimitiveRestartIndexNV;
     static Function<void> PrimitiveRestartNV;
@@ -1746,13 +1859,17 @@ public:
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLfloat *> ProgramUniform1fv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLfloat *> ProgramUniform1fvEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint> ProgramUniform1i;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLint64> ProgramUniform1i64ARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint64EXT> ProgramUniform1i64NV;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint64 *> ProgramUniform1i64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint64EXT *> ProgramUniform1i64vNV;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint> ProgramUniform1iEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint *> ProgramUniform1iv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint *> ProgramUniform1ivEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint> ProgramUniform1ui;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLuint64> ProgramUniform1ui64ARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint64EXT> ProgramUniform1ui64NV;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint64 *> ProgramUniform1ui64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint64EXT *> ProgramUniform1ui64vNV;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint> ProgramUniform1uiEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint *> ProgramUniform1uiv;
@@ -1766,13 +1883,17 @@ public:
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLfloat *> ProgramUniform2fv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLfloat *> ProgramUniform2fvEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint, gl::GLint> ProgramUniform2i;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLint64, gl::GLint64> ProgramUniform2i64ARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint64EXT, gl::GLint64EXT> ProgramUniform2i64NV;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint64 *> ProgramUniform2i64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint64EXT *> ProgramUniform2i64vNV;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint, gl::GLint> ProgramUniform2iEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint *> ProgramUniform2iv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint *> ProgramUniform2ivEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint, gl::GLuint> ProgramUniform2ui;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLuint64, gl::GLuint64> ProgramUniform2ui64ARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint64EXT, gl::GLuint64EXT> ProgramUniform2ui64NV;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint64 *> ProgramUniform2ui64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint64EXT *> ProgramUniform2ui64vNV;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint, gl::GLuint> ProgramUniform2uiEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint *> ProgramUniform2uiv;
@@ -1786,13 +1907,17 @@ public:
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLfloat *> ProgramUniform3fv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLfloat *> ProgramUniform3fvEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint, gl::GLint, gl::GLint> ProgramUniform3i;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLint64, gl::GLint64, gl::GLint64> ProgramUniform3i64ARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint64EXT, gl::GLint64EXT, gl::GLint64EXT> ProgramUniform3i64NV;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint64 *> ProgramUniform3i64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint64EXT *> ProgramUniform3i64vNV;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint, gl::GLint, gl::GLint> ProgramUniform3iEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint *> ProgramUniform3iv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint *> ProgramUniform3ivEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint, gl::GLuint, gl::GLuint> ProgramUniform3ui;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLuint64, gl::GLuint64, gl::GLuint64> ProgramUniform3ui64ARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint64EXT, gl::GLuint64EXT, gl::GLuint64EXT> ProgramUniform3ui64NV;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint64 *> ProgramUniform3ui64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint64EXT *> ProgramUniform3ui64vNV;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint, gl::GLuint, gl::GLuint> ProgramUniform3uiEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint *> ProgramUniform3uiv;
@@ -1806,13 +1931,17 @@ public:
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLfloat *> ProgramUniform4fv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLfloat *> ProgramUniform4fvEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint, gl::GLint, gl::GLint, gl::GLint> ProgramUniform4i;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLint64, gl::GLint64, gl::GLint64, gl::GLint64> ProgramUniform4i64ARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint64EXT, gl::GLint64EXT, gl::GLint64EXT, gl::GLint64EXT> ProgramUniform4i64NV;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint64 *> ProgramUniform4i64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint64EXT *> ProgramUniform4i64vNV;
     static Function<void, gl::GLuint, gl::GLint, gl::GLint, gl::GLint, gl::GLint, gl::GLint> ProgramUniform4iEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint *> ProgramUniform4iv;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLint *> ProgramUniform4ivEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint> ProgramUniform4ui;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLuint64, gl::GLuint64, gl::GLuint64, gl::GLuint64> ProgramUniform4ui64ARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint64EXT, gl::GLuint64EXT, gl::GLuint64EXT, gl::GLuint64EXT> ProgramUniform4ui64NV;
+    static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint64 *> ProgramUniform4ui64vARB;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint64EXT *> ProgramUniform4ui64vNV;
     static Function<void, gl::GLuint, gl::GLint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint> ProgramUniform4uiEXT;
     static Function<void, gl::GLuint, gl::GLint, gl::GLsizei, const gl::GLuint *> ProgramUniform4uiv;
@@ -2296,13 +2425,17 @@ public:
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLfloat *> Uniform1fv;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLfloat *> Uniform1fvARB;
     static Function<void, gl::GLint, gl::GLint> Uniform1i;
+    static Function<void, gl::GLint, gl::GLint64> Uniform1i64ARB;
     static Function<void, gl::GLint, gl::GLint64EXT> Uniform1i64NV;
+    static Function<void, gl::GLint, gl::GLsizei, const gl::GLint64 *> Uniform1i64vARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint64EXT *> Uniform1i64vNV;
     static Function<void, gl::GLint, gl::GLint> Uniform1iARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint *> Uniform1iv;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint *> Uniform1ivARB;
     static Function<void, gl::GLint, gl::GLuint> Uniform1ui;
+    static Function<void, gl::GLint, gl::GLuint64> Uniform1ui64ARB;
     static Function<void, gl::GLint, gl::GLuint64EXT> Uniform1ui64NV;
+    static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint64 *> Uniform1ui64vARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint64EXT *> Uniform1ui64vNV;
     static Function<void, gl::GLint, gl::GLuint> Uniform1uiEXT;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint *> Uniform1uiv;
@@ -2314,13 +2447,17 @@ public:
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLfloat *> Uniform2fv;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLfloat *> Uniform2fvARB;
     static Function<void, gl::GLint, gl::GLint, gl::GLint> Uniform2i;
+    static Function<void, gl::GLint, gl::GLint64, gl::GLint64> Uniform2i64ARB;
     static Function<void, gl::GLint, gl::GLint64EXT, gl::GLint64EXT> Uniform2i64NV;
+    static Function<void, gl::GLint, gl::GLsizei, const gl::GLint64 *> Uniform2i64vARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint64EXT *> Uniform2i64vNV;
     static Function<void, gl::GLint, gl::GLint, gl::GLint> Uniform2iARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint *> Uniform2iv;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint *> Uniform2ivARB;
     static Function<void, gl::GLint, gl::GLuint, gl::GLuint> Uniform2ui;
+    static Function<void, gl::GLint, gl::GLuint64, gl::GLuint64> Uniform2ui64ARB;
     static Function<void, gl::GLint, gl::GLuint64EXT, gl::GLuint64EXT> Uniform2ui64NV;
+    static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint64 *> Uniform2ui64vARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint64EXT *> Uniform2ui64vNV;
     static Function<void, gl::GLint, gl::GLuint, gl::GLuint> Uniform2uiEXT;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint *> Uniform2uiv;
@@ -2332,13 +2469,17 @@ public:
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLfloat *> Uniform3fv;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLfloat *> Uniform3fvARB;
     static Function<void, gl::GLint, gl::GLint, gl::GLint, gl::GLint> Uniform3i;
+    static Function<void, gl::GLint, gl::GLint64, gl::GLint64, gl::GLint64> Uniform3i64ARB;
     static Function<void, gl::GLint, gl::GLint64EXT, gl::GLint64EXT, gl::GLint64EXT> Uniform3i64NV;
+    static Function<void, gl::GLint, gl::GLsizei, const gl::GLint64 *> Uniform3i64vARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint64EXT *> Uniform3i64vNV;
     static Function<void, gl::GLint, gl::GLint, gl::GLint, gl::GLint> Uniform3iARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint *> Uniform3iv;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint *> Uniform3ivARB;
     static Function<void, gl::GLint, gl::GLuint, gl::GLuint, gl::GLuint> Uniform3ui;
+    static Function<void, gl::GLint, gl::GLuint64, gl::GLuint64, gl::GLuint64> Uniform3ui64ARB;
     static Function<void, gl::GLint, gl::GLuint64EXT, gl::GLuint64EXT, gl::GLuint64EXT> Uniform3ui64NV;
+    static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint64 *> Uniform3ui64vARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint64EXT *> Uniform3ui64vNV;
     static Function<void, gl::GLint, gl::GLuint, gl::GLuint, gl::GLuint> Uniform3uiEXT;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint *> Uniform3uiv;
@@ -2350,13 +2491,17 @@ public:
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLfloat *> Uniform4fv;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLfloat *> Uniform4fvARB;
     static Function<void, gl::GLint, gl::GLint, gl::GLint, gl::GLint, gl::GLint> Uniform4i;
+    static Function<void, gl::GLint, gl::GLint64, gl::GLint64, gl::GLint64, gl::GLint64> Uniform4i64ARB;
     static Function<void, gl::GLint, gl::GLint64EXT, gl::GLint64EXT, gl::GLint64EXT, gl::GLint64EXT> Uniform4i64NV;
+    static Function<void, gl::GLint, gl::GLsizei, const gl::GLint64 *> Uniform4i64vARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint64EXT *> Uniform4i64vNV;
     static Function<void, gl::GLint, gl::GLint, gl::GLint, gl::GLint, gl::GLint> Uniform4iARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint *> Uniform4iv;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLint *> Uniform4ivARB;
     static Function<void, gl::GLint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint> Uniform4ui;
+    static Function<void, gl::GLint, gl::GLuint64, gl::GLuint64, gl::GLuint64, gl::GLuint64> Uniform4ui64ARB;
     static Function<void, gl::GLint, gl::GLuint64EXT, gl::GLuint64EXT, gl::GLuint64EXT, gl::GLuint64EXT> Uniform4ui64NV;
+    static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint64 *> Uniform4ui64vARB;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint64EXT *> Uniform4ui64vNV;
     static Function<void, gl::GLint, gl::GLuint, gl::GLuint, gl::GLuint, gl::GLuint> Uniform4uiEXT;
     static Function<void, gl::GLint, gl::GLsizei, const gl::GLuint *> Uniform4uiv;
@@ -2781,6 +2926,8 @@ public:
     static Function<void, gl::GLuint, gl::GLsizei, const gl::GLfloat *> ViewportArrayv;
     static Function<void, gl::GLuint, gl::GLfloat, gl::GLfloat, gl::GLfloat, gl::GLfloat> ViewportIndexedf;
     static Function<void, gl::GLuint, const gl::GLfloat *> ViewportIndexedfv;
+    static Function<void, gl::GLuint, gl::GLfloat, gl::GLfloat> ViewportPositionWScaleNV;
+    static Function<void, gl::GLuint, gl::GLenum, gl::GLenum, gl::GLenum, gl::GLenum> ViewportSwizzleNV;
     static Function<void, gl::GLsync, gl::UnusedMask, gl::GLuint64> WaitSync;
     static Function<void, gl::GLuint, gl::GLsizei, const gl::GLuint *, const gl::GLfloat *> WeightPathsNV;
     static Function<void, gl::GLint, gl::GLenum, gl::GLsizei, const void *> WeightPointerARB;
@@ -2848,12 +2995,14 @@ public:
     static Function<void, const gl::GLint *> WindowPos4ivMESA;
     static Function<void, gl::GLshort, gl::GLshort, gl::GLshort, gl::GLshort> WindowPos4sMESA;
     static Function<void, const gl::GLshort *> WindowPos4svMESA;
+    static Function<void, gl::GLenum, gl::GLsizei, const gl::GLint *> WindowRectanglesEXT;
     static Function<void, gl::GLuint, gl::GLuint, gl::GLenum, gl::GLenum, gl::GLenum, gl::GLenum> WriteMaskEXT;
 
 protected:
-	static const array_t s_functions;
-	static std::vector<AbstractFunction *> s_additionalFunctions;
-	static std::vector<ContextSwitchCallback> s_callbacks;
+	static const array_t s_functions; ///< The list of all build-in functions.
+	static std::vector<AbstractFunction *> s_additionalFunctions; ///< The list of all additional functions;
+	static std::vector<ContextSwitchCallback> s_callbacks; ///< The list of all currently registered context switch callbacks.
 };
+
 
 } // namespace glbinding

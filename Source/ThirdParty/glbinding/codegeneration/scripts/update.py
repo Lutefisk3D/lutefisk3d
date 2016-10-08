@@ -1,9 +1,12 @@
 #!/usr/bin/python
 
 import os, sys, getopt, io, subprocess
+import xml.etree.ElementTree
 
 def update(outputfile, revisionfile):
     url = "https://cvs.khronos.org/svn/repos/ogl/trunk/doc/registry/public/api/gl.xml"
+    user = "anonymous"
+    password = "anonymous"
     
     revision = 0
 
@@ -25,23 +28,18 @@ def update(outputfile, revisionfile):
 
     print("Retrieving latest revision of gl.xml")
 
-    svninfo = subprocess.Popen(["svn", "info", url], stdout=subprocess.PIPE)
+    svninfo = subprocess.Popen(["svn", "info", "--xml", "--username", user, "--password", password, url], stdout=subprocess.PIPE)
     newrevisioninfo = svninfo.communicate()[0]
     
     if sys.version_info < (3,):
-        stream = io.StringIO(unicode(newrevisioninfo))
+        root = xml.etree.ElementTree.fromstring(unicode(newrevisioninfo))
     else:
-        stream = io.StringIO(str(newrevisioninfo, 'utf-8'))  
-
-    newrevision = 0
+        root = xml.etree.ElementTree.fromstring(str(newrevisioninfo, 'utf-8'))
     
-    line = str(stream.readline())
-    while line:
-        if line.startswith("Last Changed Rev:"):
-            newrevision = int(''.join(ch for ch in line if ch.isdigit()))
-            break
-        line = str(stream.readline())
+    commit = root.findall(".//commit")
 
+    newrevision = int(commit[0].attrib["revision"])
+    
     if newrevision <= revision:
         print (outputfile + " is up to date, skipping update")
         sys.exit(0)
@@ -53,7 +51,7 @@ def update(outputfile, revisionfile):
     
     print ("Local revision of " + outputfile + " is now " + str(newrevision))
     
-    os.system("svn export --force --quiet " + url + " " + outputfile)
+    os.system("svn export --username " + user + " --password " + password + " --force --quiet " + url + " " + outputfile)
     os.system("git diff " + outputfile)
 
 

@@ -8,6 +8,7 @@
 namespace gl43
 {
 
+
 // import enums to namespace
 
 
@@ -1869,6 +1870,7 @@ using gl::GL_QUADS_FOLLOW_PROVOKING_VERTEX_CONVENTION;
 using gl::GL_FIRST_VERTEX_CONVENTION;
 using gl::GL_LAST_VERTEX_CONVENTION;
 using gl::GL_PROVOKING_VERTEX;
+using gl::GL_SAMPLE_LOCATION_ARB;
 using gl::GL_SAMPLE_POSITION;
 using gl::GL_SAMPLE_MASK;
 using gl::GL_SAMPLE_MASK_VALUE;
@@ -2182,5 +2184,6 @@ using gl::GL_MAX_FRAMEBUFFER_HEIGHT;
 using gl::GL_MAX_FRAMEBUFFER_LAYERS;
 using gl::GL_MAX_FRAMEBUFFER_SAMPLES;
 using gl::GL_NUM_SAMPLE_COUNTS;
+
 
 } // namespace gl43

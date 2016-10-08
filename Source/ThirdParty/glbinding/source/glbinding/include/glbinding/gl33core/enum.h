@@ -8,6 +8,7 @@
 namespace gl33core
 {
 
+
 // import enums to namespace
 
 
@@ -1036,6 +1037,7 @@ using gl::GL_QUADS_FOLLOW_PROVOKING_VERTEX_CONVENTION;
 using gl::GL_FIRST_VERTEX_CONVENTION;
 using gl::GL_LAST_VERTEX_CONVENTION;
 using gl::GL_PROVOKING_VERTEX;
+using gl::GL_SAMPLE_LOCATION_ARB;
 using gl::GL_SAMPLE_POSITION;
 using gl::GL_SAMPLE_MASK;
 using gl::GL_SAMPLE_MASK_VALUE;
@@ -1094,5 +1096,6 @@ using gl::GL_MAX_GEOMETRY_INPUT_COMPONENTS;
 using gl::GL_MAX_GEOMETRY_OUTPUT_COMPONENTS;
 using gl::GL_MAX_FRAGMENT_INPUT_COMPONENTS;
 using gl::GL_CONTEXT_PROFILE_MASK;
+
 
 } // namespace gl33core

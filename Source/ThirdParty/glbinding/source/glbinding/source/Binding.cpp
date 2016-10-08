@@ -5,16 +5,23 @@
 #include <mutex>
 #include <cassert>
 
+#include "glbinding/glbinding_features.h"
+
+
 namespace
 {
-    THREAD_LOCAL glbinding::ContextHandle t_context = 0;
 
-    std::recursive_mutex g_mutex;
-    std::unordered_map<glbinding::ContextHandle, int> g_bindings;
-}
+GLBINDING_THREAD_LOCAL glbinding::ContextHandle t_context = 0;
+
+std::recursive_mutex g_mutex;
+std::unordered_map<glbinding::ContextHandle, int> g_bindings;
+
+} // namespace
+
 
 namespace glbinding 
 {
+
 
 std::vector<AbstractFunction *> Binding::s_additionalFunctions;
 std::vector<Binding::ContextSwitchCallback> Binding::s_callbacks;
@@ -45,14 +52,14 @@ void Binding::initialize(
 ,   const bool _resolveFunctions)
 {
     g_mutex.lock();
-    if (g_bindings.find(context) != g_bindings.end())
+    if (g_bindings.find(context) != g_bindings.cend())
     {
         g_mutex.unlock();
         return;
     }
     g_mutex.unlock();
 
-    const int pos = static_cast<int>(g_bindings.size());
+    const auto pos = static_cast<int>(g_bindings.size());
 
     g_mutex.lock();
     g_bindings[context] = pos;
@@ -62,15 +69,22 @@ void Binding::initialize(
     AbstractFunction::provideState(pos);
     g_mutex.unlock();
 
-    if (_useContext)
-    {
+    const auto resolveWOUse = !_useContext & _resolveFunctions;
+    const auto currentContext = resolveWOUse ? getCurrentContext() : static_cast<ContextHandle>(0);
+
+    if(_useContext)
         useContext(context);
-    }
 
     if (_resolveFunctions)
     {
+        g_mutex.lock();
         resolveFunctions();
+        g_mutex.unlock();
     }
+
+    // restore previous context
+    if(resolveWOUse)
+        useContext(currentContext);
 }
 
 void Binding::registerAdditionalFunction(AbstractFunction * function)
@@ -80,12 +94,12 @@ void Binding::registerAdditionalFunction(AbstractFunction * function)
 
 void Binding::resolveFunctions()
 {
-    for (AbstractFunction * function : Binding::functions())
+    for (auto function : Binding::functions())
     {
         function->resolveAddress();
     }
 
-    for (AbstractFunction * function : Binding::additionalFunctions())
+    for (auto function : Binding::additionalFunctions())
     {
         function->resolveAddress();
     }
@@ -101,7 +115,7 @@ void Binding::useContext(const ContextHandle context)
     t_context = context;
 
     g_mutex.lock();
-    if (g_bindings.find(t_context) == g_bindings.end())
+    if (g_bindings.find(t_context) == g_bindings.cend())
     {
         g_mutex.unlock();
 
@@ -142,11 +156,12 @@ void Binding::releaseContext(const ContextHandle context)
     g_mutex.unlock();
 }
 
-void Binding::addContextSwitchCallback(ContextSwitchCallback callback)
+void Binding::addContextSwitchCallback(const ContextSwitchCallback callback)
 {
     g_mutex.lock();
     s_callbacks.push_back(std::move(callback));
     g_mutex.unlock();
 }
+
 
 } // namespace glbinding

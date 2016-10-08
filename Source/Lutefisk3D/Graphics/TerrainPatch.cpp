@@ -282,13 +282,13 @@ void TerrainPatch::OnWorldBoundingBoxUpdate()
 unsigned TerrainPatch::GetCorrectedLodLevel(unsigned lodLevel)
 {
     if (north_)
-        lodLevel = Min((int)lodLevel, north_->GetLodLevel() + 1);
+        lodLevel = std::min(lodLevel, north_->GetLodLevel() + 1);
     if (south_)
-        lodLevel = Min((int)lodLevel, south_->GetLodLevel() + 1);
+        lodLevel = std::min(lodLevel, south_->GetLodLevel() + 1);
     if (west_)
-        lodLevel = Min((int)lodLevel, west_->GetLodLevel() + 1);
+        lodLevel = std::min(lodLevel, west_->GetLodLevel() + 1);
     if (east_)
-        lodLevel = Min((int)lodLevel, east_->GetLodLevel() + 1);
+        lodLevel = std::min(lodLevel, east_->GetLodLevel() + 1);
 
     return lodLevel;
 }

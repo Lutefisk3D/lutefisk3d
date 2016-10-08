@@ -376,6 +376,20 @@ VariantMap& Object::GetEventDataMap() const
     return context_->GetEventDataMap();
 }
 
+
+const Variant &Object::GetGlobalVar(StringHash key) const
+{
+    return context_->GetGlobalVar(key);
+}
+
+void Object::SetGlobalVar(StringHash key, const Urho3D::Variant &value)
+{
+    context_->SetGlobalVar(key, value);
+}
+const VariantMap& Object::GetGlobalVars() const
+{
+    return context_->GetGlobalVars();
+}
 Object* Object::GetSubsystem(StringHash type) const
 {
     return context_->GetSubsystem(type);

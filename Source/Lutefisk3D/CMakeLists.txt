@@ -1,7 +1,7 @@
 
 ################# Engine Core ########################
 
-set(Lutefisk3D_components)
+set(Lutefisk3D_components "")
 
 add_subdirectory(Container)
 add_subdirectory(Core)

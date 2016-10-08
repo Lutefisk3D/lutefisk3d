@@ -295,6 +295,36 @@ void Technique::ReleaseShaders()
     }
 }
 
+SharedPtr<Technique> Technique::Clone(const QString& cloneName) const
+{
+    SharedPtr<Technique> ret(new Technique(context_));
+    ret->SetIsDesktop(isDesktop_);
+    ret->SetName(cloneName);
+
+    // Deep copy passes
+    for (const auto &i : passes_)
+    {
+        Pass* srcPass = i.Get();
+        if (!srcPass)
+            continue;
+
+        Pass* newPass = ret->CreatePass(srcPass->GetName());
+        newPass->SetBlendMode(srcPass->GetBlendMode());
+        newPass->SetDepthTestMode(srcPass->GetDepthTestMode());
+        newPass->SetLightingMode(srcPass->GetLightingMode());
+        newPass->SetDepthWrite(srcPass->GetDepthWrite());
+        newPass->SetAlphaMask(srcPass->GetAlphaMask());
+        newPass->SetIsDesktop(srcPass->IsDesktop());
+        newPass->SetVertexShader(srcPass->GetVertexShader());
+        newPass->SetPixelShader(srcPass->GetPixelShader());
+        newPass->SetVertexShaderDefines(srcPass->GetVertexShaderDefines());
+        newPass->SetPixelShaderDefines(srcPass->GetPixelShaderDefines());
+    }
+
+    return ret;
+}
+
+
 Pass* Technique::CreatePass(const QString& name)
 {
     Pass* oldPass = GetPass(name);

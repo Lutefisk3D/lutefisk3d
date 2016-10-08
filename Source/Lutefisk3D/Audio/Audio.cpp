@@ -42,7 +42,7 @@ const char* AUDIO_CATEGORY = "Audio";
 static const int MIN_BUFFERLENGTH = 20;
 static const int MIN_MIXRATE = 11025;
 static const int MAX_MIXRATE = 48000;
-static const StringHash SOUND_MASTER_HASH("MASTER");
+static const StringHash SOUND_MASTER_HASH("Master");
 
 static void SDLAudioCallback(void *userdata, Uint8 *stream, int len);
 
@@ -77,12 +77,7 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
     SDL_AudioSpec obtained;
 
     desired.freq = mixRate;
-// The concept behind the emscripten audio port is to treat it as 16 bit until the final accumulation form the clip buffer
-#ifdef __EMSCRIPTEN__
-    desired.format = AUDIO_F32LSB;
-#else
     desired.format = AUDIO_S16;
-#endif
     desired.channels = stereo ? 2 : 1;
     desired.callback = SDLAudioCallback;
     desired.userdata = this;
@@ -100,15 +95,6 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
         return false;
     }
 
-#ifdef __EMSCRIPTEN__
-    if (obtained.format != AUDIO_F32LSB && obtained.format != AUDIO_F32MSB && obtained.format != AUDIO_F32SYS)
-    {
-        URHO3D_LOGERROR("Could not initialize audio output, 32-bit float buffer format not supported");
-        SDL_CloseAudioDevice(deviceID_);
-        deviceID_ = 0;
-        return false;
-    }
-#else
     if (obtained.format != AUDIO_S16SYS && obtained.format != AUDIO_S16LSB && obtained.format != AUDIO_S16MSB)
     {
         URHO3D_LOGERROR("Could not initialize audio output, 16-bit buffer format not supported");
@@ -116,30 +102,28 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
         deviceID_ = 0;
         return false;
     }
-#endif
 
     stereo_ = obtained.channels == 2;
     sampleSize_ = stereo_ ? sizeof(int) : sizeof(short);
     // Guarantee a fragment size that is low enough so that Vorbis decoding buffers do not wrap
-    fragmentSize_ = Min((int)NextPowerOfTwo(mixRate >> 6), (int)obtained.samples);
+    fragmentSize_ = std::min<unsigned>(NextPowerOfTwo(mixRate >> 6), obtained.samples);
     mixRate_ = obtained.freq;
     interpolation_ = interpolation;
     clipBuffer_ = new int[stereo ? fragmentSize_ << 1 : fragmentSize_];
 
     URHO3D_LOGINFO("Set audio mode " + QString::number(mixRate_) + " Hz " + (stereo_ ? "stereo" : "mono") + " " +
-        (interpolation_ ? "interpolated" : ""));
+                   (interpolation_ ? "interpolated" : ""));
 
     return Play();
 }
 
 void Audio::Update(float timeStep)
 {
-    URHO3D_PROFILE(UpdateAudio);
+    if (!playing_)
+        return;
     if(playing_ && deviceID_ && soundSources_.empty())
         SDL_PauseAudioDevice(deviceID_, 1);
-    // Update in reverse order, because sound sources might remove themselves
-    for (unsigned i = soundSources_.size() - 1; i < soundSources_.size(); --i)
-        soundSources_[i]->Update(timeStep);
+    UpdateInternal(timeStep);
 }
 
 bool Audio::Play()
@@ -154,6 +138,9 @@ bool Audio::Play()
     }
 
     SDL_PauseAudioDevice(deviceID_, 0);
+
+    // Update sound sources before resuming playback to make sure 3D positions are up to date
+    UpdateInternal(0.0f);
 
     playing_ = true;
     return true;
@@ -172,6 +159,26 @@ void Audio::SetMasterGain(const QString& type, float gain)
 
     for (SoundSource* src : soundSources_)
         src->UpdateMasterGain();
+}
+void Audio::PauseSoundType(const QString& type)
+{
+    pausedSoundTypes_.insert(type);
+}
+
+void Audio::ResumeSoundType(const QString& type)
+{
+    MutexLock lock(audioMutex_);
+    pausedSoundTypes_.erase(type);
+    // Update sound sources before resuming playback to make sure 3D positions are up to date
+    // Done under mutex to ensure no mixing happens before we are ready
+    UpdateInternal(0.0f);
+}
+
+void Audio::ResumeAll()
+{
+    MutexLock lock(audioMutex_);
+    pausedSoundTypes_.clear();
+    UpdateInternal(0.0f);
 }
 
 void Audio::SetListener(SoundListener* listener)
@@ -196,6 +203,11 @@ float Audio::GetMasterGain(const QString& type) const
         return 1.0f;
 
     return MAP_VALUE(findIt).GetFloat();
+}
+
+bool Audio::IsSoundTypePaused(const QString& type) const
+{
+    return pausedSoundTypes_.contains(type);
 }
 
 SoundListener* Audio::GetListener() const
@@ -258,7 +270,7 @@ void Audio::MixOutput(void *dest, unsigned samples)
     while (samples)
     {
         // If sample count exceeds the fragment (clip buffer) size, split the work
-        unsigned workSamples = Min((int)samples, (int)fragmentSize_);
+        unsigned workSamples = std::min<unsigned>(samples, fragmentSize_);
         unsigned clipSamples = workSamples;
         if (stereo_)
             clipSamples <<= 1;
@@ -268,20 +280,22 @@ void Audio::MixOutput(void *dest, unsigned samples)
         memset(clipPtr, 0, clipSamples * sizeof(int));
 
         // Mix samples to clip buffer
-        for (SoundSource * elem : soundSources_)
-            elem->Mix(clipPtr, workSamples, mixRate_, stereo_, interpolation_);
+        for (SoundSource * source : soundSources_) {
+            // Check for pause if necessary
+            if (!pausedSoundTypes_.empty())
+            {
+                if (pausedSoundTypes_.contains(source->GetSoundType()))
+                    continue;
+            }
+
+            source->Mix(clipPtr, workSamples, mixRate_, stereo_, interpolation_);
+        }
 
         // Copy output from clip buffer to destination
-#ifdef __EMSCRIPTEN__
-        float* destPtr = (float*)dest;
-        while (clipSamples--)
-            *destPtr++ = (float)Clamp(*clipPtr++, -32768, 32767) / 32768.0f;
-#else
         short* destPtr = (short*)dest;
         while (clipSamples--)
             *destPtr++ = Clamp(*clipPtr++, -32768, 32767);
 
-#endif
         samples -= workSamples;
         ((unsigned char*&)dest) += sampleSize_ * SAMPLE_SIZE_MUL * workSamples;
     }
@@ -303,6 +317,25 @@ void Audio::Release()
         SDL_CloseAudioDevice(deviceID_);
         deviceID_ = 0;
         clipBuffer_.Reset();
+    }
+}
+void Audio::UpdateInternal(float timeStep)
+{
+    URHO3D_PROFILE(UpdateAudio);
+
+    // Update in reverse order, because sound sources might remove themselves
+    for (unsigned i = soundSources_.size() - 1; i < soundSources_.size(); --i)
+    {
+        SoundSource* source = soundSources_[i];
+
+        // Check for pause if necessary; do not update paused sound sources
+        if (!pausedSoundTypes_.empty())
+        {
+            if (pausedSoundTypes_.contains(source->GetSoundType()))
+                continue;
+        }
+
+        source->Update(timeStep);
     }
 }
 

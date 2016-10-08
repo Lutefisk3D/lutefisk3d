@@ -23,6 +23,8 @@
 #pragma once
 
 #include "../Graphics/Drawable.h"
+#include "../Math/Frustum.h"
+
 #include <vector>
 
 namespace Urho3D
@@ -122,9 +124,7 @@ private:
     /// View batch info.
     HashMap<Camera*, ViewBatchInfo2D> viewBatchInfos_;
     /// Frustum for current frame.
-    const Frustum* frustum_;
-    /// Frustum bounding box for current frame.
-    BoundingBox frustumBoundingBox_;
+    Frustum frustum_;
     /// View mask of current camera for visibility checking.
     unsigned viewMask_;
     /// Cached materials.

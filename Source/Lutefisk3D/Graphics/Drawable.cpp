@@ -436,9 +436,9 @@ bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, boo
 {
     // Must track indices independently to deal with potential mismatching of drawables vertex attributes (ie. one with UV, another without, then another with)
     // Using long because 65,535 isn't enough as OBJ indices do not reset the count with each new object
-    unsigned long currentPositionIndex = 1;
-    unsigned long currentUVIndex = 1;
-    unsigned long currentNormalIndex = 1;
+    unsigned currentPositionIndex = 1;
+    unsigned currentUVIndex = 1;
+    unsigned currentNormalIndex = 1;
     bool anythingWritten = false;
 
     // Write the common "I came from X" comment
@@ -454,6 +454,9 @@ bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, boo
 
         Node* node = drawable->GetNode();
         Matrix3x4 transMat = drawable->GetNode()->GetWorldTransform();
+        Matrix3x4 n = transMat.Inverse();
+        Matrix3 normalMat = Matrix3(n.m00_, n.m01_, n.m02_, n.m10_, n.m11_, n.m12_, n.m20_, n.m21_, n.m22_);
+        normalMat = normalMat.Transpose();
 
         const std::vector<SourceBatch>& batches = drawable->GetBatches();
         for (unsigned geoIndex = 0; geoIndex < batches.size(); ++geoIndex)
@@ -521,8 +524,8 @@ bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, boo
                     const unsigned normalOffset = VertexBuffer::GetElementOffset(elementMask, ELEMENT_NORMAL);
                     for (unsigned j = 0; j < vertexCount; ++j)
                     {
-                        Vector3 vertexNormal = *((const Vector3*)(&vertexData[(vertexStart + j) * elementSize + positionOffset]));
-                        vertexNormal = transMat * vertexNormal;
+                        Vector3 vertexNormal = *((const Vector3*)(&vertexData[(vertexStart + j) * elementSize + normalOffset]));
+                        vertexNormal = normalMat * vertexNormal;
                         vertexNormal.Normalize();
 
                         if (asRightHanded)
@@ -559,15 +562,15 @@ bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, boo
                 for (unsigned indexIdx = indexStart; indexIdx < indexStart + indexCount; indexIdx++)
                 {
                     if (indexSize == 2)
-                        indexOffset = Min(indexOffset, *((unsigned short*)(indexData + indexIdx * indexSize)));
+                        indexOffset = std::min<int>(indexOffset, *((unsigned short*)(indexData + indexIdx * indexSize)));
                     else
-                        indexOffset = Min(indexOffset, *((unsigned*)(indexData + indexIdx * indexSize)));
+                        indexOffset = std::min<unsigned>(indexOffset, *((unsigned*)(indexData + indexIdx * indexSize)));
                 }
 
                 for (unsigned indexIdx = indexStart; indexIdx < indexStart + indexCount; indexIdx += 3)
                 {
-                    // Deal with 16 or 32 bit indices, converting to long
-                    unsigned long longIndices[3];
+                    // Deal with 16 or 32 bit indices
+                    unsigned longIndices[3];
                     if (indexSize == 2)
                     {
                         //16 bit indices

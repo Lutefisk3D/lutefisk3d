@@ -267,7 +267,7 @@ void AnimatedModel::UpdateBatches(const FrameInfo& frame)
         animationLodFrameNumber_ = frame.frameNumber_;
     }
     else
-        animationLodDistance_ = Min(animationLodDistance_, newLodDistance);
+        animationLodDistance_ = std::min(animationLodDistance_, newLodDistance);
 
     if (newLodDistance != lodDistance_)
     {

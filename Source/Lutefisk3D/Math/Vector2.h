@@ -155,6 +155,8 @@ public:
     float DotProduct(const Vector2& rhs) const { return x_ * rhs.x_ + y_ * rhs.y_; }
     /// Calculate absolute dot product.
     float AbsDotProduct(const Vector2& rhs) const { return Urho3D::Abs(x_ * rhs.x_) + Urho3D::Abs(y_ * rhs.y_); }
+    /// Returns the angle between this vector and another vector in degrees.
+    float Angle(const Vector2& rhs) const { return Urho3D::Acos(DotProduct(rhs) / (Length() * rhs.Length())); }
     /// Return absolute vector.
     Vector2 Abs() const { return Vector2(Urho3D::Abs(x_), Urho3D::Abs(y_)); }
     /// Linear interpolation with another vector.

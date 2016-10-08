@@ -258,12 +258,12 @@ void OcclusionBuffer::BuildDepthHierarchy()
                 int* src2 = src + width_;
                 while (dest < end)
                 {
-                    int minUpper = Min(src[0], src[1]);
-                    int minLower = Min(src2[0], src2[1]);
-                    dest->min_ = Min(minUpper, minLower);
-                    int maxUpper = Max(src[0], src[1]);
-                    int maxLower = Max(src2[0], src2[1]);
-                    dest->max_ = Max(maxUpper, maxLower);
+                    int minUpper = std::min(src[0], src[1]);
+                    int minLower = std::min(src2[0], src2[1]);
+                    dest->min_ = std::min(minUpper, minLower);
+                    int maxUpper = std::max(src[0], src[1]);
+                    int maxLower = std::max(src2[0], src2[1]);
+                    dest->max_ = std::max(maxUpper, maxLower);
 
                     src += 2;
                     src2 += 2;
@@ -274,8 +274,8 @@ void OcclusionBuffer::BuildDepthHierarchy()
             {
                 while (dest < end)
                 {
-                    dest->min_ = Min(src[0], src[1]);
-                    dest->max_ = Max(src[0], src[1]);
+                    dest->min_ = std::min(src[0], src[1]);
+                    dest->max_ = std::max(src[0], src[1]);
 
                     src += 2;
                     ++dest;
@@ -303,12 +303,12 @@ void OcclusionBuffer::BuildDepthHierarchy()
                 DepthValue* src2 = src + prevWidth;
                 while (dest < end)
                 {
-                    int minUpper = Min(src[0].min_, src[1].min_);
-                    int minLower = Min(src2[0].min_, src2[1].min_);
-                    dest->min_ = Min(minUpper, minLower);
-                    int maxUpper = Max(src[0].max_, src[1].max_);
-                    int maxLower = Max(src2[0].max_, src2[1].max_);
-                    dest->max_ = Max(maxUpper, maxLower);
+                    int minUpper = std::min(src[0].min_, src[1].min_);
+                    int minLower = std::min(src2[0].min_, src2[1].min_);
+                    dest->min_ = std::min(minUpper, minLower);
+                    int maxUpper = std::max(src[0].max_, src[1].max_);
+                    int maxLower = std::max(src2[0].max_, src2[1].max_);
+                    dest->max_ = std::max(maxUpper, maxLower);
 
                     src += 2;
                     src2 += 2;
@@ -319,8 +319,8 @@ void OcclusionBuffer::BuildDepthHierarchy()
             {
                 while (dest < end)
                 {
-                    dest->min_ = Min(src[0].min_, src[1].min_);
-                    dest->max_ = Max(src[0].max_, src[1].max_);
+                    dest->min_ = std::min(src[0].min_, src[1].min_);
+                    dest->max_ = std::max(src[0].max_, src[1].max_);
 
                     src += 2;
                     ++dest;

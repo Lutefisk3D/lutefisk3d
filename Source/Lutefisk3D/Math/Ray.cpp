@@ -25,6 +25,7 @@
 #include "../Math/Plane.h"
 #include "../Math/Ray.h"
 #include "../Math/Sphere.h"
+#include <algorithm>
 
 namespace Urho3D
 {
@@ -158,11 +159,11 @@ float Ray::HitDistance(const Frustum& frustum, bool solidInside) const
         
         if (plane.Distance(origin_) < 0.0f)
         {
-            maxOutside = Max(maxOutside, distance);
+            maxOutside = std::max(maxOutside, distance);
             allInside = false;
         }
         else
-            minInside = Min(minInside, distance);
+            minInside = std::min(minInside, distance);
     }
     
     if (allInside)

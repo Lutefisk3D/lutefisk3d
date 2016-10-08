@@ -142,7 +142,7 @@ private:
     /// Blend mode.
     BlendMode blendMode_;
     /// Num particles.
-    int numParticles_;
+    unsigned numParticles_;
     /// Emission time.
     float emissionTime_;
     /// Emit particle time

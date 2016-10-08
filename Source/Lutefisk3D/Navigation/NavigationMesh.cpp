@@ -522,7 +522,7 @@ void NavigationMesh::FindPath(std::deque<Vector3>& dest, const Vector3& start, c
     FindPath(navPathPoints, start, end, extents, filter);
 
     dest.clear();
-    for (int i = 0; i < navPathPoints.size(); ++i)
+    for (unsigned i = 0; i < navPathPoints.size(); ++i)
         dest.emplace_back(navPathPoints[i].position_);
 }
 

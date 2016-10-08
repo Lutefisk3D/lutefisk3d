@@ -56,6 +56,12 @@ public:
     void Stop();
     /// Set master gain on a specific sound type such as sound effects, music or voice.
     void SetMasterGain(const QString& type, float gain);
+    /// Pause playback of specific sound type. This allows to suspend e.g. sound effects or voice when the game is paused. By default all sound types are unpaused.
+    void PauseSoundType(const QString& type);
+    /// Resume playback of specific sound type.
+    void ResumeSoundType(const QString& type);
+    /// Resume playback of all sound types.
+    void ResumeAll();
     /// Set active sound listener for 3D sounds.
     void SetListener(SoundListener* listener);
     /// Stop any sound source playing a certain sound clip.
@@ -75,6 +81,8 @@ public:
     bool IsInitialized() const { return deviceID_ != 0; }
     /// Return master gain for a specific sound source type. Unknown sound types will return full gain (1).
     float GetMasterGain(const QString& type) const;
+    /// Return whether specific sound type has been paused.
+    bool IsSoundTypePaused(const QString& type) const;
     /// Return active sound listener.
     SoundListener* GetListener() const;
     /// Return all sound sources.
@@ -106,6 +114,8 @@ private:
     void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
     /// Stop sound output and release the sound buffer.
     void Release();
+    /// Actually update sound sources with the specific timestep. Called internally.
+    void UpdateInternal(float timeStep);
     /// Clipping buffer for mixing.
     SharedArrayPtr<int> clipBuffer_;
     /// Audio thread mutex.
@@ -126,6 +136,8 @@ private:
     bool playing_;
     /// Master gain by sound source type.
     HashMap<StringHash, Variant> masterGain_;
+    /// Paused sound types.
+    HashSet<StringHash> pausedSoundTypes_;
     /// Sound sources.
     std::vector<SoundSource*> soundSources_; //TODO: consider std::set ?
     /// Sound listener.

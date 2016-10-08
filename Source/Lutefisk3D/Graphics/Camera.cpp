@@ -262,8 +262,8 @@ Frustum Camera::GetSplitFrustum(float nearClip, float farClip) const
     Frustum ret;
 
     Matrix3x4 worldTransform = GetEffectiveWorldTransform();
-    nearClip = Max(nearClip, GetNearClip());
-    farClip = Min(farClip, farClip_);
+    nearClip = std::max(nearClip, GetNearClip());
+    farClip = std::min(farClip, farClip_);
     if (farClip < nearClip)
         farClip = nearClip;
 

@@ -4,6 +4,7 @@ set(INCLUDES
     Color.h
     Frustum.h
     MathDefs.h
+    Matrix2.h
     Matrix3.h
     Matrix3x4.h
     Matrix4.h
@@ -25,6 +26,7 @@ set(SOURCE
     BoundingBox.cpp
     Color.cpp
     Frustum.cpp
+    Matrix2.cpp
     Matrix3.cpp
     Matrix3x4.cpp
     Matrix4.cpp

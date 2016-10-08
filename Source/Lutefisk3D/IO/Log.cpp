@@ -154,12 +154,6 @@ void Log::Write(int level, const QString& message)
     if (logInstance->timeStamp_)
         formattedMessage = "[" + Time::GetTimeStamp() + "] " + formattedMessage;
 
-    #if defined(ANDROID)
-    int androidLevel = ANDROID_LOG_DEBUG + level;
-    __android_log_print(androidLevel, "Urho3D", "%s", message.CString());
-    #elif defined(IOS)
-    SDL_IOS_LogMessage(message.CString());
-    #else
     if (logInstance->quiet_)
     {
         // If in quiet mode, still print the error message to the standard error stream
@@ -168,7 +162,6 @@ void Log::Write(int level, const QString& message)
     }
     else
         PrintUnicodeLine(formattedMessage, level == LOG_ERROR);
-    #endif
 
     if (logInstance->logFile_)
     {

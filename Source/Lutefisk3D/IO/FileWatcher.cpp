@@ -87,13 +87,13 @@ bool FileWatcher::StartWatching(const QString& pathName, bool watchSubDirs)
     QString nativePath = GetNativePath(RemoveTrailingSlash(pathName));
 
     dirHandle_ = (void*)CreateFileW(
-        nativePath.toStdWString().c_str(),
-        FILE_LIST_DIRECTORY,
-        FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
-        0,
-        OPEN_EXISTING,
-        FILE_FLAG_BACKUP_SEMANTICS,
-        0);
+                nativePath.toStdWString().c_str(),
+                FILE_LIST_DIRECTORY,
+                FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
+                0,
+                OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS,
+                0);
 
     if (dirHandle_ != INVALID_HANDLE_VALUE)
     {
@@ -192,24 +192,28 @@ void FileWatcher::StopWatching()
         shouldRun_ = false;
 
         // Create and delete a dummy file to make sure the watcher loop terminates
+        // This is not required with iNotify
+#if !defined(__linux__)
         QString dummyFileName = path_ + "dummy.tmp";
         File file(context_, dummyFileName, FILE_WRITE);
         file.Close();
         if (fileSystem_)
             fileSystem_->Delete(dummyFileName);
-
-        Stop();
-
+#endif
+        // Remove watch - On linux this will cause read() to return with
+        // the IN_IGNORED flag set
 #ifdef _WIN32
         CloseHandle((HANDLE)dirHandle_);
-        #elif defined(__linux__)
+#elif defined(__linux__)
         for (auto & elem : dirHandle_.keys())
             inotify_rm_watch(watchHandle_, elem);
         dirHandle_.clear();
-        #elif defined(__APPLE__) && !defined(IOS)
+#elif defined(__APPLE__) && !defined(IOS)
         CloseFileWatcher(watcher_);
-        #endif
-
+#endif
+        // Join thread *after* removing watch as to avoid getting stuck in
+        // read()
+        Stop();
         URHO3D_LOGDEBUG("Stopped watching path " + path_);
         path_.clear();
     }
@@ -230,14 +234,14 @@ void FileWatcher::ThreadFunction()
     while (shouldRun_)
     {
         if (ReadDirectoryChangesW((HANDLE)dirHandle_,
-            buffer,
-            BUFFERSIZE,
-            watchSubDirs_,
-            FILE_NOTIFY_CHANGE_FILE_NAME |
-            FILE_NOTIFY_CHANGE_LAST_WRITE,
-            &bytesFilled,
-            0,
-            0))
+                                  buffer,
+                                  BUFFERSIZE,
+                                  watchSubDirs_,
+                                  FILE_NOTIFY_CHANGE_FILE_NAME |
+                                  FILE_NOTIFY_CHANGE_LAST_WRITE,
+                                  &bytesFilled,
+                                  0,
+                                  0))
         {
             unsigned offset = 0;
 

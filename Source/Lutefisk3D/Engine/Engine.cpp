@@ -321,7 +321,12 @@ bool Engine::Initialize(const VariantMap& parameters)
                 }
             }
         }
-        if (!autoLoadPathExist)
+        // The following debug message is confusing when user is not aware of the autoload feature
+        // Especially because the autoload feature is enabled by default without user intervention
+        // The following extra conditional check below is to suppress unnecessary debug log entry under such default situation
+        // The cleaner approach is to not enable the autoload by default, i.e. do not use 'Autoload' as default value for 'AutoloadPaths' engine parameter
+        // However, doing so will break the existing applications that rely on this
+        if (!autoLoadPathExist && (autoLoadPaths.size() > 1 || autoLoadPaths[0] != "Autoload"))
             URHO3D_LOGDEBUG(QString("Skipped autoload path '%1' as it does not exist, check the documentation on how to set the 'resource prefix path'")
                             .arg(autoLoadPaths_i));
     }
@@ -662,7 +667,7 @@ void Engine::ApplyFrameLimit()
 #ifdef LUTEFISK3D_INPUT
     Input* input = GetSubsystem<Input>();
     if (input && !input->HasFocus())
-        maxFps = Min(maxInactiveFps_, maxFps);
+        maxFps = std::min<int>(maxInactiveFps_, maxFps);
 #endif
 
     long long elapsed = 0;

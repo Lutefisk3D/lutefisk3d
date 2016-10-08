@@ -84,7 +84,7 @@ private:
     void HandleSceneUpdate(StringHash eventType, VariantMap& eventData);
     /// Handle scene post-update event.
     void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
-#ifdef LUTEFISK3D_PHYSICS
+#if defined(LUTEFISK3D_PHYSICS) || defined (LUTEFISK3D_2D)
     /// Handle physics pre-step event.
     void HandlePhysicsPreStep(StringHash eventType, VariantMap& eventData);
     /// Handle physics post-step event.

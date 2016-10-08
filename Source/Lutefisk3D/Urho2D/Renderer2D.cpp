@@ -61,7 +61,6 @@ Renderer2D::Renderer2D(Context* context) :
     Drawable(context, DRAWABLE_GEOMETRY),
     material_(new Material(context)),
     indexBuffer_(new IndexBuffer(context_)),
-    frustum_(nullptr),
     viewMask_(DEFAULT_VIEWMASK)
 {
     material_->SetName("Urho2D");
@@ -271,10 +270,7 @@ bool Renderer2D::CheckVisibility(Drawable2D* drawable) const
         return false;
 
     const BoundingBox& box = drawable->GetWorldBoundingBox();
-    if (frustum_)
-        return frustum_->IsInsideFast(box) != OUTSIDE;
-
-    return frustumBoundingBox_.IsInsideFast(box) != OUTSIDE;
+    return frustum_.IsInsideFast(box) != OUTSIDE;
 }
 
 void Renderer2D::OnWorldBoundingBoxUpdate()
@@ -334,13 +330,7 @@ void Renderer2D::HandleBeginViewUpdate(StringHash eventType, VariantMap& eventDa
 
 
     Camera* camera = static_cast<Camera*>(eventData[P_CAMERA].GetPtr());
-    frustum_ = &camera->GetFrustum();
-    if (camera->IsOrthographic() && camera->GetNode()->GetWorldDirection() == Vector3::FORWARD)
-    {
-        // Define bounding box with min and max points
-        frustumBoundingBox_.Define(frustum_->vertices_[2], frustum_->vertices_[4]);
-        frustum_ = nullptr;
-    }
+    frustum_ = camera->GetFrustum();
     viewMask_ = camera->GetViewMask();
 
     // Check visibility

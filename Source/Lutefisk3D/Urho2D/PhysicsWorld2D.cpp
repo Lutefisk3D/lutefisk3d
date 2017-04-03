@@ -236,10 +236,37 @@ void PhysicsWorld2D::Update(float timeStep)
     world_->Step(timeStep, velocityIterations_, positionIterations_);
     physicsStepping_ = false;
 
-    for (const WeakPtr<RigidBody2D> &rb : rigidBodies_)
-        if (rb)
-            rb->ApplyWorldTransform();
+    // Apply world transforms. Unparented transforms first
+    for (auto iter = rigidBodies_.begin(); iter != rigidBodies_.end();)
+    {
+        if (*iter)
+        {
+            (*iter)->ApplyWorldTransform();
+            ++iter;
+        }
+        else
+        {
+            // Erase possible stale weak pointer
+            iter = rigidBodies_.erase(iter);
+        }
+    }
+        // Apply delayed (parented) world transforms now, if any
+        while (!delayedWorldTransforms_.empty())
+        {
+            for (auto i = delayedWorldTransforms_.begin(); i != delayedWorldTransforms_.end();)
+            {
+                const DelayedWorldTransform2D& transform = MAP_VALUE(i);
 
+                // If parent's transform has already been assigned, can proceed
+                if (!delayedWorldTransforms_.contains(transform.parentRigidBody_))
+                {
+                    transform.rigidBody_->ApplyWorldTransform(transform.worldPosition_, transform.worldRotation_);
+                    i = delayedWorldTransforms_.erase(i);
+                }
+                else
+                    ++i;
+            }
+        }
     SendBeginContactEvents();
     SendEndContactEvents();
 
@@ -358,6 +385,10 @@ void PhysicsWorld2D::RemoveRigidBody(RigidBody2D* rigidBody)
 
     WeakPtr<RigidBody2D> rigidBodyPtr(rigidBody);
     rigidBodies_.erase(rigidBodyPtr);
+}
+void PhysicsWorld2D::AddDelayedWorldTransform(const DelayedWorldTransform2D& transform)
+{
+    delayedWorldTransforms_[transform.rigidBody_] = transform;
 }
 
 // Ray cast call back class.
@@ -650,7 +681,7 @@ void PhysicsWorld2D::SendBeginContactEvents()
 
 void PhysicsWorld2D::SendEndContactEvents()
 {
-   if (endContactInfos_.empty())
+    if (endContactInfos_.empty())
         return;
 
     using namespace PhysicsEndContact2D;

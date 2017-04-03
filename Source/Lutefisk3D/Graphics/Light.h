@@ -43,8 +43,8 @@ enum LightType
 
 static constexpr const float SHADOW_MIN_QUANTIZE = 0.1f;
 static constexpr const float SHADOW_MIN_VIEW = 1.0f;
-static constexpr const int MAX_LIGHT_SPLITS = 6;
-static constexpr const int MAX_CASCADE_SPLITS = 4;
+static constexpr const unsigned MAX_LIGHT_SPLITS = 6;
+static constexpr const unsigned MAX_CASCADE_SPLITS = 4;
 
 /// Shadow depth bias parameters.
 struct BiasParameters
@@ -245,7 +245,7 @@ public:
     /// Return spotlight frustum.
     Frustum GetFrustum() const;
     /// Return number of shadow map cascade splits for a directional light, considering also graphics API limitations.
-    int GetNumShadowSplits() const;
+    unsigned GetNumShadowSplits() const;
     /// Return whether light has negative (darkening) color.
     bool IsNegative() const { return GetEffectiveColor().SumRGB() < 0.0f; }
 

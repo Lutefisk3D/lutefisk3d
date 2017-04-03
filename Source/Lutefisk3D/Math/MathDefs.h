@@ -26,6 +26,7 @@
 
 #include <cstdlib>
 #include <cmath>
+#include <limits>
 
 namespace Urho3D
 {
@@ -57,17 +58,20 @@ enum Intersection
 };
 
 /// Check whether two floating point values are equal within accuracy.
-inline bool Equals(float lhs, float rhs) { return lhs + M_EPSILON >= rhs && lhs - M_EPSILON <= rhs; }
+template <class T>
+inline bool Equals(T lhs, T rhs) { return lhs + std::numeric_limits<T>::epsilon() >= rhs && lhs - std::numeric_limits<T>::epsilon() <= rhs; }
 /// Linear interpolation between two float values.
-inline float Lerp(float lhs, float rhs, float t) { return lhs * (1.0f - t) + rhs * t; }
-/// Linear interpolation between two double values.
-inline double Lerp(double lhs, double rhs, float t) { return lhs * (1.0 - t) + rhs * t; }
+template <class T>
+inline float Lerp(T lhs, T rhs, T t) { return lhs * (T(1.0) - t) + rhs * t; }
 /// Return the smaller of two floats.
-inline float Min(float lhs, float rhs) { return lhs < rhs ? lhs : rhs; }
+template <class T>
+inline T Min(T lhs, T rhs) { return lhs < rhs ? lhs : rhs; }
 /// Return the larger of two floats.
-inline float Max(float lhs, float rhs) { return lhs > rhs ? lhs : rhs; }
+template <class T>
+inline T Max(T lhs, T rhs) { return lhs > rhs ? lhs : rhs; }
 /// Return absolute value of a float.
-inline float Abs(float value) { return value >= 0.0f ? value : -value; }
+template<typename T>
+inline T Abs(T value) { return value >= T(0) ? value : -value; }
 /// Return the sign of a float (-1, 0 or 1.)
 inline float Sign(float value) { return value > 0.0f ? 1.0f : (value < 0.0f ? -1.0f : 0.0f); }
 /// Check whether a floating point value is NaN.
@@ -83,7 +87,8 @@ inline bool IsNaN(float value)
 #endif
 
 /// Clamp a float to a range.
-inline float Clamp(float value, float min, float max)
+template<typename T>
+inline T Clamp(T value, T min, T max)
 {
     if (value < min)
         return min;
@@ -94,44 +99,34 @@ inline float Clamp(float value, float min, float max)
 }
 
 /// Smoothly damp between values.
-inline float SmoothStep(float lhs, float rhs, float t)
+template<typename T>
+inline T SmoothStep(T lhs, T rhs, T t)
 {
-    t = Clamp((t - lhs) / (rhs - lhs), 0.0f, 1.0f); // Saturate t
-    return t * t * (3.0f - 2.0f * t);
+    t = Clamp((t - lhs) / (rhs - lhs), T(0), T(1)); // Saturate t
+    return t * t * (T(3) - T(2) * t);
 }
 
 /// Return sine of an angle in degrees.
-inline float Sin(float angle) { return sinf(angle * M_DEGTORAD); }
+template<typename T>
+inline T Sin(T angle) { return std::sin(angle * T(M_DEGTORAD)); }
 /// Return cosine of an angle in degrees.
-inline float Cos(float angle) { return cosf(angle * M_DEGTORAD); }
+template<typename T>
+inline T Cos(T angle) { return std::cos(angle * T(M_DEGTORAD)); }
 /// Return tangent of an angle in degrees.
-inline float Tan(float angle) { return tanf(angle * M_DEGTORAD); }
+template<typename T>
+inline T Tan(T angle) { return std::tan(angle * T(M_DEGTORAD)); }
 /// Return arc sine in degrees.
-inline float Asin(float x) { return M_RADTODEG * asinf(Clamp(x, -1.0f, 1.0f)); }
+template<typename T>
+inline T Asin(T x) { return M_RADTODEG * std::asin(Clamp(x, T(-1), T(1))); }
 /// Return arc cosine in degrees.
-inline float Acos(float x) { return M_RADTODEG * acosf(Clamp(x, -1.0f, 1.0f)); }
+template<typename T>
+inline T Acos(T x) { return M_RADTODEG * std::acos(Clamp(x, T(-1), T(1))); }
 /// Return arc tangent in degrees.
-inline float Atan(float x) { return M_RADTODEG * atanf(x); }
+template<typename T>
+inline T Atan(T x) { return M_RADTODEG * std::atan(x); }
 /// Return arc tangent of y/x in degrees.
-inline float Atan2(float y, float x) { return M_RADTODEG * atan2f(y, x); }
-
-/// Return the smaller of two integers.
-inline int Min(int lhs, int rhs) { return lhs < rhs ? lhs : rhs; }
-/// Return the larger of two integers.
-inline int Max(int lhs, int rhs) { return lhs > rhs ? lhs : rhs; }
-/// Return absolute value of an integer
-inline int Abs(int value) { return value >= 0 ? value : -value; }
-
-/// Clamp an integer to a range.
-inline int Clamp(int value, int min, int max)
-{
-    if (value < min)
-        return min;
-    else if (value > max)
-        return max;
-    else
-        return value;
-}
+template<typename T>
+inline T Atan2(T y, T x) { return M_RADTODEG * std::atan2(y, x); }
 
 /// Check whether an unsigned integer is a power of two.
 inline bool IsPowerOfTwo(unsigned value)

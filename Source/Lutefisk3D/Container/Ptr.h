@@ -22,12 +22,10 @@
 
 #pragma once
 
-#include "../Container/RefCounted.h"
-
 #include <cassert>
 #include <cstddef>
 #include <memory>
-
+#include "../Container/RefCounted.h"
 namespace Urho3D
 {
 
@@ -52,6 +50,13 @@ public:
         ptr_(rhs.ptr_)
     {
         rhs.ptr_ = nullptr;
+    }
+
+    /// Copy-construct from another shared pointer allowing implicit upcasting.
+    template <class U> SharedPtr(const SharedPtr<U>& rhs) :
+        ptr_(rhs.ptr_)
+    {
+        AddRef();
     }
 
     /// Construct from a raw pointer.
@@ -90,6 +95,18 @@ public:
         ptr_ = rhs.ptr_;
         rhs.ptr_ = tmp;
     }
+    /// Assign from another shared pointer allowing implicit upcasting.
+    template <class U> SharedPtr<T>& operator =(const SharedPtr<U>& rhs)
+    {
+        if (ptr_ == rhs.ptr_)
+            return *this;
+
+        ReleaseRef();
+        ptr_ = rhs.ptr_;
+        AddRef();
+
+        return *this;
+    }
     /// Assign from a raw pointer.
     SharedPtr<T>& operator = (T* ptr)
     {
@@ -110,11 +127,11 @@ public:
     /// Subscript the object if applicable.
     T& operator [] (const int index) { assert(ptr_); return ptr_[index]; }
     /// Test for less than with another shared pointer.
-    bool operator < (const SharedPtr<T>& rhs) const { return ptr_ < rhs.ptr_; }
+    template <class U> bool operator <(const SharedPtr<U>& rhs) const { return ptr_ < rhs.ptr_; }
     /// Test for equality with another shared pointer.
-    bool operator == (const SharedPtr<T>& rhs) const { return ptr_ == rhs.ptr_; }
+    template <class U> bool operator ==(const SharedPtr<U>& rhs) const { return ptr_ == rhs.ptr_; }
     /// Test for inequality with another shared pointer.
-    bool operator != (const SharedPtr<T>& rhs) const { return ptr_ != rhs.ptr_; }
+    template <class U> bool operator !=(const SharedPtr<U>& rhs) const { return ptr_ != rhs.ptr_; }
     /// Convert to a raw pointer.
     constexpr operator T* () const { return ptr_; }
 
@@ -165,8 +182,7 @@ public:
     unsigned ToHash() const { return ((unsigned)(size_t)ptr_) / sizeof(T); }
 
 private:
-    /// Prevent direct assignment from a shared pointer of another type.
-    template <class U> SharedPtr<T>& operator = (const SharedPtr<U>& rhs);
+    template <class U> friend class SharedPtr;
 
     /// Add a reference to the object pointed to.
     void AddRef()
@@ -224,6 +240,14 @@ public:
         AddRef();
     }
 
+    /// Copy-construct from another weak pointer allowing implicit upcasting.
+    template <class U> WeakPtr(const WeakPtr<U>& rhs) :
+        ptr_(rhs.ptr_),
+        refCount_(rhs.refCount_)
+    {
+        AddRef();
+    }
+
     /// Construct from a shared pointer.
     WeakPtr(const SharedPtr<T>& rhs) :
         ptr_(rhs.Get()),
@@ -262,6 +286,20 @@ public:
 
     /// Assign from a weak pointer.
     WeakPtr<T>& operator = (const WeakPtr<T>& rhs)
+    {
+        if (ptr_ == rhs.ptr_ && refCount_ == rhs.refCount_)
+            return *this;
+
+        ReleaseRef();
+        ptr_ = rhs.ptr_;
+        refCount_ = rhs.refCount_;
+        AddRef();
+
+        return *this;
+    }
+
+    /// Assign from another weak pointer allowing implicit upcasting.
+    template <class U> WeakPtr<T>& operator =(const WeakPtr<U>& rhs)
     {
         if (ptr_ == rhs.ptr_ && refCount_ == rhs.refCount_)
             return *this;
@@ -333,11 +371,11 @@ public:
     }
 
     /// Test for equality with another weak pointer.
-    bool operator == (const WeakPtr<T>& rhs) const { return ptr_ == rhs.ptr_ && refCount_ == rhs.refCount_; }
+    template <class U> bool operator ==(const WeakPtr<U>& rhs) const { return ptr_ == rhs.ptr_ && refCount_ == rhs.refCount_; }
     /// Test for inequality with another weak pointer.
-    bool operator != (const WeakPtr<T>& rhs) const { return ptr_ != rhs.ptr_ || refCount_ != rhs.refCount_; }
+    template <class U> bool operator !=(const WeakPtr<U>& rhs) const { return ptr_ != rhs.ptr_ || refCount_ != rhs.refCount_; }
     /// Test for less than with another weak pointer.
-    bool operator < (const WeakPtr<T>& rhs) const { return ptr_ < rhs.ptr_; }
+    template <class U> bool operator <(const WeakPtr<U>& rhs) const { return ptr_ < rhs.ptr_; }
     /// Convert to a raw pointer, null if the object is expired.
     operator T* () const { return Get(); }
 
@@ -392,8 +430,7 @@ public:
     unsigned ToHash() const { return ((unsigned)(size_t)ptr_) / sizeof(T); }
 
 private:
-    /// Prevent direct assignment from a weak pointer of different type.
-    template <class U> WeakPtr<T>& operator = (const WeakPtr<U>& rhs);
+    template <class U> friend class WeakPtr;
 
     /// Add a weak reference to the object pointed to.
     void AddRef()

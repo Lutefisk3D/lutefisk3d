@@ -666,7 +666,7 @@ void Renderer::Update(float timeStep)
             // Set also the view for the debug renderer already here, so that it can use culling
             /// \todo May result in incorrect debug geometry culling if the same scene is drawn from multiple viewports
             DebugRenderer* debug = scene->GetComponent<DebugRenderer>();
-            if (debug)
+            if (debug && viewport->GetDrawDebug())
                 debug->SetView(viewport->GetCamera());
         }
 
@@ -866,7 +866,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
         if (lightPixels < SHADOW_MIN_PIXELS)
             lightPixels = SHADOW_MIN_PIXELS;
 
-        size = Min(size, lightPixels);
+        size = std::min(size, lightPixels);
     }
 
     /// \todo Allow to specify maximum shadow maps per resolution, as smaller shadow maps take less memory
@@ -1034,14 +1034,14 @@ Texture* Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, boo
             graphics_->SetViewport(IntRect(0, 0, width, height));
             graphics_->Clear(CLEAR_COLOR);
         }
-            newBuffer = StaticCast<Texture>(newTex2D);
+            newBuffer = newTex2D;
         }
         else
         {
             SharedPtr<TextureCube> newTexCube(new TextureCube(context_));
             newTexCube->SetSize(width, format, TEXTURE_RENDERTARGET);
 
-            newBuffer = StaticCast<Texture>(newTexCube);
+            newBuffer = newTexCube;
         }
 
         newBuffer->SetSRGB(srgb);

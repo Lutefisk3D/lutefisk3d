@@ -52,10 +52,6 @@ void RemoveNamedAttribute(HashMap<StringHash, std::vector<AttributeInfo> >& attr
 
 Context::Context() : eventHandler_(nullptr)
 {
-#ifdef ANDROID
-    // Always reset the random seed on Android, as the Urho3D library might not be unloaded between runs
-    SetRandomSeed(1);
-#endif
     // Set the main thread ID (assuming the Context is created in it)
     Thread::SetMainThread();
 }
@@ -189,6 +185,17 @@ Object* Context::GetSubsystem(StringHash type) const
         return MAP_VALUE(i);
     else
         return nullptr;
+}
+
+const Variant &Context::GetGlobalVar(StringHash key) const
+{
+    auto i = globalVars_.find(key);
+    return i != globalVars_.end() ? MAP_VALUE(i) : Variant::EMPTY;
+}
+
+void Context::SetGlobalVar(StringHash key, const Variant &value)
+{
+    globalVars_[key] = value;
 }
 
 Object* Context::GetEventSender() const

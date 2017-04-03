@@ -267,7 +267,7 @@ void AnimatedModel::UpdateBatches(const FrameInfo& frame)
         animationLodFrameNumber_ = frame.frameNumber_;
     }
     else
-        animationLodDistance_ = Min(animationLodDistance_, newLodDistance);
+        animationLodDistance_ = std::min(animationLodDistance_, newLodDistance);
 
     if (newLodDistance != lodDistance_)
     {
@@ -975,6 +975,68 @@ void AnimatedModel::AssignBoneNodes()
     for (SharedPtr<AnimationState> &state : animationStates_)
     {
         state->SetStartBone(state->GetStartBone());
+    }
+}
+
+void AnimatedModel::FinalizeBoneBoundingBoxes()
+{
+    std::vector<Bone>& bones = skeleton_.GetModifiableBones();
+    std::vector<AnimatedModel*> models;
+    GetComponents<AnimatedModel>(models);
+
+    if (models.size() > 1)
+    {
+        // Reset first to the model resource's original bone bounding information if available (should be)
+        if (model_)
+        {
+            const std::vector<Bone>& modelBones = model_->GetSkeleton().GetBones();
+            for (unsigned i = 0; i < bones.size() && i < modelBones.size(); ++i)
+            {
+                bones[i].collisionMask_ = modelBones[i].collisionMask_;
+                bones[i].radius_ = modelBones[i].radius_;
+                bones[i].boundingBox_ = modelBones[i].boundingBox_;
+            }
+        }
+
+        // Get matching bones from all non-master models and merge their bone bounding information
+        // to prevent culling errors (master model may not have geometry in all bones, or the bounds are smaller)
+        for (AnimatedModel* model : models)
+        {
+            if (model == this)
+                continue;
+
+            Skeleton& otherSkeleton = model->GetSkeleton();
+            for (Bone & b : bones)
+            {
+                Bone* otherBone = otherSkeleton.GetBone(b.nameHash_);
+                if (otherBone)
+                {
+                    if (otherBone->collisionMask_ & BONECOLLISION_SPHERE)
+                    {
+                        b.collisionMask_ |= BONECOLLISION_SPHERE;
+                        b.radius_ = Max(b.radius_, otherBone->radius_);
+                    }
+                    if (otherBone->collisionMask_ & BONECOLLISION_BOX)
+                    {
+                        b.collisionMask_ |= BONECOLLISION_BOX;
+                        if (b.boundingBox_.Defined())
+                            b.boundingBox_.Merge(otherBone->boundingBox_);
+                        else
+                            b.boundingBox_.Define(otherBone->boundingBox_);
+                    }
+                }
+            }
+        }
+    }
+
+    // Remove collision information from dummy bones that do not affect skinning, to prevent them from being merged
+    // to the bounding box and making it artificially large
+    for (Bone & b : bones)
+    {
+        if (b.collisionMask_ & BONECOLLISION_BOX && b.boundingBox_.size().Length() < M_EPSILON)
+            b.collisionMask_ &= ~BONECOLLISION_BOX;
+        if (b.collisionMask_ & BONECOLLISION_SPHERE && b.radius_ < M_EPSILON)
+            b.collisionMask_ &= ~BONECOLLISION_SPHERE;
     }
 }
 

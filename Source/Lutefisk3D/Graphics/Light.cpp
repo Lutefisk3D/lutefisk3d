@@ -383,9 +383,9 @@ Frustum Light::GetFrustum() const
     return ret;
 }
 
-int Light::GetNumShadowSplits() const
+unsigned Light::GetNumShadowSplits() const
 {
-    int ret = 1;
+    unsigned ret = 1;
 
     if (shadowCascade_.splits_[1] > shadowCascade_.splits_[0])
     {
@@ -398,7 +398,7 @@ int Light::GetNumShadowSplits() const
         }
     }
 
-    return Min(ret, MAX_CASCADE_SPLITS);
+    return std::min(ret, MAX_CASCADE_SPLITS);
 }
 
 const Matrix3x4& Light::GetVolumeTransform(Camera* camera)
@@ -531,11 +531,11 @@ void Light::SetIntensitySortValue(const BoundingBox& box)
             float cornerDistance = (cornerProj - lightPos).Length();
             float cornerAngle = (cornerPos - cornerProj).Length() / cornerDistance;
 
-            float spotAngle = Min(centerAngle, cornerAngle);
-            float maxAngle = tanf(fov_ * M_DEGTORAD * 0.5f);
-            float spotFactor = Min(spotAngle / maxAngle, 1.0f);
+            float spotAngle = std::min(centerAngle, cornerAngle);
+            float maxAngle = std::tan(fov_ * M_DEGTORAD * 0.5f);
+            float spotFactor = std::min(spotAngle / maxAngle, 1.0f);
             // We do not know the actual range attenuation ramp, so take only spot attenuation into account
-            float att = Max(1.0f - spotFactor * spotFactor, M_EPSILON);
+            float att = std::max(1.0f - spotFactor * spotFactor, M_EPSILON);
             sortValue_ = 1.0f / GetIntensityDivisor(att);
         }
         break;

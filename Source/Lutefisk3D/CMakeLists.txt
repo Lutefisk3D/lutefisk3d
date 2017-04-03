@@ -1,7 +1,7 @@
 
 ################# Engine Core ########################
 
-set(Lutefisk3D_components)
+set(Lutefisk3D_components "")
 
 add_subdirectory(Container)
 add_subdirectory(Core)
@@ -57,8 +57,11 @@ add_library(Lutefisk3D STATIC
 
 target_link_libraries(Lutefisk3D Threads::Threads)
 if(NOT LUTEFISK3D_HEADLESS)
-    target_link_libraries(Lutefisk3D SDL2_LIB dl) # add imported SDL target
+    target_link_libraries(Lutefisk3D SDL2_LIB ${CMAKE_DL_LIBS}) # add imported SDL target
     target_link_libraries(Lutefisk3D glbinding_LIB) # add imported glbinding target
+    IF(MINGW)
+         target_link_libraries(Lutefisk3D winmm imm32 version)	
+    endif()
 endif()
 if(NOT LUTEFISK3D_NETLESS)
     target_link_libraries(Lutefisk3D kNet_LIB) # add imported kNet target

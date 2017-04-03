@@ -413,7 +413,7 @@ Variant ValueAnimation::LinearInterpolation(unsigned index1, unsigned index2, fl
     }
 
     case VAR_DOUBLE:
-        return Lerp(value1.GetDouble(), value2.GetDouble(), t);
+        return Lerp(value1.GetDouble(), value2.GetDouble(), double(t));
 
     default:
         URHO3D_LOGERROR("Invalid value type for linear interpolation");

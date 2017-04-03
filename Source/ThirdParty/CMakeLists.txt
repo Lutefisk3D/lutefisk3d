@@ -1,5 +1,5 @@
 add_subdirectory(cereal)
-add_subdirectory(LibCpuId)
+#add_subdirectory(LibCpuId)
 add_subdirectory(PugiXml)
 add_subdirectory(LZ4)
 
@@ -11,7 +11,7 @@ if(NOT UNIX)
 endif()
 set(ThirdParty_Install_Dir ${PROJECT_BINARY_DIR}/ThirdParty_Builds)
 if(NOT LUTEFISK3D_HEADLESS)
-    if(UNIX)
+    if(UNIX OR MINGW)
         set(SDL2_BuiltFile ${ThirdParty_Install_Dir}/lib/libSDL2.a)
     else()
         set(SDL2_BuiltFile ${ThirdParty_Install_Dir}/lib/SDL2.lib)
@@ -22,7 +22,7 @@ if(NOT LUTEFISK3D_HEADLESS)
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/SDL
         UPDATE_COMMAND ""
-        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSDL_SHARED:BOOL=OFF -DVIDEO_OPENGLES:BOOL=OFF -DSDL_FILESYSTEM:BOOL=ON -DVIDEO_WAYLAND:BOOL=OFF -DVIDEO_MIR:BOOL=OFF -DSDL_RENDERER:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSDL_SHARED:BOOL=OFF -DRENDER_D3D:BOOL=OFF -DVIDEO_OPENGLES:BOOL=OFF -DSDL_FILESYSTEM:BOOL=ON -DVIDEO_WAYLAND:BOOL=OFF -DVIDEO_MIR:BOOL=OFF -DSDL_RENDERER:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
         INSTALL_DIR ${ThirdParty_Install_Dir}/
         BUILD_BYPRODUCTS ${SDL2_BuiltFile}
     )
@@ -30,7 +30,7 @@ if(NOT LUTEFISK3D_HEADLESS)
     SET_TARGET_PROPERTIES(SDL2_LIB PROPERTIES IMPORTED_LOCATION ${SDL2_BuiltFile})
     add_dependencies(SDL2_LIB SDL2)
 
-    if(UNIX)
+    if(UNIX OR MINGW)
         set(GLBINDING_BuiltFile ${ThirdParty_Install_Dir}/lib/libglbinding.a)
     else()
         set(GLBINDING_BuiltFile ${ThirdParty_Install_Dir}/lib/glbinding.lib)
@@ -40,7 +40,7 @@ if(NOT LUTEFISK3D_HEADLESS)
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glbinding
         UPDATE_COMMAND ""
-        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOPTION_BUILD_STATIC:BOOL=ON -DOPTION_BUILD_TESTS:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_SHARED_LIBS:BOOL=OFF -DOPTION_BUILD_TESTS:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
         INSTALL_DIR ${ThirdParty_Install_Dir}/
         BUILD_BYPRODUCTS ${GLBINDING_BuiltFile}
     )
@@ -64,7 +64,7 @@ endif()
 
 
 if(NOT LUTEFISK3D_NETLESS)
-    if(UNIX)
+    if(UNIX OR MINGW)
         set(KNET_BuiltFile ${ThirdParty_Install_Dir}/lib/libkNet.a)
     else()
         set(KNET_BuiltFile ${ThirdParty_Install_Dir}/lib/kNet.lib)
@@ -97,12 +97,18 @@ if(NOT LUTEFISK3D_PHYSICLESS)
         list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletSoftBody.a)
         list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libLinearMath.a)
         list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletCollision.a)
-    else()
+    elseif(MSVC)
         set(BULLET_BuiltFile ${ThirdParty_Install_Dir}/lib/BulletCollision.lib)
         set(BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletDynamics.lib)
         list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletSoftBody.lib)
         list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/LinearMath.lib)
         list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletCollision.lib)
+    elseif(MINGW)
+        set(BULLET_BuiltFile ${ThirdParty_Install_Dir}/lib/libBulletCollision_RelWithDebugInfo.a)
+        set(BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletDynamics_RelWithDebugInfo.a)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletSoftBody_RelWithDebugInfo.a)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libLinearMath_RelWithDebugInfo.a)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletCollision_RelWithDebugInfo.a)
     endif()
 
     ExternalProject_Add(
@@ -110,7 +116,7 @@ if(NOT LUTEFISK3D_PHYSICLESS)
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Bullet
         UPDATE_COMMAND ""
-        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DINSTALL_LIBS:BOOL=ON
         INSTALL_DIR ${ThirdParty_Install_Dir}/
         BUILD_BYPRODUCTS ${BULLET_BuiltFile} ${BULLET_AllLibs}
     )

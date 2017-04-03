@@ -24,6 +24,7 @@
 
 #include "../IO/VectorBuffer.h"
 #include "../Scene/Component.h"
+#include "../Graphics/AnimationState.h"
 
 namespace Urho3D
 {
@@ -129,6 +130,8 @@ public:
     bool SetAutoFade(const QString& name, float fadeOutTime);
     /// Set whether an animation auto-removes on completion.
     bool SetRemoveOnCompletion(const QString& name, bool removeOnCompletion);
+    /// Set animation blending mode. Return true on success.
+    bool SetBlendingMode(const QString& name, AnimationBlendMode mode);
 
     /// Return whether an animation is active. Note that non-looping animations that are being clamped at the end also return true.
     bool IsPlaying(const QString& name) const;
@@ -150,6 +153,8 @@ public:
     float GetWeight(const QString& name) const;
     /// Return animation looping.
     bool IsLooped(const QString& name) const;
+    /// Return animation blending mode.
+    AnimationBlendMode GetBlendingMode(const QString& name) const;
     /// Return animation length.
     float GetLength(const QString& name) const;
     /// Return animation speed.

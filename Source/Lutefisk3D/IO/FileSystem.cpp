@@ -41,7 +41,7 @@
 #include <cstring>
 #include <sys/stat.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #ifndef _MSC_VER
 #define _WIN32_IE 0x501
 #endif
@@ -531,7 +531,7 @@ bool FileSystem::SetLastModifiedTime(const QString& fileName, unsigned newTime)
     if (fileName.isEmpty() || !CheckAccess(fileName))
         return false;
 
-    #ifdef WIN32
+    #ifdef _WIN32
     struct _stat oldTime;
     struct _utimbuf newTimes;
     if (_stat(qPrintable(fileName), &oldTime) != 0)

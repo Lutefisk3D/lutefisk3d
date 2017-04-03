@@ -9,6 +9,7 @@
 namespace gl
 {
 
+
 GLBINDING_API void glAccum(GLenum op, GLfloat value);
 GLBINDING_API void glAccumxOES(GLenum op, GLfixed value);
 GLBINDING_API void glActiveProgramEXT(GLuint program);
@@ -22,6 +23,7 @@ GLBINDING_API void glAlphaFragmentOp2ATI(GLenum op, GLuint dst, GLuint dstMod, G
 GLBINDING_API void glAlphaFragmentOp3ATI(GLenum op, GLuint dst, GLuint dstMod, GLuint arg1, GLuint arg1Rep, GLuint arg1Mod, GLuint arg2, GLuint arg2Rep, GLuint arg2Mod, GLuint arg3, GLuint arg3Rep, GLuint arg3Mod);
 GLBINDING_API void glAlphaFunc(GLenum func, GLfloat ref);
 GLBINDING_API void glAlphaFuncxOES(GLenum func, GLfixed ref);
+GLBINDING_API void glApplyFramebufferAttachmentCMAAINTEL();
 GLBINDING_API void glApplyTextureEXT(GLenum mode);
 GLBINDING_API GLboolean glAreProgramsResidentNV(GLsizei n, const GLuint * programs, GLboolean * residences);
 GLBINDING_API GLboolean glAreTexturesResident(GLsizei n, const GLuint * textures, GLboolean * residences);
@@ -32,6 +34,7 @@ GLBINDING_API void glArrayObjectATI(GLenum array, GLint size, GLenum type, GLsiz
 GLBINDING_API void glAsyncMarkerSGIX(GLuint marker);
 GLBINDING_API void glAttachObjectARB(GLhandleARB containerObj, GLhandleARB obj);
 GLBINDING_API void glAttachShader(GLuint program, GLuint shader);
+
 GLBINDING_API void glBegin(GLenum mode);
 GLBINDING_API void glBeginConditionalRender(GLuint id, GLenum mode);
 GLBINDING_API void glBeginConditionalRenderNV(GLuint id, GLenum mode);
@@ -147,6 +150,7 @@ GLBINDING_API void glBufferParameteriAPPLE(GLenum target, GLenum pname, GLint pa
 GLBINDING_API void glBufferStorage(GLenum target, GLsizeiptr size, const void * data, BufferStorageMask flags);
 GLBINDING_API void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void * data);
 GLBINDING_API void glBufferSubDataARB(GLenum target, GLintptrARB offset, GLsizeiptrARB size, const void * data);
+
 GLBINDING_API void glCallCommandListNV(GLuint list);
 GLBINDING_API void glCallList(GLuint list);
 GLBINDING_API void glCallLists(GLsizei n, GLenum type, const void * lists);
@@ -179,7 +183,7 @@ GLBINDING_API void glClearNamedBufferData(GLuint buffer, GLenum internalformat, 
 GLBINDING_API void glClearNamedBufferDataEXT(GLuint buffer, GLenum internalformat, GLenum format, GLenum type, const void * data);
 GLBINDING_API void glClearNamedBufferSubData(GLuint buffer, GLenum internalformat, GLintptr offset, GLsizeiptr size, GLenum format, GLenum type, const void * data);
 GLBINDING_API void glClearNamedBufferSubDataEXT(GLuint buffer, GLenum internalformat, GLsizeiptr offset, GLsizeiptr size, GLenum format, GLenum type, const void * data);
-GLBINDING_API void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, const GLfloat depth, GLint stencil);
+GLBINDING_API void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
 GLBINDING_API void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat * value);
 GLBINDING_API void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint * value);
 GLBINDING_API void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint * value);
@@ -307,6 +311,8 @@ GLBINDING_API void glCompressedTextureSubImage2D(GLuint texture, GLint level, GL
 GLBINDING_API void glCompressedTextureSubImage2DEXT(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void * bits);
 GLBINDING_API void glCompressedTextureSubImage3D(GLuint texture, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imageSize, const void * data);
 GLBINDING_API void glCompressedTextureSubImage3DEXT(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imageSize, const void * bits);
+GLBINDING_API void glConservativeRasterParameterfNV(GLenum pname, GLfloat value);
+GLBINDING_API void glConservativeRasterParameteriNV(GLenum pname, GLint param);
 GLBINDING_API void glConvolutionFilter1D(GLenum target, GLenum internalformat, GLsizei width, GLenum format, GLenum type, const void * image);
 GLBINDING_API void glConvolutionFilter1DEXT(GLenum target, GLenum internalformat, GLsizei width, GLenum format, GLenum type, const void * image);
 GLBINDING_API void glConvolutionFilter2D(GLenum target, GLenum internalformat, GLsizei width, GLsizei height, GLenum format, GLenum type, const void * image);
@@ -387,6 +393,7 @@ GLBINDING_API void glCullFace(GLenum mode);
 GLBINDING_API void glCullParameterdvEXT(GLenum pname, GLdouble * params);
 GLBINDING_API void glCullParameterfvEXT(GLenum pname, GLfloat * params);
 GLBINDING_API void glCurrentPaletteMatrixARB(GLint index);
+
 GLBINDING_API void glDebugMessageCallback(GLDEBUGPROC callback, const void * userParam);
 GLBINDING_API void glDebugMessageCallbackAMD(GLDEBUGPROCAMD callback, void * userParam);
 GLBINDING_API void glDebugMessageCallbackARB(GLDEBUGPROCARB callback, const void * userParam);
@@ -504,6 +511,7 @@ GLBINDING_API void glDrawTransformFeedbackInstanced(GLenum mode, GLuint id, GLsi
 GLBINDING_API void glDrawTransformFeedbackNV(GLenum mode, GLuint id);
 GLBINDING_API void glDrawTransformFeedbackStream(GLenum mode, GLuint id, GLuint stream);
 GLBINDING_API void glDrawTransformFeedbackStreamInstanced(GLenum mode, GLuint id, GLuint stream, GLsizei instancecount);
+
 GLBINDING_API void glEdgeFlag(GLboolean flag);
 GLBINDING_API void glEdgeFlagFormatNV(GLsizei stride);
 GLBINDING_API void glEdgeFlagPointer(GLsizei stride, const void * pointer);
@@ -559,8 +567,10 @@ GLBINDING_API void glEvalMesh1(GLenum mode, GLint i1, GLint i2);
 GLBINDING_API void glEvalMesh2(GLenum mode, GLint i1, GLint i2, GLint j1, GLint j2);
 GLBINDING_API void glEvalPoint1(GLint i);
 GLBINDING_API void glEvalPoint2(GLint i, GLint j);
+GLBINDING_API void glEvaluateDepthValuesARB();
 GLBINDING_API void glExecuteProgramNV(GLenum target, GLuint id, const GLfloat * params);
 GLBINDING_API void glExtractComponentEXT(GLuint res, GLuint src, GLuint num);
+
 GLBINDING_API void glFeedbackBuffer(GLsizei size, GLenum type, GLfloat * buffer);
 GLBINDING_API void glFeedbackBufferxOES(GLsizei n, GLenum type, const GLfixed * buffer);
 GLBINDING_API GLsync glFenceSync(GLenum condition, UnusedMask flags);
@@ -624,6 +634,7 @@ GLBINDING_API void glFramebufferParameteri(GLenum target, GLenum pname, GLint pa
 GLBINDING_API void glFramebufferReadBufferEXT(GLuint framebuffer, GLenum mode);
 GLBINDING_API void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 GLBINDING_API void glFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+GLBINDING_API void glFramebufferSampleLocationsfvARB(GLenum target, GLuint start, GLsizei count, const GLfloat * v);
 GLBINDING_API void glFramebufferSampleLocationsfvNV(GLenum target, GLuint start, GLsizei count, const GLfloat * v);
 GLBINDING_API void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
 GLBINDING_API void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
@@ -645,6 +656,7 @@ GLBINDING_API void glFrontFace(GLenum mode);
 GLBINDING_API void glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
 GLBINDING_API void glFrustumfOES(GLfloat l, GLfloat r, GLfloat b, GLfloat t, GLfloat n, GLfloat f);
 GLBINDING_API void glFrustumxOES(GLfixed l, GLfixed r, GLfixed b, GLfixed t, GLfixed n, GLfixed f);
+
 GLBINDING_API GLuint glGenAsyncMarkersSGIX(GLsizei range);
 GLBINDING_API void glGenBuffers(GLsizei n, GLuint * buffers);
 GLBINDING_API void glGenBuffersARB(GLsizei n, GLuint * buffers);
@@ -1032,9 +1044,11 @@ GLBINDING_API void glGetUniformSubroutineuiv(GLenum shadertype, GLint location, 
 GLBINDING_API void glGetUniformdv(GLuint program, GLint location, GLdouble * params);
 GLBINDING_API void glGetUniformfv(GLuint program, GLint location, GLfloat * params);
 GLBINDING_API void glGetUniformfvARB(GLhandleARB programObj, GLint location, GLfloat * params);
+GLBINDING_API void glGetUniformi64vARB(GLuint program, GLint location, GLint64 * params);
 GLBINDING_API void glGetUniformi64vNV(GLuint program, GLint location, GLint64EXT * params);
 GLBINDING_API void glGetUniformiv(GLuint program, GLint location, GLint * params);
 GLBINDING_API void glGetUniformivARB(GLhandleARB programObj, GLint location, GLint * params);
+GLBINDING_API void glGetUniformui64vARB(GLuint program, GLint location, GLuint64 * params);
 GLBINDING_API void glGetUniformui64vNV(GLuint program, GLint location, GLuint64EXT * params);
 GLBINDING_API void glGetUniformuiv(GLuint program, GLint location, GLuint * params);
 GLBINDING_API void glGetUniformuivEXT(GLuint program, GLint location, GLuint * params);
@@ -1115,8 +1129,10 @@ GLBINDING_API void glGetnUniformdv(GLuint program, GLint location, GLsizei bufSi
 GLBINDING_API void glGetnUniformdvARB(GLuint program, GLint location, GLsizei bufSize, GLdouble * params);
 GLBINDING_API void glGetnUniformfv(GLuint program, GLint location, GLsizei bufSize, GLfloat * params);
 GLBINDING_API void glGetnUniformfvARB(GLuint program, GLint location, GLsizei bufSize, GLfloat * params);
+GLBINDING_API void glGetnUniformi64vARB(GLuint program, GLint location, GLsizei bufSize, GLint64 * params);
 GLBINDING_API void glGetnUniformiv(GLuint program, GLint location, GLsizei bufSize, GLint * params);
 GLBINDING_API void glGetnUniformivARB(GLuint program, GLint location, GLsizei bufSize, GLint * params);
+GLBINDING_API void glGetnUniformui64vARB(GLuint program, GLint location, GLsizei bufSize, GLuint64 * params);
 GLBINDING_API void glGetnUniformuiv(GLuint program, GLint location, GLsizei bufSize, GLuint * params);
 GLBINDING_API void glGetnUniformuivARB(GLuint program, GLint location, GLsizei bufSize, GLuint * params);
 GLBINDING_API void glGlobalAlphaFactorbSUN(GLbyte factor);
@@ -1127,10 +1143,12 @@ GLBINDING_API void glGlobalAlphaFactorsSUN(GLshort factor);
 GLBINDING_API void glGlobalAlphaFactorubSUN(GLubyte factor);
 GLBINDING_API void glGlobalAlphaFactoruiSUN(GLuint factor);
 GLBINDING_API void glGlobalAlphaFactorusSUN(GLushort factor);
+
 GLBINDING_API void glHint(GLenum target, GLenum mode);
 GLBINDING_API void glHintPGI(GLenum target, GLint mode);
 GLBINDING_API void glHistogram(GLenum target, GLsizei width, GLenum internalformat, GLboolean sink);
 GLBINDING_API void glHistogramEXT(GLenum target, GLsizei width, GLenum internalformat, GLboolean sink);
+
 GLBINDING_API void glIglooInterfaceSGIX(GLenum pname, const void * params);
 GLBINDING_API void glImageTransformParameterfHP(GLenum target, GLenum pname, GLfloat param);
 GLBINDING_API void glImageTransformParameterfvHP(GLenum target, GLenum pname, const GLfloat * params);
@@ -1215,6 +1233,9 @@ GLBINDING_API GLboolean glIsVariantEnabledEXT(GLuint id, GLenum cap);
 GLBINDING_API GLboolean glIsVertexArray(GLuint array);
 GLBINDING_API GLboolean glIsVertexArrayAPPLE(GLuint array);
 GLBINDING_API GLboolean glIsVertexAttribEnabledAPPLE(GLuint index, GLenum pname);
+
+
+
 GLBINDING_API void glLabelObjectEXT(GLenum type, GLuint object, GLsizei length, const GLchar * label);
 GLBINDING_API void glLightEnviSGIX(GLenum pname, GLint param);
 GLBINDING_API void glLightModelf(GLenum pname, GLfloat param);
@@ -1254,6 +1275,7 @@ GLBINDING_API void glLoadTransposeMatrixfARB(const GLfloat * m);
 GLBINDING_API void glLoadTransposeMatrixxOES(const GLfixed * m);
 GLBINDING_API void glLockArraysEXT(GLint first, GLsizei count);
 GLBINDING_API void glLogicOp(GLenum opcode);
+
 GLBINDING_API void glMakeBufferNonResidentNV(GLenum target);
 GLBINDING_API void glMakeBufferResidentNV(GLenum target, GLenum access);
 GLBINDING_API void glMakeImageHandleNonResidentARB(GLuint64 handle);
@@ -1330,6 +1352,7 @@ GLBINDING_API void glMatrixScaledEXT(GLenum mode, GLdouble x, GLdouble y, GLdoub
 GLBINDING_API void glMatrixScalefEXT(GLenum mode, GLfloat x, GLfloat y, GLfloat z);
 GLBINDING_API void glMatrixTranslatedEXT(GLenum mode, GLdouble x, GLdouble y, GLdouble z);
 GLBINDING_API void glMatrixTranslatefEXT(GLenum mode, GLfloat x, GLfloat y, GLfloat z);
+GLBINDING_API void glMaxShaderCompilerThreadsARB(GLuint count);
 GLBINDING_API void glMemoryBarrier(MemoryBarrierMask barriers);
 GLBINDING_API void glMemoryBarrierByRegion(MemoryBarrierMask barriers);
 GLBINDING_API void glMemoryBarrierEXT(MemoryBarrierMask barriers);
@@ -1485,6 +1508,7 @@ GLBINDING_API void glMultiTexRenderbufferEXT(GLenum texunit, GLenum target, GLui
 GLBINDING_API void glMultiTexSubImage1DEXT(GLenum texunit, GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void * pixels);
 GLBINDING_API void glMultiTexSubImage2DEXT(GLenum texunit, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void * pixels);
 GLBINDING_API void glMultiTexSubImage3DEXT(GLenum texunit, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void * pixels);
+
 GLBINDING_API void glNamedBufferData(GLuint buffer, GLsizeiptr size, const void * data, GLenum usage);
 GLBINDING_API void glNamedBufferDataEXT(GLuint buffer, GLsizeiptr size, const void * data, GLenum usage);
 GLBINDING_API void glNamedBufferPageCommitmentARB(GLuint buffer, GLintptr offset, GLsizeiptr size, GLboolean commit);
@@ -1501,6 +1525,7 @@ GLBINDING_API void glNamedFramebufferParameteriEXT(GLuint framebuffer, GLenum pn
 GLBINDING_API void glNamedFramebufferReadBuffer(GLuint framebuffer, GLenum src);
 GLBINDING_API void glNamedFramebufferRenderbuffer(GLuint framebuffer, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 GLBINDING_API void glNamedFramebufferRenderbufferEXT(GLuint framebuffer, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+GLBINDING_API void glNamedFramebufferSampleLocationsfvARB(GLuint framebuffer, GLuint start, GLsizei count, const GLfloat * v);
 GLBINDING_API void glNamedFramebufferSampleLocationsfvNV(GLuint framebuffer, GLuint start, GLsizei count, const GLfloat * v);
 GLBINDING_API void glNamedFramebufferTexture(GLuint framebuffer, GLenum attachment, GLuint texture, GLint level);
 GLBINDING_API void glNamedFramebufferTexture1DEXT(GLuint framebuffer, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
@@ -1563,6 +1588,7 @@ GLBINDING_API void glNormalStream3iATI(GLenum stream, GLint nx, GLint ny, GLint 
 GLBINDING_API void glNormalStream3ivATI(GLenum stream, const GLint * coords);
 GLBINDING_API void glNormalStream3sATI(GLenum stream, GLshort nx, GLshort ny, GLshort nz);
 GLBINDING_API void glNormalStream3svATI(GLenum stream, const GLshort * coords);
+
 GLBINDING_API void glObjectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar * label);
 GLBINDING_API void glObjectPtrLabel(const void * ptr, GLsizei length, const GLchar * label);
 GLBINDING_API GLenum glObjectPurgeableAPPLE(GLenum objectType, GLuint name, GLenum option);
@@ -1570,6 +1596,7 @@ GLBINDING_API GLenum glObjectUnpurgeableAPPLE(GLenum objectType, GLuint name, GL
 GLBINDING_API void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
 GLBINDING_API void glOrthofOES(GLfloat l, GLfloat r, GLfloat b, GLfloat t, GLfloat n, GLfloat f);
 GLBINDING_API void glOrthoxOES(GLfixed l, GLfixed r, GLfixed b, GLfixed t, GLfixed n, GLfixed f);
+
 GLBINDING_API void glPNTrianglesfATI(GLenum pname, GLfloat param);
 GLBINDING_API void glPNTrianglesiATI(GLenum pname, GLint param);
 GLBINDING_API void glPassTexCoordATI(GLuint dst, GLuint coord, GLenum swizzle);
@@ -1654,6 +1681,7 @@ GLBINDING_API void glPopMatrix();
 GLBINDING_API void glPopName();
 GLBINDING_API void glPresentFrameDualFillNV(GLuint video_slot, GLuint64EXT minPresentTime, GLuint beginPresentTimeId, GLuint presentDurationId, GLenum type, GLenum target0, GLuint fill0, GLenum target1, GLuint fill1, GLenum target2, GLuint fill2, GLenum target3, GLuint fill3);
 GLBINDING_API void glPresentFrameKeyedNV(GLuint video_slot, GLuint64EXT minPresentTime, GLuint beginPresentTimeId, GLuint presentDurationId, GLenum type, GLenum target0, GLuint fill0, GLuint key0, GLenum target1, GLuint fill1, GLuint key1);
+GLBINDING_API void glPrimitiveBoundingBoxARB(GLfloat minX, GLfloat minY, GLfloat minZ, GLfloat minW, GLfloat maxX, GLfloat maxY, GLfloat maxZ, GLfloat maxW);
 GLBINDING_API void glPrimitiveRestartIndex(GLuint index);
 GLBINDING_API void glPrimitiveRestartIndexNV(GLuint index);
 GLBINDING_API void glPrimitiveRestartNV();
@@ -1711,13 +1739,17 @@ GLBINDING_API void glProgramUniform1fEXT(GLuint program, GLint location, GLfloat
 GLBINDING_API void glProgramUniform1fv(GLuint program, GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glProgramUniform1fvEXT(GLuint program, GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glProgramUniform1i(GLuint program, GLint location, GLint v0);
+GLBINDING_API void glProgramUniform1i64ARB(GLuint program, GLint location, GLint64 x);
 GLBINDING_API void glProgramUniform1i64NV(GLuint program, GLint location, GLint64EXT x);
+GLBINDING_API void glProgramUniform1i64vARB(GLuint program, GLint location, GLsizei count, const GLint64 * value);
 GLBINDING_API void glProgramUniform1i64vNV(GLuint program, GLint location, GLsizei count, const GLint64EXT * value);
 GLBINDING_API void glProgramUniform1iEXT(GLuint program, GLint location, GLint v0);
 GLBINDING_API void glProgramUniform1iv(GLuint program, GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glProgramUniform1ivEXT(GLuint program, GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glProgramUniform1ui(GLuint program, GLint location, GLuint v0);
+GLBINDING_API void glProgramUniform1ui64ARB(GLuint program, GLint location, GLuint64 x);
 GLBINDING_API void glProgramUniform1ui64NV(GLuint program, GLint location, GLuint64EXT x);
+GLBINDING_API void glProgramUniform1ui64vARB(GLuint program, GLint location, GLsizei count, const GLuint64 * value);
 GLBINDING_API void glProgramUniform1ui64vNV(GLuint program, GLint location, GLsizei count, const GLuint64EXT * value);
 GLBINDING_API void glProgramUniform1uiEXT(GLuint program, GLint location, GLuint v0);
 GLBINDING_API void glProgramUniform1uiv(GLuint program, GLint location, GLsizei count, const GLuint * value);
@@ -1731,13 +1763,17 @@ GLBINDING_API void glProgramUniform2fEXT(GLuint program, GLint location, GLfloat
 GLBINDING_API void glProgramUniform2fv(GLuint program, GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glProgramUniform2fvEXT(GLuint program, GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glProgramUniform2i(GLuint program, GLint location, GLint v0, GLint v1);
+GLBINDING_API void glProgramUniform2i64ARB(GLuint program, GLint location, GLint64 x, GLint64 y);
 GLBINDING_API void glProgramUniform2i64NV(GLuint program, GLint location, GLint64EXT x, GLint64EXT y);
+GLBINDING_API void glProgramUniform2i64vARB(GLuint program, GLint location, GLsizei count, const GLint64 * value);
 GLBINDING_API void glProgramUniform2i64vNV(GLuint program, GLint location, GLsizei count, const GLint64EXT * value);
 GLBINDING_API void glProgramUniform2iEXT(GLuint program, GLint location, GLint v0, GLint v1);
 GLBINDING_API void glProgramUniform2iv(GLuint program, GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glProgramUniform2ivEXT(GLuint program, GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glProgramUniform2ui(GLuint program, GLint location, GLuint v0, GLuint v1);
+GLBINDING_API void glProgramUniform2ui64ARB(GLuint program, GLint location, GLuint64 x, GLuint64 y);
 GLBINDING_API void glProgramUniform2ui64NV(GLuint program, GLint location, GLuint64EXT x, GLuint64EXT y);
+GLBINDING_API void glProgramUniform2ui64vARB(GLuint program, GLint location, GLsizei count, const GLuint64 * value);
 GLBINDING_API void glProgramUniform2ui64vNV(GLuint program, GLint location, GLsizei count, const GLuint64EXT * value);
 GLBINDING_API void glProgramUniform2uiEXT(GLuint program, GLint location, GLuint v0, GLuint v1);
 GLBINDING_API void glProgramUniform2uiv(GLuint program, GLint location, GLsizei count, const GLuint * value);
@@ -1751,13 +1787,17 @@ GLBINDING_API void glProgramUniform3fEXT(GLuint program, GLint location, GLfloat
 GLBINDING_API void glProgramUniform3fv(GLuint program, GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glProgramUniform3fvEXT(GLuint program, GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glProgramUniform3i(GLuint program, GLint location, GLint v0, GLint v1, GLint v2);
+GLBINDING_API void glProgramUniform3i64ARB(GLuint program, GLint location, GLint64 x, GLint64 y, GLint64 z);
 GLBINDING_API void glProgramUniform3i64NV(GLuint program, GLint location, GLint64EXT x, GLint64EXT y, GLint64EXT z);
+GLBINDING_API void glProgramUniform3i64vARB(GLuint program, GLint location, GLsizei count, const GLint64 * value);
 GLBINDING_API void glProgramUniform3i64vNV(GLuint program, GLint location, GLsizei count, const GLint64EXT * value);
 GLBINDING_API void glProgramUniform3iEXT(GLuint program, GLint location, GLint v0, GLint v1, GLint v2);
 GLBINDING_API void glProgramUniform3iv(GLuint program, GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glProgramUniform3ivEXT(GLuint program, GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glProgramUniform3ui(GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2);
+GLBINDING_API void glProgramUniform3ui64ARB(GLuint program, GLint location, GLuint64 x, GLuint64 y, GLuint64 z);
 GLBINDING_API void glProgramUniform3ui64NV(GLuint program, GLint location, GLuint64EXT x, GLuint64EXT y, GLuint64EXT z);
+GLBINDING_API void glProgramUniform3ui64vARB(GLuint program, GLint location, GLsizei count, const GLuint64 * value);
 GLBINDING_API void glProgramUniform3ui64vNV(GLuint program, GLint location, GLsizei count, const GLuint64EXT * value);
 GLBINDING_API void glProgramUniform3uiEXT(GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2);
 GLBINDING_API void glProgramUniform3uiv(GLuint program, GLint location, GLsizei count, const GLuint * value);
@@ -1771,13 +1811,17 @@ GLBINDING_API void glProgramUniform4fEXT(GLuint program, GLint location, GLfloat
 GLBINDING_API void glProgramUniform4fv(GLuint program, GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glProgramUniform4fvEXT(GLuint program, GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glProgramUniform4i(GLuint program, GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
+GLBINDING_API void glProgramUniform4i64ARB(GLuint program, GLint location, GLint64 x, GLint64 y, GLint64 z, GLint64 w);
 GLBINDING_API void glProgramUniform4i64NV(GLuint program, GLint location, GLint64EXT x, GLint64EXT y, GLint64EXT z, GLint64EXT w);
+GLBINDING_API void glProgramUniform4i64vARB(GLuint program, GLint location, GLsizei count, const GLint64 * value);
 GLBINDING_API void glProgramUniform4i64vNV(GLuint program, GLint location, GLsizei count, const GLint64EXT * value);
 GLBINDING_API void glProgramUniform4iEXT(GLuint program, GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
 GLBINDING_API void glProgramUniform4iv(GLuint program, GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glProgramUniform4ivEXT(GLuint program, GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glProgramUniform4ui(GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
+GLBINDING_API void glProgramUniform4ui64ARB(GLuint program, GLint location, GLuint64 x, GLuint64 y, GLuint64 z, GLuint64 w);
 GLBINDING_API void glProgramUniform4ui64NV(GLuint program, GLint location, GLuint64EXT x, GLuint64EXT y, GLuint64EXT z, GLuint64EXT w);
+GLBINDING_API void glProgramUniform4ui64vARB(GLuint program, GLint location, GLsizei count, const GLuint64 * value);
 GLBINDING_API void glProgramUniform4ui64vNV(GLuint program, GLint location, GLsizei count, const GLuint64EXT * value);
 GLBINDING_API void glProgramUniform4uiEXT(GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
 GLBINDING_API void glProgramUniform4uiv(GLuint program, GLint location, GLsizei count, const GLuint * value);
@@ -1834,9 +1878,11 @@ GLBINDING_API void glPushDebugGroup(GLenum source, GLuint id, GLsizei length, co
 GLBINDING_API void glPushGroupMarkerEXT(GLsizei length, const GLchar * marker);
 GLBINDING_API void glPushMatrix();
 GLBINDING_API void glPushName(GLuint name);
+
 GLBINDING_API void glQueryCounter(GLuint id, GLenum target);
 GLBINDING_API GLbitfield glQueryMatrixxOES(GLfixed * mantissa, GLint * exponent);
 GLBINDING_API void glQueryObjectParameteruiAMD(GLenum target, GLuint id, GLenum pname, GLuint param);
+
 GLBINDING_API void glRasterPos2d(GLdouble x, GLdouble y);
 GLBINDING_API void glRasterPos2dv(const GLdouble * v);
 GLBINDING_API void glRasterPos2f(GLfloat x, GLfloat y);
@@ -1926,6 +1972,7 @@ GLBINDING_API void glResumeTransformFeedbackNV();
 GLBINDING_API void glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdouble z);
 GLBINDING_API void glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
 GLBINDING_API void glRotatexOES(GLfixed angle, GLfixed x, GLfixed y, GLfixed z);
+
 GLBINDING_API void glSampleCoverage(GLfloat value, GLboolean invert);
 GLBINDING_API void glSampleCoverageARB(GLfloat value, GLboolean invert);
 GLBINDING_API void glSampleMapATI(GLuint dst, GLuint interp, GLenum swizzle);
@@ -2036,6 +2083,7 @@ GLBINDING_API void glStringMarkerGREMEDY(GLsizei len, const void * string);
 GLBINDING_API void glSubpixelPrecisionBiasNV(GLuint xbits, GLuint ybits);
 GLBINDING_API void glSwizzleEXT(GLuint res, GLuint in, GLenum outX, GLenum outY, GLenum outZ, GLenum outW);
 GLBINDING_API void glSyncTextureINTEL(GLuint texture);
+
 GLBINDING_API void glTagSampleBufferSGIX();
 GLBINDING_API void glTangent3bEXT(GLbyte tx, GLbyte ty, GLbyte tz);
 GLBINDING_API void glTangent3bvEXT(const GLbyte * v);
@@ -2254,6 +2302,7 @@ GLBINDING_API void glTransformPathNV(GLuint resultPath, GLuint srcPath, GLenum t
 GLBINDING_API void glTranslated(GLdouble x, GLdouble y, GLdouble z);
 GLBINDING_API void glTranslatef(GLfloat x, GLfloat y, GLfloat z);
 GLBINDING_API void glTranslatexOES(GLfixed x, GLfixed y, GLfixed z);
+
 GLBINDING_API void glUniform1d(GLint location, GLdouble x);
 GLBINDING_API void glUniform1dv(GLint location, GLsizei count, const GLdouble * value);
 GLBINDING_API void glUniform1f(GLint location, GLfloat v0);
@@ -2261,13 +2310,17 @@ GLBINDING_API void glUniform1fARB(GLint location, GLfloat v0);
 GLBINDING_API void glUniform1fv(GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glUniform1fvARB(GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glUniform1i(GLint location, GLint v0);
+GLBINDING_API void glUniform1i64ARB(GLint location, GLint64 x);
 GLBINDING_API void glUniform1i64NV(GLint location, GLint64EXT x);
+GLBINDING_API void glUniform1i64vARB(GLint location, GLsizei count, const GLint64 * value);
 GLBINDING_API void glUniform1i64vNV(GLint location, GLsizei count, const GLint64EXT * value);
 GLBINDING_API void glUniform1iARB(GLint location, GLint v0);
 GLBINDING_API void glUniform1iv(GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glUniform1ivARB(GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glUniform1ui(GLint location, GLuint v0);
+GLBINDING_API void glUniform1ui64ARB(GLint location, GLuint64 x);
 GLBINDING_API void glUniform1ui64NV(GLint location, GLuint64EXT x);
+GLBINDING_API void glUniform1ui64vARB(GLint location, GLsizei count, const GLuint64 * value);
 GLBINDING_API void glUniform1ui64vNV(GLint location, GLsizei count, const GLuint64EXT * value);
 GLBINDING_API void glUniform1uiEXT(GLint location, GLuint v0);
 GLBINDING_API void glUniform1uiv(GLint location, GLsizei count, const GLuint * value);
@@ -2279,13 +2332,17 @@ GLBINDING_API void glUniform2fARB(GLint location, GLfloat v0, GLfloat v1);
 GLBINDING_API void glUniform2fv(GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glUniform2fvARB(GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glUniform2i(GLint location, GLint v0, GLint v1);
+GLBINDING_API void glUniform2i64ARB(GLint location, GLint64 x, GLint64 y);
 GLBINDING_API void glUniform2i64NV(GLint location, GLint64EXT x, GLint64EXT y);
+GLBINDING_API void glUniform2i64vARB(GLint location, GLsizei count, const GLint64 * value);
 GLBINDING_API void glUniform2i64vNV(GLint location, GLsizei count, const GLint64EXT * value);
 GLBINDING_API void glUniform2iARB(GLint location, GLint v0, GLint v1);
 GLBINDING_API void glUniform2iv(GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glUniform2ivARB(GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glUniform2ui(GLint location, GLuint v0, GLuint v1);
+GLBINDING_API void glUniform2ui64ARB(GLint location, GLuint64 x, GLuint64 y);
 GLBINDING_API void glUniform2ui64NV(GLint location, GLuint64EXT x, GLuint64EXT y);
+GLBINDING_API void glUniform2ui64vARB(GLint location, GLsizei count, const GLuint64 * value);
 GLBINDING_API void glUniform2ui64vNV(GLint location, GLsizei count, const GLuint64EXT * value);
 GLBINDING_API void glUniform2uiEXT(GLint location, GLuint v0, GLuint v1);
 GLBINDING_API void glUniform2uiv(GLint location, GLsizei count, const GLuint * value);
@@ -2297,13 +2354,17 @@ GLBINDING_API void glUniform3fARB(GLint location, GLfloat v0, GLfloat v1, GLfloa
 GLBINDING_API void glUniform3fv(GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glUniform3fvARB(GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2);
+GLBINDING_API void glUniform3i64ARB(GLint location, GLint64 x, GLint64 y, GLint64 z);
 GLBINDING_API void glUniform3i64NV(GLint location, GLint64EXT x, GLint64EXT y, GLint64EXT z);
+GLBINDING_API void glUniform3i64vARB(GLint location, GLsizei count, const GLint64 * value);
 GLBINDING_API void glUniform3i64vNV(GLint location, GLsizei count, const GLint64EXT * value);
 GLBINDING_API void glUniform3iARB(GLint location, GLint v0, GLint v1, GLint v2);
 GLBINDING_API void glUniform3iv(GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glUniform3ivARB(GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glUniform3ui(GLint location, GLuint v0, GLuint v1, GLuint v2);
+GLBINDING_API void glUniform3ui64ARB(GLint location, GLuint64 x, GLuint64 y, GLuint64 z);
 GLBINDING_API void glUniform3ui64NV(GLint location, GLuint64EXT x, GLuint64EXT y, GLuint64EXT z);
+GLBINDING_API void glUniform3ui64vARB(GLint location, GLsizei count, const GLuint64 * value);
 GLBINDING_API void glUniform3ui64vNV(GLint location, GLsizei count, const GLuint64EXT * value);
 GLBINDING_API void glUniform3uiEXT(GLint location, GLuint v0, GLuint v1, GLuint v2);
 GLBINDING_API void glUniform3uiv(GLint location, GLsizei count, const GLuint * value);
@@ -2315,13 +2376,17 @@ GLBINDING_API void glUniform4fARB(GLint location, GLfloat v0, GLfloat v1, GLfloa
 GLBINDING_API void glUniform4fv(GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glUniform4fvARB(GLint location, GLsizei count, const GLfloat * value);
 GLBINDING_API void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
+GLBINDING_API void glUniform4i64ARB(GLint location, GLint64 x, GLint64 y, GLint64 z, GLint64 w);
 GLBINDING_API void glUniform4i64NV(GLint location, GLint64EXT x, GLint64EXT y, GLint64EXT z, GLint64EXT w);
+GLBINDING_API void glUniform4i64vARB(GLint location, GLsizei count, const GLint64 * value);
 GLBINDING_API void glUniform4i64vNV(GLint location, GLsizei count, const GLint64EXT * value);
 GLBINDING_API void glUniform4iARB(GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
 GLBINDING_API void glUniform4iv(GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glUniform4ivARB(GLint location, GLsizei count, const GLint * value);
 GLBINDING_API void glUniform4ui(GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
+GLBINDING_API void glUniform4ui64ARB(GLint location, GLuint64 x, GLuint64 y, GLuint64 z, GLuint64 w);
 GLBINDING_API void glUniform4ui64NV(GLint location, GLuint64EXT x, GLuint64EXT y, GLuint64EXT z, GLuint64EXT w);
+GLBINDING_API void glUniform4ui64vARB(GLint location, GLsizei count, const GLuint64 * value);
 GLBINDING_API void glUniform4ui64vNV(GLint location, GLsizei count, const GLuint64EXT * value);
 GLBINDING_API void glUniform4uiEXT(GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
 GLBINDING_API void glUniform4uiv(GLint location, GLsizei count, const GLuint * value);
@@ -2368,6 +2433,7 @@ GLBINDING_API void glUseProgram(GLuint program);
 GLBINDING_API void glUseProgramObjectARB(GLhandleARB programObj);
 GLBINDING_API void glUseProgramStages(GLuint pipeline, UseProgramStageMask stages, GLuint program);
 GLBINDING_API void glUseShaderProgramEXT(GLenum type, GLuint program);
+
 GLBINDING_API void glVDPAUFiniNV();
 GLBINDING_API void glVDPAUGetSurfaceivNV(GLvdpauSurfaceNV surface, GLenum pname, GLsizei bufSize, GLsizei * length, GLint * values);
 GLBINDING_API void glVDPAUInitNV(const void * vdpDevice, const void * getProcAddress);
@@ -2746,6 +2812,9 @@ GLBINDING_API void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 GLBINDING_API void glViewportArrayv(GLuint first, GLsizei count, const GLfloat * v);
 GLBINDING_API void glViewportIndexedf(GLuint index, GLfloat x, GLfloat y, GLfloat w, GLfloat h);
 GLBINDING_API void glViewportIndexedfv(GLuint index, const GLfloat * v);
+GLBINDING_API void glViewportPositionWScaleNV(GLuint index, GLfloat xcoeff, GLfloat ycoeff);
+GLBINDING_API void glViewportSwizzleNV(GLuint index, GLenum swizzlex, GLenum swizzley, GLenum swizzlez, GLenum swizzlew);
+
 GLBINDING_API void glWaitSync(GLsync sync, UnusedMask flags, GLuint64 timeout);
 GLBINDING_API void glWeightPathsNV(GLuint resultPath, GLsizei numPaths, const GLuint * paths, const GLfloat * weights);
 GLBINDING_API void glWeightPointerARB(GLint size, GLenum type, GLsizei stride, const void * pointer);
@@ -2813,6 +2882,16 @@ GLBINDING_API void glWindowPos4iMESA(GLint x, GLint y, GLint z, GLint w);
 GLBINDING_API void glWindowPos4ivMESA(const GLint * v);
 GLBINDING_API void glWindowPos4sMESA(GLshort x, GLshort y, GLshort z, GLshort w);
 GLBINDING_API void glWindowPos4svMESA(const GLshort * v);
+GLBINDING_API void glWindowRectanglesEXT(GLenum mode, GLsizei count, const GLint * box);
 GLBINDING_API void glWriteMaskEXT(GLuint res, GLuint in, GLenum outX, GLenum outY, GLenum outZ, GLenum outW);
 
+
+
+
+
+
 } // namespace gl
+
+
+// Include function patches due to dinstinguished types GLint, GLuint, GLenum, and GLboolean
+#include <glbinding/gl/functions-patches.h>

@@ -212,6 +212,8 @@ public:
     /// Index for shadow pass. Initialized once GetPassIndex() has been called for the first time.
     static unsigned shadowPassIndex;
 
+    /// Clone the technique. Passes will be deep copied to allow independent modification.
+    SharedPtr<Technique> Clone(const QString& cloneName = QString()) const;
 private:
     /// Require desktop GPU flag.
     bool isDesktop_;

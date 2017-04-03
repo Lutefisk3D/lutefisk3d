@@ -89,6 +89,12 @@ bool SpriteSheet2D::EndLoad()
     return false;
 }
 
+void SpriteSheet2D::SetTexture(Texture2D *texture)
+{
+    loadTextureName_.clear();
+    texture_ = texture;
+}
+
 Sprite2D* SpriteSheet2D::GetSprite(const QString& name) const
 {
     HashMap<QString, SharedPtr<Sprite2D> >::const_iterator i = spriteMapping_.find(name);

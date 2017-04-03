@@ -9,22 +9,31 @@
 #include <glbinding/Binding.h>
 #include <glbinding/Meta.h>
 
+#include "glbinding/glbinding_features.h"
+
 #include "callbacks_private.h"
+
 
 namespace
 {
-THREAD_LOCAL int t_pos = -1;
-}
+
+
+GLBINDING_THREAD_LOCAL auto t_pos = -1;
+
+
+} // namespace
+
 
 namespace glbinding 
 {
 
+
 int AbstractFunction::s_maxpos = -1;
 
 AbstractFunction::State::State()
-: address{nullptr}
-, initialized{false}
-, callbackMask{CallbackMask::None}
+: address(nullptr)
+, initialized(false)
+, callbackMask(CallbackMask::None)
 {
 }
 
@@ -56,15 +65,20 @@ void AbstractFunction::provideState(const int pos)
     assert(pos > -1);
 
     // if a state at pos exists, it is assumed to be neglected before
-    if (s_maxpos < pos)
-    {
-        for (AbstractFunction * function : Binding::functions())
-        {
-            function->m_states.resize(static_cast<std::size_t>(pos + 1));
-        }
+    if (s_maxpos >= pos)
+        return;
 
-        s_maxpos = pos;
+    for (auto function : Binding::functions())
+    {
+        function->m_states.resize(static_cast<std::size_t>(pos + 1));
     }
+
+    for (auto function : Binding::additionalFunctions())
+    {
+        function->m_states.resize(static_cast<std::size_t>(pos + 1));
+    }
+
+    s_maxpos = pos;
 }
 
 void AbstractFunction::neglectState(const int pos)
@@ -74,16 +88,25 @@ void AbstractFunction::neglectState(const int pos)
 
     if (pos == s_maxpos)
     {
-        for (AbstractFunction * function : Binding::functions())
+        const auto size = static_cast<std::size_t>(std::max(0, pos - 1));
+        for (auto function : Binding::functions())
         {
-            function->m_states.resize(static_cast<std::size_t>(std::max(0, pos - 1)));
+            function->m_states.resize(size);
         }
-
+        for (auto function : Binding::additionalFunctions())
+        {
+            function->m_states.resize(size);
+        }
         --s_maxpos;
     }
     else
     {
-        for (AbstractFunction * function : Binding::functions())
+        for (auto function : Binding::functions())
+        {
+            function->m_states[pos] = State();
+        }
+
+        for (auto function : Binding::additionalFunctions())
         {
             function->m_states[pos] = State();
         }
@@ -111,16 +134,15 @@ AbstractFunction::~AbstractFunction()
 
 void AbstractFunction::resolveAddress()
 {
-    if (state().initialized)
+    auto & currentState = state();
+
+    if (currentState.initialized)
+    {
         return;
+    }
 
-    state().address = getProcAddress(m_name);
-    state().initialized = true;
-}
-
-const std::set<gl::GLextension> & AbstractFunction::extensions() const
-{
-    return Meta::getExtensionsRequiring(m_name);
+    currentState.address = getProcAddress(m_name);
+    currentState.initialized = true;
 }
 
 const char * AbstractFunction::name() const
@@ -136,11 +158,12 @@ bool AbstractFunction::isResolved() const
 ProcAddress AbstractFunction::address() const
 {
     if (!state().initialized)
+    {
         const_cast<AbstractFunction*>(this)->resolveAddress();
+    }
 
     return state().address;
 }
-
 
 bool AbstractFunction::isEnabled(const CallbackMask mask) const
 {
@@ -193,5 +216,6 @@ void AbstractFunction::after(const FunctionCall & call) const
 {
     glbinding::after(call);
 }
+
 
 } // namespace glbinding

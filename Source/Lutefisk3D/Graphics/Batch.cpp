@@ -155,7 +155,7 @@ void Batch::CalculateSortKey()
 {
     unsigned shaderID = ((*((unsigned *)&vertexShader_) / sizeof(ShaderVariation)) +
                          (*((unsigned *)&pixelShader_) / sizeof(ShaderVariation))) &
-                        0x3fff;
+            0x3fff;
     if (!isBase_)
         shaderID |= 0x8000;
     if (nullptr != pass_ && pass_->GetAlphaMask())
@@ -274,11 +274,11 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
         graphics->SetShaderParameter(PSP_FOGCOLOR, overrideFogColorToBlack ? Color::BLACK : zone_->GetFogColor());
 
         float farClip = camera->GetFarClip();
-        float fogStart = Min(zone_->GetFogStart(), farClip);
-        float fogEnd = Min(zone_->GetFogEnd(), farClip);
+        float fogStart = std::min(zone_->GetFogStart(), farClip);
+        float fogEnd = std::min(zone_->GetFogEnd(), farClip);
         if (fogStart >= fogEnd * (1.0f - M_LARGE_EPSILON))
             fogStart = fogEnd * (1.0f - M_LARGE_EPSILON);
-        float fogRange = Max(fogEnd - fogStart, M_EPSILON);
+        float fogRange = std::max(fogEnd - fogStart, M_EPSILON);
         Vector4 fogParams(fogEnd / farClip, farClip / fogRange, 0.0f, 0.0f);
 
         Node* zoneNode = zone_->GetNode();
@@ -319,13 +319,13 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
                 case LIGHT_DIRECTIONAL:
                 {
                     Matrix4 shadowMatrices[MAX_CASCADE_SPLITS];
-                        unsigned numSplits = (unsigned)Min(MAX_CASCADE_SPLITS, (int)lightQueue_->shadowSplits_.size());
+                    unsigned numSplits = std::min<unsigned>(MAX_CASCADE_SPLITS, lightQueue_->shadowSplits_.size());
                     for (unsigned i = 0; i < numSplits; ++i)
                         CalculateShadowMatrix(shadowMatrices[i], lightQueue_, i, renderer, Vector3::ZERO);
 
                     graphics->SetShaderParameter(VSP_LIGHTMATRICES, shadowMatrices[0].Data(), 16 * numSplits);
-                }
                     break;
+                }
 
                 case LIGHT_SPOT:
                 {
@@ -337,8 +337,8 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
                         CalculateShadowMatrix(shadowMatrices[1], lightQueue_, 0, renderer, Vector3::ZERO);
 
                     graphics->SetShaderParameter(VSP_LIGHTMATRICES, shadowMatrices[0].Data(), isShadowed ? 32 : 16);
-                }
                     break;
+                }
 
                 case LIGHT_POINT:
                 {
@@ -357,7 +357,7 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
 
             // Do fade calculation for light if both fade & draw distance defined
             if (light->GetLightType() != LIGHT_DIRECTIONAL && fadeEnd > 0.0f && fadeStart > 0.0f && fadeStart < fadeEnd)
-                fade = Min(1.0f - (light->GetDistance() - fadeStart) / (fadeEnd - fadeStart), 1.0f);
+                fade = std::min(1.0f - (light->GetDistance() - fadeStart) / (fadeEnd - fadeStart), 1.0f);
 
             // Negative lights will use subtract blending, so write absolute RGB values to the shader parameter
             graphics->SetShaderParameter(PSP_LIGHTCOLOR, Color(light->GetEffectiveColor().Abs(),
@@ -373,7 +373,7 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
                 case LIGHT_DIRECTIONAL:
                 {
                     Matrix4 shadowMatrices[MAX_CASCADE_SPLITS];
-                    unsigned numSplits = Min(MAX_CASCADE_SPLITS, (int)lightQueue_->shadowSplits_.size());
+                    unsigned numSplits = std::min<unsigned>(MAX_CASCADE_SPLITS, lightQueue_->shadowSplits_.size());
                     for (unsigned i = 0; i < numSplits; ++i)
                     {
                         CalculateShadowMatrix(shadowMatrices[i], lightQueue_, i, renderer, isLightVolume ? cameraEffectivePos :
@@ -517,7 +517,7 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
 
                 // Do fade calculation for light if both fade & draw distance defined
                 if (vertexLight->GetLightType() != LIGHT_DIRECTIONAL && fadeEnd > 0.0f && fadeStart > 0.0f && fadeStart < fadeEnd)
-                    fade = Min(1.0f - (vertexLight->GetDistance() - fadeStart) / (fadeEnd - fadeStart), 1.0f);
+                    fade = std::min(1.0f - (vertexLight->GetDistance() - fadeStart) / (fadeEnd - fadeStart), 1.0f);
 
                 Color color = vertexLight->GetEffectiveColor() * fade;
                 vertexLights[i * 3] = Vector4(color.r_, color.g_, color.b_, invRange);
@@ -636,7 +636,7 @@ void BatchGroup::Draw(View *view, Camera *camera, bool allowDepthWrite) const
         // Get the geometry vertex buffers, then add the instancing stream buffer
         // Hack: use a const_cast to avoid dynamic allocation of new temp vectors
         std::vector<SharedPtr<VertexBuffer>> &vertexBuffers =
-            const_cast<std::vector<SharedPtr<VertexBuffer>> &>(geometry_->GetVertexBuffers());
+                const_cast<std::vector<SharedPtr<VertexBuffer>> &>(geometry_->GetVertexBuffers());
         std::vector<unsigned> &elementMasks = const_cast<std::vector<unsigned> &>(geometry_->GetVertexElementMasks());
         vertexBuffers.push_back(SharedPtr<VertexBuffer>(instanceBuffer));
         elementMasks.push_back(instanceBuffer->GetElementMask());
@@ -708,7 +708,7 @@ void BatchQueue::SortFrontToBack()
         {
             float minDistance = M_INFINITY;
             for (const InstanceData &j : elem.instances_)
-                minDistance = Min(minDistance, j.distance_);
+                minDistance = std::min(minDistance, j.distance_);
             elem.distance_  = minDistance;
         }
     }

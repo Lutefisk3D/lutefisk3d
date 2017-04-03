@@ -25,6 +25,7 @@
 #include "../Math/MathDefs.h"
 #include "../IO/FileSystem.h" // used for minidump support functions
 
+#include <QtCore/QThread>
 #ifndef MINI_URHO
 #include <SDL2/SDL.h>
 #endif
@@ -39,8 +40,7 @@
 #if defined(IOS)
 #include "../Math/MathDefs.h"
 #include <mach/mach_host.h>
-#elif !defined(ANDROID) && !defined(RPI) && !defined(__EMSCRIPTEN__)
-#include <LibCpuId/libcpuid.h>
+#elif !defined(ANDROID) && !defined(RPI)
 #endif
 
 #ifdef _WIN32
@@ -50,13 +50,9 @@
 #include <unistd.h>
 #endif
 
-#if defined(__EMSCRIPTEN__) && defined(__EMSCRIPTEN_PTHREADS__)
-#include <emscripten/threading.h>
-#endif
-
 #if defined(_MSC_VER)
 #include <float.h>
-#elif !defined(ANDROID) && !defined(IOS) && !defined(RPI) && !defined(__EMSCRIPTEN__)
+#elif !defined(ANDROID) && !defined(IOS) && !defined(RPI)
 // From http://stereopsis.com/FPU.html
 
 #define FPU_CW_PREC_MASK        0x0300
@@ -92,27 +88,10 @@ static QString currentLine;
 static QStringList arguments;
 static QString miniDumpDir;
 
-#if defined(IOS)
-static void GetCPUData(host_basic_info_data_t* data)
-{
-    mach_msg_type_number_t infoCount;
-    infoCount = HOST_BASIC_INFO_COUNT;
-    host_info(mach_host_self(), HOST_BASIC_INFO, (host_info_t)data, &infoCount);
-}
-#elif !defined(ANDROID) && !defined(RPI) && !defined(__EMSCRIPTEN__)
-static void GetCPUData(struct cpu_id_t* data)
-{
-    if (cpu_identify(nullptr, data) < 0)
-    {
-        data->num_logical_cpus = 1;
-        data->num_cores = 1;
-    }
-}
-#endif
 
 void InitFPU()
 {
-#if !defined(URHO3D_LUAJIT) && !defined(ANDROID) && !defined(IOS) && !defined(RPI) && !defined(__x86_64__) && !defined(_M_AMD64) && !defined(__EMSCRIPTEN__)
+#if !defined(URHO3D_LUAJIT) && !defined(ANDROID) && !defined(IOS) && !defined(RPI) && !defined(__x86_64__) && !defined(_M_AMD64)
     // Make sure FPU is in round-to-nearest, single precision mode
     // This ensures Direct3D and OpenGL behave similarly, and all threads behave similarly
 #ifdef _MSC_VER
@@ -354,79 +333,15 @@ QString GetPlatform()
 #endif
 }
 
-#if defined(ANDROID) || defined(RPI)
-static unsigned GetArmCPUCount()
-{
-    FILE* fp;
-    int res, i = -1, j = -1;
-
-    fp = fopen("/sys/devices/system/cpu/present", "r");
-    // If failed, return at least 1
-    if (fp == 0)
-        return 1;
-
-    res = fscanf(fp, "%d-%d", &i, &j);
-    fclose(fp);
-
-    if (res == 1 && i == 0)
-        return 1;
-    else if (res == 2 && i == 0)
-        return j + 1;
-
-    // If failed, return at least 1
-    return 1;
-}
-#endif
 
 unsigned GetNumPhysicalCPUs()
 {
-#if defined(IOS)
-    host_basic_info_data_t data;
-    GetCPUData(&data);
-#if defined(TARGET_IPHONE_SIMULATOR)
-    // Hardcoded to dual-core on simulator mode even if the host has more
-    return Min(2, data.physical_cpu);
-#else
-    return data.physical_cpu;
-#endif
-#elif defined(ANDROID) || defined(RPI)
-    return GetArmCPUCount();
-#elif defined(__EMSCRIPTEN__)
-#ifdef __EMSCRIPTEN_PTHREADS__
-    return emscripten_num_logical_cores();
-#else
-    return 1; // Targeting a single-threaded Emscripten build.
-#endif
-#else
-    struct cpu_id_t data;
-    GetCPUData(&data);
-    return (unsigned)data.num_cores;
-#endif
+    return QThread::idealThreadCount();
 }
 
 unsigned GetNumLogicalCPUs()
 {
-#if defined(IOS)
-    host_basic_info_data_t data;
-    GetCPUData(&data);
-#if defined(TARGET_IPHONE_SIMULATOR)
-    return Min(2, data.logical_cpu);
-#else
-    return data.logical_cpu;
-#endif
-#elif defined(ANDROID) || defined (RPI)
-    return GetArmCPUCount();
-#elif defined(__EMSCRIPTEN__)
-#ifdef __EMSCRIPTEN_PTHREADS__
-    return emscripten_num_logical_cores();
-#else
-    return 1; // Targeting a single-threaded Emscripten build.
-#endif
-#else
-    struct cpu_id_t data;
-    GetCPUData(&data);
-    return (unsigned)data.num_logical_cpus;
-#endif
+    return QThread::idealThreadCount();
 }
 void SetMiniDumpDir(const QString& pathName)
 {

@@ -126,8 +126,8 @@ void CrowdAgent::ApplyAttributes()
     maxSpeed_ = Max(0.f, maxSpeed_);
     radius_ = Max(0.f, radius_);
     height_ = Max(0.f, height_);
-    queryFilterType_ = Min(queryFilterType_, DT_CROWD_MAX_QUERY_FILTER_TYPE - 1);
-    obstacleAvoidanceType_ = Min(obstacleAvoidanceType_, DT_CROWD_MAX_OBSTAVOIDANCE_PARAMS - 1);
+    queryFilterType_ = std::min<unsigned>(queryFilterType_, DT_CROWD_MAX_QUERY_FILTER_TYPE - 1);
+    obstacleAvoidanceType_ = std::min<unsigned>(obstacleAvoidanceType_, DT_CROWD_MAX_OBSTAVOIDANCE_PARAMS - 1);
     UpdateParameters();
 
     // Set or reset target after we have attributes applied to the agent's parameters.

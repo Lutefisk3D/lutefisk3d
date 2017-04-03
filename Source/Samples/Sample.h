@@ -23,7 +23,7 @@
 #pragma once
 
 #include <Lutefisk3D/Engine/Application.h>
-
+#include <Lutefisk3D/Input/Input.h>
 #include <QString>
 
 namespace Urho3D
@@ -71,6 +71,8 @@ protected:
     virtual QString GetScreenJoystickPatchString() const { return QString::null; }
     /// Initialize touch input on mobile platform.
     void InitTouchInput();
+    /// Initialize mouse mode on non-web platform.
+    void InitMouseMode(MouseMode mode);
     /// Control logo visibility.
     void SetLogoVisible(bool enable);
 
@@ -86,7 +88,8 @@ protected:
     float pitch_;
     /// Flag to indicate whether touch input has been enabled.
     bool touchEnabled_;
-
+    /// Mouse mode option to use in the sample.
+    MouseMode useMouseMode_;
 private:
     /// Create logo.
     void CreateLogo();
@@ -94,8 +97,14 @@ private:
     void SetWindowTitleAndIcon();
     /// Create console and debug HUD.
     void CreateConsoleAndDebugHud();
+    /// Handle request for mouse mode on web platform.
+    void HandleMouseModeRequest(StringHash eventType, VariantMap& eventData);
+    /// Handle request for mouse mode change on web platform.
+    void HandleMouseModeChange(StringHash eventType, VariantMap& eventData);
     /// Handle key down event to process key controls common to all samples.
     void HandleKeyDown(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+    /// Handle key up event to process key controls common to all samples.
+    void HandleKeyUp(StringHash eventType, VariantMap& eventData);
     /// Handle scene update event to control camera's pitch and yaw for all samples.
     void HandleSceneUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
     /// Handle touch begin event to initialize touch input on desktop platform.

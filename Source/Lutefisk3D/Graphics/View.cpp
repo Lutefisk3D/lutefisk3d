@@ -903,8 +903,8 @@ void View::GetDrawables()
         {
             geometries_.insert(geometries_.end(),result.geometries_.begin(),result.geometries_.end());
             lights_.insert(lights_.end(),result.lights_.begin(),result.lights_.end());
-            minZ_ = Min(minZ_, result.minZ_);
-            maxZ_ = Max(maxZ_, result.maxZ_);
+            minZ_ = std::min(minZ_, result.minZ_);
+            maxZ_ = std::max(maxZ_, result.maxZ_);
         }
     }
     else
@@ -2285,8 +2285,8 @@ void View::ProcessShadowCasters(LightQueryResult& query, const std::vector<Drawa
     if (type != LIGHT_DIRECTIONAL)
         lightViewFrustum = cullCamera_->GetSplitFrustum(minZ_, maxZ_).Transformed(lightView);
     else
-        lightViewFrustum = cullCamera_->GetSplitFrustum(Max(minZ_, entry.shadowNearSplits_),
-                                                    Min(maxZ_, entry.shadowFarSplits_)).Transformed(lightView);
+        lightViewFrustum = cullCamera_->GetSplitFrustum(std::max(minZ_, entry.shadowNearSplits_),
+                                                    std::min(maxZ_, entry.shadowFarSplits_)).Transformed(lightView);
 
     BoundingBox lightViewFrustumBox(lightViewFrustum);
 
@@ -2428,7 +2428,7 @@ void View::SetupShadowCameras(LightQueryResult& query)
             if (nearSplit > cullCamera_->GetFarClip())
                 break;
 
-            farSplit = Min(cullCamera_->GetFarClip(), cascade.splits_[splits]);
+            farSplit = std::min(cullCamera_->GetFarClip(), cascade.splits_[splits]);
             if (farSplit <= nearSplit)
                 break;
 
@@ -2501,12 +2501,12 @@ void View::SetupDirLightShadowCamera(Camera* shadowCamera, Light* light, float n
     shadowCameraNode->SetTransform(pos, lightNode->GetWorldRotation());
 
     // Calculate main camera shadowed frustum in light's view space
-    farSplit = Min(farSplit, cullCamera_->GetFarClip());
+    farSplit = std::min(farSplit, cullCamera_->GetFarClip());
     // Use the scene Z bounds to limit frustum size if applicable
     if (parameters.focus_)
     {
-        nearSplit = Max(minZ_, nearSplit);
-        farSplit = Min(maxZ_, farSplit);
+        nearSplit = std::max(minZ_, nearSplit);
+        farSplit = std::min(maxZ_, farSplit);
     }
 
     Frustum splitFrustum = cullCamera_->GetSplitFrustum(nearSplit, farSplit);

@@ -28,7 +28,7 @@
 
 namespace gl {
 enum class GLenum : uint32_t;
-enum class GLboolean : unsigned char;
+class GLboolean;
 }
 namespace Urho3D
 {

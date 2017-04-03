@@ -113,9 +113,9 @@ void AnimationController::Update(float timeStep)
                 {
                     float weightDelta = 1.0f / fadeTime * timeStep;
                     if (currentWeight < targetWeight)
-                        currentWeight = Min(currentWeight + weightDelta, targetWeight);
+                        currentWeight = std::min(currentWeight + weightDelta, targetWeight);
                     else if (currentWeight > targetWeight)
-                        currentWeight = Max(currentWeight - weightDelta, targetWeight);
+                        currentWeight = std::max(currentWeight - weightDelta, targetWeight);
                     state->SetWeight(currentWeight);
                 }
                 else
@@ -384,6 +384,17 @@ bool AnimationController::SetLooped(const QString& name, bool enable)
     return true;
 }
 
+bool AnimationController::SetBlendingMode(const QString& name, AnimationBlendMode mode)
+{
+    AnimationState* state = GetAnimationState(name);
+    if (!state)
+        return false;
+
+    state->SetBlendingMode(mode);
+    MarkNetworkUpdate();
+    return true;
+}
+
 bool AnimationController::SetAutoFade(const QString& name, float fadeOutTime)
 {
     unsigned index;
@@ -473,6 +484,12 @@ bool AnimationController::IsLooped(const QString& name) const
 {
     AnimationState* state = GetAnimationState(name);
     return state ? state->IsLooped() : false;
+}
+
+AnimationBlendMode AnimationController::GetBlendingMode(const QString& name) const
+{
+    AnimationState* state = GetAnimationState(name);
+    return state ? state->GetBlendingMode() : ABM_LERP;
 }
 
 float AnimationController::GetLength(const QString& name) const

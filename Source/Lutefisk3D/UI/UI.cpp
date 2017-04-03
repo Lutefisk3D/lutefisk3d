@@ -1419,9 +1419,11 @@ void UI::HandleMouseMove(StringHash eventType, VariantMap& eventData)
     {
         if (!input->IsMouseVisible())
         {
-            // Relative mouse motion: move cursor only when visible
-            if (cursor_->IsVisible())
+            if (!input->IsMouseLocked())
+                cursor_->SetPosition(IntVector2(eventData[P_X].GetInt(), eventData[P_Y].GetInt()));
+            else if (cursor_->IsVisible())
             {
+                // Relative mouse motion: move cursor only when visible
                 IntVector2 pos = cursor_->GetPosition();
                 pos.x_ += eventData[P_DX].GetInt();
                 pos.y_ += eventData[P_DY].GetInt();
@@ -1573,7 +1575,7 @@ void UI::HandleKeyDown(StringHash eventType, VariantMap& eventData)
     int key = eventData[P_KEY].GetInt();
 
     // Cancel UI dragging
-    if (key == KEY_ESC && dragElementsCount_ > 0)
+    if (key == KEY_ESCAPE && dragElementsCount_ > 0)
     {
         ProcessDragCancel();
 
@@ -1581,7 +1583,7 @@ void UI::HandleKeyDown(StringHash eventType, VariantMap& eventData)
     }
 
     // Dismiss modal element if any when ESC key is pressed
-    if (key == KEY_ESC && HasModalElement())
+    if (key == KEY_ESCAPE && HasModalElement())
     {
         UIElement* element = rootModalElement_->GetChild(rootModalElement_->GetNumChildren() - 1);
         if (element->GetVars().contains(VAR_ORIGIN))
@@ -1631,7 +1633,7 @@ void UI::HandleKeyDown(StringHash eventType, VariantMap& eventData)
             }
         }
         // Defocus the element
-        else if (key == KEY_ESC && element->GetFocusMode() == FM_FOCUSABLE_DEFOCUSABLE)
+        else if (key == KEY_ESCAPE && element->GetFocusMode() == FM_FOCUSABLE_DEFOCUSABLE)
             element->SetFocus(false);
         // If none of the special keys, pass the key to the focused element
         else

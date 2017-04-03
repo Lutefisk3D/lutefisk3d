@@ -45,14 +45,15 @@ namespace Urho3D
 extern const char* GEOMETRY_CATEGORY;
 
 static const Vector3 DEFAULT_SPACING(1.0f, 0.25f, 1.0f);
-static const unsigned MAX_LOD_LEVELS = 4;
-static const int DEFAULT_PATCH_SIZE = 32;
-static const int MIN_PATCH_SIZE = 4;
-static const int MAX_PATCH_SIZE = 128;
-static const unsigned STITCH_NORTH = 1;
-static const unsigned STITCH_SOUTH = 2;
-static const unsigned STITCH_WEST = 4;
-static const unsigned STITCH_EAST = 8;
+static const constexpr unsigned MAX_LOD_LEVELS = 4;
+static const constexpr unsigned MIN_LOD_LEVELS = 1;
+static const constexpr int DEFAULT_PATCH_SIZE = 32;
+static const constexpr int MIN_PATCH_SIZE = 4;
+static const constexpr int MAX_PATCH_SIZE = 128;
+static const constexpr unsigned STITCH_NORTH = 1;
+static const constexpr unsigned STITCH_SOUTH = 2;
+static const constexpr unsigned STITCH_WEST = 4;
+static const constexpr unsigned STITCH_EAST = 8;
 
 inline void GrowUpdateRegion(IntRect& updateRegion, int x, int y)
 {
@@ -188,7 +189,7 @@ void Terrain::SetSpacing(const Vector3& spacing)
 
 void Terrain::SetMaxLodLevels(unsigned levels)
 {
-    levels = Clamp((int)levels, 1, MAX_LOD_LEVELS);
+    levels = Clamp(levels, MIN_LOD_LEVELS, MAX_LOD_LEVELS);
     if (levels != maxLodLevels_)
     {
         maxLodLevels_ = levels;
@@ -476,12 +477,11 @@ IntVector2 Terrain::WorldToHeightMap(const Vector3& worldPosition) const
         return IntVector2::ZERO;
 
     Vector3 position = node_->GetWorldTransform().Inverse() * worldPosition;
-    int xPos = (int)((position.x_ - patchWorldOrigin_.x_) / spacing_.x_);
-    int zPos = (int)((position.z_ - patchWorldOrigin_.y_) / spacing_.z_);
-    Clamp(xPos, 0, numVertices_.x_);
-    Clamp(zPos, 0, numVertices_.y_);
-
-    return IntVector2(xPos, numVertices_.y_ - zPos);
+    int xPos = (int)((position.x_ - patchWorldOrigin_.x_) / spacing_.x_ + 0.5f);
+    int zPos = (int)((position.z_ - patchWorldOrigin_.y_) / spacing_.z_ + 0.5f);
+    xPos = Clamp(xPos, 0, numVertices_.x_ - 1);
+    zPos = Clamp(zPos, 0, numVertices_.y_ - 1);
+    return IntVector2(xPos, numVertices_.y_ - 1 - zPos);
 }
 
 void Terrain::CreatePatchGeometry(TerrainPatch* patch)
@@ -539,14 +539,14 @@ void Terrain::CreatePatchGeometry(TerrainPatch* patch)
                 float minHeight = position.y_;
                 if (halfLodExpand > 0 && (x & lodExpand) == 0 && (z & lodExpand) == 0)
                 {
-                    int minX = Max(xPos - halfLodExpand, 0);
-                    int maxX = Min(xPos + halfLodExpand, numVertices_.x_ - 1);
-                    int minZ = Max(zPos - halfLodExpand, 0);
-                    int maxZ = Min(zPos + halfLodExpand, numVertices_.y_ - 1);
+                    int minX = std::max(xPos - halfLodExpand, 0);
+                    int maxX = std::min(xPos + halfLodExpand, numVertices_.x_ - 1);
+                    int minZ = std::max(zPos - halfLodExpand, 0);
+                    int maxZ = std::min(zPos + halfLodExpand, numVertices_.y_ - 1);
                     for (int nZ = minZ; nZ <= maxZ; ++nZ)
                     {
                         for (int nX = minX; nX <= maxX; ++nX)
-                            minHeight = Min(minHeight, GetRawHeight(nX, nZ));
+                            minHeight = std::min(minHeight, GetRawHeight(nX, nZ));
                     }
                 }
                 *occlusionData++ = position.x_;
@@ -651,7 +651,7 @@ void Terrain::SetPatchSizeAttr(int value)
 
 void Terrain::SetMaxLodLevelsAttr(unsigned value)
 {
-    value = Clamp((int)value, 1, MAX_LOD_LEVELS);
+    value = Clamp(value, MIN_LOD_LEVELS, MAX_LOD_LEVELS);
 
     if (value != maxLodLevels_)
     {
@@ -846,10 +846,10 @@ void Terrain::CreateGeometry()
             updateRegion.top_ -= lodExpand;
             updateRegion.bottom_ += lodExpand + 1;
 
-            int sX = Max(updateRegion.left_ / patchSize_, 0);
-            int eX = Min(updateRegion.right_ / patchSize_, numPatches_.x_ - 1);
-            int sY = Max(updateRegion.top_ / patchSize_, 0);
-            int eY = Min(updateRegion.bottom_ / patchSize_, numPatches_.y_ - 1);
+            int sX = std::max(updateRegion.left_ / patchSize_, 0);
+            int eX = std::min(updateRegion.right_ / patchSize_, numPatches_.x_ - 1);
+            int sY = std::max(updateRegion.top_ / patchSize_, 0);
+            int eY = std::min(updateRegion.bottom_ / patchSize_, numPatches_.y_ - 1);
             for (int y = sY; y <= eY; ++y)
             {
                 for (int x = sX; x <= eX; ++x)
@@ -1091,7 +1091,7 @@ void Terrain::CreateIndexData()
                     indices.push_back((z + 2 * skip) * row + x);
                     indices.push_back((z + skip) * row + x + skip);
                     indices.push_back(z * row + x);
-                    if (x < patchSize_ - skip * 2 || (j & STITCH_NORTH) == 0)
+                    if (z < patchSize_ - skip * 2 || (j & STITCH_NORTH) == 0)
                     {
                         indices.push_back((z + 2 * skip) * row + x);
                         indices.push_back((z + 2 * skip) * row + x + skip);

@@ -126,6 +126,8 @@ void Console::SetDefaultStyle(XMLFile* style)
 void Console::SetVisible(bool enable)
 {
     Input* input = GetSubsystem<Input>();
+    UI* ui = GetSubsystem<UI>();
+    Cursor* cursor = ui->GetCursor();
     background_->SetVisible(enable);
     closeButton_->SetVisible(enable);
     if (enable)
@@ -134,13 +136,18 @@ void Console::SetVisible(bool enable)
         bool hasInterpreter = PopulateInterpreter();
         commandLine_->SetVisible(hasInterpreter);
         if (hasInterpreter && focusOnShow_)
-            GetSubsystem<UI>()->SetFocusElement(lineEdit_);
+            ui->SetFocusElement(lineEdit_);
 
         // Ensure the background has no empty space when shown without the lineedit
         background_->SetHeight(background_->GetMinHeight());
 
+        if (!cursor)
+        {
         // Show OS mouse
+            input->SetMouseMode(MM_FREE, true);
         input->SetMouseVisible(true, true);
+    }
+        input->SetMouseGrabbed(false, true);
     }
     else
     {
@@ -149,7 +156,14 @@ void Console::SetVisible(bool enable)
         lineEdit_->SetFocus(false);
 
         // Restore OS mouse visibility
+        if (!cursor)
+        {
+            // Restore OS mouse visibility
+            input->ResetMouseMode();
         input->ResetMouseVisible();
+        }
+
+        input->ResetMouseGrabbed();
     }
 }
 

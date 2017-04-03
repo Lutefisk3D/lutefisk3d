@@ -32,16 +32,6 @@
 namespace Urho3D
 {
 
-#if defined(IOS) || defined(__EMSCRIPTEN__)
-// Code for supporting SDL_iPhoneSetAnimationCallback() and emscripten_set_main_loop_arg()
-#if defined(__EMSCRIPTEN__)
-#include <emscripten/emscripten.h>
-#endif
-void RunFrame(void* data)
-{
-    static_cast<Engine*>(data)->RunFrame();
-}
-#endif
 Application::Application(Context* context) :
     Object(context),
     exitCode_(EXIT_SUCCESS)
@@ -57,9 +47,6 @@ Application::Application(Context* context) :
 
 int Application::Run()
 {
-    // Emscripten-specific: C++ exceptions are turned off by default in -O1 (and above), unless '-s DISABLE_EXCEPTION_CATCHING=0' flag is set
-    // Urho3D build configuration uses -O3 (Release), -O2 (RelWithDebInfo), and -O0 (Debug)
-    // Thus, the try-catch block below should be optimised out except in Debug build configuration
     try
     {
         Setup();
@@ -77,20 +64,10 @@ int Application::Run()
             return exitCode_;
 
         // Platforms other than iOS and Emscripten run a blocking main loop
-        #if !defined(IOS) && !defined(__EMSCRIPTEN__)
         while (!engine_->IsExiting())
             engine_->RunFrame();
 
         Stop();
-        // iOS will setup a timer for running animation frames so eg. Game Center can run. In this case we do not
-        // support calling the Stop() function, as the application will never stop manually
-        #else
-        #if defined(IOS)
-        SDL_iPhoneSetAnimationCallback(GetSubsystem<Graphics>()->GetImpl()->GetWindow(), 1, &RunFrame, engine_);
-        #elif defined(__EMSCRIPTEN__)
-        emscripten_set_main_loop_arg(RunFrame, engine_, 0, 1);
-        #endif
-        #endif
 
         return exitCode_;
     }

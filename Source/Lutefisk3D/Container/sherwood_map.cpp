@@ -36,7 +36,7 @@ namespace detail
 // you now have large gaps which you would hit if somebody called reserve() with an unlucky number.
 // 4. to fill the gaps for every prime p go to wolfram alpha and get ClosestPrime(p * 2^(1/3)) and ClosestPrime(p * 2^(2/3)) and put those in the gaps
 // 5. get PrevPrime(2^64) and put it at the end
-static constexpr const size_t prime_list[] =
+static constexpr const uint64_t prime_list[] =
 {
     2llu, 3llu, 5llu, 7llu, 11llu, 13llu, 17llu, 23llu, 29llu, 37llu, 47llu,
     59llu, 73llu, 97llu, 127llu, 151llu, 197llu, 251llu, 313llu, 397llu,

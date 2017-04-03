@@ -31,7 +31,7 @@ namespace Urho3D
 {
 
 /// Profiling data for one block in the profiling tree.
-class ProfilerBlock
+class URHO3D_API ProfilerBlock
 {
 public:
     /// Construct with the specified parent block and name.
@@ -62,9 +62,10 @@ public:
     /// Destruct. Free the child blocks.
     ~ProfilerBlock()
     {
-        for (ProfilerBlock* i : children_)
+        for (ProfilerBlock*& i : children_)
         {
             delete i;
+            i = nullptr;
         }
 
         delete [] name_;
@@ -169,7 +170,7 @@ public:
 };
 
 /// Hierarchical performance profiler subsystem.
-class Profiler : public Object
+class URHO3D_API Profiler : public Object
 {
     URHO3D_OBJECT(Profiler, Object);
 
@@ -228,7 +229,7 @@ protected:
 };
 
 /// Helper class for automatically beginning and ending a profiling block
-class AutoProfileBlock
+class URHO3D_API AutoProfileBlock
 {
 public:
     /// Construct. Begin a profiling block with the specified name and optional call count.

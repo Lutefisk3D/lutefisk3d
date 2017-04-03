@@ -51,9 +51,9 @@ Node::Node(Context* context) :
     position_(Vector3::ZERO),
     rotation_(Quaternion::IDENTITY),
     scale_(Vector3::ONE),
-    worldRotation_(Quaternion::IDENTITY)
+    worldRotation_(Quaternion::IDENTITY),
+    impl_(new NodeImpl)
 {
-    impl_ = new NodeImpl();
     impl_->owner_ = 0;
 }
 
@@ -65,7 +65,6 @@ Node::~Node()
     // Remove from the scene
     if (scene_ != nullptr)
         scene_->NodeRemoved(this);
-    delete impl_;
 }
 
 void Node::RegisterObject(Context* context)
@@ -491,6 +490,10 @@ void Node::SetTransform(const Vector3& position, const Quaternion& rotation, con
     MarkNetworkUpdate();
 }
 
+void Node::SetTransform(const Matrix3x4& matrix)
+{
+    SetTransform(matrix.Translation(), matrix.Rotation(), matrix.Scale());
+}
 void Node::SetWorldPosition(const Vector3& position)
 {
     SetPosition((parent_ == scene_ || (parent_ == nullptr)) ? position : parent_->GetWorldTransform().Inverse() * position);
@@ -765,11 +768,16 @@ void Node::MarkDirty()
     }
 }
 
-Node* Node::CreateChild(const QString& name, CreateMode mode, unsigned id)
+Node* Node::CreateChild(const QString& name, CreateMode mode, unsigned id, bool temporary)
 {
-    Node* newNode = CreateChild(id, mode);
+    Node* newNode = CreateChild(id, mode, temporary);
     newNode->SetName(name);
     return newNode;
+}
+
+Node* Node::CreateTemporaryChild(const QString& name, CreateMode mode, unsigned id)
+{
+    return CreateChild(name, mode, id, true);
 }
 
 void Node::AddChild(Node* node, unsigned index)
@@ -778,13 +786,8 @@ void Node::AddChild(Node* node, unsigned index)
     if ((node == nullptr) || node == this || node->parent_ == this)
         return;
     // Check for possible cyclic parent assignment
-    Node* parent = parent_;
-    while (parent != nullptr)
-    {
-        if (parent == node)
+    if (IsChildOf(node))
             return;
-        parent = parent->parent_;
-    }
     auto location = (index != M_MAX_UNSIGNED) ? children_.begin()+index : children_.end();
     // Keep a shared ptr to the node while transfering
     SharedPtr<Node> nodeShared(node);
@@ -1202,7 +1205,12 @@ void Node::GetChildren(std::vector<Node*>& dest, bool recursive) const
     else
         GetChildrenRecursive(dest);
 }
-
+std::vector<Node*> Node::GetChildren(bool recursive) const
+{
+    std::vector<Node*> dest;
+    GetChildren(dest, recursive);
+    return dest;
+}
 void Node::GetChildrenWithComponent(std::vector<Node*>& dest, StringHash type, bool recursive) const
 {
     dest.clear();
@@ -1219,6 +1227,13 @@ void Node::GetChildrenWithComponent(std::vector<Node*>& dest, StringHash type, b
         GetChildrenWithComponentRecursive(dest, type);
 }
 
+std::vector<Node*> Node::GetChildrenWithComponent(StringHash type, bool recursive) const
+{
+    std::vector<Node*> dest;
+    GetChildrenWithComponent(dest, type, recursive);
+    return dest;
+}
+
 void Node::GetChildrenWithTag(std::vector<Node*>& dest, const QString & tag, bool recursive /*= true*/) const
 {
     dest.clear();
@@ -1233,6 +1248,12 @@ void Node::GetChildrenWithTag(std::vector<Node*>& dest, const QString & tag, boo
     }
     else
         GetChildrenWithTagRecursive(dest, tag);
+}
+std::vector<Node*> Node::GetChildrenWithTag(const QString& tag, bool recursive) const
+{
+    std::vector<Node*> dest;
+    GetChildrenWithTag(dest, tag, recursive);
+    return dest;
 }
 Node* Node::GetChild(unsigned index) const
 {
@@ -1308,6 +1329,18 @@ bool Node::HasComponent(StringHash type) const
 bool Node::HasTag(const QString & tag) const
 {
     return impl_->tags_.contains(tag);
+}
+
+bool Node::IsChildOf(Node* node) const
+{
+    Node* parent = parent_;
+    while (parent)
+    {
+        if (parent == node)
+            return true;
+        parent = parent->parent_;
+    }
+    return false;
 }
 
 const Variant& Node::GetVar(StringHash key) const
@@ -1509,7 +1542,7 @@ bool Node::Load(Deserializer& source, SceneResolver& resolver, bool readChildren
     return true;
 }
 
-bool Node::LoadXML(const XMLElement& source, SceneResolver& resolver, bool loadChildren, bool rewriteIDs, CreateMode mode)
+bool Node::LoadXML(const XMLElement& source, SceneResolver& resolver, bool readChildren, bool rewriteIDs, CreateMode mode)
 {
     // Remove all children and components first in case this is not a fresh load
     RemoveAllChildren();
@@ -1535,7 +1568,7 @@ bool Node::LoadXML(const XMLElement& source, SceneResolver& resolver, bool loadC
         compElem = compElem.GetNext("component");
     }
 
-    if (!loadChildren)
+    if (!readChildren)
         return true;
 
     XMLElement childElem = source.GetChild("node");
@@ -1545,7 +1578,7 @@ bool Node::LoadXML(const XMLElement& source, SceneResolver& resolver, bool loadC
         Node* newNode = CreateChild(rewriteIDs ? 0 : nodeID, (mode == REPLICATED && nodeID < FIRST_LOCAL_ID) ? REPLICATED :
                                                                                                                LOCAL);
         resolver.AddNode(nodeID, newNode);
-        if (!newNode->LoadXML(childElem, resolver, loadChildren, rewriteIDs, mode))
+        if (!newNode->LoadXML(childElem, resolver, readChildren, rewriteIDs, mode))
             return false;
 
         childElem = childElem.GetNext("node");
@@ -1554,7 +1587,7 @@ bool Node::LoadXML(const XMLElement& source, SceneResolver& resolver, bool loadC
     return true;
 }
 
-bool Node::LoadJSON(const JSONValue& source, SceneResolver& resolver, bool loadChildren, bool rewriteIDs, CreateMode mode)
+bool Node::LoadJSON(const JSONValue& source, SceneResolver& resolver, bool readChildren, bool rewriteIDs, CreateMode mode)
 {
     // Remove all children and components first in case this is not a fresh load
     RemoveAllChildren();
@@ -1580,7 +1613,7 @@ bool Node::LoadJSON(const JSONValue& source, SceneResolver& resolver, bool loadC
         }
     }
 
-    if (!loadChildren)
+    if (!readChildren)
         return true;
 
     const JSONArray& childrenArray = source.Get("children").GetArray();
@@ -1592,7 +1625,7 @@ bool Node::LoadJSON(const JSONValue& source, SceneResolver& resolver, bool loadC
         Node* newNode = CreateChild(rewriteIDs ? 0 : nodeID, (mode == REPLICATED && nodeID < FIRST_LOCAL_ID) ? REPLICATED :
                                                                                                                LOCAL);
         resolver.AddNode(nodeID, newNode);
-        if (!newNode->LoadJSON(childVal, resolver, loadChildren, rewriteIDs, mode))
+        if (!newNode->LoadJSON(childVal, resolver, readChildren, rewriteIDs, mode))
             return false;
     }
 
@@ -1716,9 +1749,10 @@ void Node::MarkReplicationDirty()
     }
 }
 
-Node* Node::CreateChild(unsigned id, CreateMode mode)
+Node* Node::CreateChild(unsigned id, CreateMode mode, bool temporary)
 {
     SharedPtr<Node> newNode(new Node(context_));
+    newNode->SetTemporary(temporary);
 
     // If zero ID specified, or the ID is already taken, let the scene assign
     if (scene_ != nullptr)

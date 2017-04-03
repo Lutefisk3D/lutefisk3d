@@ -43,7 +43,7 @@ struct ReplicationState;
 /// Base class for objects with automatic serialization through attributes.
 class URHO3D_API Serializable : public Object
 {
-    URHO3D_OBJECT(Serializable, Object);
+    URHO3D_OBJECT(Serializable, Object)
 
 public:
     /// Construct.
@@ -120,11 +120,11 @@ public:
     /// Return whether an attribute's network updates are being intercepted.
     bool GetInterceptNetworkUpdate(const QString& attributeName) const;
     /// Return the network attribute state, if allocated.
-    NetworkState* GetNetworkState() const { return networkState_; }
+    NetworkState* GetNetworkState() const { return networkState_.get(); }
 
 protected:
     /// Network attribute state.
-    NetworkState* networkState_;
+    std::unique_ptr<NetworkState> networkState_;
 
 private:
     /// Set instance-level default value. Allocate the internal data structure as necessary.
@@ -133,7 +133,7 @@ private:
     Variant GetInstanceDefault(const QString& name) const;
 
     /// Attribute default value at each instance level.
-    VariantMap* instanceDefaultValues_;
+    std::unique_ptr<VariantMap> instanceDefaultValues_;
     /// Temporary flag.
     bool temporary_;
 };
@@ -257,7 +257,43 @@ public:
     /// Class-specific pointer to setter function.
     SetFunctionPtr setFunction_;
 };
+/// Template implementation of the attribute accessor that uses free functions invoke helper class.
+template <typename T, typename U, typename Trait> class AttributeAccessorFreeImpl : public AttributeAccessor
+{
+public:
+    typedef typename Trait::ReturnType(*GetFunctionPtr)(const T*);
+    typedef void(*SetFunctionPtr)(T*, typename Trait::ParameterType);
 
+    /// Construct with function pointers.
+    AttributeAccessorFreeImpl(GetFunctionPtr getFunction, SetFunctionPtr setFunction) :
+        getFunction_(getFunction),
+        setFunction_(setFunction)
+    {
+        assert(getFunction_);
+        assert(setFunction_);
+    }
+
+    /// Invoke getter function.
+    virtual void Get(const Serializable* ptr, Variant& dest) const
+    {
+        assert(ptr);
+        const T* classPtr = static_cast<const T*>(ptr);
+        dest = (*getFunction_)(classPtr);
+    }
+
+    /// Invoke setter function.
+    virtual void Set(Serializable* ptr, const Variant& value)
+    {
+        assert(ptr);
+        T* classPtr = static_cast<T*>(ptr);
+        (*setFunction_)(classPtr, value.Get<U>());
+    }
+
+    /// Class-specific pointer to getter function.
+    GetFunctionPtr getFunction_;
+    /// Class-specific pointer to setter function.
+    SetFunctionPtr setFunction_;
+};
 // The following macros need to be used within a class member function such as ClassName::RegisterObject().
 // A variable called "context" needs to exist in the current scope and point to a valid Context object.
 
@@ -277,5 +313,9 @@ public:
 #define URHO3D_MIXED_ACCESSOR_ATTRIBUTE(name, getFunction, setFunction, typeName, defaultValue, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(GetVariantType<typeName >(), name, new Urho3D::AttributeAccessorImpl<ClassName, typeName, MixedAttributeTrait<typeName > >(&ClassName::getFunction, &ClassName::setFunction), defaultValue, mode))
 /// Update the default value of an already registered attribute.
 #define URHO3D_UPDATE_ATTRIBUTE_DEFAULT_VALUE(name, defaultValue) context->UpdateAttributeDefaultValue<ClassName>(name, defaultValue)
+/// Define a variant structure attribute that uses get and set functions.
+#define URHO3D_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE(name, getFunction, setFunction, typeName, defaultValue, variantStructureElementNames, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(Urho3D::GetVariantType<typeName >(), name, new Urho3D::AttributeAccessorImpl<ClassName, typeName, Urho3D::AttributeTrait<typeName > >(&ClassName::getFunction, &ClassName::setFunction), defaultValue, variantStructureElementNames, mode))
+/// Define a variant structure attribute that uses get and set functions, where the get function returns by value, but the set function uses a reference.
+#define URHO3D_MIXED_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE(name, getFunction, setFunction, typeName, defaultValue, variantStructureElementNames, mode) context->RegisterAttribute<ClassName>(Urho3D::AttributeInfo(Urho3D::GetVariantType<typeName >(), name, new Urho3D::AttributeAccessorImpl<ClassName, typeName, Urho3D::MixedAttributeTrait<typeName > >(&ClassName::getFunction, &ClassName::setFunction), defaultValue, variantStructureElementNames, mode))
 
 }

@@ -188,6 +188,7 @@ void* VertexBuffer::Lock(unsigned start, unsigned count, bool discard)
 
     lockStart_ = start;
     lockCount_ = count;
+    discardLock_ = discard;
 
     if (shadowData_)
     {
@@ -209,12 +210,12 @@ void VertexBuffer::Unlock()
     switch (lockState_)
     {
     case LOCK_SHADOW:
-        SetDataRange(shadowData_.Get() + lockStart_ * vertexSize_, lockStart_, lockCount_);
+        SetDataRange(shadowData_.Get() + lockStart_ * vertexSize_, lockStart_, lockCount_, discardLock_);
         lockState_ = LOCK_NONE;
         break;
 
     case LOCK_SCRATCH:
-        SetDataRange(lockScratchData_, lockStart_, lockCount_);
+        SetDataRange(lockScratchData_, lockStart_, lockCount_, discardLock_);
         if (graphics_)
             graphics_->FreeScratchBuffer(lockScratchData_);
         lockScratchData_ = nullptr;

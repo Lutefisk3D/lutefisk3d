@@ -193,6 +193,7 @@ bool File::Open(PackageFile* package, const QString& fileName)
     readSyncNeeded_ = false;
     writeSyncNeeded_ = false;
 
+    // Seek to beginning of package entry's file data
     ((QFile *)handle_)->seek(offset_);
     return true;
 }

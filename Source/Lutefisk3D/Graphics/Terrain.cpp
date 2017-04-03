@@ -564,8 +564,8 @@ float Terrain::GetHeight(const Vector3& worldPosition) const
         Vector3 position = node_->GetWorldTransform().Inverse() * worldPosition;
         float xPos = (position.x_ - patchWorldOrigin_.x_) / spacing_.x_;
         float zPos = (position.z_ - patchWorldOrigin_.y_) / spacing_.z_;
-        float xFrac = xPos - floorf(xPos);
-        float zFrac = zPos - floorf(zPos);
+        float xFrac = Fract(xPos);
+        float zFrac = Fract(zPos);
         float h1, h2, h3;
 
         if (xFrac + zFrac >= 1.0f)
@@ -598,8 +598,8 @@ Vector3 Terrain::GetNormal(const Vector3& worldPosition) const
         Vector3 position = node_->GetWorldTransform().Inverse() * worldPosition;
         float xPos = (position.x_ - patchWorldOrigin_.x_) / spacing_.x_;
         float zPos = (position.z_ - patchWorldOrigin_.y_) / spacing_.z_;
-        float xFrac = xPos - floorf(xPos);
-        float zFrac = zPos - floorf(zPos);
+        float xFrac = Fract(xPos);
+        float zFrac = Fract(zPos);
         Vector3 n1, n2, n3;
 
         if (xFrac + zFrac >= 1.0f)
@@ -712,7 +712,7 @@ void Terrain::CreatePatchGeometry(TerrainPatch* patch)
                 *vertexData++ = normal.z_;
 
                 // Texture coordinate
-                Vector2 texCoord((float)xPos / (float)numVertices_.x_, 1.0f - (float)zPos / (float)numVertices_.y_);
+                Vector2 texCoord((float)xPos / (float)(numVertices_.x_ - 1), 1.0f - (float)zPos / (float)(numVertices_.y_ - 1));
                 *vertexData++ = texCoord.x_;
                 *vertexData++ = texCoord.y_;
 
@@ -1027,8 +1027,7 @@ void Terrain::CreateGeometry()
                     {
                         // Create the patch scene node as local and temporary so that it is not unnecessarily serialized to either
                         // file or replicated over the network
-                        patchNode = node_->CreateChild(nodeName, LOCAL);
-                        patchNode->SetTemporary(true);
+                        patchNode = node_->CreateTemporaryChild(nodeName, LOCAL);
                     }
 
                     patchNode->SetPosition(Vector3(patchWorldOrigin_.x_ + (float)x * patchWorldSize_.x_, 0.0f,

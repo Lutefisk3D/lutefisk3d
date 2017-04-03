@@ -48,7 +48,7 @@ typedef std::deque<EventHandler *>::iterator ilEventHandler;
 typedef std::deque<EventHandler *>::const_iterator cilEventHandler;
 
 /// Type info.
-class TypeInfo
+class URHO3D_API TypeInfo
 {
 public:
     /// Construct.
@@ -91,7 +91,7 @@ private:
 
 
 /// Base class for objects with type identification, subsystem access and event sending/receiving capability.
-class Object : public RefCounted
+class URHO3D_API Object : public RefCounted
 {
     friend class Context;
 

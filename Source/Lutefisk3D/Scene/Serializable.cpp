@@ -53,18 +53,13 @@ static unsigned RemapAttributeIndex(const std::vector<AttributeInfo>* attributes
 }
 Serializable::Serializable(Context* context) :
     Object(context),
-    networkState_(nullptr),
-    instanceDefaultValues_(nullptr),
     temporary_(false)
 {
 }
 
 Serializable::~Serializable()
 {
-    delete networkState_;
-    networkState_ = nullptr;
-    delete instanceDefaultValues_;
-    instanceDefaultValues_ = nullptr;
+
 }
 
 void Serializable::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
@@ -157,6 +152,10 @@ void Serializable::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
         *(reinterpret_cast<IntVector2*>(dest)) = src.GetIntVector2();
         break;
 
+    case VAR_INTVECTOR3:
+        *(reinterpret_cast<IntVector3*>(dest)) = src.GetIntVector3();
+        break;
+
     default:
         URHO3D_LOGERROR("Unsupported attribute type for OnSetAttribute()");
         return;
@@ -197,9 +196,6 @@ void Serializable::OnGetAttribute(const AttributeInfo& attr, Variant& dest) cons
         dest = *(reinterpret_cast<const float*>(src));
         break;
 
-    case VAR_DOUBLE:
-        dest = *(reinterpret_cast<const double*>(src));
-        break;
 
     case VAR_VECTOR2:
         dest = *(reinterpret_cast<const Vector2*>(src));
@@ -255,6 +251,14 @@ void Serializable::OnGetAttribute(const AttributeInfo& attr, Variant& dest) cons
 
     case VAR_INTVECTOR2:
         dest = *(reinterpret_cast<const IntVector2*>(src));
+        break;
+
+    case VAR_INTVECTOR3:
+        dest = *(reinterpret_cast<const IntVector3*>(src));
+        break;
+
+    case VAR_DOUBLE:
+        dest = *(reinterpret_cast<const double*>(src));
         break;
 
     default:
@@ -662,8 +666,7 @@ void Serializable::ResetToDefault()
 
 void Serializable::RemoveInstanceDefault()
 {
-    delete instanceDefaultValues_;
-    instanceDefaultValues_ = nullptr;
+    instanceDefaultValues_.release();
 }
 
 void Serializable::SetTemporary(bool enable)
@@ -708,7 +711,7 @@ void Serializable::AllocateNetworkState()
     if (networkState_ != nullptr)
         return;
         const std::vector<AttributeInfo>* networkAttributes = GetNetworkAttributes();
-        networkState_ = new NetworkState();
+        networkState_.reset(new NetworkState());
         networkState_->attributes_ = networkAttributes;
     if (!networkAttributes)
         return;
@@ -1011,7 +1014,7 @@ void Serializable::SetInstanceDefault(const QString& name, const Variant& defaul
 {
     // Allocate the instance level default value
     if (instanceDefaultValues_ == nullptr)
-        instanceDefaultValues_ = new VariantMap();
+        instanceDefaultValues_.reset(new VariantMap());
     instanceDefaultValues_->operator[] (name) = defaultValue;
 }
 

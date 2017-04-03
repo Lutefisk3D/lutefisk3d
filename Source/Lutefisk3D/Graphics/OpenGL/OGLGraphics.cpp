@@ -225,7 +225,6 @@ Graphics::Graphics(Context* context_) :
     Object(context_),
     impl_(new GraphicsImpl()),
     window_(nullptr),
-    windowIcon_(nullptr),
     externalWindow_(nullptr),
     width_(0),
     height_(0),
@@ -265,7 +264,7 @@ Graphics::Graphics(Context* context_) :
     ResetCachedState();
 
     // Initialize SDL now. Graphics should be the first SDL-using subsystem to be created
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_NOPARACHUTE);
+    context_->RequireSDL(SDL_INIT_VIDEO);
 
     // Register Graphics library object factories
     RegisterGraphicsLibrary(context_);
@@ -279,14 +278,17 @@ Graphics::~Graphics()
     impl_ = nullptr;
 
     // Shut down SDL now. Graphics should be the last SDL-using subsystem to be destroyed
-    SDL_Quit();
+    context_->ReleaseSDL();
 }
 
-bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, bool resizable,bool highDPI, bool vsync, bool tripleBuffer, int multiSample)
+bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, bool resizable, bool highDPI, bool vsync, bool tripleBuffer, int multiSample, int monitor, int refreshRate)
 {
     URHO3D_PROFILE(SetScreenMode);
 
     bool maximize = false;
+    int monitors = SDL_GetNumVideoDisplays();
+    if (monitor >= monitors || monitor < 0)
+        monitor = 0; // this monitor is not present, use first monitor
 
     // Fullscreen or Borderless can not be resizable
     if (fullscreen || borderless)
@@ -318,7 +320,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
         if (fullscreen || borderless)
         {
             SDL_DisplayMode mode;
-            SDL_GetDesktopDisplayMode(0, &mode);
+            SDL_GetDesktopDisplayMode(monitor, &mode);
             width = mode.w;
             height = mode.h;
         }
@@ -333,7 +335,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     // Check fullscreen mode validity (desktop only). Use a closest match if not found
     if (fullscreen)
     {
-        std::vector<IntVector2> resolutions = GetResolutions();
+        std::vector<IntVector3> resolutions = GetResolutions(monitor);
         if (resolutions.empty())
             fullscreen = false; // todo: report failure?
         else
@@ -353,6 +355,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
 
             width = resolutions[best].x_;
             height = resolutions[best].y_;
+            refreshRate = resolutions[best].z_;
         }
     }
 
@@ -389,8 +392,12 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
             SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
         }
 
-        int x = fullscreen ? 0 : position_.x_;
-        int y = fullscreen ? 0 : position_.y_;
+        SDL_Rect display_rect;
+        SDL_GetDisplayBounds(monitor, &display_rect);
+        SDL_SetWindowPosition(window_, display_rect.x, display_rect.y);
+
+        int x = fullscreen || borderless ? display_rect.x : position_.x_;
+        int y = fullscreen || borderless ? display_rect.y : position_.y_;
 
         unsigned flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
         if (fullscreen)
@@ -479,7 +486,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     CheckFeatureSupport();
 
 #ifdef LUTEFISK3D_LOGGING
-    QString msg  = QString("Set screen mode %1x%2 %3").arg(width_).arg(height_).arg((fullscreen_ ? "fullscreen" : "windowed"));
+    QString msg  = QString("Set screen mode %1x%2 %3 monitor %4").arg(width_).arg(height_).arg((fullscreen_ ? "fullscreen" : "windowed")).arg(monitor);
     if (borderless_)
         msg.append(" borderless");
     if (resizable_)
@@ -498,6 +505,8 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     eventData[P_BORDERLESS] = borderless_;
     eventData[P_RESIZABLE] = resizable_;
     eventData[P_HIGHDPI] = highDPI_;
+    eventData[P_MONITOR] = monitor_;
+    eventData[P_REFRESHRATE] = refreshRate_;
     SendEvent(E_SCREENMODE, eventData);
 
     return true;
@@ -505,7 +514,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
 
 bool Graphics::SetMode(int width, int height)
 {
-    return SetMode(width, height, fullscreen_, borderless_, resizable_, highDPI_, vsync_, tripleBuffer_, multiSample_);
+    return SetMode(width, height, fullscreen_, borderless_, resizable_, highDPI_, vsync_, tripleBuffer_, multiSample_, monitor_, refreshRate_);
 }
 
 void Graphics::SetSRGB(bool enable)
@@ -2422,7 +2431,7 @@ void Graphics::CheckFeatureSupport()
 
     int numSupportedRTs = 1;
     // Work around GLEW failure to check extensions properly from a GL3 context
-    instancingSupport_ = true;
+    instancingSupport_ = glDrawElementsInstanced != 0 && glVertexAttribDivisor != 0;
     dxtTextureSupport_ = true;
     anisotropySupport_ = true;
     sRGBSupport_ = true;

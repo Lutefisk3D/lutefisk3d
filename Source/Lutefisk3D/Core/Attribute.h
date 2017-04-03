@@ -51,7 +51,7 @@ static const unsigned AM_FILEREADONLY = 0x81;
 class Serializable;
 
 /// Abstract base class for invoking attribute accessors.
-class AttributeAccessor : public RefCounted
+class URHO3D_API AttributeAccessor : public RefCounted
 {
 public:
     /// Get the attribute.
@@ -68,6 +68,7 @@ struct AttributeInfo
         type_(VAR_NONE),
         offset_(0),
         enumNames_(nullptr),
+        variantStructureElementNames_(0),
         mode_(AM_DEFAULT),
         ptr_(nullptr)
     {
@@ -79,6 +80,7 @@ struct AttributeInfo
         name_(name),
         offset_((unsigned)offset),
         enumNames_(nullptr),
+        variantStructureElementNames_(0),
         defaultValue_(defaultValue),
         mode_(mode),
         ptr_(nullptr)
@@ -91,6 +93,7 @@ struct AttributeInfo
         name_(name),
         offset_((unsigned)offset),
         enumNames_(enumNames),
+        variantStructureElementNames_(0),
         defaultValue_(defaultValue),
         mode_(mode),
         ptr_(nullptr)
@@ -103,6 +106,7 @@ struct AttributeInfo
         name_(name),
         offset_(0),
         enumNames_(nullptr),
+        variantStructureElementNames_(0),
         accessor_(accessor),
         defaultValue_(defaultValue),
         mode_(mode),
@@ -116,6 +120,20 @@ struct AttributeInfo
         name_(name),
         offset_(0),
         enumNames_(enumNames),
+        variantStructureElementNames_(0),
+        accessor_(accessor),
+        defaultValue_(defaultValue),
+        mode_(mode),
+        ptr_(nullptr)
+    {
+    }
+    /// Construct variant structure (structure, which packed to VariantVector) attribute.
+    AttributeInfo(VariantType type, const char* name, AttributeAccessor* accessor, const Variant& defaultValue, const char** variantStructureElementNames, unsigned mode) :
+        type_(type),
+        name_(name),
+        offset_(0),
+        enumNames_(0),
+        variantStructureElementNames_(variantStructureElementNames),
         accessor_(accessor),
         defaultValue_(defaultValue),
         mode_(mode),
@@ -127,6 +145,7 @@ struct AttributeInfo
         name_(other.name_),
         offset_(other.offset_),
         enumNames_(other.enumNames_),
+        variantStructureElementNames_(other.variantStructureElementNames_),
         accessor_(other.accessor_),
         defaultValue_(other.defaultValue_),
         mode_(other.mode_),
@@ -137,6 +156,7 @@ struct AttributeInfo
         name_(other.name_),
         offset_(other.offset_),
         enumNames_(other.enumNames_),
+        variantStructureElementNames_(other.variantStructureElementNames_),
         accessor_(other.accessor_),
         defaultValue_(other.defaultValue_),
         mode_(other.mode_),
@@ -163,6 +183,7 @@ struct AttributeInfo
         std::swap(name_,rhs.name_);
         std::swap(offset_,rhs.offset_);
         std::swap(enumNames_,rhs.enumNames_);
+        std::swap(variantStructureElementNames_,rhs.variantStructureElementNames_);
         std::swap(accessor_,rhs.accessor_);
         std::swap(defaultValue_,rhs.defaultValue_);
         std::swap(mode_,rhs.mode_);
@@ -176,6 +197,8 @@ struct AttributeInfo
     unsigned offset_;
     /// Enum names.
     const char** enumNames_;
+    /// Variant structure elements names.
+    const char** variantStructureElementNames_;
     /// Helper object for accessor mode.
     SharedPtr<AttributeAccessor> accessor_;
     /// Default value for network replication.

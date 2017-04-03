@@ -57,6 +57,19 @@ const char* faceCameraModeNames[] =
     nullptr
 };
 
+const char* billboardsStructureElementNames[] =
+{
+    "Billboard Count",
+    "   Position",
+    "   Size",
+    "   UV Coordinates",
+    "   Color",
+    "   Rotation",
+    "   Direction",
+    "   Is Enabled",
+    0
+};
+
 inline bool CompareBillboards(Billboard* lhs, Billboard* rhs)
 {
     return lhs->sortDistance_ > rhs->sortDistance_;
@@ -115,7 +128,7 @@ void BillboardSet::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Shadow Distance", GetShadowDistance, SetShadowDistance, float, 0.0f, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Animation LOD Bias", GetAnimationLodBias, SetAnimationLodBias, float, 1.0f, AM_DEFAULT);
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Billboards", GetBillboardsAttr, SetBillboardsAttr, VariantVector, Variant::emptyVariantVector, AM_FILE);
+    URHO3D_MIXED_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE("Billboards", GetBillboardsAttr, SetBillboardsAttr,VariantVector, Variant::emptyVariantVector, billboardsStructureElementNames, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Network Billboards", GetNetBillboardsAttr, SetNetBillboardsAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_NET | AM_NOEDIT);
 }
 
@@ -184,11 +197,11 @@ void BillboardSet::UpdateBatches(const FrameInfo& frame)
             bufferDirty_ = true;
 
         hasOrthoCamera_ = frame.camera_->IsOrthographic();
+    }
 
         // Calculate fixed screen size scale factor for billboards if needed
         if (fixedScreenSize_)
             CalculateFixedScreenSize(frame);
-    }
 
     distance_ = frame.camera_->GetDistance(GetWorldBoundingBox().Center());
 
@@ -249,8 +262,6 @@ void BillboardSet::SetNumBillboards(unsigned num)
     // Prevent negative value being assigned from the editor
     if (num > M_MAX_INT)
         num = 0;
-    if (num > MAX_BILLBOARDS)
-        num = MAX_BILLBOARDS;
 
     unsigned oldNum = billboards_.size();
     if (num == oldNum)
@@ -421,7 +432,7 @@ VariantVector BillboardSet::GetBillboardsAttr() const
 {
     VariantVector ret;
     ret.reserve(billboards_.size() * 7 + 1);
-    ret.push_back(billboards_.size());
+    ret.push_back(uint32_t(billboards_.size()));
 
     for (const Billboard & elem : billboards_)
     {
@@ -505,8 +516,9 @@ void BillboardSet::UpdateBufferSize()
         }
         geometryTypeUpdate_ = false;
     }
+    bool largeIndices = (numBillboards * 4) >= 65536;
     if (indexBuffer_->GetIndexCount() != numBillboards * 6)
-        indexBuffer_->SetSize(numBillboards * 6, false);
+        indexBuffer_->SetSize(numBillboards * 6, largeIndices);
 
     bufferSizeDirty_ = false;
     bufferDirty_ = true;
@@ -516,22 +528,43 @@ void BillboardSet::UpdateBufferSize()
         return;
 
     // Indices do not change for a given billboard capacity
-    unsigned short* dest = (unsigned short*)indexBuffer_->Lock(0, numBillboards * 6, true);
-    if (!dest)
+    void* destPtr = indexBuffer_->Lock(0, numBillboards * 6, true);
+    if (!destPtr)
         return;
 
+    if (!largeIndices)
+    {
+        unsigned short* dest = (unsigned short*)destPtr;
+        unsigned short vertexIndex = 0;
+        while (numBillboards--)
+        {
+            dest[0] = vertexIndex;
+            dest[1] = vertexIndex + 1;
+            dest[2] = vertexIndex + 2;
+            dest[3] = vertexIndex + 2;
+            dest[4] = vertexIndex + 3;
+            dest[5] = vertexIndex;
+
+            dest += 6;
+            vertexIndex += 4;
+        }
+    }
+    else
+    {
+        unsigned* dest = (unsigned*)destPtr;
     unsigned vertexIndex = 0;
     while (numBillboards--)
     {
-        dest[0] = (unsigned short)vertexIndex;
-        dest[1] = (unsigned short)(vertexIndex + 1);
-        dest[2] = (unsigned short)(vertexIndex + 2);
-        dest[3] = (unsigned short)(vertexIndex + 2);
-        dest[4] = (unsigned short)(vertexIndex + 3);
-        dest[5] = (unsigned short)vertexIndex;
+            dest[0] = vertexIndex;
+            dest[1] = vertexIndex + 1;
+            dest[2] = vertexIndex + 2;
+            dest[3] = vertexIndex + 2;
+            dest[4] = vertexIndex + 3;
+            dest[5] = vertexIndex;
 
         dest += 6;
         vertexIndex += 4;
+        }
     }
 
     indexBuffer_->Unlock();
@@ -740,6 +773,7 @@ void BillboardSet::CalculateFixedScreenSize(const FrameInfo& frame)
 {
     float invViewHeight = 1.0f / frame.viewSize_.y_;
     float halfViewWorldSize = frame.camera_->GetHalfViewSize();
+    bool scaleFactorChanged = false;
 
     if (!frame.camera_->IsOrthographic())
     {
@@ -750,18 +784,33 @@ void BillboardSet::CalculateFixedScreenSize(const FrameInfo& frame)
         for (unsigned i = 0; i < billboards_.size(); ++i)
         {
             Vector4 projPos(viewProj * Vector4(billboardTransform * billboards_[i].position_, 1.0f));
-            billboards_[i].screenScaleFactor_ = invViewHeight * halfViewWorldSize * projPos.w_;
+            float newScaleFactor = invViewHeight * halfViewWorldSize * projPos.w_;
+            if (newScaleFactor != billboards_[i].screenScaleFactor_)
+            {
+                billboards_[i].screenScaleFactor_ = newScaleFactor;
+                scaleFactorChanged = true;
+            }
 }
     }
     else
     {
         for (unsigned i = 0; i < billboards_.size(); ++i)
-            billboards_[i].screenScaleFactor_ = invViewHeight * halfViewWorldSize;
+        {
+            float newScaleFactor = invViewHeight * halfViewWorldSize;
+            if (newScaleFactor != billboards_[i].screenScaleFactor_)
+            {
+                billboards_[i].screenScaleFactor_ = newScaleFactor;
+                scaleFactorChanged = true;
+            }
+        }
     }
 
+    if (scaleFactorChanged)
+    {
     bufferDirty_ = true;
     forceUpdate_ = true;
     worldBoundingBoxDirty_ = true;
+    }
 }
 
 }

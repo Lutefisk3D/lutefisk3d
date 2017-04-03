@@ -63,6 +63,9 @@ inline bool Equals(T lhs, T rhs) { return lhs + std::numeric_limits<T>::epsilon(
 /// Linear interpolation between two values.
 template <class T,class U>
 inline T Lerp(T lhs, T rhs, U t) { return lhs * (U(1.0) - t) + rhs * t; }
+/// Inverse linear interpolation between two values.
+template <class T>
+inline T InverseLerp(T lhs, T rhs, T x) { return (x - lhs) / (rhs - lhs); }
 /// Return the smaller of two floats.
 template <class T>
 inline T Min(T lhs, T rhs) { return lhs < rhs ? lhs : rhs; }
@@ -127,6 +130,17 @@ inline T Atan(T x) { return M_RADTODEG * std::atan(x); }
 /// Return arc tangent of y/x in degrees.
 template<typename T>
 inline T Atan2(T y, T x) { return M_RADTODEG * std::atan2(y, x); }
+/// Return fractional part of passed value in range [0, 1).
+template <class T> T Fract(T value) { return value - floor(value); }
+
+/// Round value down. Returns integer value.
+template <class T> int FloorToInt(T x) { return static_cast<int>(floor(x)); }
+
+/// Round value to nearest integer.
+template <class T> int RoundToInt(T x) { return static_cast<int>(floor(x + T(0.5))); }
+
+/// Round value up.
+template <class T> int CeilToInt(T x) { return static_cast<int>(ceil(x)); }
 
 /// Check whether an unsigned integer is a power of two.
 inline bool IsPowerOfTwo(unsigned value)

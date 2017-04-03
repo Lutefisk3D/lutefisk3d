@@ -148,6 +148,8 @@ public:
     void SetTransform(const Vector3& position, const Quaternion& rotation, float scale);
     /// Set both position, rotation and scale in parent space as an atomic operation.
     void SetTransform(const Vector3& position, const Quaternion& rotation, const Vector3& scale);
+    /// Set node transformation in parent space as an atomic operation.
+    void SetTransform(const Matrix3x4& matrix);
     /// Set both position and rotation in parent space as an atomic operation (for Urho2D).
     void SetTransform2D(const Vector2& position, float rotation) { SetTransform(Vector3(position), Quaternion(rotation)); }
     /// Set both position, rotation and uniform scale in parent space as an atomic operation (for Urho2D).
@@ -225,7 +227,9 @@ public:
     /// Mark node and child nodes to need world transform recalculation. Notify listener components.
     void MarkDirty();
     /// Create a child scene node (with specified ID if provided).
-    Node* CreateChild(const QString& name = QString(), CreateMode mode = REPLICATED, unsigned id = 0);
+    Node* CreateChild(const QString& name = QString(), CreateMode mode = REPLICATED, unsigned id = 0, bool temporary=false);
+    /// Create a temporary child scene node (with specified ID if provided).
+    Node* CreateTemporaryChild(const QString& name = QString(), CreateMode mode = REPLICATED, unsigned id = 0);
     /// Add a child scene node at a specific index. If index is not explicitly specified or is greater than current children size, append the new child at the end.
     void AddChild(Node* node, unsigned index = M_MAX_UNSIGNED);
     /// Remove a child scene node.
@@ -290,6 +294,8 @@ public:
     Node* GetParent() const { return parent_; }
     /// Return scene.
     Scene* GetScene() const { return scene_; }
+    /// Return whether is a direct or indirect child of specified node.
+    bool IsChildOf(Node* node) const;
     /// Return whether is enabled. Disables nodes effectively disable all their components.
     bool IsEnabled() const { return enabled_; }
     /// Returns the node's last own enabled state. May be different than the value returned by IsEnabled when SetDeepEnabled has been used.
@@ -421,10 +427,16 @@ public:
     const std::vector<SharedPtr<Node> >& GetChildren() const { return children_; }
     /// Return child scene nodes, optionally recursive.
     void GetChildren(std::vector<Node*>& dest, bool recursive = false) const;
+    /// Return child scene nodes, optionally recursive.
+    std::vector<Node*> GetChildren(bool recursive) const;
     /// Return child scene nodes with a specific component.
     void GetChildrenWithComponent(std::vector<Node*>& dest, StringHash type, bool recursive = false) const;
+    /// Return child scene nodes with a specific component.
+    std::vector<Node*> GetChildrenWithComponent(StringHash type, bool recursive = false) const;
     /// Return child scene nodes with a specific tag.
     void GetChildrenWithTag(std::vector<Node *> &dest, const QString &tag, bool recursive = false) const;
+    /// Return child scene nodes with a specific tag.
+    std::vector<Node*> GetChildrenWithTag(const QString& tag, bool recursive = false) const;
     /// Return child scene node by index.
     Node* GetChild(unsigned index) const;
     /// Return child scene node by name.
@@ -503,7 +515,7 @@ public:
     /// Mark node dirty in scene replication states.
     void MarkReplicationDirty();
     /// Create a child node with specific ID.
-    Node* CreateChild(unsigned id, CreateMode mode);
+    Node* CreateChild(unsigned id, CreateMode mode, bool temporary = false);
     /// Add a pre-created component. Using this function from application code is discouraged, as component operation without an owner node may not be well-defined in all cases. Prefer CreateComponent() instead.
     void AddComponent(Component* component, unsigned id, CreateMode mode);
     /// Calculate number of non-temporary child nodes.
@@ -585,7 +597,7 @@ private:
     /// Node listeners.
     std::vector<WeakPtr<Component> > listeners_;
     /// Pointer to implementation.
-    NodeImpl* impl_;
+    std::unique_ptr<NodeImpl> impl_;
 
 protected:
     /// User variables.

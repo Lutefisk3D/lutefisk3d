@@ -102,7 +102,7 @@ void Graphics::SetOrientations(const QString& orientations)
 
 bool Graphics::ToggleFullscreen()
 {
-    return SetMode(width_, height_, !fullscreen_, borderless_, resizable_, highDPI_, vsync_, tripleBuffer_, multiSample_);
+    return SetMode(width_, height_, !fullscreen_, borderless_, resizable_, highDPI_, vsync_, tripleBuffer_, multiSample_, monitor_, refreshRate_);
 }
 
 void Graphics::SetShaderParameter(StringHash param, const Variant& value)
@@ -171,23 +171,24 @@ IntVector2 Graphics::GetWindowPosition() const
     return IntVector2::ZERO;
 }
 
-std::vector<IntVector2> Graphics::GetResolutions() const
+std::vector<IntVector3> Graphics::GetResolutions(int monitor) const
 {
-    std::vector<IntVector2> ret;
-    unsigned numModes = (unsigned)SDL_GetNumDisplayModes(0);
+    std::vector<IntVector3> ret;
+    unsigned numModes = (unsigned)SDL_GetNumDisplayModes(monitor);
 
     for (unsigned i = 0; i < numModes; ++i)
     {
         SDL_DisplayMode mode;
-        SDL_GetDisplayMode(0, i, &mode);
+        SDL_GetDisplayMode(monitor, i, &mode);
         int width = mode.w;
         int height  = mode.h;
+        int rate = mode.refresh_rate;
 
         // Store mode if unique
         bool unique = true;
         for (unsigned j = 0; j < ret.size(); ++j)
         {
-            if (ret[j].x_ == width && ret[j].y_ == height)
+            if (ret[j].x_ == width && ret[j].y_ == height && ret[j].z_ == rate)
             {
                 unique = false;
                 break;
@@ -195,16 +196,21 @@ std::vector<IntVector2> Graphics::GetResolutions() const
         }
 
         if (unique)
-            ret.emplace_back(width, height);
+            ret.emplace_back(width, height, rate);
     }
 
     return ret;
 }
-IntVector2 Graphics::GetDesktopResolution() const
+IntVector2 Graphics::GetDesktopResolution(int monitor) const
 {
     SDL_DisplayMode mode;
-    SDL_GetDesktopDisplayMode(0, &mode);
+    SDL_GetDesktopDisplayMode(monitor, &mode);
     return IntVector2(mode.w, mode.h);
+}
+
+int Graphics::GetMonitorCount() const
+{
+    return SDL_GetNumVideoDisplays();
 }
 
 void Graphics::Maximize()
@@ -258,7 +264,9 @@ void Graphics::RemoveGPUObject(GPUObject* object)
 {
     MutexLock lock(gpuObjectMutex_);
     auto iter = std::find(gpuObjects_.begin(),gpuObjects_.end(),object);
-    assert(iter!=gpuObjects_.end());
+    if(iter==gpuObjects_.end())
+        URHO3D_LOGDEBUG("Graphics::RemoveGPUObject called multiple times on same object");
+
 
     gpuObjects_.erase(iter);
 }

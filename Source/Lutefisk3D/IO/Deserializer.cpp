@@ -141,6 +141,12 @@ IntVector2 Deserializer::ReadIntVector2()
     return IntVector2(data);
 }
 
+IntVector3 Deserializer::ReadIntVector3()
+{
+    int data[3];
+    Read(data, sizeof data);
+    return IntVector3(data);
+}
 Rect Deserializer::ReadRect()
 {
     float data[4];
@@ -296,6 +302,8 @@ Variant Deserializer::ReadVariant(VariantType type)
     case VAR_INT:
         return Variant(ReadInt());
 
+    case VAR_INT64:
+        return Variant(ReadInt64());
     case VAR_BOOL:
         return Variant(ReadBool());
 
@@ -351,6 +359,8 @@ Variant Deserializer::ReadVariant(VariantType type)
     case VAR_INTVECTOR2:
         return Variant(ReadIntVector2());
 
+    case VAR_INTVECTOR3:
+        return Variant(ReadIntVector3());
     case VAR_MATRIX3:
         return Variant(ReadMatrix3());
 

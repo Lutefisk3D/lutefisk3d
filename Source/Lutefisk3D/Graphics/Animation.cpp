@@ -369,6 +369,21 @@ SharedPtr<Animation> Animation::Clone(const QString& cloneName) const
 
     return ret;
 }
+AnimationTrack* Animation::GetTrack(unsigned index)
+{
+    if (index >= GetNumTracks())
+        return (AnimationTrack*) nullptr;
+
+    int j = 0;
+    for(auto i = tracks_.begin(); i != tracks_.end(); ++i)
+    {
+        if (j == index)
+            return &i->second;
+        ++j;
+    }
+
+    return (AnimationTrack*) nullptr;
+}
 AnimationTrack* Animation::GetTrack(const QString& name)
 {
     HashMap<StringHash, AnimationTrack>::iterator i = tracks_.find(StringHash(name));

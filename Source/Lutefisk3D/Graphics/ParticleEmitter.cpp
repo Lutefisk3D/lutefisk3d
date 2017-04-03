@@ -281,8 +281,6 @@ void ParticleEmitter::SetNumParticles(unsigned num)
     // Prevent negative value being assigned from the editor
     if (num > M_MAX_INT)
         num = 0;
-    if (num > MAX_BILLBOARDS)
-        num = MAX_BILLBOARDS;
 
     particles_.resize(num);
     SetNumBillboards(num);
@@ -293,7 +291,7 @@ void ParticleEmitter::SetEmitting(bool enable)
     if (enable != emitting_)
     {
         emitting_ = enable;
-        sendFinishedEvent_ = enable;
+        sendFinishedEvent_ = enable || CheckActiveParticles();
         periodTimer_ = 0.0f;
         // Note: network update does not need to be marked as this is a file only attribute
     }
@@ -379,12 +377,12 @@ VariantVector ParticleEmitter::GetParticlesAttr() const
     VariantVector ret;
     if (!serializeParticles_)
     {
-        ret.push_back(particles_.size());
+        ret.push_back(uint32_t(particles_.size()));
         return ret;
     }
 
     ret.reserve(particles_.size() * 8 + 1);
-    ret.push_back(particles_.size());
+    ret.emplace_back(uint32_t(particles_.size()));
     for (const Particle & elem : particles_)
     {
         ret.push_back(elem.velocity_);
@@ -404,12 +402,12 @@ VariantVector ParticleEmitter::GetParticleBillboardsAttr() const
     VariantVector ret;
     if (!serializeParticles_)
     {
-        ret.push_back(billboards_.size());
+        ret.emplace_back(uint32_t(billboards_.size()));
         return ret;
     }
 
     ret.reserve(billboards_.size() * 7 + 1);
-    ret.push_back(billboards_.size());
+    ret.emplace_back(uint32_t(billboards_.size()));
 
     for (const Billboard & elem : billboards_)
     {
@@ -521,6 +519,19 @@ unsigned ParticleEmitter::GetFreeParticle() const
     return M_MAX_UNSIGNED;
 }
 
+bool ParticleEmitter::CheckActiveParticles() const
+{
+    for (unsigned i = 0; i < billboards_.size(); ++i)
+    {
+        if (billboards_[i].enabled_)
+        {
+            return true;
+            break;
+        }
+    }
+
+    return false;
+}
 void ParticleEmitter::HandleScenePostUpdate(StringHash eventType, VariantMap& eventData)
 {
     // Store scene's timestep and use it instead of global timestep, as time scale may be other than 1
@@ -536,39 +547,25 @@ void ParticleEmitter::HandleScenePostUpdate(StringHash eventType, VariantMap& ev
         MarkForUpdate();
     }
 
-    if (node_ && !emitting_ && sendFinishedEvent_)
+    if (node_ && !emitting_ && sendFinishedEvent_ && !CheckActiveParticles())
     {
         // Send finished event only once all billboards are gone
-        bool hasEnabledBillboards = false;
+        sendFinishedEvent_ = false;
 
-        for (unsigned i = 0; i < billboards_.size(); ++i)
-        {
-            if (billboards_[i].enabled_)
-            {
-                hasEnabledBillboards = true;
-                break;
-            }
-        }
+        // Make a weak pointer to self to check for destruction during event handling
+        WeakPtr<ParticleEmitter> self(this);
 
-        if (!hasEnabledBillboards)
-        {
-            sendFinishedEvent_ = false;
+        using namespace ParticleEffectFinished;
 
-            // Make a weak pointer to self to check for destruction during event handling
-            WeakPtr<ParticleEmitter> self(this);
+        VariantMap& eventData = GetEventDataMap();
+        eventData[P_NODE] = node_;
+        eventData[P_EFFECT] = effect_;
 
-            using namespace ParticleEffectFinished;
+        node_->SendEvent(E_PARTICLEEFFECTFINISHED, eventData);
+        if (self.Expired())
+            return;
 
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_NODE] = node_;
-            eventData[P_EFFECT] = effect_;
-
-            node_->SendEvent(E_PARTICLEEFFECTFINISHED, eventData);
-            if (self.Expired())
-                return;
-
-            DoAutoRemove(autoRemove_);
-        }
+        DoAutoRemove(autoRemove_);
     }
 }
 

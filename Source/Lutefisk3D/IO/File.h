@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,11 @@
 #include "../IO/Deserializer.h"
 #include "../IO/Serializer.h"
 #include "../Core/Object.h"
+#include "../IO/AbstractFile.h"
 
+#ifdef __ANDROID__
+struct SDL_RWops;
+#endif
 namespace Urho3D
 {
 
@@ -41,7 +45,7 @@ enum FileMode
 class PackageFile;
 
 /// %File opened either through the filesystem or from within a package file.
-class URHO3D_API File : public Object, public Deserializer, public Serializer
+class URHO3D_API File : public Object, public AbstractFile
 {
     URHO3D_OBJECT(File, Object);
 

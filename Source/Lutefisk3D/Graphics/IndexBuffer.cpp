@@ -40,7 +40,8 @@ IndexBuffer::IndexBuffer(Context* context, bool forceHeadless) :
     lockCount_(0),
     lockScratchData_(nullptr),
     shadowed_(false),
-    dynamic_(false)
+    dynamic_(false),
+    discardLock_(false)
 {
     // Force shadowing mode if graphics subsystem does not exist
     if (!graphics_)

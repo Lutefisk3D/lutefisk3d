@@ -186,8 +186,12 @@ bool AnimationController::Play(const QString& name, unsigned char layer, bool lo
 
 bool AnimationController::PlayExclusive(const QString& name, unsigned char layer, bool looped, float fadeTime)
 {
-    FadeOthers(name, 0.0f, fadeTime);
-    return Play(name, layer, looped, fadeTime);
+    bool success = Play(name, layer, looped, fadeTime);
+    
+    // Fade other animations only if successfully started the new one
+    if (success)
+         FadeOthers(name, 0.0f, fadeTime);
+    return success;
 }
 
 bool AnimationController::Stop(const QString& name, float fadeOutTime)
@@ -532,7 +536,7 @@ float AnimationController::GetFadeTime(const QString& name) const
     unsigned index;
     AnimationState* state;
     FindAnimation(name, index, state);
-    return index != M_MAX_UNSIGNED ? animations_[index].fadeTime_ : 0.0f; // TODO: this fix should be PRd to upstream
+    return index != M_MAX_UNSIGNED ? animations_[index].fadeTime_ : 0.0f; // BUG: was targetWeight_ this fix should be PRd to upstream
 }
 
 float AnimationController::GetAutoFade(const QString& name) const
@@ -807,7 +811,7 @@ VariantVector AnimationController::GetNodeAnimationStatesAttr() const
 {
     VariantVector ret;
     ret.reserve(nodeAnimationStates_.size() * 3 + 1);
-    ret.push_back(nodeAnimationStates_.size());
+    ret.push_back(uint32_t(nodeAnimationStates_.size()));
     for (const auto & elem : nodeAnimationStates_)
     {
         AnimationState* state = elem;

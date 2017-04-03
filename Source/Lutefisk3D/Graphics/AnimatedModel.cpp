@@ -47,6 +47,17 @@ namespace Urho3D
 
 extern const char* GEOMETRY_CATEGORY;
 
+const char* animationStatesStructureElementNames[] =
+{
+    "Anim State Count",
+    "   Animation",
+    "   Start Bone",
+    "   Is Looped",
+    "   Weight",
+    "   Time",
+    "   Layer",
+    0
+};
 static bool CompareAnimationOrder(const SharedPtr<AnimationState>& lhs, const SharedPtr<AnimationState>& rhs)
 {
     return lhs->GetLayer() < rhs->GetLayer();
@@ -103,7 +114,7 @@ void AnimatedModel::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Animation LOD Bias", GetAnimationLodBias, SetAnimationLodBias, float, 1.0f, AM_DEFAULT);
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Bone Animation Enabled", GetBonesEnabledAttr, SetBonesEnabledAttr, VariantVector, Variant::emptyVariantVector, AM_FILE | AM_NOEDIT);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Animation States", GetAnimationStatesAttr, SetAnimationStatesAttr, VariantVector, Variant::emptyVariantVector, AM_FILE);
+    URHO3D_MIXED_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE("Animation States", GetAnimationStatesAttr, SetAnimationStatesAttr,                                                            VariantVector, Variant::emptyVariantVector,                                                            animationStatesStructureElementNames, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Morphs", GetMorphsAttr, SetMorphsAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_DEFAULT | AM_NOEDIT);
 }
 
@@ -373,6 +384,9 @@ void AnimatedModel::SetModel(Model* model, bool createBones)
         boneBoundingBoxDirty_ = true;
         SetSkeleton(model->GetSkeleton(), createBones);
         ResetLodLevels();
+        // Reserve space for skinning matrices
+        skinMatrices_.resize(skeleton_.GetNumBones());
+        SetGeometryBoneMappings();
 
         // Enable skinning in batches
         for (unsigned i = 0; i < batches_.size(); ++i)
@@ -766,10 +780,6 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
         }
     }
 
-    // Reserve space for skinning matrices
-    skinMatrices_.resize(skeleton_.GetNumBones());
-    SetGeometryBoneMappings();
-
     assignBonesPending_ = !createBones;
 }
 
@@ -855,7 +865,7 @@ VariantVector AnimatedModel::GetAnimationStatesAttr() const
 {
     VariantVector ret;
     ret.reserve(animationStates_.size() * 6 + 1);
-    ret.push_back(animationStates_.size());
+    ret.push_back(uint32_t(animationStates_.size()));
     for (const SharedPtr<AnimationState> &i : animationStates_)
     {
         AnimationState* state = i.Get();
@@ -1244,6 +1254,11 @@ void AnimatedModel::UpdateAnimation(const FrameInfo& frame)
             animationLodTimer_ = 0.0f;
     }
 
+    ApplyAnimation();
+}
+
+void AnimatedModel::ApplyAnimation()
+{
     // Make sure animations are in ascending priority order
     if (animationOrderDirty_)
     {

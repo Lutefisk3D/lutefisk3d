@@ -178,6 +178,8 @@ class URHO3D_API View : public Object
     void SetGlobalShaderParameters();
     /// Set camera-specific shader parameters. Called by Batch and internally by View.
     void SetCameraShaderParameters(const Urho3D::Camera &camera);
+    /// Set command's shader parameters if any. Called internally by View.
+    void SetCommandShaderParameters(const RenderPathCommand& command);
     /// Set G-buffer offset and inverse size shader parameters. Called by Batch and internally by View.
     void SetGBufferShaderParameters(const IntVector2& texSize, const IntRect& viewRect);
 
@@ -247,6 +249,8 @@ private:
     Technique* GetTechnique(Drawable* drawable, Material* material);
     /// Check if material should render an auxiliary view (if it has a camera attached.)
     void CheckMaterialForAuxView(Material* material);
+    /// Set shader defines for a batch queue if used.
+    void SetQueueShaderDefines(BatchQueue& queue, const RenderPathCommand& command);
     /// Choose shaders for a batch and add it to queue.
     void AddBatchToQueue(BatchQueue& batchQueue, Batch batch, const Technique* tech, bool allowInstancing = true, bool allowShadows = true);
     /// Prepare instancing buffer by filling it with all instance transforms.
@@ -415,6 +419,10 @@ private:
     unsigned litAlphaPassIndex_;
     /// Pointer to the light volume command if any.
     const RenderPathCommand* lightVolumeCommand_;
+    /// Pointer to the forwardlights command if any.
+    const RenderPathCommand* forwardLightsCommand_;
+    /// Pointer to the current commmand if it contains shader parameters to be set for a render pass.
+    const RenderPathCommand* passCommand_;
     /// Flag for scene being resolved from the backbuffer.
     bool usedResolve_;
 };

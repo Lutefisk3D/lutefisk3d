@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// Event profiling data for one block in the event profiling tree.
-class EventProfilerBlock : public ProfilerBlock
+class URHO3D_API EventProfilerBlock : public ProfilerBlock
 {
 public:
     /// Construct with the specified parent block and event ID.
@@ -59,7 +59,7 @@ public:
 };
 
 /// Hierarchical performance event profiler subsystem.
-class EventProfiler : public Profiler
+class URHO3D_API EventProfiler : public Profiler
 {
     URHO3D_OBJECT(EventProfiler, Profiler);
 

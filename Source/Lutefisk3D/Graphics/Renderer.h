@@ -51,6 +51,7 @@ class Texture2D;
 class TextureCube;
 class View;
 class Zone;
+struct BatchQueue;
 
 static const int SHADOW_MIN_PIXELS = 64;
 static const int INSTANCING_BUFFER_DEFAULT_SIZE = 1024;

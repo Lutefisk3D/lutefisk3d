@@ -20,6 +20,7 @@
 // THE SOFTWARE.
 //
 
+#include "../Core/Context.h"
 #include "../Urho2D/AnimatedSprite2D.h"
 #include "../Urho2D/AnimationSet2D.h"
 #include "../Urho2D/CollisionBox2D.h"
@@ -40,7 +41,6 @@
 #include "../Urho2D/ConstraintRope2D.h"
 #include "../Urho2D/ConstraintWeld2D.h"
 #include "../Urho2D/ConstraintWheel2D.h"
-#include "../Core/Context.h"
 #include "../Urho2D/Drawable2D.h"
 #include "../Urho2D/ParticleEffect2D.h"
 #include "../Urho2D/ParticleEmitter2D.h"

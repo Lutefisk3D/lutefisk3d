@@ -490,12 +490,18 @@ void Animatable::UpdateAttributeAnimations(float timeStep)
 {
     if (!animationEnabled_)
         return;
+    // Keep weak pointer to self to check for destruction caused by event handling
+    WeakPtr<Animatable> self(this);
 
     QStringList finishedNames;
     for (auto &elem: attributeAnimationInfos_)
     {
         SharedPtr<AttributeAnimationInfo> & i(ELEMENT_VALUE(elem));
-        if (i->Update(timeStep))
+        bool finished = i->Update(timeStep);
+        // If self deleted as a result of an event sent during animation playback, nothing more to do
+        if (self.Expired())
+            return;
+        if(finished)
             finishedNames.push_back(i->GetAttributeInfo().name_);
     }
 

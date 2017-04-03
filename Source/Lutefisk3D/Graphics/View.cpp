@@ -86,7 +86,7 @@ public:
             if (drawable->GetCastShadows() && ((drawable->GetDrawableFlags() & drawableFlags_) != 0) &&
                     ((drawable->GetViewMask() & viewMask_) != 0u))
             {
-                if (inside || (frustum_.IsInsideFast(drawable->GetWorldBoundingBox()) != 0u))
+                if (inside || frustum_.IsInsideFast(drawable->GetWorldBoundingBox()))
                     result_.push_back(drawable);
             }
         }

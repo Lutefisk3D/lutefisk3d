@@ -20,6 +20,9 @@
 // THE SOFTWARE.
 //
 
+#include "../Graphics/DrawableEvents.h"
+#include "../Scene/Component.h"
+#include "../Scene/Node.h"
 #include "../Urho2D/SpriterInstance2D.h"
 
 #include <cmath>
@@ -30,10 +33,11 @@ namespace Urho3D
 namespace Spriter
 {
 
-SpriterInstance::SpriterInstance(SpriterData* spriteData) : 
+SpriterInstance::SpriterInstance(Component* owner, SpriterData* spriteData) : 
+    owner_(owner),
     spriterData_(spriteData),
-    entity_(0),
-    animation_(0)
+    entity_(nullptr),
+    animation_(nullptr)
 {
 }
 
@@ -41,8 +45,8 @@ SpriterInstance::~SpriterInstance()
 {
     Clear();
 
-    OnSetAnimation(0);
-    OnSetEntity(0);
+    OnSetAnimation(nullptr);
+    OnSetEntity(nullptr);
 }
 
 bool SpriterInstance::SetEntity(int index)
@@ -64,11 +68,11 @@ bool SpriterInstance::SetEntity(const QString & entityName)
     if (!spriterData_)
         return false;
 
-    for (size_t i = 0; i < spriterData_->entities_.size(); ++i)
+    for (auto & entity : spriterData_->entities_)
     {
-        if (spriterData_->entities_[i]->name_ == entityName)
+        if (entity->name_ == entityName)
         {
-            OnSetEntity(spriterData_->entities_[i]);
+            OnSetEntity(entity);
             return true;
         }
     }
@@ -95,11 +99,11 @@ bool SpriterInstance::SetAnimation(const QString & animationName, LoopMode loopM
     if (!entity_)
         return false;
 
-    for (size_t i = 0; i < entity_->animations_.size(); ++i)
+    for (auto & animation : entity_->animations_)
     {
-        if (entity_->animations_[i]->name_ == animationName)
+        if (animation->name_ == animationName)
         {
-            OnSetAnimation(entity_->animations_[i], loopMode);
+            OnSetAnimation(animation, loopMode);
             return true;
         }
     }
@@ -124,16 +128,38 @@ void SpriterInstance::Update(float deltaTime)
 
     Clear();
 
+    float lastTime = currentTime_;
     currentTime_ += deltaTime;
     if (currentTime_ > animation_->length_)
     {
+        bool sendFinishEvent = false;
+
         if (looping_)
         {
             currentTime_ = fmod(currentTime_, animation_->length_);
+            sendFinishEvent = true;
         }
         else
         {
             currentTime_ = animation_->length_;
+            sendFinishEvent = lastTime != currentTime_;
+        }
+
+        if (sendFinishEvent && owner_)
+        {
+            Node* senderNode = owner_->GetNode();
+            if (senderNode)
+            {
+                using namespace AnimationFinished;
+
+                VariantMap& eventData = senderNode->GetEventDataMap();
+                eventData[P_NODE] = senderNode;
+                eventData[P_ANIMATION] = animation_;
+                eventData[P_NAME] = animation_->name_;
+                eventData[P_LOOPED] = looping_;
+    
+                senderNode->SendEvent(E_ANIMATIONFINISHED, eventData);
+            }
         }
     }
 
@@ -146,7 +172,7 @@ void SpriterInstance::OnSetEntity(Entity* entity)
     if (entity == this->entity_)
         return;
 
-    OnSetAnimation(0);
+    OnSetAnimation(nullptr);
 
     this->entity_ = entity;
 }
@@ -173,9 +199,8 @@ void SpriterInstance::OnSetAnimation(Animation* animation, LoopMode loopMode)
 
 void SpriterInstance::UpdateTimelineKeys()
 {
-    for (size_t i = 0; i < mainlineKey_->boneRefs_.size(); ++i)
+    for (Ref* ref : mainlineKey_->boneRefs_)
     {
-        Ref* ref = mainlineKey_->boneRefs_[i];
         BoneTimelineKey* timelineKey = (BoneTimelineKey*)GetTimelineKey(ref);
         if (ref->parent_ >= 0)
         {
@@ -188,9 +213,8 @@ void SpriterInstance::UpdateTimelineKeys()
         timelineKeys_.push_back(timelineKey);
     }
 
-    for (size_t i = 0; i < mainlineKey_->objectRefs_.size(); ++i)
+    for (Ref* ref : mainlineKey_->objectRefs_)
     {
-        Ref* ref = mainlineKey_->objectRefs_[i];
         SpriteTimelineKey* timelineKey = (SpriteTimelineKey*)GetTimelineKey(ref);
             
         if (ref->parent_ >= 0)
@@ -211,14 +235,14 @@ void SpriterInstance::UpdateTimelineKeys()
 void SpriterInstance::UpdateMainlineKey()
 {
     const std::vector<MainlineKey*>& mainlineKeys = animation_->mainlineKeys_;
-    for (size_t i = 0; i < mainlineKeys.size(); ++i)
+    for (MainlineKey * key : mainlineKeys)
     {
-        if (mainlineKeys[i]->time_ <= currentTime_)
+        if (key->time_ <= currentTime_)
         {
-            mainlineKey_ = mainlineKeys[i];
+            mainlineKey_ = key;
         }
 
-        if (mainlineKeys[i]->time_ >= currentTime_)
+        if (key->time_ >= currentTime_)
         {
             break;
         }
@@ -268,13 +292,13 @@ TimelineKey* SpriterInstance::GetTimelineKey(Ref* ref) const
 
 void SpriterInstance::Clear()
 {
-    mainlineKey_ = 0;
+    mainlineKey_ = nullptr;
 
     if (!timelineKeys_.empty())
     {
-        for (size_t i = 0; i < timelineKeys_.size(); ++i)
+        for (auto & timelineKey : timelineKeys_)
         {
-            delete timelineKeys_[i];
+            delete timelineKey;
         }
         timelineKeys_.clear();
     }

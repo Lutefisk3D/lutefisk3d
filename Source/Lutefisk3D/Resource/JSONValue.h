@@ -46,7 +46,7 @@ enum JSONValueType
     /// JSON array type.
     JSON_ARRAY,
     /// JSON object type.
-    JSON_OBJECT,
+    JSON_OBJECT
 };
 /// JSON number type.
 enum JSONNumberType
@@ -58,7 +58,7 @@ enum JSONNumberType
     /// Unsigned integer.
     JSONNT_UINT,
     /// Float or double.
-    JSONNT_FLOAT_DOUBLE,
+    JSONNT_FLOAT_DOUBLE
 };
 
 class JSONValue;
@@ -69,7 +69,7 @@ typedef std::vector<JSONValue> JSONArray;
 typedef HashMap<QString, JSONValue> JSONObject;
 
 /// JSON value class.
-class JSONValue
+class URHO3D_API JSONValue
 {
 public:
     /// Construct null value.
@@ -126,7 +126,11 @@ public:
         *this = value;
     }
     /// Construct with a JSON object.
-    JSONValue(const JSONObject& value);
+    JSONValue(const JSONObject& value) :
+        type_(0)
+    {
+        *this = value;
+    }
     /// Copy-construct from another JSON value.
     JSONValue(const JSONValue& value) :
         type_(0)
@@ -164,6 +168,10 @@ public:
     JSONValueType GetValueType() const;
     /// Return number type.
     JSONNumberType GetNumberType() const;
+    /// Return value type's name.
+    QString GetValueTypeName() const;
+    /// Return number type's name.
+    QString GetNumberTypeName() const;
     /// Check is null.
     bool IsNull() const { return GetValueType() == JSON_NULL; }
     /// Check is boolean.
@@ -189,8 +197,6 @@ public:
     double GetDouble() const { return IsNumber() ? numberValue_ : 0.0; }
     /// Return string value.
     const QString& GetString() const { return IsString() ? *stringValue_ : s_dummy;}
-    /// Return C string value.
-    const char* GetCString() const { return IsString() ? qPrintable(*stringValue_) : nullptr;}
     /// Return JSON array value.
     const JSONArray& GetArray() const { return IsArray() ? *arrayValue_ : emptyArray; }
     /// Return JSON object value.
@@ -211,7 +217,7 @@ public:
     void Erase(unsigned pos, unsigned length = 1);
     /// Resize array.
     void Resize(unsigned newSize);
-    /// Return size of array.
+    /// Return size of array or number of keys in object.
     unsigned Size() const;
 
     // JSON object functions
@@ -256,6 +262,18 @@ public:
     static const JSONArray emptyArray;
     /// Empty JSON object.
     static const JSONObject emptyObject;
+    /// Return name corresponding to a value type.
+    static QString GetValueTypeName(JSONValueType type);
+    /// Return name corresponding to a number type.
+    static QString GetNumberTypeName(JSONNumberType type);
+    /// Return a value type from name; null if unrecognized.
+    static JSONValueType GetValueTypeFromName(const QString& typeName);
+    /// Return a value type from name; null if unrecognized.
+    static JSONValueType GetValueTypeFromName(const char* typeName);
+    /// Return a number type from name; NaN if unrecognized.
+    static JSONNumberType GetNumberTypeFromName(const QString& typeName);
+    /// Return a value type from name; NaN if unrecognized.
+    static JSONNumberType GetNumberTypeFromName(const char* typeName);
 
 private:
     /// type.

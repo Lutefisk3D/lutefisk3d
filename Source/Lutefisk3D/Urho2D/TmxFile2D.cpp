@@ -107,7 +107,7 @@ bool TmxTileLayer2D::Load(const XMLElement& element, const TileMapInfo2D& info)
     }
 
     XMLElement tileElem = dataElem.GetChild("tile");
-    tiles_.resize(width_ * height_);
+    tiles_.resize((unsigned)(width_ * height_));
 
     for (int y = 0; y < height_; ++y)
     {
@@ -384,6 +384,8 @@ bool TmxFile2D::EndLoad()
         info_.orientation_ = O_ISOMETRIC;
     else if (orientation == "staggered")
         info_.orientation_ = O_STAGGERED;
+    else if (orientation == "hexagonal")
+        info_.orientation_ = O_HEXAGONAL;
     else
     {
         URHO3D_LOGERROR("Unsupported orientation type " + orientation);
@@ -452,32 +454,6 @@ bool TmxFile2D::SetInfo(Orientation2D orientation, int width, int height, float 
     info_.tileHeight_ = tileHeight * PIXEL_SIZE;
     return true;
 }
-
-Sprite2D* TmxFile2D::GetTileSprite(int gid) const
-{
-    HashMap<int, SharedPtr<Sprite2D> >::const_iterator i = gidToSpriteMapping_.find(gid);
-    if (i == gidToSpriteMapping_.end())
-        return nullptr;
-
-    return MAP_VALUE(i);
-}
-
-PropertySet2D* TmxFile2D::GetTilePropertySet(int gid) const
-{
-    HashMap<int, SharedPtr<PropertySet2D> >::const_iterator i = gidToPropertySetMapping_.find(gid);
-    if (i == gidToPropertySetMapping_.end())
-        return nullptr;
-    return MAP_VALUE(i);
-}
-
-const TmxLayer2D* TmxFile2D::GetLayer(unsigned index) const
-{
-    if (index >= layers_.size())
-        return nullptr;
-
-    return layers_[index];
-}
-
 void TmxFile2D::AddLayer(unsigned index, TmxLayer2D *layer)
 {
     if(index > layers_.size())
@@ -493,6 +469,30 @@ void TmxFile2D::AddLayer(unsigned index, TmxLayer2D *layer)
 void TmxFile2D::AddLayer(TmxLayer2D *layer)
 {
     layers_.push_back(layer);
+}
+
+Sprite2D* TmxFile2D::GetTileSprite(int gid) const
+{
+    auto i = gidToSpriteMapping_.find(gid);
+    if (i == gidToSpriteMapping_.end())
+        return 0;
+
+    return MAP_VALUE(i);
+}
+
+PropertySet2D* TmxFile2D::GetTilePropertySet(int gid) const
+{
+    auto i = gidToPropertySetMapping_.find(gid);
+    if (i == gidToPropertySetMapping_.end())
+        return 0;
+    return MAP_VALUE(i);
+}
+const TmxLayer2D* TmxFile2D::GetLayer(unsigned index) const
+{
+    if (index >= layers_.size())
+        return nullptr;
+
+    return layers_[index];
 }
 
 

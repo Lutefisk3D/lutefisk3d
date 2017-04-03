@@ -60,7 +60,7 @@ private:
 };
 
 /// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an object animation to it.
-class Animatable : public Serializable
+class URHO3D_API Animatable : public Serializable
 {
     URHO3D_OBJECT(Animatable,Serializable);
 

@@ -240,9 +240,11 @@ Image::Image(Context* context) :
     height_(0),
     depth_(0),
     components_(0),
+    numCompressedLevels_(0),
     cubemap_(false),
     array_(false),
-    sRGB_(false)
+    sRGB_(false),
+    compressedFormat_(CF_NONE)
 {
 }
 
@@ -436,8 +438,9 @@ bool Image::BeginLoad(Deserializer& source)
         {
             URHO3D_PROFILE(ConvertDDSToRGBA);
 
-            SharedPtr<Image> currentImage(this);
-            while (currentImage.NotNull())
+            currentImage = this;
+
+            while (currentImage)
             {
                 unsigned sourcePixelByteSize = ddsd.ddpfPixelFormat_.dwRGBBitCount_ >> 3;
                 unsigned numPixels = dataSize / sourcePixelByteSize;
@@ -448,13 +451,12 @@ bool Image::BeginLoad(Deserializer& source)
                 unsigned gMask = ddsd.ddpfPixelFormat_.dwGBitMask_;
                 unsigned bMask = ddsd.ddpfPixelFormat_.dwBBitMask_;
                 unsigned aMask = ddsd.ddpfPixelFormat_.dwRGBAlphaBitMask_;
-                ADJUSTSHIFT(rMask, rShiftL, rShiftR);
-                ADJUSTSHIFT(gMask, gShiftL, gShiftR);
-                ADJUSTSHIFT(bMask, bShiftL, bShiftR);
-                ADJUSTSHIFT(aMask, aShiftL, aShiftR);
+                ADJUSTSHIFT(rMask, rShiftL, rShiftR)
+                ADJUSTSHIFT(gMask, gShiftL, gShiftR)
+                ADJUSTSHIFT(bMask, bShiftL, bShiftR)
+                ADJUSTSHIFT(aMask, aShiftL, aShiftR)
 
                 SharedArrayPtr<unsigned char> rgbaData(new unsigned char[numPixels * 4]);
-                SetMemoryUse(numPixels * 4);
 
                 switch (sourcePixelByteSize)
                 {
@@ -510,6 +512,7 @@ bool Image::BeginLoad(Deserializer& source)
 
                 // Replace with converted data
                 currentImage->data_ = rgbaData;
+                currentImage->SetMemoryUse(numPixels * 4);
                 currentImage = currentImage->GetNextSibling();
             }
         }
@@ -1178,7 +1181,6 @@ bool Image::SavePNG(const QString& fileName) const
 
     return saveImageCommon(fileName,"png");
 }
-
 bool Image::SaveJPG(const QString & fileName, int quality) const
 {
     URHO3D_PROFILE(SaveImageJPG);
@@ -1394,6 +1396,9 @@ SharedPtr<Image> Image::GetNextLevel() const
                 pixelDataOut[x+3] = ((unsigned)pixelDataIn[x*2+3] + pixelDataIn[x*2+7]) >> 1;
             }
             break;
+        default:
+            assert(false);  // Should never reach here
+            break;
         }
     }
     // 2D case
@@ -1461,6 +1466,9 @@ SharedPtr<Image> Image::GetNextLevel() const
                     out[x+3] = ((unsigned)inUpper[x*2+3] + inUpper[x*2+7] + inLower[x*2+3] + inLower[x*2+7]) >> 2;
                 }
             }
+            break;
+        default:
+            assert(false);  // Should never reach here
             break;
         }
     }
@@ -1984,7 +1992,7 @@ unsigned char* Image::GetImageData(Deserializer& source, int& width, int& height
     QImage img(QImage::fromData(buffer.Get(),dataSize));
     assert(img.width()>0 && img.height()>0);
     if(((img.depth()+7)/8)==4) {
-        if(not img.hasAlphaChannel()) {
+        if(!img.hasAlphaChannel()) {
             img = img.convertToFormat(QImage::Format_RGB888);
         }
         else

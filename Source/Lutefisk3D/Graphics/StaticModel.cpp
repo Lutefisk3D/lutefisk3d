@@ -31,6 +31,7 @@
 #include "../Graphics/Model.h"
 #include "../Graphics/OcclusionBuffer.h"
 #include "../Graphics/OctreeQuery.h"
+#include "../Graphics/VertexBuffer.h"
 #include "../Core/Profiler.h"
 #include "../Resource/ResourceCache.h"
 #include "../Resource/ResourceEvents.h"
@@ -208,11 +209,11 @@ bool StaticModel::DrawOcclusion(OcclusionBuffer* buffer)
         unsigned vertexSize;
         const unsigned char* indexData;
         unsigned indexSize;
-        unsigned elementMask;
+        const std::vector<VertexElement>* elements;
 
-        geometry->GetRawData(vertexData, vertexSize, indexData, indexSize, elementMask);
+        geometry->GetRawData(vertexData, vertexSize, indexData, indexSize, elements);
         // Check for valid geometry data
-        if (!vertexData || !indexData)
+        if (!vertexData || !indexData || !elements || VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR3, SEM_POSITION) != 0)
             continue;
 
         unsigned indexStart = geometry->GetIndexStart();
@@ -240,6 +241,11 @@ void StaticModel::SetModel(Model* model)
         return;
     }
 
+    if (!node_)
+    {
+        URHO3D_LOGERROR("Can not set model while model component is not attached to a scene node");
+        return;
+    }
     // Unsubscribe from the reload event of previous model (if any), then subscribe to the new
     if (model_)
         UnsubscribeFromEvent(model_, E_RELOADFINISHED);
@@ -394,7 +400,7 @@ const ResourceRefList& StaticModel::GetMaterialsAttr() const
 {
     materialsAttr_.names_.resize(batches_.size());
     for (unsigned i = 0; i < batches_.size(); ++i)
-        materialsAttr_.names_[i] = GetResourceName(batches_[i].material_);
+        materialsAttr_.names_[i] = GetResourceName(GetMaterial(i));
 
     return materialsAttr_;
 }

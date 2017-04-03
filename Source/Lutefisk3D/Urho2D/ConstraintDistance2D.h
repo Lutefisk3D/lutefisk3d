@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// 2D distance constraint component.
-class ConstraintDistance2D : public Constraint2D
+class URHO3D_API ConstraintDistance2D : public Constraint2D
 {
     URHO3D_OBJECT(ConstraintDistance2D,Constraint2D);
 
@@ -36,7 +36,7 @@ public:
     /// Construct.
     ConstraintDistance2D(Context* scontext);
     /// Destruct.
-    virtual ~ConstraintDistance2D();
+    virtual ~ConstraintDistance2D() = default;
     /// Register object factory.
     static void RegisterObject(Context* context);
 

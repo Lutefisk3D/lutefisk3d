@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// 2D mouse constraint component.
-class ConstraintMouse2D : public Constraint2D
+class URHO3D_API ConstraintMouse2D : public Constraint2D
 {
     URHO3D_OBJECT(ConstraintMouse2D,Constraint2D);
 

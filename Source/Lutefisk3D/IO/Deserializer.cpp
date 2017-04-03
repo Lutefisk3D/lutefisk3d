@@ -53,6 +53,12 @@ unsigned Deserializer::GetChecksum()
     return 0;
 }
 
+long long Deserializer::ReadInt64()
+{
+    long long ret;
+    Read(&ret, sizeof ret);
+    return ret;
+}
 int Deserializer::ReadInt()
 {
     int ret;
@@ -70,6 +76,13 @@ short Deserializer::ReadShort()
 signed char Deserializer::ReadByte()
 {
     signed char ret;
+    Read(&ret, sizeof ret);
+    return ret;
+}
+
+unsigned long long Deserializer::ReadUInt64()
+{
+    unsigned long long ret;
     Read(&ret, sizeof ret);
     return ret;
 }
@@ -393,7 +406,7 @@ unsigned Deserializer::ReadVLE()
     unsigned char byte;
 
     byte = ReadUByte();
-    ret = byte & 0x7f;
+    ret = (unsigned)(byte & 0x7f);
     if (byte < 0x80)
         return ret;
 

@@ -34,7 +34,7 @@ namespace Urho3D
 class Matrix3x4;
 
 /// 4x4 matrix for arbitrary linear transforms including projection.
-class Matrix4
+class URHO3D_API Matrix4
 {
 public:
     /// Construct an identity matrix.
@@ -116,7 +116,7 @@ public:
     {
     }
     
-    // Construct from values.
+    /// Construct from values.
     Matrix4(float v00, float v01, float v02, float v03,
             float v10, float v11, float v12, float v13,
             float v20, float v21, float v22, float v23,
@@ -499,7 +499,7 @@ public:
         m22_ = rotation.m22_;
     }
     
-    // Set scaling elements.
+    /// Set scaling elements.
     void SetScale(const Vector3& scale)
     {
         m00_ = scale.x_;
@@ -507,7 +507,7 @@ public:
         m22_ = scale.z_;
     }
     
-    // Set uniform scaling elements.
+    /// Set uniform scaling elements.
     void SetScale(float scale)
     {
         m00_ = scale;

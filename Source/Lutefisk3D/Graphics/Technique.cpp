@@ -37,6 +37,8 @@
 namespace Urho3D
 {
 
+extern const char* cullModeNames[];
+
 const char* blendModeNames[] =
 {
     "replace",
@@ -73,11 +75,12 @@ static const char* lightingModeNames[] =
 
 Pass::Pass(const QString& name) :
     blendMode_(BLEND_REPLACE),
+    cullMode_(MAX_CULLMODES),
     depthTestMode_(CMP_LESSEQUAL),
     lightingMode_(LIGHTING_UNLIT),
     shadersLoadedFrameNumber_(0),
+    alphaToCoverage_(false),
     depthWrite_(true),
-    alphaMask_(false),
     isDesktop_(false)
 {
     name_ = name.toLower();
@@ -98,7 +101,10 @@ void Pass::SetBlendMode(BlendMode mode)
 {
     blendMode_ = mode;
 }
-
+void Pass::SetCullMode(CullMode mode)
+{
+    cullMode_ = mode;
+}
 void Pass::SetDepthTestMode(CompareMode mode)
 {
     depthTestMode_ = mode;
@@ -114,9 +120,9 @@ void Pass::SetDepthWrite(bool enable)
     depthWrite_ = enable;
 }
 
-void Pass::SetAlphaMask(bool enable)
+void Pass::SetAlphaToCoverage(bool enable)
 {
-    alphaMask_ = enable;
+    alphaToCoverage_ = enable;
 }
 
 void Pass::SetIsDesktop(bool enable)
@@ -148,6 +154,17 @@ void Pass::SetPixelShaderDefines(const QString& defines)
     ReleaseShaders();
 }
 
+void Pass::SetVertexShaderDefineExcludes(const QString& excludes)
+{
+    vertexShaderDefineExcludes_ = excludes;
+    ReleaseShaders();
+}
+
+void Pass::SetPixelShaderDefineExcludes(const QString& excludes)
+{
+    pixelShaderDefineExcludes_ = excludes;
+    ReleaseShaders();
+}
 void Pass::ReleaseShaders()
 {
     vertexShaders_.clear();
@@ -157,6 +174,33 @@ void Pass::ReleaseShaders()
 void Pass::MarkShadersLoaded(unsigned frameNumber)
 {
     shadersLoadedFrameNumber_ = frameNumber;
+}
+QString Pass::GetEffectiveVertexShaderDefines() const
+{
+    // Prefer to return just the original defines if possible
+    if (vertexShaderDefineExcludes_.isEmpty())
+        return vertexShaderDefines_;
+
+    QStringList vsDefines = vertexShaderDefines_.split(' ');
+    QStringList vsExcludes = vertexShaderDefineExcludes_.split(' ');
+    for (unsigned i = 0; i < vsExcludes.size(); ++i)
+        vsDefines.removeAll(vsExcludes[i]);
+
+    return vsDefines.join(" ");
+}
+
+QString Pass::GetEffectivePixelShaderDefines() const
+{
+    // Prefer to return just the original defines if possible
+    if (pixelShaderDefineExcludes_.isEmpty())
+        return pixelShaderDefines_;
+
+    QStringList psDefines = pixelShaderDefines_.split(' ');
+    QStringList psExcludes = pixelShaderDefineExcludes_.split(' ');
+    for (unsigned i = 0; i < psExcludes.size(); ++i)
+        psDefines.removeAll(psExcludes[i]);
+
+    return psDefines.join(" ");
 }
 unsigned Technique::basePassIndex = 0;
 unsigned Technique::alphaPassIndex = 0;
@@ -187,6 +231,7 @@ void Technique::RegisterObject(Context* context)
 bool Technique::BeginLoad(Deserializer& source)
 {
     passes_.clear();
+    cloneTechniques_.clear();
 
     SetMemoryUse(sizeof(Technique));
 
@@ -207,9 +252,6 @@ bool Technique::BeginLoad(Deserializer& source)
         globalVSDefines += ' ';
     if (!globalPSDefines.isEmpty())
         globalPSDefines += ' ';
-    bool globalAlphaMask = false;
-    if (rootElem.HasAttribute("alphamask"))
-        globalAlphaMask = rootElem.GetBool("alphamask");
 
     XMLElement passElem = rootElem.GetChild("pass");
     while (passElem)
@@ -243,6 +285,8 @@ bool Technique::BeginLoad(Deserializer& source)
                 newPass->SetPixelShaderDefines(globalPSDefines + passElem.GetAttribute("psdefines"));
             }
 
+            newPass->SetVertexShaderDefineExcludes(passElem.GetAttribute("vsexcludes"));
+            newPass->SetPixelShaderDefineExcludes(passElem.GetAttribute("psexcludes"));
             if (passElem.HasAttribute("lighting"))
             {
                 QString lighting = passElem.GetAttributeLower("lighting");
@@ -254,6 +298,12 @@ bool Technique::BeginLoad(Deserializer& source)
             {
                 QString blend = passElem.GetAttributeLower("blend");
                 newPass->SetBlendMode((BlendMode)GetStringListIndex(blend, blendModeNames, BLEND_REPLACE));
+            }
+
+            if (passElem.HasAttribute("cull"))
+            {
+                QString cull = passElem.GetAttributeLower("cull");
+                newPass->SetCullMode((CullMode)GetStringListIndex(cull, cullModeNames, MAX_CULLMODES));
             }
 
             if (passElem.HasAttribute("depthtest"))
@@ -268,10 +318,8 @@ bool Technique::BeginLoad(Deserializer& source)
             if (passElem.HasAttribute("depthwrite"))
                 newPass->SetDepthWrite(passElem.GetBool("depthwrite"));
 
-            if (passElem.HasAttribute("alphamask"))
-                newPass->SetAlphaMask(passElem.GetBool("alphamask"));
-            else
-                newPass->SetAlphaMask(globalAlphaMask);
+            if (passElem.HasAttribute("alphatocoverage"))
+                newPass->SetAlphaToCoverage(passElem.GetBool("alphatocoverage"));
         }
         else
             URHO3D_LOGERROR("Missing pass name");
@@ -313,12 +361,14 @@ SharedPtr<Technique> Technique::Clone(const QString& cloneName) const
         newPass->SetDepthTestMode(srcPass->GetDepthTestMode());
         newPass->SetLightingMode(srcPass->GetLightingMode());
         newPass->SetDepthWrite(srcPass->GetDepthWrite());
-        newPass->SetAlphaMask(srcPass->GetAlphaMask());
+        newPass->SetAlphaToCoverage(srcPass->GetAlphaToCoverage());
         newPass->SetIsDesktop(srcPass->IsDesktop());
         newPass->SetVertexShader(srcPass->GetVertexShader());
         newPass->SetPixelShader(srcPass->GetPixelShader());
         newPass->SetVertexShaderDefines(srcPass->GetVertexShaderDefines());
         newPass->SetPixelShaderDefines(srcPass->GetPixelShaderDefines());
+        newPass->SetVertexShaderDefineExcludes(srcPass->GetVertexShaderDefineExcludes());
+        newPass->SetPixelShaderDefineExcludes(srcPass->GetPixelShaderDefineExcludes());
     }
 
     return ret;
@@ -339,7 +389,7 @@ Pass* Technique::CreatePass(const QString& name)
     passes_[passIndex] = newPass;
 
     // Calculate memory use now
-    SetMemoryUse(sizeof(Technique) + GetNumPasses() * sizeof(Pass));
+    SetMemoryUse((unsigned)(sizeof(Technique) + GetNumPasses() * sizeof(Pass)));
     return newPass;
 }
 
@@ -351,7 +401,7 @@ void Technique::RemovePass(const QString& name)
     else if (MAP_VALUE(i) < passes_.size() && passes_[MAP_VALUE(i)].Get())
     {
         passes_[MAP_VALUE(i)].Reset();
-        SetMemoryUse(sizeof(Technique) + GetNumPasses() * sizeof(Pass));
+        SetMemoryUse((unsigned)(sizeof(Technique) + GetNumPasses() * sizeof(Pass)));
     }
 }
 
@@ -409,6 +459,35 @@ std::vector<Pass*> Technique::GetPasses() const
             ret.push_back(pass);
     }
     return ret;
+}
+SharedPtr<Technique> Technique::CloneWithDefines(const QString& vsDefines, const QString& psDefines)
+{
+    // Return self if no actual defines
+    if (vsDefines.isEmpty() && psDefines.isEmpty())
+        return SharedPtr<Technique>(this);
+
+    std::pair<StringHash, StringHash> key = std::make_pair(StringHash(vsDefines), StringHash(psDefines));
+
+    // Return existing if possible
+    auto iter = cloneTechniques_.find(key);
+    if (iter != cloneTechniques_.end())
+        return MAP_VALUE(iter);
+
+    // Set same name as the original for the clones to ensure proper serialization of the material. This should not be a problem
+    // since the clones are never stored to the resource cache
+    iter = cloneTechniques_.insert(std::make_pair(key, Clone(GetName()))).first;
+
+    for (Pass *pass : MAP_VALUE(iter)->passes_)
+    {
+        if (!pass)
+            continue;
+        if (!vsDefines.isEmpty())
+            pass->SetVertexShaderDefines(pass->GetVertexShaderDefines() + " " + vsDefines);
+        if (!psDefines.isEmpty())
+            pass->SetPixelShaderDefines(pass->GetPixelShaderDefines() + " " + psDefines);
+    }
+
+    return MAP_VALUE(iter);
 }
 unsigned Technique::GetPassIndex(const QString& passName)
 {

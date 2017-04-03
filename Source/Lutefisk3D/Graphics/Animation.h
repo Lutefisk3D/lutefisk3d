@@ -50,7 +50,7 @@ struct AnimationKeyFrame
 };
 
 /// Skeletal animation track, stores keyframes of a single bone.
-struct AnimationTrack
+struct URHO3D_API AnimationTrack
 {
     /// Construct.
     AnimationTrack() :
@@ -68,7 +68,7 @@ struct AnimationTrack
     void RemoveKeyFrame(unsigned index);
     /// Remove all keyframes.
     void RemoveAllKeyFrames();
-    
+
     /// Return keyframe at index, or null if not found.
     AnimationKeyFrame* GetKeyFrame(unsigned index);
     /// Return number of keyframes.
@@ -106,7 +106,7 @@ static const unsigned char CHANNEL_ROTATION = 0x2;
 static const unsigned char CHANNEL_SCALE = 0x4;
 
 /// Skeletal animation resource.
-class Animation : public Resource
+class URHO3D_API Animation : public Resource
 {
     URHO3D_OBJECT(Animation,Resource);
 
@@ -114,7 +114,7 @@ public:
     /// Construct.
     Animation(Context* context);
     /// Destruct.
-    virtual ~Animation();
+    virtual ~Animation() = default;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -133,8 +133,6 @@ public:
     bool RemoveTrack(const QString& name);
     /// Remove all tracks. This is unsafe if the animation is currently used in playback.
     void RemoveAllTracks();
-    /// Set all animation tracks.
-    void SetTracks(const HashMap<StringHash, AnimationTrack>& tracks);
     /// Set a trigger point at index.
     void SetTrigger(unsigned index, const AnimationTriggerPoint& trigger);
     /// Add a trigger point.
@@ -147,7 +145,8 @@ public:
     void RemoveAllTriggers();
     /// Resize trigger point vector.
     void SetNumTriggers(unsigned num);
-
+    /// Clone the animation.
+    SharedPtr<Animation> Clone(const QString& cloneName = QString()) const;
     /// Return animation name.
     const QString& GetAnimationName() const { return animationName_; }
     /// Return animation name hash.

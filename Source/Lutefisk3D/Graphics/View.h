@@ -115,7 +115,7 @@ struct PerThreadSceneResult
 static const unsigned MAX_VIEWPORT_TEXTURES = 2;
 
 /// Internal structure for 3D rendering work. Created for each backbuffer and texture viewport, but not for shadow cameras.
-class View : public Object
+class URHO3D_API View : public Object
 {
     friend void CheckVisibilityWork(const WorkItem* item, unsigned threadIndex);
     friend void ProcessLightWork(const WorkItem* item, unsigned threadIndex);
@@ -153,6 +153,11 @@ class View : public Object
     RenderSurface* GetRenderTarget() const { return renderTarget_; }
     /// Return whether should draw debug geometry.
     bool GetDrawDebug() const { return drawDebug_; }
+    /// Return view rectangle.
+    const IntRect& GetViewRect() const { return viewRect_; }
+
+    /// Return view dimensions.
+    const IntVector2& GetViewSize() const { return viewSize_; }
     /// Return geometry objects.
     const std::vector<Drawable*>& GetGeometries() const { return geometries_; }
     /// Return occluder objects.
@@ -172,12 +177,15 @@ class View : public Object
     /// Set global (per-frame) shader parameters. Called by Batch and internally by View.
     void SetGlobalShaderParameters();
     /// Set camera-specific shader parameters. Called by Batch and internally by View.
-    void SetCameraShaderParameters(const Urho3D::Camera &camera, bool setProjectionMatrix);
+    void SetCameraShaderParameters(const Urho3D::Camera &camera);
     /// Set G-buffer offset and inverse size shader parameters. Called by Batch and internally by View.
     void SetGBufferShaderParameters(const IntVector2& texSize, const IntRect& viewRect);
 
-    /// Draw a fullscreen quad. Shaders and renderstates must have been set beforehand.
-    void DrawFullscreenQuad(bool nearQuad);
+    /// Draw a fullscreen quad. Shaders and renderstates must have been set beforehand. Quad will be drawn to the middle of depth range, similarly to deferred directional lights.
+    void DrawFullscreenQuad(bool setIdentityProjection = false);
+    /// Get a named texture from the rendertarget list or from the resource cache, to be either used as a rendertarget or texture binding.
+    Texture* FindNamedTexture(const QString& name, bool isRenderTarget, bool isVolumeMap = false);
+
 private:
     /// Query the octree for drawable objects.
     void GetDrawables();
@@ -220,7 +228,7 @@ private:
     /// Query for lit geometries and shadow casters for a light.
     void ProcessLight(LightQueryResult& query, unsigned threadIndex);
     /// Process shadow casters' visibilities and build their combined view- or projection-space bounding box.
-    void ProcessShadowCasters(LightQueryResult& query, const std::vector<Drawable*>& drawables, unsigned splitIndex);
+    void ProcessShadowCasters(LightQueryResult& query, const std::vector<Drawable*>& drawables, LightQueryShadowEntry &entry);
     /// Set up initial shadow camera view(s).
     void SetupShadowCameras(LightQueryResult& query);
     /// Set up a directional light shadow camera
@@ -240,20 +248,21 @@ private:
     /// Check if material should render an auxiliary view (if it has a camera attached.)
     void CheckMaterialForAuxView(Material* material);
     /// Choose shaders for a batch and add it to queue.
-    void AddBatchToQueue(BatchQueue& queue, Batch batch, const Technique* tech, bool allowInstancing = true, bool allowShadows = true);
+    void AddBatchToQueue(BatchQueue& batchQueue, Batch batch, const Technique* tech, bool allowInstancing = true, bool allowShadows = true);
     /// Prepare instancing buffer by filling it with all instance transforms.
     void PrepareInstancingBuffer();
     /// Set up a light volume rendering batch.
     void SetupLightVolumeBatch(Batch& batch);
+    /// Check whether a light queue needs shadow rendering.
+    bool NeedRenderShadowMap(const LightBatchQueue& queue);
     /// Render a shadow map.
     void RenderShadowMap(const LightBatchQueue& queue);
     /// Return the proper depth-stencil surface to use for a rendertarget.
     RenderSurface* GetDepthStencil(RenderSurface* renderTarget);
     /// Helper function to get the render surface from a texture. 2D textures will always return the first face only.
     RenderSurface* GetRenderSurfaceFromTexture(Texture* texture, CubeMapFace face = FACE_POSITIVE_X);
-    /// Get a named texture from the rendertarget list or from the resource cache, to be either used as a rendertarget or texture binding.
-    Texture* FindNamedTexture(const QString& name, bool isRenderTarget, bool isVolumeMap = false);
-
+    /// Send a view update or render related event through the Renderer subsystem. The parameters are the same for all of them.
+    void SendViewEvent(StringHash eventType);
     /// Return the drawable's zone, or camera zone if it has override mode enabled.
     Zone* GetZone(Drawable* drawable)
     {
@@ -278,7 +287,7 @@ private:
     /// Return hash code for a vertex light queue.
     uint64_t GetVertexLightQueueHash(const std::vector<Light*>& vertexLights)
     {
-        unsigned long long hash = 0;
+        uint64_t hash = 0;
         for (Light * light : vertexLights)
             hash += uintptr_t(light);
         return hash;

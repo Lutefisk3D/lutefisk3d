@@ -6,6 +6,7 @@ set(INCLUDES
     Batch.h
     BillboardSet.h
     Camera.h
+    ConstantBuffer.cpp
     ConstantBuffer.h
     CustomGeometry.h
     DebugRenderer.h
@@ -27,6 +28,7 @@ set(INCLUDES
     OctreeQuery.h
     ParticleEffect.h
     ParticleEmitter.h
+    RibbonTrail.h
     Renderer.h
     RenderPath.h
     RenderSurface.h
@@ -43,6 +45,7 @@ set(INCLUDES
     Terrain.h
     TerrainPatch.h
     Texture2D.h
+    Texture2DArray.h
     Texture3D.h
     TextureCube.h
     Texture.h
@@ -65,7 +68,10 @@ set(SOURCE
     DecalSet.cpp
     Drawable.cpp
     Geometry.cpp
+    GPUObject.cpp
+    Graphics.cpp
     GraphicsDefs.cpp
+    IndexBuffer.cpp
     Light.cpp
     Material.cpp
     Model.cpp
@@ -76,8 +82,11 @@ set(SOURCE
     ParticleEmitter.cpp
     Renderer.cpp
     RenderPath.cpp
+    RenderSurface.cpp
+    RibbonTrail.cpp
     Shader.cpp
     ShaderPrecache.cpp
+    ShaderVariation.cpp
     Skeleton.cpp
     Skybox.cpp
     StaticModel.cpp
@@ -86,26 +95,20 @@ set(SOURCE
     Technique.cpp
     Terrain.cpp
     TerrainPatch.cpp
+    Texture.cpp
+    Texture2D.cpp
+    Texture2DArray.cpp
+    Texture3D.cpp
+    TextureCube.cpp
+    VertexBuffer.cpp
     View.cpp
     Viewport.cpp
     Zone.cpp
 )
 set(OPENGL2_3_RENDERER
-    OpenGL/OGLConstantBuffer.h
-    OpenGL/OGLGPUObject.h
-    OpenGL/OGLGraphics.h
     OpenGL/OGLGraphicsImpl.h
-    OpenGL/OGLIndexBuffer.h
-    OpenGL/OGLRenderSurface.h
     OpenGL/OGLShaderProgram.h
-    OpenGL/OGLShaderVariation.h
-    OpenGL/OGLTexture2D.h
-    OpenGL/OGLTexture3D.h
-    OpenGL/OGLTextureCube.h
-    OpenGL/OGLTexture.h
-    OpenGL/OGLVertexBuffer.h
     OpenGL/OGLConstantBuffer.cpp
-    OpenGL/OGLGPUObject.cpp
     OpenGL/OGLGraphics.cpp
     OpenGL/OGLGraphicsImpl.cpp
     OpenGL/OGLIndexBuffer.cpp
@@ -113,6 +116,7 @@ set(OPENGL2_3_RENDERER
     OpenGL/OGLShaderProgram.cpp
     OpenGL/OGLShaderVariation.cpp
     OpenGL/OGLTexture2D.cpp
+    OpenGL/OGLTexture2DArray.cpp
     OpenGL/OGLTexture3D.cpp
     OpenGL/OGLTexture.cpp
     OpenGL/OGLTextureCube.cpp

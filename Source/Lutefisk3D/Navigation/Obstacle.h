@@ -31,7 +31,7 @@ namespace Urho3D
 class DynamicNavigationMesh;
 
 /// Obstacle for dynamic navigation mesh.
-class Obstacle : public Component
+class URHO3D_API Obstacle : public Component
 {
     URHO3D_OBJECT(Obstacle,Component)
     friend class DynamicNavigationMesh;
@@ -66,8 +66,12 @@ public:
     void DrawDebugGeometry(bool depthTest);
 
 protected:
+    /// Handle node being assigned.
+    virtual void OnNodeSet(Node* node);
     /// Handle scene being assigned, identify our DynamicNavigationMesh.
     virtual void OnSceneSet(Scene* scene) override;
+    /// Handle node transform being dirtied.
+    virtual void OnMarkedDirty(Node* node);
 
 private:
     /// Radius of this obstacle.

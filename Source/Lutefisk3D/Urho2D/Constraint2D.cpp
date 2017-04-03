@@ -35,7 +35,6 @@ namespace Urho3D
 {
 
 extern const char* URHO2D_CATEGORY;
-
 Constraint2D::Constraint2D(Context* context) :
     Component(context),
     joint_(nullptr),
@@ -46,12 +45,6 @@ Constraint2D::Constraint2D(Context* context) :
 
 Constraint2D::~Constraint2D()
 {
-    if (ownerBody_)
-        ownerBody_->RemoveConstraint2D(this);
-
-    if (otherBody_)
-        otherBody_->RemoveConstraint2D(this);
-
     ReleaseJoint();
 }
 
@@ -78,6 +71,11 @@ void Constraint2D::CreateJoint()
     {
         joint_ = physicsWorld_->GetWorld()->CreateJoint(jointDef);
         joint_->SetUserData(this);
+        if (ownerBody_)
+            ownerBody_->AddConstraint2D(this);
+
+        if (otherBody_)
+            otherBody_->AddConstraint2D(this);
     }
 }
 
@@ -86,6 +84,11 @@ void Constraint2D::ReleaseJoint()
     if (!joint_)
         return;
 
+    if (ownerBody_)
+        ownerBody_->RemoveConstraint2D(this);
+
+    if (otherBody_)
+        otherBody_->RemoveConstraint2D(this);
     if (physicsWorld_)
         physicsWorld_->GetWorld()->DestroyJoint(joint_);
 

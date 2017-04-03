@@ -22,6 +22,9 @@ void Start()
     // Setup the viewport for displaying the scene
     SetupViewport();
 
+    // Set the mouse mode to use in the sample
+    SampleInitMouseMode(MM_RELATIVE);
+
     // Hook up to the frame update events
     SubscribeToEvents();
 }
@@ -138,6 +141,9 @@ void CreateScene()
             Material@ renderMaterial = Material();
             renderMaterial.SetTechnique(0, cache.GetResource("Technique", "Techniques/DiffUnlit.xml"));
             renderMaterial.textures[TU_DIFFUSE] = renderTexture;
+            // Since the screen material is on top of the box model and may Z-fight, use negative depth bias
+            // to push it forward (particularly necessary on mobiles with possibly less Z resolution)
+            renderMaterial.depthBias = BiasParameters(-0.001, 0.0);
             screenObject.material = renderMaterial;
 
             // Get the texture's RenderSurface object (exists when the texture has been created in rendertarget mode)
@@ -200,13 +206,13 @@ void MoveCamera(float timeStep)
     cameraNode.rotation = Quaternion(pitch, yaw, 0.0f);
 
     // Read WASD keys and move the camera scene node to the corresponding direction if they are pressed
-    if (input.keyDown['W'])
+    if (input.keyDown[KEY_W])
         cameraNode.Translate(Vector3(0.0f, 0.0f, 1.0f) * MOVE_SPEED * timeStep);
-    if (input.keyDown['S'])
+    if (input.keyDown[KEY_S])
         cameraNode.Translate(Vector3(0.0f, 0.0f, -1.0f) * MOVE_SPEED * timeStep);
-    if (input.keyDown['A'])
+    if (input.keyDown[KEY_A])
         cameraNode.Translate(Vector3(-1.0f, 0.0f, 0.0f) * MOVE_SPEED * timeStep);
-    if (input.keyDown['D'])
+    if (input.keyDown[KEY_D])
         cameraNode.Translate(Vector3(1.0f, 0.0f, 0.0f) * MOVE_SPEED * timeStep);
 }
 

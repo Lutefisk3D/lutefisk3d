@@ -27,7 +27,7 @@
 
 namespace Urho3D
 {
-    class NavArea : public Component
+class URHO3D_API NavArea : public Component
     {
         URHO3D_OBJECT(NavArea,Component);
 

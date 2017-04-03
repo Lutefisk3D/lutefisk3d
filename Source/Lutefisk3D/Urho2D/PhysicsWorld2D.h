@@ -32,13 +32,8 @@ class Camera;
 class RigidBody2D;
 
 /// 2D Physics raycast hit.
-struct PhysicsRaycastResult2D
+struct URHO3D_API PhysicsRaycastResult2D
 {
-    /// Construct with defaults.
-    PhysicsRaycastResult2D() : body_(nullptr)
-    {
-    }
-
     /// Test for inequality, added to prevent GCC from complaining.
     bool operator !=(const PhysicsRaycastResult2D& rhs) const
     {
@@ -52,7 +47,7 @@ struct PhysicsRaycastResult2D
     /// Hit distance from ray origin.
     float distance_;
     /// Rigid body that was hit.
-    RigidBody2D* body_;
+    RigidBody2D* body_ = nullptr;
 };
 
 /// Delayed world transform assignment for parented 2D rigidbodies.
@@ -69,7 +64,7 @@ struct DelayedWorldTransform2D
 };
 
 /// 2D physics simulation world component. Should be added only to the root scene node.
-class PhysicsWorld2D : public Component, public b2ContactListener, public b2Draw
+class URHO3D_API PhysicsWorld2D : public Component, public b2ContactListener, public b2Draw
 {
     URHO3D_OBJECT(PhysicsWorld2D,Component);
 
@@ -84,13 +79,13 @@ public:
     /// Visualize the component as debug geometry.
     virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
-    // Implement b2ContactListener.
+    // Implement b2ContactListener
     /// Called when two fixtures begin to touch.
     virtual void BeginContact(b2Contact* contact) override;
     /// Called when two fixtures cease to touch.
     virtual void EndContact(b2Contact* contact) override;
 
-    // Implement b2Draw.
+    // Implement b2Draw
     /// Draw a closed polygon provided in CCW order.
     virtual void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) override;
     /// Draw a solid closed polygon provided in CCW order.
@@ -248,6 +243,8 @@ private:
         SharedPtr<Node> nodeA_;
         /// Node B.
         SharedPtr<Node> nodeB_;
+        /// Box2D contact.
+        b2Contact* contact_;
     };
     /// Begin contact infos.
     std::vector<ContactInfo> beginContactInfos_;

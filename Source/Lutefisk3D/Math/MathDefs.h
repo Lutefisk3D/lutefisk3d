@@ -60,9 +60,9 @@ enum Intersection
 /// Check whether two floating point values are equal within accuracy.
 template <class T>
 inline bool Equals(T lhs, T rhs) { return lhs + std::numeric_limits<T>::epsilon() >= rhs && lhs - std::numeric_limits<T>::epsilon() <= rhs; }
-/// Linear interpolation between two float values.
-template <class T>
-inline float Lerp(T lhs, T rhs, T t) { return lhs * (T(1.0) - t) + rhs * t; }
+/// Linear interpolation between two values.
+template <class T,class U>
+inline T Lerp(T lhs, T rhs, U t) { return lhs * (U(1.0) - t) + rhs * t; }
 /// Return the smaller of two floats.
 template <class T>
 inline T Min(T lhs, T rhs) { return lhs < rhs ? lhs : rhs; }
@@ -131,20 +131,20 @@ inline T Atan2(T y, T x) { return M_RADTODEG * std::atan2(y, x); }
 /// Check whether an unsigned integer is a power of two.
 inline bool IsPowerOfTwo(unsigned value)
 {
-    if (!value)
-        return true;
-    while (!(value & 1))
-        value >>= 1;
-    return value == 1;
+    return !(value & (value - 1));
 }
 
 /// Round up to next power of two.
 inline unsigned NextPowerOfTwo(unsigned value)
 {
-    unsigned ret = 1;
-    while (ret < value && ret < 0x80000000)
-        ret <<= 1;
-    return ret;
+    // http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+    --value;
+    value |= value >> 1;
+    value |= value >> 2;
+    value |= value >> 4;
+    value |= value >> 8;
+    value |= value >> 16;
+    return ++value;
 }
 
 /// Count the number of set bits in a mask.

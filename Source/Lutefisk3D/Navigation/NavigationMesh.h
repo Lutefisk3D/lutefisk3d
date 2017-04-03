@@ -47,6 +47,7 @@ enum NavmeshPartitionType
     NAVMESH_PARTITION_MONOTONE
 };
 class Geometry;
+class NavArea;
 
 struct FindPathData;
 struct NavBuildData;
@@ -73,18 +74,18 @@ enum NavigationPathPointFlag
     NAVPATHFLAG_OFF_MESH = 0x04
 };
 
-struct NavigationPathPoint
+struct URHO3D_API NavigationPathPoint
 {
-    /// World-space position of the path point
+    /// World-space position of the path point.
     Vector3 position_;
-    /// Detour flag
+    /// Detour flag.
     NavigationPathPointFlag flag_;
-    /// Detour area ID
+    /// Detour area ID.
     unsigned char areaID_;
 };
 
 /// Navigation mesh component. Collects the navigation geometry from child nodes with the Navigable component and responds to path queries.
-class NavigationMesh : public Component
+class URHO3D_API NavigationMesh : public Component
 {
     URHO3D_OBJECT(NavigationMesh,Component);
     friend class CrowdManager;
@@ -294,9 +295,12 @@ protected:
     bool drawOffMeshConnections_;
     /// Debug draw NavArea components.
     bool drawNavAreas_;
+
+    /// NavAreas for this NavMesh
+    std::vector<WeakPtr<NavArea> > areas_;
 };
 
 /// Register Navigation library objects.
-extern void RegisterNavigationLibrary(Context* context);
+void URHO3D_API RegisterNavigationLibrary(Context* context);
 
 }

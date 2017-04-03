@@ -43,29 +43,31 @@ enum PListValueType
 };
 
 class PListValue;
+/// PList value map.
 class PListValueMap;
+/// Vector of PList value.
 typedef std::vector<PListValue> PListValueVector;
 
 
 /// PList value.
-class PListValue
+class URHO3D_API PListValue
 {
 public:
-    // Construct.
+    /// Construct.
     PListValue();
-    // Construct from int.
+    /// Construct from int.
     PListValue(int value);
-    // Construct from boolean.
+    /// Construct from boolean.
     PListValue(bool value);
-    // Construct from float.
+    /// Construct from float.
     PListValue(float value);
-    // Construct from string.
+    /// Construct from string.
     PListValue(const QString& value);
-    // Construct from value map.
+    /// Construct from value map.
     PListValue(PListValueMap& valueMap);
-    // Construct from value vector.
+    /// Construct from value vector.
     PListValue(PListValueVector& valueVector);
-    // Construct from another value.
+    /// Construct from another value.
     PListValue(const PListValue& value);
     /// Destruct.
     ~PListValue();
@@ -137,7 +139,7 @@ public:
     const PListValue& operator [](const QString& key) const;
 };
 /// Property list (plist).
-class PListFile : public Resource
+class URHO3D_API PListFile : public Resource
 {
     URHO3D_OBJECT(PListFile,Resource);
 

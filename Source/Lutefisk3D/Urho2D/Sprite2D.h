@@ -31,7 +31,7 @@ class SpriteSheet2D;
 class Texture2D;
 
 /// Sprite.
-class Sprite2D : public Resource
+class URHO3D_API Sprite2D : public Resource
 {
     URHO3D_OBJECT(Sprite2D,Resource);
 
@@ -69,7 +69,7 @@ public:
     const Vector2& GetHotSpot() const { return hotSpot_; }
     /// Return offset.
     const IntVector2& GetOffset() const { return offset_; }
-    /// Return texture edge offset
+    /// Return texture edge offset.
     float GetTextureEdgeOffset() const { return edgeOffset_; }
     /// Return sprite sheet.
     SpriteSheet2D* GetSpriteSheet() const { return spriteSheet_; }

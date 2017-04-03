@@ -61,9 +61,7 @@ Zone::Zone(Context* context) :
     boundingBox_ = BoundingBox(DEFAULT_BOUNDING_BOX_MIN, DEFAULT_BOUNDING_BOX_MAX);
 }
 
-Zone::~Zone()
-{
-}
+
 
 void Zone::RegisterObject(Context* context)
 {
@@ -113,13 +111,13 @@ void Zone::SetBoundingBox(const BoundingBox& box)
 
 void Zone::SetAmbientColor(const Color& color)
 {
-    ambientColor_ = Color(color, 1.0f);
+    ambientColor_ = color;
     MarkNetworkUpdate();
 }
 
 void Zone::SetFogColor(const Color& color)
 {
-    fogColor_ = Color(color, 1.0f);
+    fogColor_ = color;
     MarkNetworkUpdate();
 }
 

@@ -201,18 +201,19 @@ unsigned HttpRequest::Read(void* dest, unsigned size)
 
     for (;;)
     {
-        unsigned bytesAvailable;
+        std::pair<unsigned, bool> status;
 
         for (;;)
         {
-            bytesAvailable = CheckEofAndAvailableSize();
-            if (bytesAvailable || IsEof())
+            status = CheckAvailableSizeAndEof();
+            if (status.first || status.second)
                 break;
             // While no bytes and connection is still open, block until has some data
             mutex_.Release();
             Time::Sleep(5);
             mutex_.Acquire();
         }
+        unsigned bytesAvailable = status.first;
 
         if (bytesAvailable)
         {
@@ -241,43 +242,45 @@ unsigned HttpRequest::Read(void* dest, unsigned size)
             break;
     }
 
-    // Check for end-of-file once more after reading the bytes
-    CheckEofAndAvailableSize();
     mutex_.Release();
     return totalRead;
 }
 
 unsigned HttpRequest::Seek(unsigned position)
 {
-    return position_;
+    return 0;
+}
+
+bool HttpRequest::IsEof() const
+{
+    MutexLock lock(mutex_);
+    return CheckAvailableSizeAndEof().second;
 }
 
 QString HttpRequest::GetError() const
 {
     MutexLock lock(mutex_);
-    const_cast<HttpRequest*>(this)->CheckEofAndAvailableSize();
     return error_;
 }
 
 HttpRequestState HttpRequest::GetState() const
 {
     MutexLock lock(mutex_);
-    const_cast<HttpRequest*>(this)->CheckEofAndAvailableSize();
     return state_;
 }
 
 unsigned HttpRequest::GetAvailableSize() const
 {
     MutexLock lock(mutex_);
-    return const_cast<HttpRequest*>(this)->CheckEofAndAvailableSize();
+    return CheckAvailableSizeAndEof().first;
 }
 
-unsigned HttpRequest::CheckEofAndAvailableSize()
+std::pair<unsigned, bool> HttpRequest::CheckAvailableSizeAndEof() const
 {
-    unsigned bytesAvailable = (writePosition_ - readPosition_) & (READ_BUFFER_SIZE - 1);
-    if (state_ == HTTP_ERROR || (state_ == HTTP_CLOSED && !bytesAvailable))
-        position_ = M_MAX_UNSIGNED;
-    return bytesAvailable;
+    std::pair<unsigned, bool> ret;
+    ret.first = (writePosition_ - readPosition_) & (READ_BUFFER_SIZE - 1);
+    ret.second = (state_ == HTTP_ERROR || (state_ == HTTP_CLOSED && !ret.first));
+    return ret;
 }
 
 }

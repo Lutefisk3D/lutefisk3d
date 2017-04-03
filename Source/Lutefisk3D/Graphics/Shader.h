@@ -31,7 +31,7 @@ namespace Urho3D
 class ShaderVariation;
 
 /// %Shader resource consisting of several shader variations.
-class Shader : public Resource
+class URHO3D_API Shader : public Resource
 {
     URHO3D_OBJECT(Shader,Resource);
 
@@ -48,9 +48,9 @@ public:
     /// Finish resource loading. Always called from the main thread. Return true if successful.
     virtual bool EndLoad() override;
 
-    /// Return a variation with defines.
+    /// Return a variation with defines. Separate multiple defines with spaces.
     ShaderVariation* GetVariation(ShaderType type, const QString& defines);
-    /// Return a variation with defines.
+    /// Return a variation with defines. Separate multiple defines with spaces.
     ShaderVariation* GetVariation(ShaderType type, const char* defines);
     /// Return either vertex or pixel shader source code.
     const QString& GetSourceCode(ShaderType type) const { return type == VS ? vsSourceCode_ : psSourceCode_; }

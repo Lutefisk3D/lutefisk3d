@@ -34,6 +34,11 @@ Serializer::~Serializer()
 {
 }
 
+bool Serializer::WriteInt64(long long value)
+{
+    return Write(&value, sizeof value) == sizeof value;
+}
+
 bool Serializer::WriteInt(int value)
 {
     return Write(&value, sizeof value) == sizeof value;
@@ -45,6 +50,11 @@ bool Serializer::WriteShort(short value)
 }
 
 bool Serializer::WriteByte(signed char value)
+{
+    return Write(&value, sizeof value) == sizeof value;
+}
+
+bool Serializer::WriteUInt64(unsigned long long value)
 {
     return Write(&value, sizeof value) == sizeof value;
 }
@@ -66,7 +76,7 @@ bool Serializer::WriteUByte(unsigned char value)
 
 bool Serializer::WriteBool(bool value)
 {
-    return WriteUByte(value ? 1 : 0) == 1;
+    return WriteUByte((unsigned char)(value ? 1 : 0)) == 1;
 }
 
 bool Serializer::WriteFloat(float value)
@@ -175,7 +185,7 @@ bool Serializer::WriteString(const QString& value)
 bool Serializer::WriteFileID(const QString& value)
 {
     bool success = true;
-    unsigned length = std::min((int)value.length(), 4);
+    unsigned length = std::min<unsigned>(value.length(), 4);
 
     success &= Write(qPrintable(value), length) == length;
     for (unsigned i = value.length(); i < 4; ++i)

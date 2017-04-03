@@ -154,8 +154,8 @@ void BorderImage::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& 
             batch.AddQuad(x + border_.left_, 0, innerSize.x_, border_.top_, uvTopLeft.x_ + uvBorder.left_, uvTopLeft.y_,
                 innerUvSize.x_, uvBorder.top_, tiled_);
         if (border_.right_)
-            batch.AddQuad(x + border_.left_ + innerSize.x_, 0, border_.right_, border_.top_, uvTopLeft.x_ + uvBorder.left_ +
-                innerUvSize.x_, uvTopLeft.y_, uvBorder.right_, uvBorder.top_);
+            batch.AddQuad(x + border_.left_ + innerSize.x_, 0, border_.right_, border_.top_,
+                uvTopLeft.x_ + uvBorder.left_ + innerUvSize.x_, uvTopLeft.y_, uvBorder.right_, uvBorder.top_);
     }
     // Middle
     if (innerSize.y_)
@@ -167,22 +167,24 @@ void BorderImage::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& 
             batch.AddQuad(x + border_.left_, border_.top_, innerSize.x_, innerSize.y_, uvTopLeft.x_ + uvBorder.left_,
                 uvTopLeft.y_ + uvBorder.top_, innerUvSize.x_, innerUvSize.y_, tiled_);
         if (border_.right_)
-            batch.AddQuad(x + border_.left_ + innerSize.x_, border_.top_, border_.right_, innerSize.y_, uvTopLeft.x_ +
-                uvBorder.left_ + innerUvSize.x_, uvTopLeft.y_ + uvBorder.top_, uvBorder.right_, innerUvSize.y_, tiled_);
+            batch.AddQuad(x + border_.left_ + innerSize.x_, border_.top_, border_.right_, innerSize.y_,
+                uvTopLeft.x_ + uvBorder.left_ + innerUvSize.x_, uvTopLeft.y_ + uvBorder.top_, uvBorder.right_, innerUvSize.y_,
+                tiled_);
     }
     // Bottom
     if (border_.bottom_)
     {
         if (border_.left_)
-            batch.AddQuad(x, border_.top_ + innerSize.y_, border_.left_, border_.bottom_, uvTopLeft.x_, uvTopLeft.y_ +
-                uvBorder.top_ + innerUvSize.y_, uvBorder.left_, uvBorder.bottom_);
+            batch.AddQuad(x, border_.top_ + innerSize.y_, border_.left_, border_.bottom_, uvTopLeft.x_,
+                uvTopLeft.y_ + uvBorder.top_ + innerUvSize.y_, uvBorder.left_, uvBorder.bottom_);
         if (innerSize.x_)
-            batch.AddQuad(x + border_.left_, border_.top_ + innerSize.y_, innerSize.x_, border_.bottom_, uvTopLeft.x_ +
-                uvBorder.left_, uvTopLeft.y_ + uvBorder.top_ + innerUvSize.y_, innerUvSize.x_, uvBorder.bottom_, tiled_);
+            batch.AddQuad(x + border_.left_, border_.top_ + innerSize.y_, innerSize.x_, border_.bottom_,
+                uvTopLeft.x_ + uvBorder.left_, uvTopLeft.y_ + uvBorder.top_ + innerUvSize.y_, innerUvSize.x_, uvBorder.bottom_,
+                tiled_);
         if (border_.right_)
             batch.AddQuad(x + border_.left_ + innerSize.x_, border_.top_ + innerSize.y_, border_.right_, border_.bottom_,
-                uvTopLeft.x_ + uvBorder.left_ + innerUvSize.x_, uvTopLeft.y_ + uvBorder.top_ + innerUvSize.y_,
-                uvBorder.right_, uvBorder.bottom_);
+                uvTopLeft.x_ + uvBorder.left_ + innerUvSize.x_, uvTopLeft.y_ + uvBorder.top_ + innerUvSize.y_, uvBorder.right_,
+                uvBorder.bottom_);
     }
 
     UIBatch::AddOrMerge(batch, batches);

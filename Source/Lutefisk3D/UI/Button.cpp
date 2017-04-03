@@ -116,12 +116,12 @@ void Button::OnClickEnd(const IntVector2& position, const IntVector2& screenPosi
     if (pressed_ && button == MOUSEB_LEFT)
     {
         SetPressed(false);
-
+        // If mouse was released on top of the element, consider it hovering on this frame yet (see issue #1453)
+        if (IsInside(screenPosition, true))
+            hovering_ = true;
         using namespace Released;
 
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_ELEMENT] = this;
-        SendEvent(E_RELEASED, eventData);
+        SendEvent(E_RELEASED, P_ELEMENT,this);
     }
 }
 

@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 #include "JSONValue.h"
-
+#include "../Core/StringUtils.h"
 #include "../Core/Context.h"
 #include "../IO/Log.h"
 
@@ -29,6 +29,25 @@
 namespace Urho3D
 {
 
+static const char* valueTypeNames[] =
+{
+    "Null",
+    "Bool",
+    "Number",
+    "String",
+    "Array",
+    "Object",
+    0
+};
+
+static const char* numberTypeNames[] =
+{
+    "NaN",
+    "Int",
+    "Unsigned",
+    "Real",
+    0
+};
 const JSONValue JSONValue::EMPTY;
 const JSONArray JSONValue::emptyArray(0);
 const JSONObject JSONValue::emptyObject;
@@ -150,6 +169,15 @@ JSONNumberType JSONValue::GetNumberType() const
     return (JSONNumberType)(type_ & 0xffff);
 }
 
+QString JSONValue::GetValueTypeName() const
+{
+    return GetValueTypeName(GetValueType());
+}
+
+QString JSONValue::GetNumberTypeName() const
+{
+    return GetNumberTypeName(GetNumberType());
+}
 JSONValue& JSONValue::operator [](unsigned index)
 {
     // Convert to array type
@@ -210,6 +238,8 @@ unsigned JSONValue::Size() const
 {
     if (GetValueType() == JSON_ARRAY)
         return arrayValue_->size();
+    else if (GetValueType() == JSON_OBJECT)
+        return objectValue_->size();
 
     return 0;
 }
@@ -551,10 +581,34 @@ VariantVector JSONValue::GetVariantVector() const
     return variantVector;
 }
 
-Urho3D::JSONValue::JSONValue(const Urho3D::JSONObject & value) :
-    type_(0)
+QString JSONValue::GetValueTypeName(JSONValueType type)
 {
-    *this = value;
+    return valueTypeNames[type];
+}
+
+QString JSONValue::GetNumberTypeName(JSONNumberType type)
+{
+    return numberTypeNames[type];
+}
+
+JSONValueType JSONValue::GetValueTypeFromName(const QString& typeName)
+{
+    return GetValueTypeFromName(qPrintable(typeName));
+}
+
+JSONValueType JSONValue::GetValueTypeFromName(const char* typeName)
+{
+    return (JSONValueType)GetStringListIndex(typeName, valueTypeNames, JSON_NULL);
+}
+
+JSONNumberType JSONValue::GetNumberTypeFromName(const QString& typeName)
+{
+    return GetNumberTypeFromName(qPrintable(typeName));
+}
+
+JSONNumberType JSONValue::GetNumberTypeFromName(const char* typeName)
+{
+    return (JSONNumberType)GetStringListIndex(typeName, numberTypeNames, JSONNT_NAN);
 }
 
 }

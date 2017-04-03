@@ -52,12 +52,16 @@ public:
     /// Write bytes to the stream. Return number of bytes actually written.
     virtual unsigned Write(const void* data, unsigned size) = 0;
 
+    /// Write a 64-bit integer.
+    bool WriteInt64(long long value);
     /// Write a 32-bit integer.
     bool WriteInt(int value);
     /// Write a 16-bit integer.
     bool WriteShort(short value);
     /// Write an 8-bit integer.
     bool WriteByte(signed char value);
+    /// Write a 64-bit unsigned integer.
+    bool WriteUInt64(unsigned long long value);
     /// Write a 32-bit unsigned integer.
     bool WriteUInt(unsigned value);
     /// Write a 16-bit unsigned integer.
@@ -129,5 +133,3 @@ public:
 };
 
 }
-template<class Archive>
-void serialize(Archive & archive, Urho3D::Color & m);

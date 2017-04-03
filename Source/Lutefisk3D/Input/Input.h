@@ -57,7 +57,7 @@ struct TouchState
     UIElement* GetTouchedElement();
 
     /// Touch (finger) ID.
-    int touchID_;
+    unsigned touchID_;
     /// Position in screen coordinates.
     IntVector2 position_;
     /// Last position in screen coordinates.
@@ -122,7 +122,7 @@ struct JoystickState
 };
 
 /// %Input subsystem. Converts operating system window messages to input state and events.
-class Input : public Object
+class URHO3D_API Input : public Object
 {
     URHO3D_OBJECT(Input,Object);
 
@@ -223,9 +223,9 @@ public:
     /// Check if a key has been pressed on this frame by scancode.
     bool GetScancodePress(int scancode) const;
     /// Check if a mouse button is held down.
-    bool GetMouseButtonDown(int button) const;
+    bool GetMouseButtonDown(unsigned button) const;
     /// Check if a mouse button has been pressed on this frame.
-    bool GetMouseButtonPress(int button) const;
+    bool GetMouseButtonPress(unsigned button) const;
     /// Check if a qualifier key is held down.
     bool GetQualifierDown(int qualifier) const;
     /// Check if a qualifier key has been pressed on this frame.
@@ -296,15 +296,15 @@ private:
     /// Reset input accumulation.
     void ResetInputAccumulation();
     /// Get the index of a touch based on the touch ID.
-    unsigned GetTouchIndexFromID(int touchID);
+    unsigned GetTouchIndexFromID(unsigned touchID);
     /// Used internally to return and remove the next available touch index.
     unsigned PopTouchIndex();
     /// Push a touch index back into the list of available when finished with it.
-    void PushTouchIndex(int touchID);
+    void PushTouchIndex(unsigned touchID);
     /// Send an input focus or window minimization change event.
     void SendInputFocusEvent();
     /// Handle a mouse button change.
-    void SetMouseButton(int button, bool newState);
+    void SetMouseButton(unsigned button, bool newState);
     /// Handle a key change.
     void SetKey(int key, int scancode, bool newState);
     /// Handle mouse wheel change.
@@ -322,21 +322,10 @@ private:
     /// Handle SDL event.
     void HandleSDLEvent(void* sdlEvent);
 
-#ifndef __EMSCRIPTEN__
     /// Set SDL mouse mode relative.
     void SetMouseModeRelative(SDL_bool enable);
     /// Set SDL mouse mode absolute.
     void SetMouseModeAbsolute(SDL_bool enable);
-#else
-    /// Set whether the operating system mouse cursor is visible (Emscripten platform only).
-    void SetMouseVisibleEmscripten(bool enable, bool suppressEvent = false);
-    /// Set mouse mode final resolution (Emscripten platform only).
-    void SetMouseModeEmscriptenFinal(MouseMode mode, bool suppressEvent = false);
-    /// SetMouseMode  (Emscripten platform only).
-    void SetMouseModeEmscripten(MouseMode mode, bool suppressEvent);
-    /// Handle frame end event.
-    void HandleEndFrame(StringHash eventType, VariantMap& eventData);
-#endif
 
     /// Graphics subsystem.
     WeakPtr<Graphics> graphics_;
@@ -349,11 +338,11 @@ private:
     /// Key pressed state by scancode.
     QSet<int> scancodePress_;
     /// Active finger touches.
-    HashMap<int, TouchState> touches_;
+    HashMap<unsigned, TouchState> touches_;
     /// List that maps between event touch IDs and normalised touch IDs
-    QList<int> availableTouchIDs_;
+    QList<unsigned> availableTouchIDs_;
     /// Mapping of touch indices
-    HashMap<int, int> touchIDMap_;
+    HashMap<unsigned, unsigned> touchIDMap_;
     /// String for text input.
     QString textInput_;
     /// Opened joysticks.
@@ -386,10 +375,8 @@ private:
     MouseMode mouseMode_;
     /// The last mouse mode set by SetMouseMode.
     MouseMode lastMouseMode_;
-#ifndef __EMSCRIPTEN__
     /// Flag to determine whether SDL mouse relative was used.
     bool sdlMouseRelative_;
-#endif
     /// Touch emulation mode flag.
     bool touchEmulation_;
     /// Input focus flag.

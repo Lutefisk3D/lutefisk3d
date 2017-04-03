@@ -119,7 +119,7 @@ bool UnknownComponent::Load(Deserializer& source, bool setInstanceDefault)
         if (!attr.name_.isEmpty())
         {
             QString attrValue = attrElem.GetAttribute("value");
-            attr.defaultValue_ = QString::null;
+            attr.defaultValue_ = QString();
             xmlAttributeInfos_.push_back(attr);
             xmlAttributes_.push_back(attrValue);
         }

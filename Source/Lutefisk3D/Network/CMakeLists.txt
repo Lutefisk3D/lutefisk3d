@@ -16,6 +16,7 @@ add_library(Lutefisk3D_Network OBJECT ${SOURCE} ${INCLUDES})
 
 target_include_directories(Lutefisk3D_Network PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Network PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
+target_compile_options(Lutefisk3D_Network PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_OPTIONS>)
 set_property(TARGET Lutefisk3D_Network PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_dependencies(Lutefisk3D_Network SDL2_LIB)

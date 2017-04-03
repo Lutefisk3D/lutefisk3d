@@ -38,10 +38,6 @@ ConstraintDistance2D::ConstraintDistance2D(Context* context) :
 
 }
 
-ConstraintDistance2D::~ConstraintDistance2D()
-{
-}
-
 void ConstraintDistance2D::RegisterObject(Context* context)
 {
     context->RegisterFactory<ConstraintDistance2D>(URHO2D_CATEGORY);

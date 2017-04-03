@@ -32,15 +32,15 @@ class Console;
 class DebugHud;
 
 /// Urho3D engine. Creates the other subsystems.
-class Engine : public Object
+class URHO3D_API Engine : public Object
 {
-    URHO3D_OBJECT(Engine,Object);
+    URHO3D_OBJECT(Engine,Object)
 
 public:
     /// Construct.
     Engine(Context* context);
     /// Destruct. Free all subsystems.
-    virtual ~Engine();
+    virtual ~Engine() = default;
 
     /// Initialize engine using parameters given and show the application window. Return true if successful.
     bool Initialize(const VariantMap& parameters);
@@ -53,15 +53,15 @@ public:
     /// Set minimum frames per second. If FPS goes lower than this, time will appear to slow down.
     void SetMinFps(int fps);
     /// Set maximum frames per second. The engine will sleep if FPS is higher than this.
-    void SetMaxFps(int fps);
+    void SetMaxFps(unsigned fps);
     /// Set maximum frames per second when the application does not have input focus.
-    void SetMaxInactiveFps(int fps);
+    void SetMaxInactiveFps(unsigned fps);
     /// Set how many frames to average for timestep smoothing. Default is 2. 1 disables smoothing.
     void SetTimeStepSmoothing(int frames);
     /// Set whether to pause update events and audio when minimized.
-    void SetPauseMinimized(bool enable);
+    void SetPauseMinimized(bool enable) { pauseMinimized_ = enable; }
     /// Set whether to exit automatically on exit request (window close button.)
-    void SetAutoExit(bool enable);
+    void SetAutoExit(bool enable) { autoExit_ = enable; }
     /// Override timestep of the next frame. Should be called in between RunFrame() calls.
     void SetNextTimeStep(float seconds);
     /// Close the graphics window and set the exit flag. No-op on iOS, as an iOS application can not legally exit.
@@ -76,13 +76,13 @@ public:
     /// Get timestep of the next frame. Updated by ApplyFrameLimit().
     float GetNextTimeStep() const { return timeStep_; }
     /// Return the minimum frames per second.
-    int GetMinFps() const { return minFps_; }
+    unsigned GetMinFps() const { return minFps_; }
     /// Return the maximum frames per second.
-    int GetMaxFps() const { return maxFps_; }
+    unsigned GetMaxFps() const { return maxFps_; }
     /// Return the maximum frames per second when the application does not have input focus.
-    int GetMaxInactiveFps() const { return maxInactiveFps_; }
+    unsigned GetMaxInactiveFps() const { return maxInactiveFps_; }
     /// Return how many frames to average for timestep smoothing.
-    int GetTimeStepSmoothing() const { return timeStepSmoothing_; }
+    unsigned GetTimeStepSmoothing() const { return timeStepSmoothing_; }
     /// Return whether to pause update events and audio when minimized.
     bool GetPauseMinimized() const { return pauseMinimized_; }
     /// Return whether to exit automatically on exit request.

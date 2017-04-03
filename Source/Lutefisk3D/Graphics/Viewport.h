@@ -38,7 +38,7 @@ class XMLFile;
 class View;
 
 /// %Viewport definition either for a render surface or the backbuffer.
-class Viewport : public Object
+class URHO3D_API Viewport : public Object
 {
     URHO3D_OBJECT(Viewport,Object);
 
@@ -46,17 +46,17 @@ public:
     /// Construct with defaults.
     Viewport(Context* context);
     /// Construct with a full rectangle.
-    Viewport(Context* context, Scene* scene, Camera* camera, RenderPath* renderPath = nullptr);
+    Viewport(Context* context, Scene* scene, Camera* camera, RenderPath* renderPath = 0);
     /// Construct with a specified rectangle.
     Viewport(Context* context, Scene* scene, Camera* camera, const IntRect& rect, RenderPath* renderPath = nullptr);
     /// Destruct.
-    ~Viewport();
+    ~Viewport() = default;
 
     /// Set scene.
     void SetScene(Scene* scene);
     /// Set viewport camera.
     void SetCamera(Camera* camera);
-    /// Set rectangle.
+    /// Set view rectangle. A zero rectangle (0 0 0 0) means to use the rendertarget's full dimensions.
     void SetRect(const IntRect& rect);
     /// Set rendering path.
     void SetRenderPath(RenderPath* path);
@@ -73,7 +73,7 @@ public:
     Camera* GetCamera() const;
     /// Return the internal rendering structure. May be null if the viewport has not been rendered yet.
     View* GetView() const;
-    /// Return rectangle.
+    /// Return view rectangle. A zero rectangle (0 0 0 0) means to use the rendertarget's full dimensions. In this case you could fetch the actual view rectangle from View object, though it will be valid only after the first frame.
     const IntRect& GetRect() const { return rect_; }
     /// Return rendering path.
     RenderPath* GetRenderPath() const;
@@ -83,9 +83,9 @@ public:
     Camera* GetCullCamera() const;
     /// Return ray corresponding to normalized screen coordinates.
     Ray GetScreenRay(int x, int y) const;
-    // Convert a world space point to normalized screen coordinates.
+    /// Convert a world space point to normalized screen coordinates.
     IntVector2 WorldToScreenPoint(const Vector3& worldPos) const;
-    // Convert screen coordinates and depth to a world space point.
+    /// Convert screen coordinates and depth to a world space point.
     Vector3 ScreenToWorldPoint(int x, int y, float depth) const;
 
     /// Allocate the view structure. Called by Renderer.

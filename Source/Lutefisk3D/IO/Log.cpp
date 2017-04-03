@@ -32,13 +32,6 @@
 
 #include <cstdio>
 
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-#ifdef IOS
-extern "C" void SDL_IOS_LogMessage(const char* message);
-#endif
-
 namespace Urho3D
 {
 
@@ -77,7 +70,6 @@ Log::~Log()
 
 void Log::Open(const QString& fileName)
 {
-    #if !defined(ANDROID) && !defined(IOS)
     if (fileName.isEmpty())
         return;
     if (logFile_ && logFile_->IsOpen())
@@ -96,23 +88,20 @@ void Log::Open(const QString& fileName)
         logFile_.Reset();
         Write(LOG_ERROR, "Failed to create log file " + fileName);
     }
-    #endif
 }
 
 void Log::Close()
 {
-    #if !defined(ANDROID) && !defined(IOS)
     if (logFile_ && logFile_->IsOpen())
     {
         logFile_->Close();
         logFile_.Reset();
     }
-    #endif
 }
 
 void Log::SetLevel(int level)
 {
-    assert(level >= LOG_DEBUG && level < LOG_NONE);
+    assert(level >= LOG_DEBUG && level <= LOG_NONE);
 
     level_ = level;
 }
@@ -129,7 +118,13 @@ void Log::SetQuiet(bool quiet)
 
 void Log::Write(int level, const QString& message)
 {
-    assert(level >= LOG_DEBUG && level < LOG_NONE);
+    // Special case for LOG_RAW level
+    if (level == LOG_RAW)
+    {
+        WriteRaw(message, false);
+        return;
+    }
+    assert(level >= LOG_DEBUG && level <= LOG_NONE);
 
     // If not in the main thread, store message for later processing
     if (!Thread::IsMainThread())
@@ -201,17 +196,6 @@ void Log::WriteRaw(const QString& message, bool error)
 
     logInstance->lastMessage_ = message;
 
-    #if defined(ANDROID)
-    if (logInstance->quiet_)
-    {
-        if (error)
-            __android_log_print(ANDROID_LOG_ERROR, "Urho3D", message.CString());
-    }
-    else
-        __android_log_print(error ? ANDROID_LOG_ERROR : ANDROID_LOG_INFO, "Urho3D", message.CString());
-    #elif defined(IOS)
-    SDL_IOS_LogMessage(message.CString());
-    #else
     if (logInstance->quiet_)
     {
         // If in quiet mode, still print the error message to the standard error stream
@@ -220,7 +204,6 @@ void Log::WriteRaw(const QString& message, bool error)
     }
     else
         PrintUnicode(message, error);
-    #endif
 
     if (logInstance->logFile_)
     {

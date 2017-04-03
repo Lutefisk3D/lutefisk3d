@@ -312,7 +312,7 @@ bool Serializable::Save(Serializer& dest) const
     for (unsigned i = 0; i < attributes->size(); ++i)
     {
         const AttributeInfo& attr = attributes->at(i);
-        if ((attr.mode_ & AM_FILE) == 0u)
+        if (((attr.mode_ & AM_FILE) == 0u) || (attr.mode_ & AM_FILEREADONLY) == AM_FILEREADONLY)
             continue;
 
         OnGetAttribute(attr, value);
@@ -516,7 +516,7 @@ bool Serializable::SaveXML(XMLElement& dest) const
     for (unsigned i = 0; i < attributes->size(); ++i)
     {
         const AttributeInfo& attr = attributes->at(i);
-        if ((attr.mode_ & AM_FILE) == 0u)
+        if (((attr.mode_ & AM_FILE) == 0u) || (attr.mode_ & AM_FILEREADONLY) == AM_FILEREADONLY)
             continue;
 
         OnGetAttribute(attr, value);
@@ -553,7 +553,7 @@ bool Serializable::SaveJSON(JSONValue& dest) const
     for (unsigned i = 0; i < attributes->size(); ++i)
     {
         const AttributeInfo& attr = attributes->at(i);
-        if ((attr.mode_ & AM_FILE) == 0u)
+        if (((attr.mode_ & AM_FILE) == 0u) || (attr.mode_ & AM_FILEREADONLY) == AM_FILEREADONLY)
             continue;
 
         OnGetAttribute(attr, value);
@@ -683,11 +683,11 @@ void Serializable::SetTemporary(bool enable)
 
 void Serializable::SetInterceptNetworkUpdate(const QString& attributeName, bool enable)
 {
-    const std::vector<AttributeInfo>* attributes = GetNetworkAttributes();
+    AllocateNetworkState();
+    const std::vector<AttributeInfo>* attributes = networkState_->attributes_;
     if (attributes == nullptr)
         return;
 
-    AllocateNetworkState();
 
     for (unsigned i = 0; i < attributes->size(); ++i)
     {
@@ -705,11 +705,24 @@ void Serializable::SetInterceptNetworkUpdate(const QString& attributeName, bool 
 
 void Serializable::AllocateNetworkState()
 {
-    if (networkState_ == nullptr)
-    {
+    if (networkState_ != nullptr)
+        return;
         const std::vector<AttributeInfo>* networkAttributes = GetNetworkAttributes();
         networkState_ = new NetworkState();
         networkState_->attributes_ = networkAttributes;
+    if (!networkAttributes)
+        return;
+
+    unsigned numAttributes = networkAttributes->size();
+
+    if (networkState_->currentValues_.size() != numAttributes)
+    {
+        networkState_->currentValues_.resize(numAttributes);
+        networkState_->previousValues_.resize(numAttributes);
+
+        // Copy the default attribute values to the previous state as a starting point
+        for (unsigned i = 0; i < numAttributes; ++i)
+            networkState_->previousValues_[i] = networkAttributes->at(i).defaultValue_;
     }
 }
 
@@ -805,7 +818,7 @@ bool Serializable::ReadDeltaUpdate(Deserializer& source)
     DirtyBits attributeBits;
     bool changed = false;
 
-    unsigned long long interceptMask = networkState_ != nullptr ? networkState_->interceptMask_ : 0;
+    uint64_t interceptMask = networkState_ != nullptr ? networkState_->interceptMask_ : 0;
     unsigned char timeStamp = source.ReadUByte();
     source.Read(attributeBits.data_, (numAttributes + 7) >> 3);
 

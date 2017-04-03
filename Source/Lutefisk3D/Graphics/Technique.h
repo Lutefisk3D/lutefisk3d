@@ -24,6 +24,7 @@
 
 #include "../Graphics/GraphicsDefs.h"
 #include "../Resource/Resource.h"
+#include "../Math/StringHash.h"
 
 namespace Urho3D
 {
@@ -33,13 +34,13 @@ class ShaderVariation;
 /// Lighting mode of a pass.
 enum PassLightingMode
 {
-    LIGHTING_UNLIT,
+    LIGHTING_UNLIT = 0,
     LIGHTING_PERVERTEX,
     LIGHTING_PERPIXEL
 };
 
 /// %Material rendering pass, which defines shaders and render state.
-class Pass : public RefCounted
+class URHO3D_API Pass : public RefCounted
 {
 public:
     /// Construct.
@@ -49,24 +50,30 @@ public:
 
     /// Set blend mode.
     void SetBlendMode(BlendMode mode);
+    /// Set culling mode override. By default culling mode is read from the material instead. Set the illegal culling mode MAX_CULLMODES to disable override again.
+    void SetCullMode(CullMode mode);
     /// Set depth compare mode.
     void SetDepthTestMode(CompareMode mode);
     /// Set pass lighting mode, affects what shader variations will be attempted to be loaded.
     void SetLightingMode(PassLightingMode mode);
     /// Set depth write on/off.
     void SetDepthWrite(bool enable);
-    /// Set alpha masking hint. Completely opaque draw calls will be performed before alpha masked.
-    void SetAlphaMask(bool enable);
+    /// Set alpha-to-coverage on/off.
+    void SetAlphaToCoverage(bool enable);
     /// Set whether requires desktop level hardware.
     void SetIsDesktop(bool enable);
     /// Set vertex shader name.
     void SetVertexShader(const QString& name);
     /// Set pixel shader name.
     void SetPixelShader(const QString& name);
-    /// Set vertex shader defines.
+    /// Set vertex shader defines. Separate multiple defines with spaces.
     void SetVertexShaderDefines(const QString& defines);
-    /// Set pixel shader defines.
+    /// Set pixel shader defines. Separate multiple defines with spaces.
     void SetPixelShaderDefines(const QString& defines);
+    /// Set vertex shader define excludes. Use to mark defines that the shader code will not recognize, to prevent compiling redundant shader variations.
+    void SetVertexShaderDefineExcludes(const QString& excludes);
+    /// Set pixel shader define excludes. Use to mark defines that the shader code will not recognize, to prevent compiling redundant shader variations.
+    void SetPixelShaderDefineExcludes(const QString& excludes);
     /// Reset shader pointers.
     void ReleaseShaders();
     /// Mark shaders loaded this frame.
@@ -78,6 +85,8 @@ public:
     unsigned GetIndex() const { return index_; }
     /// Return blend mode.
     BlendMode GetBlendMode() const { return blendMode_; }
+    /// Return culling mode override. If pass is not overriding culling mode (default), the illegal mode MAX_CULLMODES is returned.
+    CullMode GetCullMode() const { return cullMode_; }
     /// Return depth compare mode.
     CompareMode GetDepthTestMode() const { return depthTestMode_; }
     /// Return pass lighting mode.
@@ -86,8 +95,8 @@ public:
     unsigned GetShadersLoadedFrameNumber() const { return shadersLoadedFrameNumber_; }
     /// Return depth write mode.
     bool GetDepthWrite() const { return depthWrite_; }
-    /// Return alpha masking hint.
-    bool GetAlphaMask() const { return alphaMask_; }
+    /// Return alpha-to-coverage mode.
+    bool GetAlphaToCoverage() const { return alphaToCoverage_; }
     /// Return whether requires desktop level hardware.
     bool IsDesktop() const { return isDesktop_; }
     /// Return vertex shader name.
@@ -98,16 +107,27 @@ public:
     const QString& GetVertexShaderDefines() const { return vertexShaderDefines_; }
     /// Return pixel shader defines.
     const QString& GetPixelShaderDefines() const { return pixelShaderDefines_; }
+    /// Return vertex shader define excludes.
+    const QString& GetVertexShaderDefineExcludes() const { return vertexShaderDefineExcludes_; }
+
+    /// Return pixel shader define excludes.
+    const QString& GetPixelShaderDefineExcludes() const { return pixelShaderDefineExcludes_; }
     /// Return vertex shaders.
     std::vector<SharedPtr<ShaderVariation> >& GetVertexShaders() { return vertexShaders_; }
     /// Return pixel shaders.
     std::vector<SharedPtr<ShaderVariation> >& GetPixelShaders() { return pixelShaders_; }
+    /// Return the effective vertex shader defines, accounting for excludes. Called internally by Renderer.
+    QString GetEffectiveVertexShaderDefines() const;
+    /// Return the effective pixel shader defines, accounting for excludes. Called internally by Renderer.
+    QString GetEffectivePixelShaderDefines() const;
 
 private:
     /// Pass index.
     unsigned index_;
     /// Blend mode.
     BlendMode blendMode_;
+    /// Culling mode.
+    CullMode cullMode_;
     /// Depth compare mode.
     CompareMode depthTestMode_;
     /// Lighting mode.
@@ -116,8 +136,8 @@ private:
     unsigned shadersLoadedFrameNumber_;
     /// Depth write mode.
     bool depthWrite_;
-    /// Alpha masking hint.
-    bool alphaMask_;
+    /// Alpha-to-coverage mode.
+    bool alphaToCoverage_;
     /// Require desktop level hardware flag.
     bool isDesktop_;
     /// Vertex shader name.
@@ -128,6 +148,10 @@ private:
     QString vertexShaderDefines_;
     /// Pixel shader defines.
     QString pixelShaderDefines_;
+    /// Vertex shader define excludes.
+    QString vertexShaderDefineExcludes_;
+    /// Pixel shader define excludes.
+    QString pixelShaderDefineExcludes_;
     /// Vertex shaders.
     std::vector<SharedPtr<ShaderVariation> > vertexShaders_;
     /// Pixel shaders.
@@ -137,7 +161,7 @@ private:
 };
 
 /// %Material technique. Consists of several passes.
-class Technique : public Resource
+class URHO3D_API Technique : public Resource
 {
     URHO3D_OBJECT(Technique,Resource);
 
@@ -162,6 +186,8 @@ public:
     void RemovePass(const QString& passName);
     /// Reset shader pointers in all passes.
     void ReleaseShaders();
+    /// Clone the technique. Passes will be deep copied to allow independent modification.
+    SharedPtr<Technique> Clone(const QString& cloneName = QString()) const;
 
     /// Return whether requires desktop level hardware.
     bool IsDesktop() const { return isDesktop_; }
@@ -192,6 +218,8 @@ public:
     std::vector<QString> GetPassNames() const;
     /// Return all passes.
     std::vector<Pass*> GetPasses() const;
+    /// Return a clone with added shader compilation defines. Called internally by Material.
+    SharedPtr<Technique> CloneWithDefines(const QString& vsDefines, const QString& psDefines);
     /// Return a pass type index by name. Allocate new if not used yet.
     static unsigned GetPassIndex(const QString& passName);
 
@@ -212,8 +240,6 @@ public:
     /// Index for shadow pass. Initialized once GetPassIndex() has been called for the first time.
     static unsigned shadowPassIndex;
 
-    /// Clone the technique. Passes will be deep copied to allow independent modification.
-    SharedPtr<Technique> Clone(const QString& cloneName = QString()) const;
 private:
     /// Require desktop GPU flag.
     bool isDesktop_;
@@ -221,6 +247,8 @@ private:
     bool desktopSupport_;
     /// Passes.
     std::vector<SharedPtr<Pass> > passes_;
+    /// Cached clones with added shader compilation defines.
+    HashMap<std::pair<StringHash, StringHash>, SharedPtr<Technique> > cloneTechniques_;
 
     /// Pass index assignments.
     static HashMap<QString, unsigned> passIndices;

@@ -21,16 +21,16 @@
 //
 
 #include "../../Core/Context.h"
-#include "../../IO/FileSystem.h"
+#include "../../Core/Profiler.h"
 #include "../../Graphics/Graphics.h"
 #include "../../Graphics/GraphicsEvents.h"
 #include "../../Graphics/GraphicsImpl.h"
 #include "../../Resource/Image.h"
-#include "../../IO/Log.h"
-#include "../../Core/Profiler.h"
 #include "../../Graphics/Renderer.h"
-#include "../../Resource/ResourceCache.h"
 #include "../../Graphics/Texture2D.h"
+#include "../../IO/FileSystem.h"
+#include "../../IO/Log.h"
+#include "../../Resource/ResourceCache.h"
 #include "../../Resource/XMLFile.h"
 
 #include "glbinding/gl33ext/functions.h"
@@ -39,74 +39,6 @@ using namespace gl;
 
 namespace Urho3D
 {
-
-Texture2D::Texture2D(Context* context) :
-    Texture(context)
-{
-    target_ = GL_TEXTURE_2D;
-}
-
-Texture2D::~Texture2D()
-{
-    Release();
-}
-
-void Texture2D::RegisterObject(Context* context)
-{
-    context->RegisterFactory<Texture2D>();
-}
-
-bool Texture2D::BeginLoad(Deserializer& source)
-{
-    // In headless mode, do not actually load the texture, just return success
-    if (!graphics_)
-        return true;
-
-    // If device is lost, retry later
-    if (graphics_->IsDeviceLost())
-    {
-        URHO3D_LOGWARNING("Texture load while device is lost");
-        dataPending_ = true;
-        return true;
-    }
-
-    // Load the image data for EndLoad()
-    loadImage_ = new Image(context_);
-    if (!loadImage_->Load(source))
-    {
-        loadImage_.Reset();
-        return false;
-    }
-
-    // Precalculate mip levels if async loading
-    if (GetAsyncLoadState() == ASYNC_LOADING)
-        loadImage_->PrecalculateLevels();
-
-    // Load the optional parameters file
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    QString xmlName = ReplaceExtension(GetName(), ".xml");
-    loadParameters_ = cache->GetTempResource<XMLFile>(xmlName, false);
-
-    return true;
-}
-
-bool Texture2D::EndLoad()
-{
-    // In headless mode, do not actually load the texture, just return success
-     if (!graphics_ || graphics_->IsDeviceLost())
-        return true;
-
-    // If over the texture budget, see if materials can be freed to allow textures to be freed
-    CheckTextureBudget(GetTypeStatic());
-
-    SetParameters(loadParameters_);
-    bool success = SetData(loadImage_);
-
-    loadImage_.Reset();
-    loadParameters_.Reset();
-
-    return success;
-}
 
 void Texture2D::OnDeviceLost()
 {
@@ -165,41 +97,6 @@ void Texture2D::Release()
     }
 }
 
-bool Texture2D::SetSize(int width, int height, gl::GLenum format, TextureUsage usage)
-{
-    if (width <= 0 || height <= 0)
-    {
-        URHO3D_LOGERROR("Zero or negative texture dimensions");
-        return false;
-    }
-    // Delete the old rendersurface if any
-    renderSurface_.Reset();
-
-    usage_ = usage;
-
-    if (usage >= TEXTURE_RENDERTARGET)
-    {
-        renderSurface_ = new RenderSurface(this);
-
-        // Clamp mode addressing by default, nearest filtering, and mipmaps disabled
-        addressMode_[COORD_U] = ADDRESS_CLAMP;
-        addressMode_[COORD_V] = ADDRESS_CLAMP;
-        filterMode_ = FILTER_NEAREST;
-        requestedLevels_ = 1;
-    }
-
-    if (usage == TEXTURE_RENDERTARGET)
-        SubscribeToEvent(E_RENDERSURFACEUPDATE, URHO3D_HANDLER(Texture2D, HandleRenderSurfaceUpdate));
-    else
-        UnsubscribeFromEvent(E_RENDERSURFACEUPDATE);
-
-    width_ = width;
-    height_ = height;
-    format_ = format;
-
-    return Create();
-}
-
 bool Texture2D::SetData(unsigned level, int x, int y, int width, int height, const void* data)
 {
     URHO3D_PROFILE(SetTextureData);
@@ -251,7 +148,7 @@ bool Texture2D::SetData(unsigned level, int x, int y, int width, int height, con
     if (!IsCompressed())
     {
         if (wholeLevel)
-            glTexImage2D(target_, level, (GLint)format, width, height, 0, GetExternalFormat(format_), GetDataType(format_), data);
+            glTexImage2D(target_, level, format, width, height, 0, GetExternalFormat(format_), GetDataType(format_), data);
         else
             glTexSubImage2D(target_, level, x, y, width, height, GetExternalFormat(format_), GetDataType(format_), data);
     }
@@ -267,14 +164,15 @@ bool Texture2D::SetData(unsigned level, int x, int y, int width, int height, con
     return true;
 }
 
-bool Texture2D::SetData(SharedPtr<Image> image, bool useAlpha)
+bool Texture2D::SetData(Urho3D::Image *image, bool useAlpha)
 {
     if (!image)
     {
         URHO3D_LOGERROR("Null image, can not set data");
         return false;
     }
-
+    // Use a shared ptr for managing the temporary mip images created during this function
+    SharedPtr<Image> mipImage;
     unsigned memoryUse = sizeof(Texture2D);
 
     int quality = QUALITY_HIGH;
@@ -286,9 +184,10 @@ bool Texture2D::SetData(SharedPtr<Image> image, bool useAlpha)
     {
         // Convert unsuitable formats to RGBA
         unsigned components = image->GetComponents();
-        if (Graphics::GetGL3Support() && ((components == 1 && !useAlpha) || components == 2))
+        if (((components == 1 && !useAlpha) || components == 2))
         {
-            image = image->ConvertToRGBA();
+            mipImage = image->ConvertToRGBA();
+            image = mipImage;
             if (!image)
                 return false;
             components = image->GetComponents();
@@ -301,7 +200,8 @@ bool Texture2D::SetData(SharedPtr<Image> image, bool useAlpha)
         // Discard unnecessary mip levels
         for (unsigned i = 0; i < mipsToSkip_[quality]; ++i)
         {
-            image = image->GetNextLevel();
+            mipImage = image->GetNextLevel();
+            image = mipImage;
             levelData = image->GetData();
             levelWidth = image->GetWidth();
             levelHeight = image->GetHeight();
@@ -344,7 +244,8 @@ bool Texture2D::SetData(SharedPtr<Image> image, bool useAlpha)
 
             if (i < levels_ - 1)
             {
-                image = image->GetNextLevel();
+                mipImage = image->GetNextLevel();
+                image = mipImage;
                 levelData = image->GetData();
                 levelWidth = image->GetWidth();
                 levelHeight = image->GetHeight();
@@ -373,7 +274,7 @@ bool Texture2D::SetData(SharedPtr<Image> image, bool useAlpha)
         width /= (1 << mipsToSkip);
         height /= (1 << mipsToSkip);
 
-        SetNumLevels(Max((int)(levels - mipsToSkip), 1));
+        SetNumLevels(Max((levels - mipsToSkip), 1U));
         SetSize(width, height, format);
 
         for (unsigned i = 0; i < levels_ && i < levels - mipsToSkip; ++i)
@@ -401,7 +302,6 @@ bool Texture2D::SetData(SharedPtr<Image> image, bool useAlpha)
 
 bool Texture2D::GetData(unsigned level, void* dest) const
 {
-    #ifndef GL_ES_VERSION_2_0
     if (!object_ || !graphics_)
     {
         URHO3D_LOGERROR("No texture created, can not get data");
@@ -435,10 +335,6 @@ bool Texture2D::GetData(unsigned level, void* dest) const
 
     graphics_->SetTexture(0, nullptr);
     return true;
-    #else
-    URHO3D_LOGERROR("Getting texture data not supported");
-    return false;
-    #endif
 }
 
 bool Texture2D::Create()
@@ -464,11 +360,29 @@ bool Texture2D::Create()
     {
         if (renderSurface_)
         {
-            renderSurface_->CreateRenderBuffer(width_, height_, format);
+            renderSurface_->CreateRenderBuffer(width_, height_, format, multiSample_);
             return true;
         }
         else
             return false;
+    }
+    else
+    {
+        if (multiSample_ > 1)
+        {
+            if (autoResolve_)
+            {
+                // Multisample with autoresolve: create a renderbuffer for rendering, but also a texture
+                renderSurface_->CreateRenderBuffer(width_, height_, format, multiSample_);
+            }
+            else
+            {
+                // Multisample without autoresolve: create a texture only
+                target_ = GL_TEXTURE_2D_MULTISAMPLE;
+                if (renderSurface_)
+                    renderSurface_->target_ = GL_TEXTURE_2D_MULTISAMPLE;
+            }
+        }
     }
 
     glGenTextures(1, &object_);
@@ -482,7 +396,10 @@ bool Texture2D::Create()
     if (!IsCompressed())
     {
         glGetError();
-        glTexImage2D(target_, 0, (GLint)format, width_, height_, 0, externalFormat, dataType, nullptr);
+        if (multiSample_ > 1 && !autoResolve_)
+            glTexImage2DMultisample(target_, multiSample_, format, width_, height_, GL_TRUE);
+        else
+            glTexImage2D(target_, 0, format, width_, height_, 0, externalFormat, dataType, nullptr);
         if (glGetError()!=GL_NO_ERROR)
         {
             URHO3D_LOGERROR("Failed to create texture");
@@ -491,38 +408,16 @@ bool Texture2D::Create()
     }
 
     // Set mipmapping
-    levels_ = requestedLevels_;
-    if (!levels_)
-    {
-        unsigned maxSize = Max((int)width_, (int)height_);
-        while (maxSize)
-        {
-            maxSize >>= 1;
-            ++levels_;
-        }
-    }
+    levels_ = CheckMaxLevels(width_, height_, requestedLevels_);
 
-    #ifndef GL_ES_VERSION_2_0
     glTexParameteri(target_, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(target_, GL_TEXTURE_MAX_LEVEL, levels_ - 1);
-    #endif
 
     // Set initial parameters, then unbind the texture
     UpdateParameters();
     graphics_->SetTexture(0, nullptr);
 
     return success;
-}
-
-void Texture2D::HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData)
-{
-    if (renderSurface_ && (renderSurface_->GetUpdateMode() == SURFACE_UPDATEALWAYS || renderSurface_->IsUpdateQueued()))
-    {
-        Renderer* renderer = GetSubsystem<Renderer>();
-        if (renderer)
-            renderer->QueueRenderSurface(renderSurface_);
-        renderSurface_->ResetUpdateQueued();
-    }
 }
 
 }

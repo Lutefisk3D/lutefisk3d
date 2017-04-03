@@ -43,10 +43,9 @@ namespace Urho3D
 {
 
 extern const char* GEOMETRY_CATEGORY;
-
 static const Vector3 DEFAULT_SPACING(1.0f, 0.25f, 1.0f);
-static const constexpr unsigned MAX_LOD_LEVELS = 4;
 static const constexpr unsigned MIN_LOD_LEVELS = 1;
+static const constexpr unsigned MAX_LOD_LEVELS = 4;
 static const constexpr int DEFAULT_PATCH_SIZE = 32;
 static const constexpr int MIN_PATCH_SIZE = 4;
 static const constexpr int MAX_PATCH_SIZE = 128;
@@ -102,13 +101,14 @@ Terrain::Terrain(Context* context) :
     shadowDistance_(0.0f),
     lodBias_(1.0f),
     maxLights_(0),
-    recreateTerrain_(false)
+    northID_(0),
+    southID_(0),
+    westID_(0),
+    eastID_(0),
+    recreateTerrain_(false),
+    neighborsDirty_(false)
 {
     indexBuffer_->SetShadowed(true);
-}
-
-Terrain::~Terrain()
-{
 }
 
 void Terrain::RegisterObject(Context* context)
@@ -118,6 +118,10 @@ void Terrain::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Height Map", GetHeightMapAttr, SetHeightMapAttr, ResourceRef, ResourceRef(Image::GetTypeStatic()), AM_DEFAULT);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Material", GetMaterialAttr, SetMaterialAttr, ResourceRef, ResourceRef(Material::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_ATTRIBUTE("North Neighbor NodeID", unsigned, northID_, 0, AM_DEFAULT | AM_NODEID);
+    URHO3D_ATTRIBUTE("South Neighbor NodeID", unsigned, southID_, 0, AM_DEFAULT | AM_NODEID);
+    URHO3D_ATTRIBUTE("West Neighbor NodeID", unsigned, westID_, 0, AM_DEFAULT | AM_NODEID);
+    URHO3D_ATTRIBUTE("East Neighbor NodeID", unsigned, eastID_, 0, AM_DEFAULT | AM_NODEID);
     URHO3D_ATTRIBUTE("Vertex Spacing", Vector3, spacing_, DEFAULT_SPACING, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Patch Size", GetPatchSize, SetPatchSizeAttr, int, DEFAULT_PATCH_SIZE, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Max LOD Levels", GetMaxLodLevels, SetMaxLodLevelsAttr, unsigned, MAX_LOD_LEVELS, AM_DEFAULT);
@@ -140,15 +144,34 @@ void Terrain::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
 {
     Serializable::OnSetAttribute(attr, src);
 
-    // Change of any non-accessor attribute requires recreation of the terrain
+    // Change of any non-accessor attribute requires recreation of the terrain, or setting the neighbor terrains
     if (!attr.accessor_)
+    {
+        if (attr.mode_ & AM_NODEID)
+            neighborsDirty_ = true;
+        else
         recreateTerrain_ = true;
+}
 }
 
 void Terrain::ApplyAttributes()
 {
     if (recreateTerrain_)
         CreateGeometry();
+    if (neighborsDirty_)
+    {
+        Scene* scene = GetScene();
+        Node* north = scene ? scene->GetNode(northID_) : (Node*)nullptr;
+        Node* south = scene ? scene->GetNode(southID_) : (Node*)nullptr;
+        Node* west = scene ? scene->GetNode(westID_) : (Node*)nullptr;
+        Node* east = scene ? scene->GetNode(eastID_) : (Node*)nullptr;
+        Terrain* northTerrain = north ? north->GetComponent<Terrain>() : (Terrain*)nullptr;
+        Terrain* southTerrain = south ? south->GetComponent<Terrain>() : (Terrain*)nullptr;
+        Terrain* westTerrain = west ? west->GetComponent<Terrain>() : (Terrain*)nullptr;
+        Terrain* eastTerrain = east ? east->GetComponent<Terrain>() : (Terrain*)nullptr;
+        SetNeighbors(northTerrain, southTerrain, westTerrain, eastTerrain);
+        neighborsDirty_ = false;
+    }
 }
 
 void Terrain::OnSetEnabled()
@@ -164,7 +187,7 @@ void Terrain::OnSetEnabled()
 
 void Terrain::SetPatchSize(int size)
 {
-    if (size < MIN_PATCH_SIZE || size > MAX_PATCH_SIZE || !IsPowerOfTwo(size))
+    if (size < MIN_PATCH_SIZE || size > MAX_PATCH_SIZE || !IsPowerOfTwo((unsigned)size))
         return;
 
     if (size != patchSize_)
@@ -240,6 +263,122 @@ void Terrain::SetMaterial(Material* material)
             patches_[i]->SetMaterial(material);
     }
 
+    MarkNetworkUpdate();
+}
+
+void Terrain::SetNorthNeighbor(Terrain* north)
+{
+    if (north == north_)
+        return;
+
+    if (north_ && north_->GetNode())
+        UnsubscribeFromEvent(north_->GetNode(), E_TERRAINCREATED);
+
+    north_ = north;
+    if (north_ && north_->GetNode())
+    {
+        northID_ = north_->GetNode()->GetID();
+        SubscribeToEvent(north_->GetNode(), E_TERRAINCREATED, URHO3D_HANDLER(Terrain, HandleNeighborTerrainCreated));
+    }
+
+    UpdateEdgePatchNeighbors();
+    MarkNetworkUpdate();
+}
+
+void Terrain::SetSouthNeighbor(Terrain* south)
+{
+    if (south == south_)
+        return;
+
+    if (south_ && south_->GetNode())
+        UnsubscribeFromEvent(south_->GetNode(), E_TERRAINCREATED);
+
+    south_ = south;
+    if (south_ && south_->GetNode())
+    {
+        southID_ = south_->GetNode()->GetID();
+        SubscribeToEvent(south_->GetNode(), E_TERRAINCREATED, URHO3D_HANDLER(Terrain, HandleNeighborTerrainCreated));
+    }
+
+    UpdateEdgePatchNeighbors();
+    MarkNetworkUpdate();
+}
+
+void Terrain::SetWestNeighbor(Terrain* west)
+{
+    if (west == west_)
+        return;
+
+    if (west_ && west_->GetNode())
+        UnsubscribeFromEvent(west_->GetNode(), E_TERRAINCREATED);
+
+    west_ = west;
+    if (west_ && west_->GetNode())
+    {
+        westID_ = west_->GetNode()->GetID();
+        SubscribeToEvent(west_->GetNode(), E_TERRAINCREATED, URHO3D_HANDLER(Terrain, HandleNeighborTerrainCreated));
+    }
+
+    UpdateEdgePatchNeighbors();
+    MarkNetworkUpdate();
+}
+
+void Terrain::SetEastNeighbor(Terrain* east)
+{
+    if (east == east_)
+        return;
+
+    if (east_ && east_->GetNode())
+        UnsubscribeFromEvent(east_->GetNode(), E_TERRAINCREATED);
+
+    east_ = east;
+    if (east_ && east_->GetNode())
+    {
+        eastID_ = east_->GetNode()->GetID();
+        SubscribeToEvent(east_->GetNode(), E_TERRAINCREATED, URHO3D_HANDLER(Terrain, HandleNeighborTerrainCreated));
+    }
+
+    UpdateEdgePatchNeighbors();
+    MarkNetworkUpdate();
+}
+
+void Terrain::SetNeighbors(Terrain* north, Terrain* south, Terrain* west, Terrain* east)
+{
+    if (north_ && north_->GetNode())
+        UnsubscribeFromEvent(north_->GetNode(), E_TERRAINCREATED);
+    if (south_ && south_->GetNode())
+        UnsubscribeFromEvent(south_->GetNode(), E_TERRAINCREATED);
+    if (west_ && west_->GetNode())
+        UnsubscribeFromEvent(west_->GetNode(), E_TERRAINCREATED);
+    if (east_ && east_->GetNode())
+        UnsubscribeFromEvent(east_->GetNode(), E_TERRAINCREATED);
+
+    north_ = north;
+    if (north_ && north_->GetNode())
+    {
+        northID_ = north_->GetNode()->GetID();
+        SubscribeToEvent(north_->GetNode(), E_TERRAINCREATED, URHO3D_HANDLER(Terrain, HandleNeighborTerrainCreated));
+    }
+    south_ = south;
+    if (south_ && south_->GetNode())
+    {
+        southID_ = south_->GetNode()->GetID();
+        SubscribeToEvent(south_->GetNode(), E_TERRAINCREATED, URHO3D_HANDLER(Terrain, HandleNeighborTerrainCreated));
+    }
+    west_ = west;
+    if (west_ && west_->GetNode())
+    {
+        westID_ = west_->GetNode()->GetID();
+        SubscribeToEvent(west_->GetNode(), E_TERRAINCREATED, URHO3D_HANDLER(Terrain, HandleNeighborTerrainCreated));
+    }
+    east_ = east;
+    if (east_ && east_->GetNode())
+    {
+        eastID_ = east_->GetNode()->GetID();
+        SubscribeToEvent(east_->GetNode(), E_TERRAINCREATED, URHO3D_HANDLER(Terrain, HandleNeighborTerrainCreated));
+    }
+
+    UpdateEdgePatchNeighbors();
     MarkNetworkUpdate();
 }
 
@@ -401,7 +540,21 @@ TerrainPatch* Terrain::GetPatch(int x, int z) const
     if (x < 0 || x >= numPatches_.x_ || z < 0 || z >= numPatches_.y_)
         return nullptr;
     else
-        return GetPatch(z * numPatches_.x_ + x);
+        return GetPatch((unsigned)(z * numPatches_.x_ + x));
+}
+
+TerrainPatch* Terrain::GetNeighborPatch(int x, int z) const
+{
+    if (z >= numPatches_.y_ && north_)
+        return north_->GetPatch(x, z - numPatches_.y_);
+    else if (z < 0 && south_)
+        return south_->GetPatch(x, z + south_->GetNumPatches().y_);
+    else if (x < 0 && west_)
+        return west_->GetPatch(x + west_->GetNumPatches().x_, z);
+    else if (x >= numPatches_.x_ && east_)
+        return east_->GetPatch(x - numPatches_.x_, z);
+    else 
+        return GetPatch(x, z);
 }
 
 float Terrain::GetHeight(const Vector3& worldPosition) const
@@ -488,7 +641,7 @@ void Terrain::CreatePatchGeometry(TerrainPatch* patch)
 {
     URHO3D_PROFILE(CreatePatchGeometry);
 
-    unsigned row = patchSize_ + 1;
+    unsigned row = (unsigned)(patchSize_ + 1);
     VertexBuffer* vertexBuffer = patch->GetVertexBuffer();
     Geometry* geometry = patch->GetGeometry();
     Geometry* maxLodGeometry = patch->GetMaxLodGeometry();
@@ -584,13 +737,13 @@ void Terrain::CreatePatchGeometry(TerrainPatch* patch)
 
         geometry->SetIndexBuffer(indexBuffer_);
         geometry->SetDrawRange(TRIANGLE_LIST, drawRanges_[0].first, drawRanges_[0].second, false);
-        geometry->SetRawVertexData(cpuVertexData, sizeof(Vector3), MASK_POSITION);
+        geometry->SetRawVertexData(cpuVertexData, MASK_POSITION);
         maxLodGeometry->SetIndexBuffer(indexBuffer_);
         maxLodGeometry->SetDrawRange(TRIANGLE_LIST, drawRanges_[0].first, drawRanges_[0].second, false);
-        maxLodGeometry->SetRawVertexData(cpuVertexData, sizeof(Vector3), MASK_POSITION);
+        maxLodGeometry->SetRawVertexData(cpuVertexData, MASK_POSITION);
         occlusionGeometry->SetIndexBuffer(indexBuffer_);
         occlusionGeometry->SetDrawRange(TRIANGLE_LIST, drawRanges_[occlusionDrawRange].first, drawRanges_[occlusionDrawRange].second, false);
-        occlusionGeometry->SetRawVertexData(occlusionCpuVertexData, sizeof(Vector3), MASK_POSITION);
+        occlusionGeometry->SetRawVertexData(occlusionCpuVertexData, MASK_POSITION);
     }
 
     patch->ResetLod();
@@ -639,7 +792,7 @@ void Terrain::SetHeightMapAttr(const ResourceRef& value)
 
 void Terrain::SetPatchSizeAttr(int value)
 {
-    if (value < MIN_PATCH_SIZE || value > MAX_PATCH_SIZE || !IsPowerOfTwo(value))
+    if (value < MIN_PATCH_SIZE || value > MAX_PATCH_SIZE || !IsPowerOfTwo((unsigned)value))
         return;
 
     if (value != patchSize_)
@@ -693,7 +846,7 @@ void Terrain::CreateGeometry()
     unsigned prevNumPatches = patches_.size();
 
     // Determine number of LOD levels
-    unsigned lodSize = patchSize_;
+    unsigned lodSize = (unsigned)patchSize_;
     numLodLevels_ = 1;
     while (lodSize > MIN_PATCH_SIZE && numLodLevels_ < maxLodLevels_)
     {
@@ -709,11 +862,10 @@ void Terrain::CreateGeometry()
     {
         numPatches_ = IntVector2((heightMap_->GetWidth() - 1) / patchSize_, (heightMap_->GetHeight() - 1) / patchSize_);
         numVertices_ = IntVector2(numPatches_.x_ * patchSize_ + 1, numPatches_.y_ * patchSize_ + 1);
-        patchWorldOrigin_ = Vector2(-0.5f * (float)numPatches_.x_ * patchWorldSize_.x_, -0.5f * (float)numPatches_.y_ *
-                                    patchWorldSize_.y_);
+        patchWorldOrigin_ = Vector2(-0.5f * (float)numPatches_.x_ * patchWorldSize_.x_, -0.5f * (float)numPatches_.y_ * patchWorldSize_.y_);
         if (numVertices_ != lastNumVertices_ || lastSpacing_ != spacing_ || patchSize_ != lastPatchSize_ )
             updateAll = true;
-        unsigned newDataSize = numVertices_.x_ * numVertices_.y_;
+        unsigned newDataSize = (unsigned)(numVertices_.x_ * numVertices_.y_);
 
         // Create new height data if terrain size changed
         if (!heightData_ || updateAll)
@@ -751,7 +903,7 @@ void Terrain::CreateGeometry()
         for (auto & oldPatchNode : oldPatchNodes)
         {
             bool nodeOk = false;
-            QStringList coords = (oldPatchNode)->GetName().mid(6).split('_');
+            QStringList coords = oldPatchNode->GetName().mid(6).split('_');
             if (coords.size() == 2)
             {
                 int x = coords[0].toInt();
@@ -816,8 +968,8 @@ void Terrain::CreateGeometry()
             {
                 for (int x = 0; x < numVertices_.x_; ++x)
                 {
-                    float newHeight = ((float)src[imgRow * (numVertices_.y_ - 1 - z) + imgComps * x] + (float)src[imgRow *
-                            (numVertices_.y_ - 1 - z) + imgComps * x + 1] / 256.0f) * spacing_.y_;
+                    float newHeight = ((float)src[imgRow * (numVertices_.y_ - 1 - z) + imgComps * x] +
+                                       (float)src[imgRow * (numVertices_.y_ - 1 - z) + imgComps * x + 1] / 256.0f) * spacing_.y_;
 
                     if (updateAll)
                         *dest = newHeight;
@@ -879,8 +1031,8 @@ void Terrain::CreateGeometry()
                         patchNode->SetTemporary(true);
                     }
 
-                    patchNode->SetPosition(Vector3(patchWorldOrigin_.x_ + (float)x * patchWorldSize_.x_, 0.0f, patchWorldOrigin_.y_ +
-                                                   (float)z * patchWorldSize_.y_));
+                    patchNode->SetPosition(Vector3(patchWorldOrigin_.x_ + (float)x * patchWorldSize_.x_, 0.0f,
+                        patchWorldOrigin_.y_ + (float)z * patchWorldSize_.y_));
 
                     TerrainPatch* patch = patchNode->GetComponent<TerrainPatch>();
                     if (!patch)
@@ -957,7 +1109,7 @@ void Terrain::CreateGeometry()
                 CalculateLodErrors(patch);
             }
 
-            SetNeighbors(patch);
+            SetPatchNeighbors(patch);
         }
     }
 
@@ -1019,12 +1171,12 @@ void Terrain::CreateIndexData()
             {
                 for (int x = xStart; x < xEnd; x += skip)
                 {
-                    indices.push_back((z + skip) * row + x);
-                    indices.push_back(z * row + x + skip);
-                    indices.push_back(z * row + x);
-                    indices.push_back((z + skip) * row + x);
-                    indices.push_back((z + skip) * row + x + skip);
-                    indices.push_back(z * row + x + skip);
+                    indices.push_back((unsigned short)((z + skip) * row + x));
+                    indices.push_back((unsigned short)(z * row + x + skip));
+                    indices.push_back((unsigned short)(z * row + x));
+                    indices.push_back((unsigned short)((z + skip) * row + x));
+                    indices.push_back((unsigned short)((z + skip) * row + x + skip));
+                    indices.push_back((unsigned short)(z * row + x + skip));
                 }
             }
 
@@ -1036,18 +1188,18 @@ void Terrain::CreateIndexData()
                 {
                     if (x > 0 || (j & STITCH_WEST) == 0)
                     {
-                        indices.push_back((z + skip) * row + x);
-                        indices.push_back(z * row + x + skip);
-                        indices.push_back(z * row + x);
+                        indices.push_back((unsigned short)((z + skip) * row + x));
+                        indices.push_back((unsigned short)(z * row + x + skip));
+                        indices.push_back((unsigned short)(z * row + x));
                     }
-                    indices.push_back((z + skip) * row + x);
-                    indices.push_back((z + skip) * row + x + 2 * skip);
-                    indices.push_back(z * row + x + skip);
+                    indices.push_back((unsigned short)((z + skip) * row + x));
+                    indices.push_back((unsigned short)((z + skip) * row + x + 2 * skip));
+                    indices.push_back((unsigned short)(z * row + x + skip));
                     if (x < patchSize_ - skip * 2 || (j & STITCH_EAST) == 0)
                     {
-                        indices.push_back((z + skip) * row + x + 2 * skip);
-                        indices.push_back(z * row + x + 2 * skip);
-                        indices.push_back(z * row + x + skip);
+                        indices.push_back((unsigned short)((z + skip) * row + x + 2 * skip));
+                        indices.push_back((unsigned short)(z * row + x + 2 * skip));
+                        indices.push_back((unsigned short)(z * row + x + skip));
                     }
                 }
             }
@@ -1060,18 +1212,18 @@ void Terrain::CreateIndexData()
                 {
                     if (x > 0 || (j & STITCH_WEST) == 0)
                     {
-                        indices.push_back((z + skip) * row + x);
-                        indices.push_back((z + skip) * row + x + skip);
-                        indices.push_back(z * row + x);
+                        indices.push_back((unsigned short)((z + skip) * row + x));
+                        indices.push_back((unsigned short)((z + skip) * row + x + skip));
+                        indices.push_back((unsigned short)(z * row + x));
                     }
-                    indices.push_back(z * row + x);
-                    indices.push_back((z + skip) * row + x + skip);
-                    indices.push_back(z * row + x + 2 * skip);
+                    indices.push_back((unsigned short)(z * row + x));
+                    indices.push_back((unsigned short)((z + skip) * row + x + skip));
+                    indices.push_back((unsigned short)(z * row + x + 2 * skip));
                     if (x < patchSize_ - skip * 2 || (j & STITCH_EAST) == 0)
                     {
-                        indices.push_back((z + skip) * row + x + skip);
-                        indices.push_back((z + skip) * row + x + 2 * skip);
-                        indices.push_back(z * row + x + 2 * skip);
+                        indices.push_back((unsigned short)((z + skip) * row + x + skip));
+                        indices.push_back((unsigned short)((z + skip) * row + x + 2 * skip));
+                        indices.push_back((unsigned short)(z * row + x + 2 * skip));
                     }
                 }
             }
@@ -1084,18 +1236,18 @@ void Terrain::CreateIndexData()
                 {
                     if (z > 0 || (j & STITCH_SOUTH) == 0)
                     {
-                        indices.push_back(z * row + x);
-                        indices.push_back((z + skip) * row + x + skip);
-                        indices.push_back(z * row + x + skip);
+                        indices.push_back((unsigned short)(z * row + x));
+                        indices.push_back((unsigned short)((z + skip) * row + x + skip));
+                        indices.push_back((unsigned short)(z * row + x + skip));
                     }
-                    indices.push_back((z + 2 * skip) * row + x);
-                    indices.push_back((z + skip) * row + x + skip);
-                    indices.push_back(z * row + x);
+                    indices.push_back((unsigned short)((z + 2 * skip) * row + x));
+                    indices.push_back((unsigned short)((z + skip) * row + x + skip));
+                    indices.push_back((unsigned short)(z * row + x));
                     if (z < patchSize_ - skip * 2 || (j & STITCH_NORTH) == 0)
                     {
-                        indices.push_back((z + 2 * skip) * row + x);
-                        indices.push_back((z + 2 * skip) * row + x + skip);
-                        indices.push_back((z + skip) * row + x + skip);
+                        indices.push_back((unsigned short)((z + 2 * skip) * row + x));
+                        indices.push_back((unsigned short)((z + 2 * skip) * row + x + skip));
+                        indices.push_back((unsigned short)((z + skip) * row + x + skip));
                     }
                 }
             }
@@ -1108,18 +1260,18 @@ void Terrain::CreateIndexData()
                 {
                     if (z > 0 || (j & STITCH_SOUTH) == 0)
                     {
-                        indices.push_back(z * row + x);
-                        indices.push_back((z + skip) * row + x);
-                        indices.push_back(z * row + x + skip);
+                        indices.push_back((unsigned short)(z * row + x));
+                        indices.push_back((unsigned short)((z + skip) * row + x));
+                        indices.push_back((unsigned short)(z * row + x + skip));
                     }
-                    indices.push_back((z + skip) * row + x);
-                    indices.push_back((z + 2 * skip) * row + x + skip);
-                    indices.push_back(z * row + x + skip);
+                    indices.push_back((unsigned short)((z + skip) * row + x));
+                    indices.push_back((unsigned short)((z + 2 * skip) * row + x + skip));
+                    indices.push_back((unsigned short)(z * row + x + skip));
                     if (z < patchSize_ - skip * 2 || (j & STITCH_NORTH) == 0)
                     {
-                        indices.push_back((z + skip) * row + x);
-                        indices.push_back((z + 2 * skip) * row + x);
-                        indices.push_back((z + 2 * skip) * row + x + skip);
+                        indices.push_back((unsigned short)((z + skip) * row + x));
+                        indices.push_back((unsigned short)((z + 2 * skip) * row + x));
+                        indices.push_back((unsigned short)((z + 2 * skip) * row + x + skip));
                     }
                 }
             }
@@ -1154,7 +1306,7 @@ float Terrain::GetSourceHeight(int x, int z) const
 
 float Terrain::GetLodHeight(int x, int z, unsigned lodLevel) const
 {
-    unsigned offset = 1 << lodLevel;
+    unsigned offset = (unsigned)(1 << lodLevel);
     float divisor = (float)offset;
     float xFrac = (float)(x % offset) / divisor;
     float zFrac = (float)(z % offset) / divisor;
@@ -1242,11 +1394,13 @@ void Terrain::CalculateLodErrors(TerrainPatch* patch)
     }
 }
 
-void Terrain::SetNeighbors(TerrainPatch* patch)
+void Terrain::SetPatchNeighbors(TerrainPatch* patch)
 {
+    if (!patch)
+        return;
     const IntVector2& coords = patch->GetCoordinates();
-    patch->SetNeighbors(GetPatch(coords.x_, coords.y_ + 1), GetPatch(coords.x_, coords.y_ - 1),
-                        GetPatch(coords.x_ - 1, coords.y_), GetPatch(coords.x_ + 1, coords.y_));
+    patch->SetNeighbors(GetNeighborPatch(coords.x_, coords.y_ + 1), GetNeighborPatch(coords.x_, coords.y_ - 1),
+        GetNeighborPatch(coords.x_ - 1, coords.y_), GetNeighborPatch(coords.x_ + 1, coords.y_));
 }
 
 bool Terrain::SetHeightMapInternal(Image* image, bool recreateNow)
@@ -1276,6 +1430,30 @@ bool Terrain::SetHeightMapInternal(Image* image, bool recreateNow)
 void Terrain::HandleHeightMapReloadFinished(StringHash eventType, VariantMap& eventData)
 {
     CreateGeometry();
+}
+
+void Terrain::HandleNeighborTerrainCreated(StringHash eventType, VariantMap& eventData)
+{
+    UpdateEdgePatchNeighbors();
+}
+
+void Terrain::UpdateEdgePatchNeighbors()
+{
+    for (int x = 1; x < numPatches_.x_ - 1; ++x)
+    {
+        SetPatchNeighbors(GetPatch(x, 0));
+        SetPatchNeighbors(GetPatch(x, numPatches_.y_ - 1));
+    }
+    for (int z = 1; z < numPatches_.y_ - 1; ++z)
+    {
+        SetPatchNeighbors(GetPatch(0, z));
+        SetPatchNeighbors(GetPatch(numPatches_.x_ - 1, z));
+    }
+
+    SetPatchNeighbors(GetPatch(0, 0));
+    SetPatchNeighbors(GetPatch(numPatches_.x_ - 1, 0));
+    SetPatchNeighbors(GetPatch(0, numPatches_.y_ - 1));
+    SetPatchNeighbors(GetPatch(numPatches_.x_ - 1, numPatches_.y_ - 1));
 }
 
 }

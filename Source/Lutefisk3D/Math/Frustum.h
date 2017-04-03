@@ -46,7 +46,7 @@ static const unsigned NUM_FRUSTUM_PLANES = 6;
 static const unsigned NUM_FRUSTUM_VERTICES = 8;
 
 /// Convex constructed of 6 planes.
-class Frustum
+class URHO3D_API Frustum
 {
 public:
     /// Construct a degenerate frustum with all points at origin.
@@ -63,8 +63,12 @@ public:
     void Define(const Vector3& near, const Vector3& far, const Matrix3x4& transform = Matrix3x4::IDENTITY);
     /// Define with a bounding box and a transform matrix.
     void Define(const BoundingBox& box, const Matrix3x4& transform = Matrix3x4::IDENTITY);
+    /// Define from a projection or view-projection matrix.
+    void Define(const Matrix4& projection);
     /// Define with orthographic projection parameters and a transform matrix.
     void DefineOrtho(float orthoSize, float aspectRatio, float zoom, float nearZ, float farZ, const Matrix3x4& transform = Matrix3x4::IDENTITY);
+    /// Define a split (limited) frustum from a projection matrix, with near & far distances specified.
+    void DefineSplit(const Matrix4& projection, float near, float far);
     /// Transform by a 3x3 matrix.
     void Transform(const Matrix3& transform);
     /// Transform by a 3x4 matrix.
@@ -117,7 +121,7 @@ public:
         Vector3 edge = center - box.min_;
         bool allInside = true;
 
-        for (auto & plane : planes_)
+        for (const auto & plane : planes_)
         {
             float dist = plane.normal_.DotProduct(center) + plane.d_;
             float absDist = plane.absNormal_.DotProduct(edge);

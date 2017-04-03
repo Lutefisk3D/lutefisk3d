@@ -39,7 +39,7 @@ struct StaticModelGeometryData
 };
 
 /// Static model component.
-class StaticModel : public Drawable
+class URHO3D_API StaticModel : public Drawable
 {
     URHO3D_OBJECT(StaticModel,Drawable);
 
@@ -63,22 +63,22 @@ public:
     virtual bool DrawOcclusion(OcclusionBuffer* buffer) override;
 
     /// Set model.
-    void SetModel(Model* model);
+    virtual void SetModel(Model* model);
     /// Set material on all geometries.
-    void SetMaterial(Material* material);
+    virtual void SetMaterial(Material* material);
     /// Set material on one geometry. Return true if successful.
-    bool SetMaterial(unsigned index, Material* material);
+    virtual bool SetMaterial(unsigned index, Material* material);
     /// Set occlusion LOD level. By default (M_MAX_UNSIGNED) same as visible.
     void SetOcclusionLodLevel(unsigned level);
     /// Apply default materials from a material list file. If filename is empty (default), the model's resource name with extension .txt will be used.
-    void ApplyMaterialList(const QString& fileName = QString::null);
+    void ApplyMaterialList(const QString& fileName = QString());
 
     /// Return model.
     Model* GetModel() const { return model_; }
     /// Return number of geometries.
     unsigned GetNumGeometries() const { return geometries_.size(); }
     /// Return material by geometry index.
-    Material* GetMaterial(unsigned index = 0) const;
+    virtual Material* GetMaterial(unsigned index = 0) const;
     /// Return occlusion LOD level.
     unsigned GetOcclusionLodLevel() const { return occlusionLodLevel_; }
     /// Determines if the given world space point is within the model geometry.

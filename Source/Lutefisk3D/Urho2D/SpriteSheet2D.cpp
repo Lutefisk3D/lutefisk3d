@@ -95,15 +95,6 @@ void SpriteSheet2D::SetTexture(Texture2D *texture)
     texture_ = texture;
 }
 
-Sprite2D* SpriteSheet2D::GetSprite(const QString& name) const
-{
-    HashMap<QString, SharedPtr<Sprite2D> >::const_iterator i = spriteMapping_.find(name);
-    if (i == spriteMapping_.end())
-        return nullptr;
-
-    return MAP_VALUE(i);
-}
-
 void SpriteSheet2D::DefineSprite(const QString& name, const IntRect& rectangle, const Vector2& hotSpot, const IntVector2& offset)
 {
     if (!texture_)
@@ -122,7 +113,14 @@ void SpriteSheet2D::DefineSprite(const QString& name, const IntRect& rectangle, 
 
     spriteMapping_[name] = sprite;
 }
+Sprite2D* SpriteSheet2D::GetSprite(const QString& name) const
+{
+    HashMap<QString, SharedPtr<Sprite2D> >::const_iterator i = spriteMapping_.find(name);
+    if (i == spriteMapping_.end())
+        return nullptr;
 
+    return MAP_VALUE(i);
+}
 bool SpriteSheet2D::BeginLoadFromPListFile(Deserializer& source)
 {
     loadPListFile_ = new PListFile(context_);
@@ -329,7 +327,7 @@ bool SpriteSheet2D::EndLoadFromJSONFile()
         JSONValue frameWidthVal = subTextureVal.Get("frameWidth");
         JSONValue frameHeightVal = subTextureVal.Get("frameHeight");
 
-        if (!frameHeightVal.IsNull() && !frameHeightVal.IsNull())
+        if (!frameWidthVal.IsNull() && !frameHeightVal.IsNull())
         {
             offset.x_ = subTextureVal.Get("frameX").GetInt();
             offset.y_ = subTextureVal.Get("frameY").GetInt();

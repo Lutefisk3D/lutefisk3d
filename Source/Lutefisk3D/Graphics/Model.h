@@ -68,8 +68,8 @@ struct VertexBufferDesc
 {
     /// Vertex count.
     unsigned vertexCount_;
-    /// Element mask.
-    unsigned elementMask_;
+    /// Vertex declaration.
+    std::vector<VertexElement> vertexElements_;
     /// Vertex data size.
     unsigned dataSize_;
     /// Vertex data.
@@ -105,7 +105,7 @@ struct GeometryDesc
 };
 
 /// 3D model resource.
-class Model : public Resource
+class URHO3D_API Model : public Resource
 {
     URHO3D_OBJECT(Model,Resource);
 
@@ -145,7 +145,7 @@ public:
     /// Set vertex morphs.
     void SetMorphs(const std::vector<ModelMorph>& morphs);
     /// Clone the model. The geometry data is deep-copied and can be modified in the clone without affecting the original.
-    SharedPtr<Model> Clone(const QString& cloneName = QString::null) const;
+    SharedPtr<Model> Clone(const QString& cloneName = QString()) const;
 
     /// Return bounding box.
     const BoundingBox& GetBoundingBox() const { return boundingBox_; }

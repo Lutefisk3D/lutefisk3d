@@ -41,7 +41,7 @@ enum HttpRequestState
 };
 
 /// An HTTP connection with response data stream.
-class HttpRequest : public RefCounted, public Deserializer, public Thread
+class URHO3D_API HttpRequest : public RefCounted, public Deserializer, public Thread
 {
 public:
     /// Construct with parameters.
@@ -56,6 +56,8 @@ public:
     virtual unsigned Read(void* dest, unsigned size);
     /// Set position from the beginning of the stream. Not supported.
     virtual unsigned Seek(unsigned position);
+    /// Return whether all response data has been read.
+    virtual bool IsEof() const;
     
     /// Return URL used in the request.
     const QString& GetURL() const { return url_; }
@@ -71,8 +73,8 @@ public:
     bool IsOpen() const { return GetState() == HTTP_OPEN; }
     
 private:
-    /// Check for end of the data stream and return available size in buffer. Must only be called when the mutex is held by the main thread.
-    unsigned CheckEofAndAvailableSize();
+    /// Check for available read data in buffer and whether end has been reached. Must only be called when the mutex is held by the main thread.
+    std::pair<unsigned, bool> CheckAvailableSizeAndEof() const;
     
     /// URL.
     QString url_;

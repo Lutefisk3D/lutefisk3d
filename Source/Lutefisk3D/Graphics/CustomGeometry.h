@@ -30,6 +30,8 @@ namespace Urho3D
 /// Custom geometry vertex.
 struct CustomGeometryVertex
 {
+    CustomGeometryVertex() = default;
+    explicit CustomGeometryVertex(const Vector3 &v) : position_(v) {}
     /// Position.
     Vector3 position_;
     /// Normal.
@@ -45,7 +47,7 @@ struct CustomGeometryVertex
 class VertexBuffer;
 
 /// Custom geometry component.
-class CustomGeometry : public Drawable
+class URHO3D_API CustomGeometry : public Drawable
 {
     URHO3D_OBJECT(CustomGeometry,Drawable);
 
@@ -53,7 +55,7 @@ public:
     /// Construct.
     CustomGeometry(Context* context);
     /// Destruct.
-    virtual ~CustomGeometry();
+    virtual ~CustomGeometry() = default;
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);
 

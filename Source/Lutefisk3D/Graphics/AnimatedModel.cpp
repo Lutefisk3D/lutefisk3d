@@ -315,6 +315,11 @@ void AnimatedModel::SetModel(Model* model, bool createBones)
 {
     if (model == model_)
         return;
+    if (!node_)
+    {
+        URHO3D_LOGERROR("Can not set model while model component is not attached to a scene node");
+        return;
+    }
 
     // Unsubscribe from the reload event of previous model (if any), then subscribe to the new
     if (model_)
@@ -751,8 +756,7 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
 
         if (createBones)
         {
-            std::vector<Bone>& bones = skeleton_.GetModifiableBones();
-            for (Bone &bone : bones)
+            for (Bone &bone : skeleton_.GetModifiableBones())
             {
                 Node* boneNode = node_->GetChild(bone.name_, true);
                 if (boneNode)
@@ -809,7 +813,7 @@ void AnimatedModel::SetAnimationStatesAttr(const VariantVector& value)
             newState->SetLooped(value[index++].GetBool());
             newState->SetWeight(value[index++].GetFloat());
             newState->SetTime(value[index++].GetFloat());
-            newState->SetLayer(value[index++].GetInt());
+            newState->SetLayer((unsigned char)value[index++].GetInt());
         }
         else
         {
@@ -819,7 +823,7 @@ void AnimatedModel::SetAnimationStatesAttr(const VariantVector& value)
         }
     }
 
-    if (animationStates_.size())
+    if (!animationStates_.empty())
     {
         MarkAnimationDirty();
         MarkAnimationOrderDirty();
@@ -858,7 +862,7 @@ VariantVector AnimatedModel::GetAnimationStatesAttr() const
         Animation* animation = state->GetAnimation();
         Bone* startBone = state->GetStartBone();
         ret.push_back(GetResourceRef(animation, Animation::GetTypeStatic()));
-        ret.push_back(startBone ? startBone->name_ : QString::null);
+        ret.push_back(startBone ? startBone->name_ : QString());
         ret.push_back(state->IsLooped());
         ret.push_back(state->GetWeight());
         ret.push_back(state->GetTime());
@@ -1040,67 +1044,6 @@ void AnimatedModel::FinalizeBoneBoundingBoxes()
     }
 }
 
-void AnimatedModel::FinalizeBoneBoundingBoxes()
-{
-    std::vector<Bone>& bones = skeleton_.GetModifiableBones();
-    std::vector<AnimatedModel*> models;
-    GetComponents<AnimatedModel>(models);
-
-    if (models.size() > 1)
-    {
-        // Reset first to the model resource's original bone bounding information if available (should be)
-        if (model_)
-        {
-            const std::vector<Bone>& modelBones = model_->GetSkeleton().GetBones();
-            for (unsigned i = 0; i < bones.size() && i < modelBones.size(); ++i)
-            {
-                bones[i].collisionMask_ = modelBones[i].collisionMask_;
-                bones[i].radius_ = modelBones[i].radius_;
-                bones[i].boundingBox_ = modelBones[i].boundingBox_;
-            }
-        }
-
-        // Get matching bones from all non-master models and merge their bone bounding information
-        // to prevent culling errors (master model may not have geometry in all bones, or the bounds are smaller)
-        for (AnimatedModel* model : models)
-        {
-            if (model == this)
-                continue;
-
-            Skeleton& otherSkeleton = model->GetSkeleton();
-            for (Bone & b : bones)
-            {
-                Bone* otherBone = otherSkeleton.GetBone(b.nameHash_);
-                if (otherBone)
-                {
-                    if (otherBone->collisionMask_ & BONECOLLISION_SPHERE)
-                    {
-                        b.collisionMask_ |= BONECOLLISION_SPHERE;
-                        b.radius_ = Max(b.radius_, otherBone->radius_);
-                    }
-                    if (otherBone->collisionMask_ & BONECOLLISION_BOX)
-                    {
-                        b.collisionMask_ |= BONECOLLISION_BOX;
-                        if (b.boundingBox_.Defined())
-                            b.boundingBox_.Merge(otherBone->boundingBox_);
-                        else
-                            b.boundingBox_.Define(otherBone->boundingBox_);
-                    }
-                }
-            }
-        }
-    }
-
-    // Remove collision information from dummy bones that do not affect skinning, to prevent them from being merged
-    // to the bounding box and making it artificially large
-    for (Bone & b : bones)
-    {
-        if (b.collisionMask_ & BONECOLLISION_BOX && b.boundingBox_.size().Length() < M_EPSILON)
-            b.collisionMask_ &= ~BONECOLLISION_BOX;
-        if (b.collisionMask_ & BONECOLLISION_SPHERE && b.radius_ < M_EPSILON)
-            b.collisionMask_ &= ~BONECOLLISION_SPHERE;
-    }
-}
 void AnimatedModel::RemoveRootBone()
 {
     Bone* rootBone = skeleton_.GetRootBone();
@@ -1181,16 +1124,16 @@ void AnimatedModel::CloneGeometries()
             for (unsigned k = 0; k < originalBuffers.size(); ++k)
             {
                 VertexBuffer* originalBuffer = originalBuffers[k];
-                unsigned originalMask = original->GetVertexElementMask(k);
 
                 if (clonedVertexBuffers.contains(originalBuffer))
                 {
                     VertexBuffer* clonedBuffer = clonedVertexBuffers[originalBuffer];
-                    clone->SetVertexBuffer(l++, originalBuffer, originalMask & ~clonedBuffer->GetElementMask());
-                    clone->SetVertexBuffer(l++, clonedBuffer, originalMask & clonedBuffer->GetElementMask());
+                    clone->SetVertexBuffer(l++, originalBuffer);
+                    // Specify the morph buffer at a greater index to override the model's original positions/normals/tangents
+                    clone->SetVertexBuffer(l++, clonedBuffer);
                 }
                 else
-                    clone->SetVertexBuffer(l++, originalBuffer, originalMask);
+                    clone->SetVertexBuffer(l++, originalBuffer);
             }
 
             clone->SetIndexBuffer(original->GetIndexBuffer());
@@ -1210,8 +1153,8 @@ void AnimatedModel::CopyMorphVertices(void *destVertexData, void *srcVertexData,
                                       VertexBuffer *destBuffer, VertexBuffer *srcBuffer)
 {
     unsigned       mask          = destBuffer->GetElementMask() & srcBuffer->GetElementMask();
-    unsigned       normalOffset  = srcBuffer->GetElementOffset(ELEMENT_NORMAL);
-    unsigned       tangentOffset = srcBuffer->GetElementOffset(ELEMENT_TANGENT);
+    unsigned       normalOffset  = srcBuffer->GetElementOffset(SEM_NORMAL);
+    unsigned       tangentOffset = srcBuffer->GetElementOffset(SEM_TANGENT);
     unsigned       vertexSize    = srcBuffer->GetVertexSize();
     float *        dest          = (float *)destVertexData;
     unsigned char *src           = (unsigned char *)srcVertexData;
@@ -1415,8 +1358,8 @@ void AnimatedModel::ApplyMorph(VertexBuffer* buffer, void* destVertexData, unsig
 {
     unsigned elementMask = morph.elementMask_ & buffer->GetElementMask();
     unsigned vertexCount = morph.vertexCount_;
-    unsigned normalOffset = buffer->GetElementOffset(ELEMENT_NORMAL);
-    unsigned tangentOffset = buffer->GetElementOffset(ELEMENT_TANGENT);
+    unsigned normalOffset = buffer->GetElementOffset(SEM_NORMAL);
+    unsigned tangentOffset = buffer->GetElementOffset(SEM_TANGENT);
     unsigned vertexSize = buffer->GetVertexSize();
 
     unsigned char* srcData = morph.morphData_;

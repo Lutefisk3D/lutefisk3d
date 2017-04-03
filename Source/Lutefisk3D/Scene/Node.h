@@ -31,6 +31,7 @@ namespace Urho3D
 
 class Component;
 class Connection;
+class Node;
 class Scene;
 class SceneResolver;
 
@@ -51,8 +52,24 @@ enum TransformSpace
     TS_WORLD
 };
 
+/// Internal implementation structure for less performance-critical Node variables.
+struct URHO3D_API NodeImpl
+{
+    /// Nodes this node depends on for network updates.
+    std::vector<Node*> dependencyNodes_;
+    /// Network owner connection.
+    Connection* owner_;
+    /// Name.
+    QString name_;
+    /// Tag strings.
+    QStringList tags_;
+    /// Name hash.
+    StringHash nameHash_;
+    /// Attribute buffer for network updates.
+    mutable VectorBuffer attrBuffer_;
+};
 /// %Scene node that may contain components and child nodes.
-class Node : public Animatable
+class URHO3D_API Node : public Animatable
 {
     URHO3D_OBJECT(Node,Animatable);
 
@@ -208,7 +225,7 @@ public:
     /// Mark node and child nodes to need world transform recalculation. Notify listener components.
     void MarkDirty();
     /// Create a child scene node (with specified ID if provided).
-    Node* CreateChild(const QString& name = QString::null, CreateMode mode = REPLICATED, unsigned id = 0);
+    Node* CreateChild(const QString& name = QString(), CreateMode mode = REPLICATED, unsigned id = 0);
     /// Add a child scene node at a specific index. If index is not explicitly specified or is greater than current children size, append the new child at the end.
     void AddChild(Node* node, unsigned index = M_MAX_UNSIGNED);
     /// Remove a child scene node.
@@ -235,11 +252,13 @@ public:
     void RemoveComponents(StringHash type);
     /// Remove all components from this node.
     void RemoveAllComponents();
+    /// Adjust index order of an existing component in this node.
+    void ReorderComponent(Component* component, unsigned index);
     /// Clone scene node, components and child nodes. Return the clone.
     Node* Clone(CreateMode mode = REPLICATED);
     /// Remove from the parent node. If no other shared pointer references exist, causes immediate deletion.
     void Remove();
-    /// Set parent scene node. Retains the world transform.
+    /// Assign to a new parent scene node. Retains the world transform.
     void SetParent(Node* parent);
     /// Set a user variable.
     void SetVar(StringHash key, const Variant& value);
@@ -259,11 +278,11 @@ public:
     /// Return ID.
     unsigned GetID() const { return id_; }
     /// Return name.
-    const QString& GetName() const { return name_; }
+    const QString& GetName() const { return impl_->name_; }
     /// Return name hash.
-    StringHash GetNameHash() const { return nameHash_; }
+    StringHash GetNameHash() const { return impl_->nameHash_; }
     /// Return all tags.
-    const QStringList& GetTags() const { return tags_; }
+    const QStringList& GetTags() const { return impl_->tags_; }
 
     /// Return whether has a specific tag.
     bool HasTag(const QString &tag) const;
@@ -276,7 +295,7 @@ public:
     /// Returns the node's last own enabled state. May be different than the value returned by IsEnabled when SetDeepEnabled has been used.
     bool IsEnabledSelf() const { return enabledPrev_; }
     /// Return owner connection in networking.
-    Connection* GetOwner() const { return owner_; }
+    Connection* GetOwner() const { return impl_->owner_; }
     /// Return position in parent space.
     const Vector3& GetPosition() const { return position_; }
     /// Return position in parent space (for Urho2D).
@@ -476,7 +495,7 @@ public:
     /// Load components from XML data and optionally load child nodes.
     bool LoadJSON(const JSONValue& source, SceneResolver& resolver, bool loadChildren = true, bool rewriteIDs = false, CreateMode mode = REPLICATED);
     /// Return the depended on nodes to order network updates.
-    const std::vector<Node*>& GetDependencyNodes() const { return dependencyNodes_; }
+    const std::vector<Node*>& GetDependencyNodes() const { return impl_->dependencyNodes_; }
     /// Prepare network update by comparing attributes and marking replication states dirty as necessary.
     void PrepareNetworkUpdate();
     /// Clean up all references to a network connection that is about to be removed.
@@ -485,7 +504,7 @@ public:
     void MarkReplicationDirty();
     /// Create a child node with specific ID.
     Node* CreateChild(unsigned id, CreateMode mode);
-    /// Add a pre-created component.
+    /// Add a pre-created component. Using this function from application code is discouraged, as component operation without an owner node may not be well-defined in all cases. Prefer CreateComponent() instead.
     void AddComponent(Component* component, unsigned id, CreateMode mode);
     /// Calculate number of non-temporary child nodes.
     unsigned GetNumPersistentChildren() const;
@@ -508,10 +527,6 @@ protected:
     /// Find target of an attribute animation from object hierarchy by name.
     virtual Animatable* FindAttributeAnimationTarget(const QString& name, QString& outName);
 
-    /// Network update queued flag.
-    bool networkUpdate_;
-    /// User variables.
-    VariantMap vars_;
 
 private:
     /// Set enabled/disabled state with optional recursion. Optionally affect the remembered enable state.
@@ -545,6 +560,10 @@ private:
     bool enabled_;
     /// Last SetEnabled flag before any SetDeepEnabled.
     bool enabledPrev_;
+protected:
+    /// Network update queued flag.
+    bool networkUpdate_;
+private:
     /// Parent scene node.
     Node* parent_;
     /// Scene (root node.)
@@ -565,18 +584,12 @@ private:
     std::vector<SharedPtr<Node> > children_;
     /// Node listeners.
     std::vector<WeakPtr<Component> > listeners_;
-    /// Nodes this node depends on for network updates.
-    std::vector<Node*> dependencyNodes_;
-    /// Network owner connection.
-    Connection* owner_;
-    /// Name.
-    QString name_;
-    /// Tag strings.
-    QStringList tags_;
-    /// Name hash.
-    StringHash nameHash_;
-    /// Attribute buffer for network updates.
-    mutable VectorBuffer attrBuffer_;
+    /// Pointer to implementation.
+    NodeImpl* impl_;
+
+protected:
+    /// User variables.
+    VariantMap vars_;
 };
 
 template <class T> T* Node::CreateComponent(CreateMode mode, unsigned id) { return static_cast<T*>(CreateComponent(T::GetTypeStatic(), mode, id)); }

@@ -23,12 +23,12 @@
 #include "Animation.h"
 
 #include "../Core/Context.h"
+#include "../Core/Profiler.h"
 #include "../IO/Deserializer.h"
 #include "../IO/FileSystem.h"
 #include "../IO/Log.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
 #include "../IO/Serializer.h"
+#include "../Resource/ResourceCache.h"
 #include "../Resource/XMLFile.h"
 #include "../Resource/JSONFile.h"
 
@@ -82,7 +82,7 @@ void AnimationTrack::RemoveAllKeyFrames()
 
 AnimationKeyFrame* AnimationTrack::GetKeyFrame(unsigned index)
 {
-    return index < keyFrames_.size() ? &keyFrames_[index] : (AnimationKeyFrame*)0;
+    return index < keyFrames_.size() ? &keyFrames_[index] : (AnimationKeyFrame*)nullptr;
 }
 void AnimationTrack::GetKeyFrameIndex(float time, unsigned& index) const
 {
@@ -107,9 +107,6 @@ Animation::Animation(Context* context) :
 {
 }
 
-Animation::~Animation()
-{
-}
 
 void Animation::RegisterObject(Context* context)
 {
@@ -359,22 +356,34 @@ void Animation::SetNumTriggers(unsigned num)
 {
     triggers_.resize(num);
 }
+SharedPtr<Animation> Animation::Clone(const QString& cloneName) const
+{
+    SharedPtr<Animation> ret(new Animation(context_));
 
+    ret->SetName(cloneName);
+    ret->SetAnimationName(animationName_);
+    ret->length_ = length_;
+    ret->tracks_ = tracks_;
+    ret->triggers_ = triggers_;
+    ret->SetMemoryUse(GetMemoryUse());
+
+    return ret;
+}
 AnimationTrack* Animation::GetTrack(const QString& name)
 {
     HashMap<StringHash, AnimationTrack>::iterator i = tracks_.find(StringHash(name));
-    return i != tracks_.end() ? &MAP_VALUE(i): (AnimationTrack*)0;
+    return i != tracks_.end() ? &MAP_VALUE(i): (AnimationTrack*)nullptr;
 }
 
 AnimationTrack* Animation::GetTrack(StringHash nameHash)
 {
     HashMap<StringHash, AnimationTrack>::iterator i = tracks_.find(nameHash);
-    return i != tracks_.end() ? &MAP_VALUE(i) : (AnimationTrack*)0;
+    return i != tracks_.end() ? &MAP_VALUE(i) : (AnimationTrack*)nullptr;
     }
 
 AnimationTriggerPoint* Animation::GetTrigger(unsigned index)
 {
-    return index < triggers_.size() ? &triggers_[index] : (AnimationTriggerPoint*)0;
+    return index < triggers_.size() ? &triggers_[index] : (AnimationTriggerPoint*)nullptr;
 }
 
 }

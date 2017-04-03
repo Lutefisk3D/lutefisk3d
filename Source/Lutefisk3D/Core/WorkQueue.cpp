@@ -43,7 +43,7 @@ public:
     }
 
     /// Process work items until stopped.
-    virtual void ThreadFunction() override
+    void ThreadFunction() override
     {
         // Init FPU state first
         InitFPU();

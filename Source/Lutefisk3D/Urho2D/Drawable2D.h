@@ -63,10 +63,10 @@ struct SourceBatch2D
 };
 
 /// Pixel size (equal 0.01f).
-extern const float PIXEL_SIZE;
+extern URHO3D_API const float PIXEL_SIZE;
 
 /// Base class for 2D visible components.
-class Drawable2D : public Drawable
+class URHO3D_API Drawable2D : public Drawable
 {
     URHO3D_OBJECT(Drawable2D,Drawable);
 

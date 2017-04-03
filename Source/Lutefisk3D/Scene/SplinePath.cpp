@@ -111,9 +111,9 @@ void SplinePath::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
         if (spline_.GetKnots().size() > 1)
         {
             Vector3 a = spline_.GetPoint(0.f).GetVector3();
-            for (int i = 1; i <= 100; ++i)
+            for (float f = 0.01f; f <= 1.0f; f = f + 0.01f)
             {
-                const Vector3 b = spline_.GetPoint(float(i)*0.01f).GetVector3();
+                const Vector3 b = spline_.GetPoint(f).GetVector3();
                 debug->AddLine(a, b, Color::GREEN);
                 a = b;
             }

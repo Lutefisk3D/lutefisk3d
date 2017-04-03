@@ -27,7 +27,7 @@
 
 namespace Urho3D
 {
-extern const float PIXEL_SIZE;
+extern URHO3D_API const float PIXEL_SIZE;
 
 float TileMapInfo2D::GetMapWidth() const
 {
@@ -38,6 +38,8 @@ float TileMapInfo2D::GetMapHeight() const
 {
     if (orientation_ == O_STAGGERED)
         return (height_ + 1) * 0.5f * tileHeight_;
+    else if (orientation_ == O_HEXAGONAL)
+        return (height_) * 0.5f * (tileHeight_ + tileHeight_ * 0.5f);
     else
         return height_ * tileHeight_;
 }
@@ -49,12 +51,14 @@ Vector2 TileMapInfo2D::ConvertPosition(const Vector2& position) const
     case O_ISOMETRIC:
         {
             Vector2 index = position * PIXEL_SIZE / tileHeight_;
-            return Vector2((width_ + index.x_ - index.y_) * tileWidth_ * 0.5f, (height_ * 2.0f - index.x_ - index.y_) * tileHeight_ * 0.5f);
+            return Vector2((width_ + index.x_ - index.y_) * tileWidth_ * 0.5f,
+                (height_ * 2.0f - index.x_ - index.y_) * tileHeight_ * 0.5f);
         }
 
     case O_STAGGERED:
         return Vector2(position.x_ * PIXEL_SIZE, GetMapHeight() - position.y_ * PIXEL_SIZE);
 
+    case O_HEXAGONAL:
     case O_ORTHOGONAL:
     default:
         return Vector2(position.x_ * PIXEL_SIZE, GetMapHeight() - position.y_ * PIXEL_SIZE);
@@ -76,6 +80,12 @@ Vector2 TileMapInfo2D::TileIndexToPosition(int x, int y) const
         else
             return Vector2((x + 0.5f) * tileWidth_, (height_ - 1 - y)  * 0.5f * tileHeight_);
 
+    case O_HEXAGONAL:
+        if (y % 2 == 0)
+            return Vector2(x * tileWidth_, (height_ - 1 - y) * 0.75f * tileHeight_);
+        else
+            return Vector2((x + 0.5f) * tileWidth_, (height_ - 1 - y)  * 0.75f * tileHeight_);
+
     case O_ORTHOGONAL:
     default:
         return Vector2(x * tileWidth_, (height_ - 1 - y) * tileHeight_);
@@ -90,10 +100,11 @@ bool TileMapInfo2D::PositionToTileIndex(int& x, int& y, const Vector2& position)
     {
     case O_ISOMETRIC:
         {
-            int x_sub_y = (int)(position.x_ * 2.0f / tileWidth_ + 1 - width_);
-            int x_add_y = (int)(height_ * 2.0f - position.y_ * 2.0f / tileHeight_ - 2.0f);
-            x = (x_sub_y - x_add_y) / 2;
-            y = (x_sub_y - x_add_y) / 2;
+        float ox = position.x_ / tileWidth_ - height_ * 0.5f;
+        float oy = position.y_ / tileHeight_;
+
+        x = (int)(width_ - oy + ox);
+        y = (int)(height_ - oy - ox);
         }
         break;
 
@@ -104,6 +115,14 @@ bool TileMapInfo2D::PositionToTileIndex(int& x, int& y, const Vector2& position)
         else
             x = (int)(position.x_ / tileWidth_ - 0.5f);
 
+        break;
+
+    case O_HEXAGONAL:
+        y = (int)(height_ - 1 - position.y_ / 0.75f / tileHeight_);
+        if (y % 2 == 0)
+            x = (int)(position.x_ / tileWidth_);
+        else
+            x = (int)(position.x_ / tileWidth_ - 0.75f);
         break;
 
     case O_ORTHOGONAL:

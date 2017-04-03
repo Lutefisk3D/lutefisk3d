@@ -34,7 +34,7 @@ class XMLFile;
 class JSONFile;
 
 /// Sprite sheet.
-class SpriteSheet2D : public Resource
+class URHO3D_API SpriteSheet2D : public Resource
 {
     URHO3D_OBJECT(SpriteSheet2D,Resource);
 
@@ -50,16 +50,16 @@ public:
     virtual bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
     virtual bool EndLoad() override;
+    /// Set texture.
+    void SetTexture(Texture2D * texture);
+    /// Define sprite.
+    void DefineSprite(const QString& name, const IntRect& rectangle, const Vector2& hotSpot = Vector2(0.5f, 0.5f), const IntVector2& offset = IntVector2::ZERO);
 
     /// Return texture.
     Texture2D* GetTexture() const { return texture_; }
-    /// Set texture
-    void SetTexture(Texture2D * texture);
 
     /// Return sprite.
     Sprite2D* GetSprite(const QString& name) const;
-    /// Define sprite.
-    void DefineSprite(const QString& name, const IntRect& rectangle, const Vector2& hotSpot = Vector2(0.5f, 0.5f), const IntVector2& offset = IntVector2::ZERO);
 
     /// Return sprite mapping.
     const HashMap<QString, SharedPtr<Sprite2D> >& GetSpriteMapping() const { return spriteMapping_; }

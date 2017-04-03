@@ -73,7 +73,7 @@ class Sprite2D;
 };
 
 /// 2D particle emitter component.
-class ParticleEmitter2D : public Drawable2D
+class URHO3D_API ParticleEmitter2D : public Drawable2D
 {
     URHO3D_OBJECT(ParticleEmitter2D,Drawable2D);
 
@@ -141,7 +141,7 @@ private:
     SharedPtr<Sprite2D> sprite_;
     /// Blend mode.
     BlendMode blendMode_;
-    /// Num particles.
+    /// Number of particles.
     unsigned numParticles_;
     /// Emission time.
     float emissionTime_;

@@ -17,6 +17,8 @@ IntRect viewportArea; // the area where the editor viewport is. if we ever want 
 IntRect viewportUIClipBorder = IntRect(27, 60, 0, 0); // used to clip viewport borders, the borders are ugly when going behind the transparent toolbars
 RenderPath@ renderPath; // Renderpath to use on all views
 String renderPathName;
+bool gammaCorrection = false;
+bool HDR = false;
 bool mouseWheelCameraPosition = false;
 bool contextMenuActionWaitFrame = false;
 bool cameraFlyMode = true;
@@ -346,6 +348,7 @@ ViewportContext@ activeViewport;
 
 Text@ editorModeText;
 Text@ renderStatsText;
+Text@ modelInfoText;
 
 EditMode editMode = EDIT_MOVE;
 AxisMode axisMode = AXIS_WORLD;
@@ -370,6 +373,7 @@ bool scaleSnap = false;
 bool renderingDebug = false;
 bool physicsDebug = false;
 bool octreeDebug = false;
+bool navigationDebug = false;
 int pickMode = PICK_GEOMETRIES;
 bool orbiting = false;
 
@@ -456,8 +460,16 @@ void SetRenderPath(const String&in newRenderPathName)
             }
         }
     }
-    
-    // If renderPath is null, the engine default will be used
+
+    if (renderPath is null)
+        renderPath = renderer.defaultRenderPath.Clone();
+
+    // Append gamma correction postprocess and disable/enable it as requested
+    renderPath.Append(cache.GetResource("XMLFile", "PostProcess/GammaCorrection.xml"));
+    renderPath.SetEnabled("GammaCorrection", gammaCorrection);
+
+    renderer.hdrRendering = HDR;
+
     for (uint i = 0; i < renderer.numViewports; ++i)
         renderer.viewports[i].renderPath = renderPath;
 
@@ -466,6 +478,20 @@ void SetRenderPath(const String&in newRenderPathName)
         
     if (particleEffectPreview !is null && particleEffectPreview.viewport !is null)
         particleEffectPreview.viewport.renderPath = renderPath;
+}
+
+void SetGammaCorrection(bool enable)
+{
+    gammaCorrection = enable;
+    if (renderPath !is null)
+        renderPath.SetEnabled("GammaCorrection", gammaCorrection);
+}
+
+void SetHDR(bool enable)
+{
+    HDR = enable;
+    if (renderer !is null)
+        renderer.hdrRendering = HDR;
 }
 
 void CreateCamera()
@@ -1110,6 +1136,8 @@ void CreateStatsBar()
     ui.root.AddChild(editorModeText);
     renderStatsText = Text();
     ui.root.AddChild(renderStatsText);
+    modelInfoText = Text();
+    ui.root.AddChild(modelInfoText);
 }
 
 void SetupStatsBarText(Text@ text, Font@ font, int x, int y, HorizontalAlignment hAlign, VerticalAlignment vAlign)
@@ -1153,11 +1181,13 @@ void UpdateStats(float timeStep)
     {
         SetupStatsBarText(editorModeText, font, 35, 64, HA_LEFT, VA_TOP);
         SetupStatsBarText(renderStatsText, font, -4, 64, HA_RIGHT, VA_TOP);
+        SetupStatsBarText(modelInfoText, font, 35, 88, HA_LEFT, VA_TOP);
     }
     else
     {
         SetupStatsBarText(editorModeText, font, 35, 64, HA_LEFT, VA_TOP);
         SetupStatsBarText(renderStatsText, font, 35, 78, HA_LEFT, VA_TOP);
+        SetupStatsBarText(modelInfoText, font, 35, 102, HA_LEFT, VA_TOP);
     }
 }
 
@@ -1231,32 +1261,32 @@ void UpdateView(float timeStep)
     {
         if (hotKeyMode == HOTKEYS_MODE_STANDARD || (hotKeyMode == HOTKEYS_MODE_BLENDER && cameraFlyMode && !input.keyDown[KEY_LSHIFT])) 
         {
-            if (input.keyDown['W'] || input.keyDown[KEY_UP])
+            if (input.keyDown[KEY_W] || input.keyDown[KEY_UP])
             {
                 cameraNode.Translate(Vector3(0, 0, cameraBaseSpeed) * timeStep * speedMultiplier);
                 FadeUI();
             }
-            if (input.keyDown['S'] || input.keyDown[KEY_DOWN])
+            if (input.keyDown[KEY_S] || input.keyDown[KEY_DOWN])
             {
                 cameraNode.Translate(Vector3(0, 0, -cameraBaseSpeed) * timeStep * speedMultiplier);
                 FadeUI();
             }
-            if (input.keyDown['A'] || input.keyDown[KEY_LEFT])
+            if (input.keyDown[KEY_A] || input.keyDown[KEY_LEFT])
             {
                 cameraNode.Translate(Vector3(-cameraBaseSpeed, 0, 0) * timeStep * speedMultiplier);
                 FadeUI();
             }
-            if (input.keyDown['D'] || input.keyDown[KEY_RIGHT])
+            if (input.keyDown[KEY_D] || input.keyDown[KEY_RIGHT])
             {
                 cameraNode.Translate(Vector3(cameraBaseSpeed, 0, 0) * timeStep * speedMultiplier);
                 FadeUI();
             }
-            if (input.keyDown['E'] || input.keyDown[KEY_PAGEUP])
+            if (input.keyDown[KEY_E] || input.keyDown[KEY_PAGEUP])
             {
                 cameraNode.Translate(Vector3(0, cameraBaseSpeed, 0) * timeStep * speedMultiplier, TS_WORLD);
                 FadeUI();
             }
-            if (input.keyDown['Q'] || input.keyDown[KEY_PAGEDOWN])
+            if (input.keyDown[KEY_Q] || input.keyDown[KEY_PAGEDOWN])
             {
                 cameraNode.Translate(Vector3(0, -cameraBaseSpeed, 0) * timeStep * speedMultiplier, TS_WORLD);
                 FadeUI();
@@ -1342,7 +1372,7 @@ void UpdateView(float timeStep)
     {
         changeCamViewButton = input.mouseButtonDown[MOUSEB_MIDDLE] || cameraFlyMode;
 
-        if (input.mouseButtonPress[MOUSEB_RIGHT] || input.keyDown[KEY_ESC])
+        if (input.mouseButtonPress[MOUSEB_RIGHT] || input.keyDown[KEY_ESCAPE])
             cameraFlyMode = false;
     }
 
@@ -1438,7 +1468,7 @@ void UpdateView(float timeStep)
             }
             else
             {
-                for (int i = 0; i < selectedNodes.length; i++)
+                for (uint i = 0; i < selectedNodes.length; i++)
                 {
                     bb.Merge(selectedNodes[i].position);
                 }
@@ -1625,6 +1655,21 @@ void HandlePostRenderUpdate()
         editorScene.physicsWorld.DrawDebugGeometry(true);
     if (octreeDebug && editorScene.octree !is null)
         editorScene.octree.DrawDebugGeometry(true);
+
+    if (navigationDebug)
+    {
+        CrowdManager@ crowdManager = editorScene.GetComponent("CrowdManager");
+        if (crowdManager !is null)
+            crowdManager.DrawDebugGeometry(true);
+
+        Array<Component@>@ navMeshes = editorScene.GetComponents("NavigationMesh", true);
+        for (uint i = 0; i < navMeshes.length; ++i)
+            cast<NavigationMesh>(navMeshes[i]).DrawDebugGeometry(true);
+
+        Array<Component@>@ dynNavMeshes = editorScene.GetComponents("DynamicNavigationMesh", true);
+        for (uint i = 0; i < dynNavMeshes.length; ++i)
+            cast<DynamicNavigationMesh>(dynNavMeshes[i]).DrawDebugGeometry(true);        
+    }
 
     if (setViewportCursor | resizingBorder > 0)
     {
@@ -1872,13 +1917,13 @@ void ViewRaycast(bool mouseClick)
     }
 }
 
-Vector3 GetNewNodePosition()
+Vector3 GetNewNodePosition(bool raycastToMouse = false)
 {
     if (newNodeMode == NEW_NODE_IN_CENTER)
         return Vector3(0, 0, 0);
     if (newNodeMode == NEW_NODE_RAYCAST)
     {
-        Ray cameraRay = camera.GetScreenRay(0.5, 0.5);
+        Ray cameraRay = raycastToMouse ? GetActiveViewportCameraRay() : camera.GetScreenRay(0.5, 0.5);
         Vector3 position, normal;
         if (GetSpawnPosition(cameraRay, camera.farClip, position, normal, 0, false))
             return position;
@@ -1930,6 +1975,11 @@ void TogglePhysicsDebug()
 void ToggleOctreeDebug()
 {
     octreeDebug = !octreeDebug;
+}
+
+void ToggleNavigationDebug()
+{
+    navigationDebug = !navigationDebug;
 }
 
 bool StopTestAnimation()
@@ -1993,44 +2043,6 @@ Vector3 SelectedNodesCenterPoint()
         lastSelectedNodesCenterPoint = centerPoint;
         return centerPoint;
     }
-}
-
-Vector3 GetScreenCollision(IntVector2 pos)
-{
-    Ray cameraRay = camera.GetScreenRay(float(pos.x) / activeViewport.viewport.rect.width, float(pos.y) / activeViewport.viewport.rect.height);
-    Vector3 res = cameraNode.position + cameraRay.direction * Vector3(0, 0, newNodeDistance);
-
-    bool physicsFound = false;
-    if (editorScene.physicsWorld !is null)
-    {
-        if (!runUpdate)
-            editorScene.physicsWorld.UpdateCollisions();
-
-        PhysicsRaycastResult result = editorScene.physicsWorld.RaycastSingle(cameraRay, camera.farClip);
-
-        if (result.body !is null)
-        {
-            physicsFound = true;
-            result.position;
-        }
-    }
-
-    if (editorScene.octree is null)
-        return res;
-
-    RayQueryResult result = editorScene.octree.RaycastSingle(cameraRay, RAY_TRIANGLE, camera.farClip,
-        DRAWABLE_GEOMETRY, 0x7fffffff);
-
-    if (result.drawable !is null)
-    {
-        // take the closer of the results
-        if (physicsFound && (cameraNode.position - res).length < (cameraNode.position - result.position).length)
-            return res;
-        else
-            return result.position;
-    }
-
-    return res;
 }
 
 Drawable@ GetDrawableAtMousePostion()

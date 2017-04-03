@@ -54,10 +54,12 @@ public:
     /// Return whether a geometry update is necessary, and if it can happen in a worker thread.
     virtual UpdateGeometryType GetUpdateGeometryType() override;
 
-    /// Set font and font size and use signed distance field font. Return true if successful.
+    /// Set font by looking from resource cache by name and font size. Return true if successful.
     bool SetFont(const QString& fontName, int size = DEFAULT_FONT_SIZE);
-    /// Set font and font size and use signed distance field font. Return true if successful.
+    /// Set font and font size. Return true if successful.
     bool SetFont(Font* font, int size = DEFAULT_FONT_SIZE);
+    /// Set font size only while retaining the existing font. Return true if successful.
+    bool SetFontSize(int size);
     /// Set material.
     void SetMaterial(Material* material);
     /// Set text. Text is assumed to be either ASCII or UTF8-encoded.
@@ -76,6 +78,12 @@ public:
     void SetWordwrap(bool enable);
     /// Set text effect.
     void SetTextEffect(TextEffect textEffect);
+    /// Set shadow offset.
+    void SetEffectShadowOffset(const IntVector2& offset);
+    /// Set stroke thickness.
+    void SetEffectStrokeThickness(int thickness);
+    /// Set stroke rounding. Corners of the font will be rounded off in the stroke so the stroke won't have corners.
+    void SetEffectRoundStroke(bool roundStroke);
     /// Set effect color.
     void SetEffectColor(const Color& effectColor);
     /// Set effect Z bias.
@@ -88,15 +96,17 @@ public:
     void SetColor(Corner corner, const Color& color);
     /// Set opacity.
     void SetOpacity(float opacity);
+    /// Set whether text has fixed size on screen (pixel-perfect) regardless of distance to camera. Works best when combined with face camera rotation. Default false.
+    void SetFixedScreenSize(bool enable);
     /// Set how the text should rotate in relation to the camera. Default is to not rotate (FC_NONE.)
     void SetFaceCameraMode(FaceCameraMode mode);
 
     /// Return font.
     Font* GetFont() const;
-    /// Return material.
-    Material* GetMaterial() const;
     /// Return font size.
     int GetFontSize() const;
+    /// Return material.
+    Material* GetMaterial() const;
     /// Return text.
     const QString& GetText() const;
     /// Return row alignment.
@@ -111,6 +121,12 @@ public:
     bool GetWordwrap() const;
     /// Return text effect.
     TextEffect GetTextEffect() const;
+    /// Return effect shadow offset.
+    const IntVector2& GetEffectShadowOffset() const;
+    /// Return effect stroke thickness.
+    int GetEffectStrokeThickness() const;
+    /// Return effect round stroke.
+    bool GetEffectRoundStroke() const;
     /// Return effect color.
     const Color& GetEffectColor() const;
     /// Return effect depth bias.
@@ -133,6 +149,8 @@ public:
     const Color& GetColor(Corner corner) const;
     /// Return opacity.
     float GetOpacity() const;
+    /// Return whether text has fixed screen size.
+    bool IsFixedScreenSize() const { return fixedScreenSize_; }
     /// Return how the text rotates in relation to the camera.
     FaceCameraMode GetFaceCameraMode() const { return faceCameraMode_; }
 
@@ -144,6 +162,10 @@ public:
     void SetMaterialAttr(const ResourceRef& value);
     /// Return material attribute.
     ResourceRef GetMaterialAttr() const;
+    /// Set text attribute.
+    void SetTextAttr(const QString& value);
+    /// Return text attribute.
+    QString GetTextAttr() const;
     /// Get color attribute. Uses just the top-left color.
     const Color& GetColorAttr() const { return text_.color_[0]; }
 
@@ -153,13 +175,14 @@ protected:
     /// Recalculate the world-space bounding box.
     virtual void OnWorldBoundingBoxUpdate() override;
 
-private:
     /// Mark text & geometry dirty.
     void MarkTextDirty();
     /// Update text %UI batches.
     void UpdateTextBatches();
     /// Create materials for text rendering. May only be called from the main thread. Text %UI batches must be up-to-date.
     void UpdateTextMaterials(bool forceUpdate = false);
+    /// Recalculate camera facing and fixed screen size.
+    void CalculateFixedScreenSize(const FrameInfo& frame);
 
     /// Internally used text element.
     Text text_;
@@ -177,6 +200,10 @@ private:
     Matrix3x4 customWorldTransform_;
     /// Text rotation mode in relation to the camera.
     FaceCameraMode faceCameraMode_;
+    /// Minimal angle between text normal and look-at direction.
+    float minAngle_;
+    /// Fixed screen size flag.
+    bool fixedScreenSize_;
     /// Text needs update flag.
     bool textDirty_;
     /// Geometry dirty flag.

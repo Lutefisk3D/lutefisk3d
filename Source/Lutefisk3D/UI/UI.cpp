@@ -94,11 +94,7 @@ UI::UI(Context* context) :
     nonFocusedMouseWheel_(true),     // Default Mac OS X and Linux behaviour
     #endif
     useSystemClipboard_(false),
-    #if defined(ANDROID) || defined(IOS)
-    useScreenKeyboard_(true),
-    #else
     useScreenKeyboard_(false),
-    #endif
     useMutableGlyphs_(false),
     forceAutoHint_(false),
     uiRendered_(false),
@@ -814,6 +810,10 @@ void UI::Render(bool resetRenderTargets, VertexBuffer* buffer, const std::vector
             graphics_->SetShaderParameter(VSP_VIEWPROJ, projection);
         if (graphics_->NeedParameterUpdate(SP_MATERIAL, this))
             graphics_->SetShaderParameter(PSP_MATDIFFCOLOR, Color(1.0f, 1.0f, 1.0f, 1.0f));
+
+        float elapsedTime = GetSubsystem<Time>()->GetElapsedTime();
+        graphics_->SetShaderParameter(VSP_ELAPSEDTIME, elapsedTime);
+        graphics_->SetShaderParameter(PSP_ELAPSEDTIME, elapsedTime);
 
         IntRect scissor = batch.scissor_;
         scissor.left_ = (int)(scissor.left_ * uiScale_);

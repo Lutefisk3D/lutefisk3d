@@ -30,7 +30,6 @@
 
 namespace Urho3D
 {
-static const QString s_dummy_str;
 static const char* commandTypeNames[] =
 {
     "none",
@@ -40,6 +39,7 @@ static const char* commandTypeNames[] =
     "forwardlights",
     "lightvolumes",
     "renderui",
+    "sendevent",
     nullptr
 };
 
@@ -99,6 +99,10 @@ void RenderTargetInfo::Load(const XMLElement& element)
         size_.x_ = element.GetFloat("width");
     if (element.HasAttribute("height"))
         size_.y_ = element.GetFloat("height");
+    if (element.HasAttribute("multisample"))
+        multiSample_ = Clamp(element.GetInt("multisample"), 1, 16);
+    if (element.HasAttribute("autoresolve"))
+        autoResolve_ = element.GetBool("autoresolve");
 }
 
 void RenderPathCommand::Load(const XMLElement& element)
@@ -171,14 +175,16 @@ void RenderPathCommand::Load(const XMLElement& element)
             }
         }
         break;
-
+    case CMD_SENDEVENT:
+        eventName_ = element.GetAttribute("name");
+        break;
     default:
         break;
     }
 
     // By default use 1 output, which is the viewport
-    outputs_.resize(1);
-    outputs_[0] = std::make_pair(QString("viewport"), FACE_POSITIVE_X);
+    outputs_.clear();
+    outputs_.emplace_back(QString("viewport"), FACE_POSITIVE_X);
     if (element.HasAttribute("output"))
         outputs_[0].first = element.GetAttribute("output");
     if (element.HasAttribute("face"))
@@ -234,7 +240,7 @@ void RenderPathCommand::RemoveShaderParameter(const QString& name)
 
 void RenderPathCommand::SetNumOutputs(unsigned num)
 {
-    num = Clamp((int)num, 1, MAX_RENDERTARGETS);
+    num = Clamp(num, 1U, MAX_RENDERTARGETS);
     outputs_.resize(num);
 }
 
@@ -268,7 +274,7 @@ void RenderPathCommand::SetDepthStencilName(const QString& name)
 
 const QString& RenderPathCommand::GetTextureName(TextureUnit unit) const
 {
-    return unit < MAX_TEXTURE_UNITS ? textureNames_[unit] : s_dummy_str;
+    return unit < MAX_TEXTURE_UNITS ? textureNames_[unit] : s_dummy;
 }
 
 const Variant& RenderPathCommand::GetShaderParameter(const QString& name) const
@@ -279,7 +285,7 @@ const Variant& RenderPathCommand::GetShaderParameter(const QString& name) const
 
 const QString& RenderPathCommand::GetOutputName(unsigned index) const
 {
-    return index < outputs_.size() ? outputs_[index].first : s_dummy_str;
+    return index < outputs_.size() ? outputs_[index].first : s_dummy;
 }
 
 CubeMapFace RenderPathCommand::GetOutputFace(unsigned index) const

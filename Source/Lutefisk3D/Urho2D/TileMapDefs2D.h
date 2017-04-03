@@ -38,11 +38,13 @@ enum Orientation2D
     /// Isometric.
     O_ISOMETRIC,
     /// Staggered.
-    O_STAGGERED
+    O_STAGGERED,
+    /// Hexagonal
+    O_HEXAGONAL
 };
 
 /// Tile map information.
-struct TileMapInfo2D
+struct URHO3D_API TileMapInfo2D
 {
     /// Orientation.
     Orientation2D orientation_;
@@ -98,7 +100,7 @@ enum TileMapObjectType2D
 };
 
 /// Property set.
-class PropertySet2D : public RefCounted
+class URHO3D_API PropertySet2D : public RefCounted
 {
 public:
     PropertySet2D();
@@ -117,7 +119,7 @@ protected:
 };
 
 /// Tile define.
-class Tile2D : public RefCounted
+class URHO3D_API Tile2D : public RefCounted
 {
 public:
     /// Construct.
@@ -144,7 +146,7 @@ private:
 };
 
 /// Tile map object.
-class TileMapObject2D : public RefCounted
+class URHO3D_API TileMapObject2D : public RefCounted
 {
 public:
     TileMapObject2D();

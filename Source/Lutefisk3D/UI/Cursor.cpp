@@ -53,7 +53,6 @@ static const char* shapeNames[] =
 };
 
 /// OS cursor shape lookup table matching cursor shape enumeration
-#if !defined(ANDROID) && !defined(IOS)
 static const int osCursorLookup[CS_MAX_SHAPES] =
 {
     SDL_SYSTEM_CURSOR_ARROW,    // CS_NORMAL
@@ -69,7 +68,6 @@ static const int osCursorLookup[CS_MAX_SHAPES] =
     SDL_SYSTEM_CURSOR_WAIT,   // CS_BUSY
     SDL_SYSTEM_CURSOR_WAITARROW // CS_BUSY_ARROW
 };
-#endif
 
 extern const char* UI_CATEGORY;
 
@@ -261,7 +259,6 @@ VariantVector Cursor::GetShapesAttr() const
 void Cursor::ApplyOSCursorShape()
 {
     // Mobile platforms do not support applying OS cursor shapes: comment out to avoid log error messages
-#if !defined(ANDROID) && !defined(IOS)
     if (!osShapeDirty_ || !GetSubsystem<Input>()->IsMouseVisible() || GetSubsystem<UI>()->GetCursor() != this)
         return;
 
@@ -305,7 +302,6 @@ void Cursor::ApplyOSCursorShape()
         SDL_SetCursor(info.osCursor_);
 
     osShapeDirty_ = false;
-#endif
 }
 
 void Cursor::HandleMouseVisibleChanged(StringHash eventType, VariantMap& eventData)

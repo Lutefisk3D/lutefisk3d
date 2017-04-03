@@ -25,6 +25,9 @@
 #include "../Scene/Component.h"
 #include "../Urho2D/TileMapDefs2D.h"
 
+#ifdef GetObject
+#undef GetObject
+#endif
 namespace Urho3D
 {
 
@@ -37,7 +40,7 @@ class TmxObjectGroup2D;
 class TmxTileLayer2D;
 
 /// Tile map component.
-class TileMapLayer2D : public Component
+class URHO3D_API TileMapLayer2D : public Component
 {
     URHO3D_OBJECT(TileMapLayer2D,Component);
 

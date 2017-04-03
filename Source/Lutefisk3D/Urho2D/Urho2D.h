@@ -26,6 +26,6 @@ namespace Urho3D
 {
 
 /// Register Urho2D library objects.
-void RegisterUrho2DLibrary(class Context* context);
+void URHO3D_API RegisterUrho2DLibrary(class Context* context);
 
 }

@@ -72,6 +72,7 @@ struct Batch
         material_(rhs.material_),
         worldTransform_(rhs.worldTransform_),
         numWorldTransforms_(rhs.numWorldTransforms_),
+        instancingData_(rhs.instancingData_),
         lightQueue_(nullptr),
         geometryType_(rhs.geometryType_),
         isBase_(is_base)
@@ -116,6 +117,8 @@ struct Batch
     const Matrix3x4* worldTransform_;
     /// Number of world transforms.
     unsigned numWorldTransforms_;
+    /// Per-instance data. If not null, must contain enough data to fill instancing buffer.
+    void* instancingData_;
     /// Zone.
     Zone* zone_;
     /// Light properties.
@@ -142,15 +145,17 @@ struct InstanceData
     /// Construct undefined.
     InstanceData() = default;
 
-    /// Construct with transform and distance.
-    constexpr InstanceData(const Matrix3x4* worldTransform, float distance) :
+    /// Construct with transform, instancing data and distance.
+    constexpr InstanceData(const Matrix3x4* worldTransform, const void* instancingData, float distance) :
         worldTransform_(worldTransform),
+        instancingData_(instancingData),
         distance_(distance)
     {
     }
-
     /// World transform.
     const Matrix3x4* worldTransform_;
+    /// Instancing data buffer.
+    const void* instancingData_;
     /// Distance from camera.
     float distance_;
 };
@@ -163,7 +168,8 @@ struct BatchGroup : public Batch
 
     /// Construct from a batch.
     BatchGroup(const Batch &batch) :
-        Batch(batch)
+        Batch(batch),
+        startIndex_(M_MAX_UNSIGNED)
     {
     }
 
@@ -171,22 +177,21 @@ struct BatchGroup : public Batch
     ~BatchGroup() = default;
 
     /// Add world transform(s) from a batch.
-    void AddTransforms(float distance,unsigned int numTransforms,const Matrix3x4 *transforms)
+    void AddTransforms(float distance,unsigned int numTransforms,const Matrix3x4 *transforms,void *instanceData)
     {
         for (unsigned i = 0; i < numTransforms; ++i)
         {
-            instances_.emplace_back(transforms + i,distance);
+            instances_.emplace_back(transforms + i,instanceData,distance);
         }
     }
 
-    /// Pre-set the instance transforms. Buffer must be big enough to hold all transforms.
-    void SetTransforms(void* lockedData, unsigned& freeIndex);
+    /// Pre-set the instance data. Buffer must be big enough to hold all data.
+    void SetInstancingData(void* lockedData, unsigned stride, unsigned& freeIndex);
     /// Prepare and draw.
     void Draw(View* view, Camera* camera, bool allowDepthWrite) const;
 
     /// Instance data.
     PODVectorN<InstanceData,32> instances_;
-    //std::vector<InstanceData> instances_;
     /// Instance stream start index, or M_MAX_UNSIGNED if transforms not pre-set.
     unsigned startIndex_=M_MAX_UNSIGNED;
 };
@@ -263,8 +268,8 @@ public:
     void SortFrontToBack();
     /// Sort batches front to back while also maintaining state sorting.
     void SortFrontToBack2Pass(std::vector<Batch*>& batches);
-    /// Pre-set instance transforms of all groups. The vertex buffer must be big enough to hold all transforms.
-    void SetTransforms(void* lockedData, unsigned& freeIndex);
+    /// Pre-set instance data of all groups. The vertex buffer must be big enough to hold all data.
+    void SetInstancingData(void* lockedData, unsigned stride, unsigned& freeIndex);
     /// Draw.
     void Draw(View* view, Camera* camera, bool markToStencil, bool usingLightOptimization, bool allowDepthWrite) const;
     /// Return the combined amount of instances.
@@ -328,8 +333,7 @@ struct LightBatchQueue
     std::vector<Batch> volumeBatches_;
 };
 
-typedef unsigned int uint;
-inline uint qHash(const Urho3D::BatchGroupKey & key)
+inline unsigned int qHash(const Urho3D::BatchGroupKey & key)
 {
     return key.ToHash();
 }

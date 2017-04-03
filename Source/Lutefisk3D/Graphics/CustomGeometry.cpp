@@ -53,10 +53,6 @@ CustomGeometry::CustomGeometry(Context* context) :
     SetNumGeometries(1);
 }
 
-CustomGeometry::~CustomGeometry()
-{
-}
-
 void CustomGeometry::RegisterObject(Context* context)
 {
     context->RegisterFactory<CustomGeometry>(GEOMETRY_CATEGORY);
@@ -182,11 +178,11 @@ bool CustomGeometry::DrawOcclusion(OcclusionBuffer* buffer)
         unsigned vertexSize;
         const unsigned char* indexData;
         unsigned indexSize;
-        unsigned elementMask;
+        const std::vector<VertexElement>* elements;
 
-        geometry->GetRawData(vertexData, vertexSize, indexData, indexSize, elementMask);
+        geometry->GetRawData(vertexData, vertexSize, indexData, indexSize, elements);
         // Check for valid geometry data
-        if (!vertexData)
+        if (!vertexData || !elements || VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR3, SEM_POSITION) != 0)
             continue;
 
         // Draw and check for running out of triangles
@@ -254,8 +250,7 @@ void CustomGeometry::DefineVertex(const Vector3& position)
     if (vertices_.size() < geometryIndex_)
         return;
 
-    vertices_[geometryIndex_].resize(vertices_[geometryIndex_].size() + 1);
-    vertices_[geometryIndex_].back().position_ = position;
+    vertices_[geometryIndex_].emplace_back(position);
 }
 
 void CustomGeometry::DefineNormal(const Vector3& normal)
@@ -382,7 +377,7 @@ void CustomGeometry::Commit()
                     ++vertexCount;
                 }
 
-                geometries_[i]->SetVertexBuffer(0, vertexBuffer_, elementMask_);
+                geometries_[i]->SetVertexBuffer(0, vertexBuffer_);
                 geometries_[i]->SetDrawRange(primitiveTypes_[i], 0, 0, vertexStart, vertexCount);
                 vertexStart += vertexCount;
             }
@@ -396,7 +391,7 @@ void CustomGeometry::Commit()
     {
         for (unsigned i = 0; i < geometries_.size(); ++i)
         {
-            geometries_[i]->SetVertexBuffer(0, vertexBuffer_, elementMask_);
+            geometries_[i]->SetVertexBuffer(0, vertexBuffer_);
             geometries_[i]->SetDrawRange(primitiveTypes_[i], 0, 0, 0, 0);
         }
     }

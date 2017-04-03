@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "../Container/HashMap.h"
 #include "../Container/Ptr.h"
 #include <vector>
 class QString;
@@ -42,7 +43,6 @@ class StringHash;
 /// %Animation blending mode.
 enum AnimationBlendMode
 {
-    ABM_OVERRIDE = 0,
     // Lerp blending (default)
     ABM_LERP = 0,
     // Additive blending based on difference from bind pose
@@ -52,25 +52,20 @@ enum AnimationBlendMode
 /// %Animation instance per-track data.
 struct AnimationStateTrack
 {
-    /// Construct with defaults.
-    AnimationStateTrack();
-    /// Destruct
-    ~AnimationStateTrack();
-
     /// Animation track.
-    const AnimationTrack* track_;
+    const AnimationTrack* track_ = nullptr;
     /// Bone pointer.
-    Bone* bone_;
+    Bone* bone_ = nullptr;
     /// Scene node pointer.
     WeakPtr<Node> node_;
     /// Blending weight.
-    float weight_;
+    float weight_ = 1.0f;
     /// Last key frame.
-    unsigned keyFrame_;
+    unsigned keyFrame_ = 0;
 };
 
 /// %Animation instance.
-class AnimationState : public RefCounted
+class URHO3D_API AnimationState : public RefCounted
 {
 public:
     /// Construct with animated model and animation pointers.
@@ -78,7 +73,7 @@ public:
     /// Construct with root scene node and animation pointers.
     AnimationState(Node* node, Animation* animation);
     /// Destruct.
-    ~AnimationState();
+    virtual ~AnimationState() = default;
 
     /// Set start bone. Not supported in node animation mode. Resets any assigned per-bone weights.
     void SetStartBone(Bone* bone);
@@ -87,7 +82,7 @@ public:
     /// Set blending weight.
     void SetWeight(float weight);
     /// Set blending mode.
-    void SetBlendingMode(AnimationBlendMode mode);
+    void SetBlendMode(AnimationBlendMode mode);
     /// Set time position. Does not fire animation triggers.
     void SetTime(float time);
     /// Set per-bone blending weight by track index. Default is 1.0 (full), is multiplied  with the state's blending weight when applying the animation. Optionally recurses to child bones.
@@ -130,7 +125,7 @@ public:
     /// Return blending weight.
     float GetWeight() const { return weight_; }
     /// Return blending mode.
-    AnimationBlendMode GetBlendingMode() const { return blendingMode_; }
+    AnimationBlendMode GetBlendMode() const { return blendingMode_; }
 
     /// Return time position.
     float GetTime() const { return time_; }

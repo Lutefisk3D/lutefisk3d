@@ -24,17 +24,12 @@
 #include "Thread.h"
 #include <algorithm>
 
-namespace Urho3D
-{
+using namespace Urho3D;
 
 TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo) :
     type_(typeName),
     typeName_(typeName),
     baseTypeInfo_(baseTypeInfo)
-{
-}
-
-TypeInfo::~TypeInfo()
 {
 }
 
@@ -173,6 +168,15 @@ void Object::SubscribeToEvent(Object* sender, StringHash eventType, EventHandler
 
     context_->AddEventReceiver(this, sender, eventType);
 }
+void Object::SubscribeToEvent(StringHash eventType, const std::function<void(StringHash, VariantMap&)>& function, void* userData/*=0*/)
+{
+    SubscribeToEvent(eventType, new EventHandler11Impl(function, userData));
+}
+
+void Object::SubscribeToEvent(Object* sender, StringHash eventType, const std::function<void(StringHash, VariantMap&)>& function, void* userData/*=0*/)
+{
+    SubscribeToEvent(sender, eventType, new EventHandler11Impl(function, userData));
+}
 
 void Object::UnsubscribeFromEvent(StringHash eventType)
 {
@@ -278,35 +282,29 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
     WeakPtr<Object> self(this);
     Context* context = context_;
     QSet<Object*> processed;
+    Context_EventGuard context_guard(*context,this,eventType);
 
-    context->BeginSendEvent(this);
 
     // Check first the specific event receivers
-    const HashSet<Object*>* group = context->GetEventReceivers(this, eventType);
+    // Note: group is held alive with a shared ptr, as it may get destroyed along with the sender
+    SharedPtr<EventReceiverGroup> group(context->GetEventReceivers(this, eventType));
     if (group)
     {
-        for (HashSet<Object*>::const_iterator i = group->cbegin(); i != group->cend();)
-        {
-            HashSet<Object*>::const_iterator current = i++;
-            Object* receiver = *current;
-            Object* next = nullptr;
-            if (i != group->end())
-                next = *i;
+        EventReceiverGroup_Guard event_guard(*group);
 
-            unsigned oldSize = group->size();
+        for (Object* receiver : group->receivers_)
+        {
+            // Holes may exist if receivers removed during send
+            if (!receiver)
+                continue;
+
             receiver->OnEvent(this, eventType, eventData);
 
             // If self has been destroyed as a result of event handling, exit
             if (self.Expired())
             {
-                context->EndSendEvent();
                 return;
             }
-
-            // If group has changed size during iteration (removed/added subscribers) try to recover
-            /// \todo This is not entirely foolproof, as a subscriber could have been added to make up for the removed one
-            if (group->size() != oldSize)
-                i = group->find(next);
 
             processed.insert(receiver);
         }
@@ -316,59 +314,42 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
     group = context->GetEventReceivers(eventType);
     if (group)
     {
+        EventReceiverGroup_Guard event_guard(*group);
         if (processed.isEmpty())
         {
-            for (HashSet<Object*>::const_iterator i = group->cbegin(); i != group->cend();)
+            for (Object* receiver : group->receivers_)
             {
-                HashSet<Object*>::const_iterator current = i++;
-                Object* receiver = *current;
-                Object* next = nullptr;
-                if (i != group->end())
-                    next = *i;
+                if (!receiver)
+                    continue;
 
-                unsigned oldSize = group->size();
                 receiver->OnEvent(this, eventType, eventData);
 
                 if (self.Expired())
                 {
-                    context->EndSendEvent();
                     return;
                 }
 
-                if (group->size() != oldSize)
-                    i = group->find(next);
             }
         }
         else
         {
             // If there were specific receivers, check that the event is not sent doubly to them
-            for (HashSet<Object*>::const_iterator i = group->cbegin(); i != group->cend();)
+            for (Object* receiver : group->receivers_)
             {
-                HashSet<Object*>::const_iterator current = i++;
-                Object* receiver = *current;
-                Object* next = nullptr;
-                if (i != group->end())
-                    next = *i;
+                if (!receiver || processed.contains(receiver))
+                    continue;
 
-                if (!processed.contains(receiver))
+                receiver->OnEvent(this, eventType, eventData);
+
+                if (self.Expired())
                 {
-                    unsigned oldSize = group->size();
-                    receiver->OnEvent(this, eventType, eventData);
-
-                    if (self.Expired())
-                    {
-                        context->EndSendEvent();
-                        return;
-                    }
-
-                    if (group->size() != oldSize)
-                        i = group->find(next);
+                    return;
                 }
+
             }
         }
     }
 
-    context->EndSendEvent();
 }
 
 VariantMap& Object::GetEventDataMap() const
@@ -382,13 +363,13 @@ const Variant &Object::GetGlobalVar(StringHash key) const
     return context_->GetGlobalVar(key);
 }
 
-void Object::SetGlobalVar(StringHash key, const Urho3D::Variant &value)
-{
-    context_->SetGlobalVar(key, value);
-}
 const VariantMap& Object::GetGlobalVars() const
 {
     return context_->GetGlobalVars();
+}
+void Object::SetGlobalVar(StringHash key, const Urho3D::Variant &value)
+{
+    context_->SetGlobalVar(key, value);
 }
 Object* Object::GetSubsystem(StringHash type) const
 {
@@ -495,4 +476,21 @@ void Object::RemoveEventSender(Object* sender)
     }
 }
 
+Urho3D::StringHash EventNameRegistrar::RegisterEventName(const char* eventName)
+{
+    StringHash id(eventName);
+    GetEventNameMap()[id] = eventName;
+    return id;
+}
+
+const QString& EventNameRegistrar::GetEventName(StringHash eventID)
+{
+    auto it = GetEventNameMap().find(eventID);
+    return  it != GetEventNameMap().end() ? MAP_VALUE(it) : s_dummy;
+}
+
+HashMap<StringHash, QString>& EventNameRegistrar::GetEventNameMap()
+{
+    static HashMap<StringHash, QString> eventNames_;
+    return eventNames_;
 }

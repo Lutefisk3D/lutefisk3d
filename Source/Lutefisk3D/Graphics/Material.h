@@ -74,6 +74,8 @@ struct TechniqueEntry
 
     /// Technique.
     SharedPtr<Technique> technique_;
+    /// Original technique, in case the material adds shader compilation defines. The modified clones are requested from it.
+    SharedPtr<Technique> original_;
     /// Quality level.
     int qualityLevel_;
     /// LOD distance.
@@ -104,7 +106,7 @@ private:
 };
 
 /// Describes how to render 3D geometries.
-class Material : public Resource
+class URHO3D_API Material : public Resource
 {
     URHO3D_OBJECT(Material,Resource);
 
@@ -135,6 +137,10 @@ public:
     void SetNumTechniques(unsigned num);
     /// Set technique.
     void SetTechnique(unsigned index, Technique* tech, unsigned qualityLevel = 0, float lodDistance = 0.0f);
+    /// Set additional vertex shader defines. Separate multiple defines with spaces. Setting defines at the material level causes technique(s) to be cloned as necessary.
+    void SetVertexShaderDefines(const QString& defines);
+    /// Set additional pixel shader defines. Separate multiple defines with spaces. Setting defines at the material level causes technique(s) to be cloned as necessary.
+    void SetPixelShaderDefines(const QString& defines);
     /// Set shader parameter.
     void SetShaderParameter(const QString& name, const Variant& value);
     /// Set shader parameter animation.
@@ -155,10 +161,16 @@ public:
     void SetShadowCullMode(CullMode mode);
     /// Set polygon fill mode. Interacts with the camera's fill mode setting so that the "least filled" mode will be used.
     void SetFillMode(FillMode mode);
-    /// Set depth bias.
+    /// Set depth bias parameters for depth write and compare. Note that the normal offset parameter is not used and will not be saved, as it affects only shadow map sampling during light rendering.
     void SetDepthBias(const BiasParameters& parameters);
+    /// Set alpha-to-coverage mode on all passes.
+    void SetAlphaToCoverage(bool enable);
+    /// Set line antialiasing on/off. Has effect only on models that consist of line lists.
+    void SetLineAntiAlias(bool enable);
     /// Set 8-bit render order within pass. Default 128. Lower values will render earlier and higher values later, taking precedence over e.g. state and distance sorting.
     void SetRenderOrder(uint8_t order);
+    /// Set whether to use in occlusion rendering. Default true.
+    void SetOcclusion(bool enable);
     /// Associate the material with a scene to ensure that shader parameter animation happens in sync with scene update, respecting the scene time scale. If no scene is set, the global update events will be used.
     void SetScene(Scene* scene);
     /// Remove shader parameter.
@@ -166,7 +178,7 @@ public:
     /// Reset all shader pointers.
     void ReleaseShaders();
     /// Clone the material.
-    SharedPtr<Material> Clone(const QString& cloneName = QString::null) const;
+    SharedPtr<Material> Clone(const QString& cloneName = QString()) const;
     /// Ensure that material techniques are listed in correct order.
     void SortTechniques();
     /// Mark material for auxiliary view rendering.
@@ -186,6 +198,10 @@ public:
     Texture* GetTexture(TextureUnit unit) const;
    /// Return all textures.
     const HashMap<TextureUnit, SharedPtr<Texture> >& GetTextures() const { return textures_; }
+    /// Return additional vertex shader defines.
+    const QString& GetVertexShaderDefines() const { return vertexShaderDefines_; }
+    /// Return additional pixel shader defines.
+    const QString& GetPixelShaderDefines() const { return pixelShaderDefines_; }
     /// Return shader parameter.
     const Variant& GetShaderParameter(const QString& name) const;
     /// Return shader parameter animation.
@@ -204,6 +220,11 @@ public:
     FillMode GetFillMode() const { return fillMode_; }
     /// Return depth bias.
     const BiasParameters& GetDepthBias() const { return depthBias_; }
+    /// Return alpha-to-coverage mode.
+    bool GetAlphaToCoverage() const { return alphaToCoverage_; }
+
+    /// Return whether line antialiasing is enabled.
+    bool GetLineAntiAlias() const { return lineAntiAlias_; }
     /// Return render order.
     unsigned char GetRenderOrder() const { return renderOrder_; }
     /// Return last auxiliary view rendered frame number.
@@ -219,22 +240,22 @@ public:
 
     /// Return name for texture unit.
     static QString GetTextureUnitName(TextureUnit unit);
-    /// Parse a shader parameter value from a string. Returns either a bool, a float, or a 2 to 4-component vector.
+    /// Parse a shader parameter value from a string. Retunrs either a bool, a float, or a 2 to 4-component vector.
     static Variant ParseShaderParameterValue(const QString& value);
 
 private:
-    /// Helper function for loading JSON files
+    /// Helper function for loading JSON files.
     bool BeginLoadJSON(Deserializer& source);
-    /// Helper function for loading XML files
+    /// Helper function for loading XML files.
     bool BeginLoadXML(Deserializer& source);
-    /// Re-evaluate occlusion rendering.
-    void CheckOcclusion();
     /// Reset to defaults.
     void ResetToDefaults();
     /// Recalculate shader parameter hash.
     void RefreshShaderParameterHash();
     /// Recalculate the memory used by the material.
     void RefreshMemoryUse();
+    /// Reapply shader defines to technique index. By default reapply all.
+    void ApplyShaderDefines(unsigned index = M_MAX_UNSIGNED);
     /// Return shader parameter animation info.
     ShaderParameterAnimationInfo* GetShaderParameterAnimationInfo(const QString& name) const;
     /// Update whether should be subscribed to scene or global update events for shader parameter animation.
@@ -250,6 +271,10 @@ private:
     HashMap<StringHash, MaterialShaderParameter> shaderParameters_;
     /// %Shader parameters animation infos.
     HashMap<StringHash, SharedPtr<ShaderParameterAnimationInfo> > shaderParameterAnimationInfos_;
+    /// Vertex shader defines.
+    QString vertexShaderDefines_;
+    /// Pixel shader defines.
+    QString pixelShaderDefines_;
     /// Normal culling mode.
     CullMode cullMode_;
     /// Culling mode for shadow rendering.
@@ -264,6 +289,10 @@ private:
     unsigned auxViewFrameNumber_;
     /// Shader parameter hash value.
     unsigned shaderParameterHash_;
+    /// Alpha-to-coverage flag.
+    bool alphaToCoverage_;
+    /// Line antialiasing flag.
+    bool lineAntiAlias_;
     /// Render occlusion flag.
     bool occlusion_;
     /// Specular lighting flag.

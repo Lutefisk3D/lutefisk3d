@@ -83,6 +83,11 @@ void Obstacle::SetRadius(float newRadius)
     MarkNetworkUpdate();
 }
 
+void Obstacle::OnNodeSet(Node* node)
+{
+    if (node)
+        node->AddListener(this);
+}
 void Obstacle::OnSceneSet(Scene* scene)
 {
     if (scene)
@@ -102,6 +107,26 @@ void Obstacle::OnSceneSet(Scene* scene)
         if (obstacleId_ > 0 && ownerMesh_)
             ownerMesh_->RemoveObstacle(this);
         ownerMesh_.Reset();
+    }
+}
+
+void Obstacle::OnMarkedDirty(Node* node)
+{
+    if (IsEnabledEffective() && ownerMesh_)
+    {
+        Scene* scene = GetScene();
+        /// \hack If scene already unassigned, or if it's being destroyed, do nothing
+        if (!scene || scene->Refs() == 0)
+            return;
+
+        // If within threaded update, update later
+        if (scene->IsThreadedUpdate())
+        {
+            scene->DelayedMarkedDirty(this);
+            return;
+        }
+
+        ownerMesh_->ObstacleChanged(this);
     }
 }
 

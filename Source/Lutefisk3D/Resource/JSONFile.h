@@ -30,7 +30,7 @@ namespace Urho3D
 {
 
 /// JSON document resource.
-class JSONFile : public Resource
+class URHO3D_API JSONFile : public Resource
 {
     URHO3D_OBJECT(JSONFile,Resource);
 
@@ -48,6 +48,8 @@ public:
     virtual bool Save(Serializer& dest) const override;
     /// Save resource with user-defined indentation, only the first character (if any) of the string is used and the length of the string defines the character count. Return true if successful.
     bool Save(Serializer& dest, const QString& indendation) const;
+    /// Deserialize from a string. Return true if successful.
+    bool FromString(const QString& source);
 
     /// Return root value.
     JSONValue& GetRoot() { return root_; }

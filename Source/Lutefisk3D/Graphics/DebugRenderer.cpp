@@ -20,7 +20,6 @@
 // THE SOFTWARE.
 //
 
-
 #include "../Graphics/AnimatedModel.h"
 #include "../Graphics/Camera.h"
 #include "../Core/Context.h"
@@ -45,7 +44,8 @@ static const unsigned MAX_LINES = 1000000;
 static const unsigned MAX_TRIANGLES = 100000;
 
 DebugRenderer::DebugRenderer(Context* context) :
-    Component(context)
+    Component(context),
+    lineAntiAlias_(false)
 {
     vertexBuffer_ = new VertexBuffer(context_);
 
@@ -59,6 +59,16 @@ DebugRenderer::~DebugRenderer()
 void DebugRenderer::RegisterObject(Context* context)
 {
     context->RegisterFactory<DebugRenderer>(SUBSYSTEM_CATEGORY);
+    URHO3D_ACCESSOR_ATTRIBUTE("Line Antialias", GetLineAntiAlias, SetLineAntiAlias, bool, false, AM_DEFAULT);
+}
+
+void DebugRenderer::SetLineAntiAlias(bool enable)
+{
+    if (enable != lineAntiAlias_)
+    {
+        lineAntiAlias_ = enable;
+        MarkNetworkUpdate();
+    }
 }
 
 void DebugRenderer::SetView(Camera* camera)
@@ -68,6 +78,7 @@ void DebugRenderer::SetView(Camera* camera)
 
     view_ = camera->GetView();
     projection_ = camera->GetProjection();
+    gpuProjection_ = camera->GetGPUProjection();
     frustum_ = camera->GetFrustum();
 }
 
@@ -485,17 +496,18 @@ void DebugRenderer::Render()
 
     vertexBuffer_->Unlock();
 
-    graphics->SetBlendMode(BLEND_REPLACE);
+    graphics->SetBlendMode(lineAntiAlias_ ? BLEND_ALPHA : BLEND_REPLACE);
     graphics->SetColorWrite(true);
     graphics->SetCullMode(CULL_NONE);
     graphics->SetDepthWrite(true);
+    graphics->SetLineAntiAlias(lineAntiAlias_);
     graphics->SetScissorTest(false);
     graphics->SetStencilTest(false);
     graphics->SetShaders(vs, ps);
     graphics->SetShaderParameter(VSP_MODEL, Matrix3x4::IDENTITY);
     graphics->SetShaderParameter(VSP_VIEW, view_);
     graphics->SetShaderParameter(VSP_VIEWINV, view_.Inverse());
-    graphics->SetShaderParameter(VSP_VIEWPROJ, projection_ * view_);
+    graphics->SetShaderParameter(VSP_VIEWPROJ, gpuProjection_ * view_);
     graphics->SetShaderParameter(PSP_MATDIFFCOLOR, Color(1.0f, 1.0f, 1.0f, 1.0f));
     graphics->SetVertexBuffer(vertexBuffer_);
 
@@ -531,6 +543,7 @@ void DebugRenderer::Render()
         graphics->SetDepthTest(CMP_ALWAYS);
         graphics->Draw(TRIANGLE_LIST, start, count);
     }
+    graphics->SetLineAntiAlias(false); //todo: only set this to false if we switched it on
 }
 
 bool DebugRenderer::IsInside(const BoundingBox& box) const

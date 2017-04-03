@@ -26,6 +26,9 @@ function Start()
     -- Setup the viewport for displaying the scene
     SetupViewport()
 
+    -- Set the mouse mode to use in the sample
+    SampleInitMouseMode(MM_RELATIVE)
+
     -- Hook up to the frame update and render post-update events
     SubscribeToEvents()
 end
@@ -203,7 +206,7 @@ function SpawnJack(pos, jackGroup)
     local agent = jackNode:CreateComponent("CrowdAgent")
     agent.height = 2.0
     agent.maxSpeed = 3.0
-    agent.maxAccel = 3.0
+    agent.maxAccel = 5.0
 end
 
 function CreateMushroom(pos)
@@ -313,8 +316,14 @@ function Raycast(maxDistance)
 end
 
 function MoveCamera(timeStep)
+    input.mouseVisible = input.mouseMode ~= MM_RELATIVE
+    mouseDown = input:GetMouseButtonDown(MOUSEB_RIGHT)
+
+    -- Override the MM_RELATIVE mouse grabbed settings, to allow interaction with UI
+    input.mouseGrabbed = mouseDown
+
     -- Right mouse button controls mouse cursor visibility: hide when pressed
-    ui.cursor.visible = not input:GetMouseButtonDown(MOUSEB_RIGHT)
+    ui.cursor.visible = not mouseDown
 
     -- Do not move if the UI has a focused element (the console)
     if ui.focusElement ~= nil then
@@ -424,14 +433,14 @@ function HandleCrowdAgentReposition(eventType, eventData)
             -- Face the direction of its velocity but moderate the turning speed based on the speed ratio and timeStep
             node.rotation = node.rotation:Slerp(Quaternion(Vector3.FORWARD, velocity), 10.0 * timeStep * speedRatio)
             -- Throttle the animation speed based on agent speed ratio (ratio = 1 is full throttle)
-            animCtrl:SetSpeed(WALKING_ANI, speedRatio)
+            animCtrl:SetSpeed(WALKING_ANI, speedRatio * 1.5)
         else
             animCtrl:Play(WALKING_ANI, 0, true, 0.1)
         end
 
-        -- If speed is too low then stopping the animation
+        -- If speed is too low then stop the animation
         if speed < agent.radius then
-            animCtrl:Stop(WALKING_ANI, 0.8)
+            animCtrl:Stop(WALKING_ANI, 0.5)
         end
     end
 end

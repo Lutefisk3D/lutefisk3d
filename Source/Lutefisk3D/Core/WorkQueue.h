@@ -71,16 +71,16 @@ private:
     bool pooled_;
 };
 struct comparePriority {
-    bool operator()(const WorkItem *a,const WorkItem *b) {
+    bool operator()(const WorkItem *a,const WorkItem *b) const {
         return a->priority_ < b->priority_;
     }
     bool operator()(const SharedPtr<WorkItem> &a,const SharedPtr<WorkItem> &b) const {
         return a->priority_ < b->priority_;
     }
-    bool operator()(const WorkItem *a,unsigned int b) {
+    bool operator()(const WorkItem *a,unsigned int b) const {
         return a->priority_ < b;
     }
-    bool operator()(unsigned int b,const WorkItem *a) {
+    bool operator()(unsigned int b,const WorkItem *a) const {
         return b < a->priority_;
     }
 };

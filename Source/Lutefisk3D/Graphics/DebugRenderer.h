@@ -92,7 +92,7 @@ struct DebugTriangle
 };
 
 /// Debug geometry rendering component. Should be added only to the root scene node.
-class DebugRenderer : public Component
+class URHO3D_API DebugRenderer : public Component
 {
     URHO3D_OBJECT(DebugRenderer,Component);
 
@@ -104,6 +104,8 @@ public:
     /// Register object factory.
     static void RegisterObject(Context* context);
 
+    /// Set line antialiasing on/off. Default false.
+    void SetLineAntiAlias(bool enable);
     /// Set the camera viewpoint. Call before rendering, or before adding geometry if you want to use culling.
     void SetView(Camera* camera);
     /// Add a line.
@@ -141,6 +143,8 @@ public:
     /// Update vertex buffer and render all debug lines. The viewport and rendertarget should be set before.
     void Render();
 
+    /// Return whether line antialiasing is enabled.
+    bool GetLineAntiAlias() const { return lineAntiAlias_; }
     /// Return the view transform.
     const Matrix3x4& GetView() const { return view_; }
     /// Return the projection transform.
@@ -168,10 +172,14 @@ private:
     Matrix3x4 view_;
     /// Projection transform.
     Matrix4 projection_;
+    /// Projection transform in API-specific format.
+    Matrix4 gpuProjection_;
     /// View frustum.
     Frustum frustum_;
     /// Vertex buffer.
     SharedPtr<VertexBuffer> vertexBuffer_;
+    /// Line antialiasing flag.
+    bool lineAntiAlias_;
 };
 
 }

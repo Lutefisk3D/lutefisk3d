@@ -36,7 +36,7 @@ namespace Urho3D
 {
 
 /// XML document resource.
-class XMLFile : public Resource
+class URHO3D_API XMLFile : public Resource
 {
     URHO3D_OBJECT(XMLFile,Resource);
 
@@ -61,7 +61,7 @@ public:
     XMLElement CreateRoot(const QString& name);
 
     /// Return the root element, with optionally specified name. Return null element if not found.
-    XMLElement GetRoot(const QString& name = QString::null);
+    XMLElement GetRoot(const QString& name = QString());
     /// Return the pugixml document.
     pugi::xml_document* GetDocument() const { return document_; }
     /// Serialize the XML content to a string.

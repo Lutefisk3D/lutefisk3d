@@ -27,6 +27,9 @@ void Start()
     // Setup the viewport for displaying the scene
     SetupViewport();
 
+    // Set the mouse mode to use in the sample
+    SampleInitMouseMode(MM_RELATIVE);
+
     // Hook up to the frame update and render post-update events
     SubscribeToEvents();
 }
@@ -227,7 +230,7 @@ void SpawnJack(const Vector3& pos, Node@ jackGroup)
     CrowdAgent@ agent = jackNode.CreateComponent("CrowdAgent");
     agent.height = 2.0f;
     agent.maxSpeed = 3.0f;
-    agent.maxAccel = 3.0f;
+    agent.maxAccel = 5.0f;
 }
 
 void CreateBoxOffMeshConnections(DynamicNavigationMesh@ navMesh, Node@ boxGroup)
@@ -339,8 +342,14 @@ bool Raycast(float maxDistance, Vector3& hitPos, Drawable@& hitDrawable)
 
 void MoveCamera(float timeStep)
 {
+    input.mouseVisible = input.mouseMode != MM_RELATIVE;
+    bool mouseDown = input.mouseButtonDown[MOUSEB_RIGHT];
+
+    // Override the MM_RELATIVE mouse grabbed settings, to allow interaction with UI
+    input.mouseGrabbed = mouseDown;
+
     // Right mouse button controls mouse cursor visibility: hide when pressed
-    ui.cursor.visible = !input.mouseButtonDown[MOUSEB_RIGHT];
+    ui.cursor.visible = !mouseDown;
 
     // Do not move if the UI has a focused element (the console)
     if (ui.focusElement !is null)
@@ -365,20 +374,20 @@ void MoveCamera(float timeStep)
     }
 
     // Read WASD keys and move the camera scene node to the corresponding direction if they are pressed
-    if (input.keyDown['W'])
+    if (input.keyDown[KEY_W])
         cameraNode.Translate(Vector3(0.0f, 0.0f, 1.0f) * MOVE_SPEED * timeStep);
-    if (input.keyDown['S'])
+    if (input.keyDown[KEY_S])
         cameraNode.Translate(Vector3(0.0f, 0.0f, -1.0f) * MOVE_SPEED * timeStep);
-    if (input.keyDown['A'])
+    if (input.keyDown[KEY_A])
         cameraNode.Translate(Vector3(-1.0f, 0.0f, 0.0f) * MOVE_SPEED * timeStep);
-    if (input.keyDown['D'])
+    if (input.keyDown[KEY_D])
         cameraNode.Translate(Vector3(1.0f, 0.0f, 0.0f) * MOVE_SPEED * timeStep);
 
     // Set destination or spawn a jack with left mouse button
     if (input.mouseButtonPress[MOUSEB_LEFT])
         SetPathPoint(input.qualifierDown[QUAL_SHIFT]);
     // Add new obstacle or remove existing obstacle/agent with middle mouse button
-    else if (input.mouseButtonPress[MOUSEB_MIDDLE] || input.keyPress['O'])
+    else if (input.mouseButtonPress[MOUSEB_MIDDLE] || input.keyPress[KEY_O])
         AddOrRemoveObject();
 
     // Check for loading/saving the scene from/to the file Data/Scenes/CrowdNavigation.xml relative to the executable directory
@@ -476,14 +485,14 @@ void HandleCrowdAgentReposition(StringHash eventType, VariantMap& eventData)
             // Face the direction of its velocity but moderate the turning speed based on the speed ratio and timeStep
             node.rotation = node.rotation.Slerp(Quaternion(FORWARD, velocity), 10.f * timeStep * speedRatio);
             // Throttle the animation speed based on agent speed ratio (ratio = 1 is full throttle)
-            animCtrl.SetSpeed(WALKING_ANI, speedRatio);
+            animCtrl.SetSpeed(WALKING_ANI, speedRatio * 1.5f);
         }
         else
             animCtrl.Play(WALKING_ANI, 0, true, 0.1f);
 
-        // If speed is too low then stopping the animation
+        // If speed is too low then stop the animation
         if (speed < agent.radius)
-            animCtrl.Stop(WALKING_ANI, 0.8f);
+            animCtrl.Stop(WALKING_ANI, 0.5f);
     }
 }
 

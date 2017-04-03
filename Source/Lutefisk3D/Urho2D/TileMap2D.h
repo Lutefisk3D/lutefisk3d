@@ -32,15 +32,15 @@ class TileMapLayer2D;
 class TmxFile2D;
 
 /// Tile map component.
-class TileMap2D : public Component
+class URHO3D_API TileMap2D : public Component
 {
     URHO3D_OBJECT(TileMap2D,Component);
 
 public:
     /// Construct.
-    TileMap2D(Context* context);
+    explicit TileMap2D(Context* context);
     /// Destruct.
-    ~TileMap2D();
+    ~TileMap2D() = default;
     /// Register object factory.
     static void RegisterObject(Context* context);
 

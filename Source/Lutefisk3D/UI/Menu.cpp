@@ -24,6 +24,7 @@
 #include "UI.h"
 #include "UIEvents.h"
 #include "Window.h"
+#include "../Core/StringUtils.h"
 #include "../Core/Context.h"
 #include "../IO/Log.h"
 #include "../Input/InputEvents.h"
@@ -329,7 +330,7 @@ void Menu::ShowPopup(bool enable)
 
 void Menu::SetAccelerator(int key, int qualifiers)
 {
-    acceleratorKey_ = key;
+    acceleratorKey_ = QChar(key).toLower().toLatin1();
     acceleratorQualifiers_ = qualifiers;
 
     if (key)

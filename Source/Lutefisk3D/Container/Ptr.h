@@ -38,7 +38,11 @@ public:
         ptr_(0)
     {
     }
-
+    /// Construct a null shared pointer.
+    SharedPtr(std::nullptr_t) :
+        ptr_(0)
+    {
+    }
     /// Copy-construct from another shared pointer.
     SharedPtr(const SharedPtr<T>& rhs) :
         ptr_(rhs.ptr_)
@@ -139,8 +143,9 @@ public:
     void Reset() { ReleaseRef(); }
 
     /// Detach without destroying the object even if the refcount goes zero. To be used for scripting language interoperation.
-    void Detach()
+    T* Detach()
     {
+        T* ptr = ptr_;
         if (ptr_)
         {
             RefCount* refCount = RefCountPtr();
@@ -148,6 +153,7 @@ public:
             Reset(); // 1 ref
             --refCount->refs_; // 0 refs
         }
+        return ptr;
     }
 
     /// Perform a static cast from a shared pointer of another type.
@@ -231,7 +237,12 @@ public:
         refCount_(0)
     {
     }
-
+    /// Construct a null weak pointer.
+    WeakPtr(std::nullptr_t) :
+        ptr_(0),
+        refCount_(0)
+    {
+    }
     /// Copy-construct from another weak pointer.
     WeakPtr(const WeakPtr<T>& rhs) :
         ptr_(rhs.ptr_),
@@ -480,9 +491,8 @@ template <class T, class U> WeakPtr<T> DynamicCast(const WeakPtr<U>& ptr)
     return ret;
 }
 
-typedef unsigned int uint;
 template<class T>
-inline uint qHash(const Urho3D::WeakPtr<T> & key, uint seed)
+inline unsigned int qHash(const Urho3D::WeakPtr<T> & key, unsigned int seed)
 {
     return key.ToHash();
 }

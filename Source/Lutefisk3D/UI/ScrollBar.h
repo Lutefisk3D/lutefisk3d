@@ -23,7 +23,7 @@
 #pragma once
 
 #include "../UI/UIElement.h"
-
+#include "../UI/BorderImage.h"
 namespace Urho3D
 {
 
@@ -31,9 +31,9 @@ class Button;
 class Slider;
 
 /// Scroll bar %UI element with forward and back buttons.
-class ScrollBar : public UIElement
+class ScrollBar : public BorderImage
 {
-    URHO3D_OBJECT(ScrollBar,UIElement);
+    URHO3D_OBJECT(ScrollBar,BorderImage);
 
 public:
     /// Construct.
@@ -46,7 +46,7 @@ public:
     /// Apply attribute changes that can not be applied immediately.
     virtual void ApplyAttributes() override;
     /// React to resize.
-    virtual void OnResize() override;
+    virtual void OnResize(const IntVector2& newSize, const IntVector2& delta) override;
     /// React to editable status change.
     virtual void OnSetEditable() override;
 

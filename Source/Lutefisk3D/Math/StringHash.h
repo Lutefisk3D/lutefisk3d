@@ -23,12 +23,13 @@
 #pragma once
 
 #include <functional>
+#include "../Core/Lutefisk3D.h"
 class QString;
 namespace Urho3D
 {
 
 /// 32-bit hash value for a string.
-class StringHash
+class URHO3D_API StringHash
 {
 public:
     /// Construct with zero value.
@@ -82,7 +83,7 @@ public:
         return *this;
     }
 
-    // Test for equality with another hash.
+    /// Test for equality with another hash.
     bool operator == (const StringHash& rhs) const { return value_ == rhs.value_; }
     /// Test for inequality with another hash.
     bool operator != (const StringHash& rhs) const { return value_ != rhs.value_; }
@@ -109,8 +110,7 @@ private:
     /// Hash value.
     unsigned value_;
 };
-typedef unsigned int uint;
-inline uint qHash(const StringHash &key, uint seed)
+inline unsigned int qHash(const StringHash &key, unsigned int seed)
 {
     return key.ToHash();
 }

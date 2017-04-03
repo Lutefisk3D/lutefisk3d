@@ -415,19 +415,6 @@ bool FileSystem::FileExists(const QString& fileName) const
 
     QString fixedName = GetNativePath(RemoveTrailingSlash(fileName));
 
-    #ifdef ANDROID
-    if (fixedName.StartsWith("/apk/"))
-    {
-        SDL_RWops* rwOps = SDL_RWFromFile(fileName.mid(5).CString(), "rb");
-        if (rwOps)
-        {
-            SDL_RWclose(rwOps);
-            return true;
-        }
-        else
-            return false;
-    }
-    #endif
 
     QFileInfo fi(fixedName);
     if(!fi.exists() || fi.isDir())
@@ -440,14 +427,6 @@ bool FileSystem::DirExists(const QString& pathName) const
 {
     if (!CheckAccess(pathName))
         return false;
-
-
-    #ifdef ANDROID
-    /// \todo Actually check for existence, now true is always returned for directories within the APK
-    if (fixedName.StartsWith("/apk/"))
-        return true;
-    #endif
-
     QFileInfo fi(pathName);
     return fi.exists() && fi.isDir();
 }
@@ -469,15 +448,7 @@ QString FileSystem::GetProgramDir() const
     if (!programDir_.isEmpty())
         return programDir_;
 
-    #if defined(ANDROID)
-    // This is an internal directory specifier pointing to the assets in the .apk
-    // Files from this directory will be opened using special handling
-    programDir_ = APK;
-    return programDir_;
-    #elif defined(IOS)
-    programDir_ = AddTrailingSlash(SDL_IOS_GetResourceDir());
-    return programDir_;
-    #elif defined(__APPLE__)
+    #if   defined(__APPLE__)
     char exeName[MAX_PATH];
     memset(exeName, 0, MAX_PATH);
     unsigned size = MAX_PATH;
@@ -562,42 +533,7 @@ void FileSystem::ScanDirInternal(QStringList& result, QString path, const QStrin
     if (filterExtension.contains('*'))
         filterExtension.clear();
 
-#ifdef ANDROID
-    if (IS_ASSET(path))
-    {
-        QString assetPath(ASSET(path));
-        assetPath.Resize(assetPath.Length() - 1);       // AssetManager.list() does not like trailing slash
-        int count;
-        char** list = SDL_Android_GetFileList(assetPath.CString(), &count);
-        for (int i = 0; i < count; ++i)
-        {
-            QString fileName(list[i]);
-            if (!(flags & SCAN_HIDDEN) && fileName.StartsWith("."))
-                continue;
-
-#ifdef ASSET_DIR_INDICATOR
-            // Patch the directory name back after retrieving the directory flag
-            bool isDirectory = fileName.EndsWith(ASSET_DIR_INDICATOR);
-            if (isDirectory)
-            {
-                fileName.Resize(fileName.Length() - sizeof(ASSET_DIR_INDICATOR) / sizeof(char) + 1);
-                if (flags & SCAN_DIRS)
-                    result.Push(deltaPath + fileName);
-                if (recursive)
-                    ScanDirInternal(result, path + fileName, startPath, filter, flags, recursive);
-            }
-            else if (flags & SCAN_FILES)
-#endif
-            {
-                if (filterExtension.Empty() || fileName.EndsWith(filterExtension))
-                    result.Push(deltaPath + fileName);
-            }
-        }
-        SDL_Android_FreeFileList(&list, &count);
-        return;
-    }
-#endif
-    #ifdef WIN32
+#ifdef _WIN32
     WIN32_FIND_DATAW info;
     std::wstring path_w(path.toStdWString());
     HANDLE handle = FindFirstFileW((path_w + wchar_t('*')).c_str(), &info);

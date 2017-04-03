@@ -36,8 +36,7 @@ Profiler::Profiler(Context* context) :
     Object(context),
     current_(nullptr),
     root_(nullptr),
-    intervalFrames_(0),
-    totalFrames_(0)
+    intervalFrames_(0)
 {
     root_ = new ProfilerBlock(nullptr, "Root");
     current_ = root_;
@@ -52,23 +51,18 @@ Profiler::~Profiler()
 void Profiler::BeginFrame()
 {
     // End the previous frame if any
-    EndFrame();
+    if (root_->count_)
+        EndFrame();
 
-    BeginBlock("RunFrame");
+    root_->Begin();
 }
 
 void Profiler::EndFrame()
 {
-    if (current_ != root_)
-    {
-        EndBlock();
-        ++intervalFrames_;
-        ++totalFrames_;
-        if (!totalFrames_)
-            ++totalFrames_;
-        root_->EndFrame();
-        current_ = root_;
-    }
+    EndBlock();
+    ++intervalFrames_;
+    root_->EndFrame();
+    current_ = root_;
 }
 
 void Profiler::BeginInterval()
@@ -99,53 +93,49 @@ QString Profiler::PrintData(bool showUnused, bool showTotal, unsigned maxDepth) 
 
 void Profiler::PrintData(ProfilerBlock* block, QString& output, unsigned depth, unsigned maxDepth, bool showUnused, bool showTotal) const
 {
+    static const int LINE_MAX_LENGTH = 256;
+    static const int NAME_MAX_LENGTH = 30;
+
     char line[LINE_MAX_LENGTH];
     char indentedName[LINE_MAX_LENGTH];
-
-    unsigned intervalFrames = std::max(intervalFrames_, 1U);
 
     if (depth >= maxDepth)
         return;
 
-    // Do not print the root block as it does not collect any actual data
-    if (block != root_)
+    // Do not print any block that does not collect critical data
+    if (showUnused || block->intervalCount_ || (showTotal && block->totalCount_))
     {
-        if (showUnused || block->intervalCount_ || (showTotal && block->totalCount_))
+        memset(indentedName, ' ', NAME_MAX_LENGTH);
+        indentedName[depth++] = 0;
+        strncat(indentedName, block->name_, NAME_MAX_LENGTH - depth);
+        indentedName[strlen(indentedName)] = ' ';
+        indentedName[NAME_MAX_LENGTH] = 0;
+
+        if (!showTotal)
         {
-            memset(indentedName, ' ', NAME_MAX_LENGTH);
-            indentedName[depth] = 0;
-            strcat(indentedName, block->name_);
-            indentedName[strlen(indentedName)] = ' ';
-            indentedName[NAME_MAX_LENGTH] = 0;
+            float avg = block->intervalTime_ / block->intervalCount_ / 1000.0f;
+            float max = block->intervalMaxTime_ / 1000.0f;
+            float frame = block->intervalTime_ / (intervalFrames_ ? intervalFrames_ : 1) / 1000.0f;
+            float all = block->intervalTime_ / 1000.0f;
 
-            if (!showTotal)
-            {
-                float avg = (block->intervalCount_ ? block->intervalTime_ / block->intervalCount_ : 0.0f) / 1000.0f;
-                float max = block->intervalMaxTime_ / 1000.0f;
-                float frame = block->intervalTime_ / intervalFrames / 1000.0f;
-                float all = block->intervalTime_ / 1000.0f;
-
-                sprintf(line, "%s %5u %8.3f %8.3f %8.3f %9.3f\n", indentedName, std::min(block->intervalCount_, 99999U),
+            sprintf(line, "%s %5u %8.3f %8.3f %8.3f %9.3f\n", indentedName, Min(block->intervalCount_, 99999U),
                     avg, max, frame, all);
-            }
-            else
-            {
-                float avg = (block->frameCount_ ? block->frameTime_ / block->frameCount_ : 0.0f) / 1000.0f;
-                float max = block->frameMaxTime_ / 1000.0f;
-                float all = block->frameTime_ / 1000.0f;
+        }
+        else
+        {
+            float avg = (block->frameCount_ ? block->frameTime_ / block->frameCount_ : 0.0f) / 1000.0f;
+            float max = block->frameMaxTime_ / 1000.0f;
+            float all = block->frameTime_ / 1000.0f;
 
-                float totalAvg = (block->totalCount_ ? block->totalTime_ / block->totalCount_ : 0.0f) / 1000.0f;
-                float totalMax = block->totalMaxTime_ / 1000.0f;
-                float totalAll = block->totalTime_ / 1000.0f;
+            float totalAvg = block->totalTime_ / block->totalCount_ / 1000.0f;
+            float totalMax = block->totalMaxTime_ / 1000.0f;
+            float totalAll = block->totalTime_ / 1000.0f;
 
-                sprintf(line, "%s %5u %8.3f %8.3f %9.3f  %7u %9.3f %9.3f %11.3f\n", indentedName, std::min(block->frameCount_, 99999U),
-                    avg, max, all, std::min(block->totalCount_, 99999U), totalAvg, totalMax, totalAll);
-            }
-
-            output += QString(line);
+            sprintf(line, "%s %5u %8.3f %8.3f %9.3f  %7u %9.3f %9.3f %11.3f\n", indentedName, Min(block->frameCount_, 99999U),
+                    avg, max, all, Min(block->totalCount_, 99999U), totalAvg, totalMax, totalAll);
         }
 
-        ++depth;
+        output += QString(line);
     }
 
     for (ProfilerBlock* i : block->children_)

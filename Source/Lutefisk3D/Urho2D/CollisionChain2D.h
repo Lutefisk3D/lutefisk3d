@@ -27,7 +27,7 @@
 namespace Urho3D
 {
 /// 2D chain collision component.
-class CollisionChain2D : public CollisionShape2D
+class URHO3D_API CollisionChain2D : public CollisionShape2D
 {
     URHO3D_OBJECT(CollisionChain2D,CollisionShape2D);
 

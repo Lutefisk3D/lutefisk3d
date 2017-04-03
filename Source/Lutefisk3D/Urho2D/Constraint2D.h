@@ -32,7 +32,7 @@ class RigidBody2D;
 class PhysicsWorld2D;
 
 /// 2D physics constraint component.
-class Constraint2D : public Component
+class URHO3D_API Constraint2D : public Component
 {
     URHO3D_OBJECT(Constraint2D,Component);
 
@@ -46,9 +46,9 @@ public:
 
     /// Handle enabled/disabled state change.
     virtual void OnSetEnabled();
-    /// Create Joint.
+    /// Create joint.
     void CreateJoint();
-    /// Release Joint.
+    /// Release joint.
     void ReleaseJoint();
 
     /// Set other rigid body.

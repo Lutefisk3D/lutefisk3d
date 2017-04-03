@@ -24,6 +24,7 @@
 
 #include "../Math/Rect.h"
 #include "../Math/Vector3.h"
+#include "../Core/Lutefisk3D.h"
 
 #ifdef LUTEFISK3D_SSE
 #include <xmmintrin.h>
@@ -39,7 +40,7 @@ class Matrix3x4;
 class Sphere;
 
 /// Three-dimensional axis-aligned bounding box.
-class BoundingBox
+class URHO3D_API BoundingBox
 {
 public:
     /// Construct with zero size.

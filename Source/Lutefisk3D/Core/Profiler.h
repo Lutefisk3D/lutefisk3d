@@ -25,6 +25,7 @@
 #include "../Container/Str.h"
 #include "../Core/Thread.h"
 #include "../Core/Timer.h"
+#include <limits>
 
 namespace Urho3D
 {
@@ -195,12 +196,10 @@ public:
         if (!Thread::IsMainThread())
             return;
 
-        if (current_ != root_)
-        {
             current_->End();
+        if (current_->parent_)
             current_ = current_->parent_;
         }
-    }
 
     /// Begin the profiling frame. Called by HandleBeginFrame().
     void BeginFrame();
@@ -209,14 +208,14 @@ public:
     /// Begin a new interval.
     void BeginInterval();
 
-    /// Return profiling data as text output.
+    /// Return profiling data as text output. This method is not thread-safe.
     QString PrintData(bool showUnused = false, bool showTotal = false, unsigned maxDepth = std::numeric_limits<unsigned>::max()) const;
     /// Return the current profiling block.
     const ProfilerBlock* GetCurrentBlock() { return current_; }
     /// Return the root profiling block.
     const ProfilerBlock* GetRootBlock() { return root_; }
 
-private:
+protected:
     /// Return profiling data as text output for a specified profiling block.
     void PrintData(ProfilerBlock* block, QString& output, unsigned depth, unsigned maxDepth, bool showUnused, bool showTotal) const;
 
@@ -226,8 +225,6 @@ private:
     ProfilerBlock* root_;
     /// Frames in the current interval.
     unsigned intervalFrames_;
-    /// Total frames.
-    unsigned totalFrames_;
 };
 
 /// Helper class for automatically beginning and ending a profiling block

@@ -47,7 +47,7 @@ struct NodeReplicationState;
 struct SceneReplicationState;
 
 /// Dirty attribute bits structure for network replication.
-struct DirtyBits
+struct URHO3D_API DirtyBits
 {
     /// Construct empty.
     DirtyBits() :
@@ -69,7 +69,7 @@ struct DirtyBits
         if (index < MAX_NETWORK_ATTRIBUTES)
         {
             unsigned byteIndex = index >> 3;
-            unsigned bit = 1 << (index & 7);
+            unsigned bit = 1U << (index & 7);
             if ((data_[byteIndex] & bit) == 0)
             {
                 data_[byteIndex] |= bit;
@@ -84,7 +84,7 @@ struct DirtyBits
         if (index < MAX_NETWORK_ATTRIBUTES)
         {
             unsigned byteIndex = index >> 3;
-            unsigned bit = 1 << (index & 7);
+            unsigned bit = 1U << (index & 7);
             if ((data_[byteIndex] & bit) != 0)
             {
                 data_[byteIndex] &= ~bit;
@@ -106,7 +106,7 @@ struct DirtyBits
         if (index < MAX_NETWORK_ATTRIBUTES)
         {
             unsigned byteIndex = index >> 3;
-            unsigned bit = 1 << (index & 7);
+            unsigned bit = 1U << (index & 7);
             return (data_[byteIndex] & bit) != 0;
         }
         else
@@ -123,7 +123,7 @@ struct DirtyBits
 };
 
 /// Per-object attribute state for network replication, allocated on demand.
-struct NetworkState
+struct URHO3D_API NetworkState
 {
     /// Construct with defaults.
     NetworkState() :
@@ -141,18 +141,18 @@ struct NetworkState
     /// Previous user variables.
     VariantMap previousVars_;
     /// Bitmask for intercepting network messages. Used on the client only.
-    unsigned long long interceptMask_;
+    uint64_t interceptMask_;
 };
 
 /// Base class for per-user network replication states.
-struct ReplicationState
+struct URHO3D_API ReplicationState
 {
     /// Parent network connection.
     Connection* connection_;
 };
 
 /// Per-user component network replication state.
-struct ComponentReplicationState : public ReplicationState
+struct URHO3D_API ComponentReplicationState : public ReplicationState
 {
     /// Parent node replication state.
     NodeReplicationState* nodeState_;
@@ -163,7 +163,7 @@ struct ComponentReplicationState : public ReplicationState
 };
 
 /// Per-user node network replication state.
-struct NodeReplicationState : public ReplicationState
+struct URHO3D_API NodeReplicationState : public ReplicationState
 {
     /// Construct.
     NodeReplicationState() :
@@ -190,7 +190,7 @@ struct NodeReplicationState : public ReplicationState
 };
 
 /// Per-user scene network replication state.
-struct SceneReplicationState : public ReplicationState
+struct URHO3D_API SceneReplicationState : public ReplicationState
 {
     /// Nodes by ID.
     HashMap<unsigned, NodeReplicationState> nodeStates_;

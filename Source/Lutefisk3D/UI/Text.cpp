@@ -41,6 +41,10 @@ const char* textEffects[] =
     "None",
     "Shadow",
     "Stroke",
+    "Stroke 2",
+    "Stroke 3",
+    "Stroke 4",
+    "Stroke 5",
     nullptr
 };
 
@@ -51,7 +55,6 @@ extern const char* UI_CATEGORY;
 
 Text::Text(Context* context) :
     UIElement(context),
-    usedInText3D_(false),
     fontSize_(DEFAULT_FONT_SIZE),
     textAlignment_(HA_LEFT),
     rowSpacing_(1.0f),
@@ -104,6 +107,7 @@ void Text::ApplyAttributes()
     DecodeToUnicode();
 
     fontSize_ = Max(fontSize_, 1);
+    strokeThickness_ = Abs(strokeThickness_);
     ValidateSelection();
     UpdateText();
 }
@@ -133,7 +137,7 @@ void Text::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexD
         bool both = hovering_ && selected_ && hoverColor_.a_ > 0.0 && selectionColor_.a_ > 0.0f;
         UIBatch batch(this, BLEND_ALPHA, currentScissor, nullptr, &vertexData);
         batch.SetColor(both ? selectionColor_.Lerp(hoverColor_, 0.5f) : (selected_ && selectionColor_.a_ > 0.0f ?
-            selectionColor_: hoverColor_));
+                                                                             selectionColor_: hoverColor_));
         batch.AddQuad(0, 0, GetWidth(), GetHeight(), 0, 0);
         UIBatch::AddOrMerge(batch, batches);
     }
@@ -154,7 +158,7 @@ void Text::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexD
                 if (charLocations_[i].position_.y_ != currentStart.y_)
                 {
                     batch.AddQuad(currentStart.x_, currentStart.y_, currentEnd.x_ - currentStart.x_, currentEnd.y_ - currentStart.y_,
-                        0, 0);
+                                  0, 0);
                     currentStart = charLocations_[i].position_;
                     currentEnd = currentStart + charLocations_[i].size_;
                 }
@@ -195,14 +199,39 @@ void Text::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexD
             break;
 
         case TE_STROKE:
-            ConstructBatch(pageBatch, pageGlyphLocation, -1, -1, &effectColor_, effectDepthBias_);
-            ConstructBatch(pageBatch, pageGlyphLocation, 0, -1, &effectColor_, effectDepthBias_);
-            ConstructBatch(pageBatch, pageGlyphLocation, 1, -1, &effectColor_, effectDepthBias_);
-            ConstructBatch(pageBatch, pageGlyphLocation, -1, 0, &effectColor_, effectDepthBias_);
-            ConstructBatch(pageBatch, pageGlyphLocation, 1, 0, &effectColor_, effectDepthBias_);
-            ConstructBatch(pageBatch, pageGlyphLocation, -1, 1, &effectColor_, effectDepthBias_);
-            ConstructBatch(pageBatch, pageGlyphLocation, 0, 1, &effectColor_, effectDepthBias_);
-            ConstructBatch(pageBatch, pageGlyphLocation, 1, 1, &effectColor_, effectDepthBias_);
+            if (roundStroke_)
+            {
+                // Samples should be even or glyph may be redrawn in wrong x y pos making stroke corners rough
+                // Adding to thickness helps with thickness of 1 not having enought samples for this formula
+                // or certain fonts with reflex corners requiring more glyph samples for a smooth stroke when large
+                int thickness = Min(strokeThickness_, fontSize_);
+                int samples = thickness * thickness + (thickness % 2 == 0 ? 4 : 3);
+                float angle = 360.f / samples;
+                float floatThickness = (float)thickness;
+                for (int i = 0; i < samples; ++i)
+                {
+                    float x = Cos(angle * i) * floatThickness;
+                    float y = Sin(angle * i) * floatThickness;
+                    ConstructBatch(pageBatch, pageGlyphLocation, (int)x, (int)y, &effectColor_, effectDepthBias_);
+                }
+            }
+            else
+            {
+                int thickness = Min(strokeThickness_, fontSize_);
+                int x, y;
+                for (x = -thickness; x <= thickness; ++x)
+                {
+                    for (y = -thickness; y <= thickness; ++y)
+                    {
+                        // Don't draw glyphs that aren't on the edges
+                        if (x > -thickness && x < thickness &&
+                                y > -thickness && y < thickness)
+                            continue;
+
+                        ConstructBatch(pageBatch, pageGlyphLocation, x, y, &effectColor_, effectDepthBias_);
+                    }
+                }
+            }
             ConstructBatch(pageBatch, pageGlyphLocation, 0, 0);
             break;
         }
@@ -214,7 +243,7 @@ void Text::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexD
     hovering_ = false;
 }
 
-void Text::OnResize()
+void Text::OnResize(const IntVector2& newSize, const IntVector2& delta)
 {
     if (wordWrap_)
         UpdateText(true);
@@ -251,6 +280,15 @@ bool Text::SetFont(Font* font, int size)
     return true;
 }
 
+bool Text::SetFontSize(int size)
+{
+    // Initial font must be set
+    if (!font_)
+        return false;
+    else
+        return SetFont(font_, size);
+}
+
 void Text::DecodeToUnicode()
 {
     unicodeText_.clear();
@@ -267,8 +305,8 @@ void Text::SetText(const QString& text)
         text_ = l10n->Get(stringId_);
     }
     else
-{
-    text_ = text;
+    {
+        text_ = text;
     }
 
     DecodeToUnicode();
@@ -336,6 +374,7 @@ void Text::HandleChangeLanguage(StringHash eventType, VariantMap& eventData)
     ValidateSelection();
     UpdateText();
 }
+
 void Text::SetSelection(unsigned start, unsigned length)
 {
     selectionStart_ = start;
@@ -364,14 +403,24 @@ void Text::SetTextEffect(TextEffect textEffect)
     textEffect_ = textEffect;
 }
 
+void Text::SetEffectShadowOffset(const IntVector2& offset)
+{
+    shadowOffset_ = offset;
+}
+
+void Text::SetEffectStrokeThickness(int thickness)
+{
+    strokeThickness_ = Abs(thickness);
+}
+
+void Text::SetEffectRoundStroke(bool roundStroke)
+{
+    roundStroke_ = roundStroke;
+}
+
 void Text::SetEffectColor(const Color& effectColor)
 {
     effectColor_ = effectColor;
-}
-
-void Text::SetUsedInText3D(bool usedInText3D)
-{
-    usedInText3D_ = usedInText3D;
 }
 
 void Text::SetEffectDepthBias(float bias)
@@ -417,6 +466,21 @@ void Text::SetFontAttr(const ResourceRef& value)
 ResourceRef Text::GetFontAttr() const
 {
     return GetResourceRef(font_, Font::GetTypeStatic());
+}
+
+void Text::SetTextAttr(const QString &value)
+{
+    text_ = value;
+    if (autoLocalizable_)
+        stringId_ = value;
+}
+
+QString Text::GetTextAttr() const
+{
+    if (autoLocalizable_ && !stringId_.isEmpty())
+        return stringId_;
+    else
+        return text_;
 }
 
 bool Text::FilterImplicitAttributes(XMLElement& dest) const
@@ -730,7 +794,7 @@ int Text::GetRowStartPosition(unsigned rowIndex) const
 }
 
 void Text::ConstructBatch(UIBatch& pageBatch, const std::vector<GlyphLocation>& pageGlyphLocation, int dx, int dy, Color* color,
-    float depthBias)
+                          float depthBias)
 {
     unsigned startDataSize = pageBatch.vertexData_->size();
 
@@ -745,7 +809,7 @@ void Text::ConstructBatch(UIBatch& pageBatch, const std::vector<GlyphLocation>& 
     {
         const FontGlyph& glyph = *glyphLocation.glyph_;
         pageBatch.AddQuad(dx + glyphLocation.x_ + glyph.offsetX_, dy + glyphLocation.y_ + glyph.offsetY_, glyph.width_,
-            glyph.height_, glyph.x_, glyph.y_);
+                          glyph.height_, glyph.x_, glyph.y_);
     }
 
     if (depthBias != 0.0f)

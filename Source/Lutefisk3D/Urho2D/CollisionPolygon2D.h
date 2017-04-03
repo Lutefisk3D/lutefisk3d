@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// 2D polygon collision component.
-class CollisionPolygon2D : public CollisionShape2D
+class URHO3D_API CollisionPolygon2D : public CollisionShape2D
 {
     URHO3D_OBJECT(CollisionPolygon2D,CollisionShape2D);
 

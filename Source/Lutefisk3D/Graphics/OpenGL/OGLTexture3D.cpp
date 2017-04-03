@@ -20,135 +20,22 @@
 // THE SOFTWARE.
 //
 
-#include "../../Core/Context.h"
-#include "../../IO/FileSystem.h"
 #include "../../Graphics/Graphics.h"
 #include "../../Graphics/GraphicsEvents.h"
 #include "../../Graphics/GraphicsImpl.h"
-#include "../../IO/Log.h"
-#include "../../Core/Profiler.h"
 #include "../../Graphics/Renderer.h"
-#include "../../Resource/ResourceCache.h"
 #include "../../Graphics/Texture3D.h"
+#include "../../Resource/ResourceCache.h"
 #include "../../Resource/XMLFile.h"
+#include "../../IO/FileSystem.h"
+#include "../../IO/Log.h"
+#include "../../Core/Context.h"
+#include "../../Core/Profiler.h"
 
 using namespace gl;
 
 namespace Urho3D
 {
-
-Texture3D::Texture3D(Context* context) :
-    Texture(context)
-{
-    target_ = GL_TEXTURE_3D;
-}
-
-Texture3D::~Texture3D()
-{
-    Release();
-}
-
-void Texture3D::RegisterObject(Context* context)
-{
-    context->RegisterFactory<Texture3D>();
-}
-
-bool Texture3D::BeginLoad(Deserializer& source)
-{
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-
-    // In headless mode, do not actually load the texture, just return success
-    if (!graphics_)
-        return true;
-
-    // If device is lost, retry later
-    if (graphics_->IsDeviceLost())
-    {
-        URHO3D_LOGWARNING("Texture load while device is lost");
-        dataPending_ = true;
-        return true;
-    }
-
-    QString texPath, texName, texExt;
-    SplitPath(GetName(), texPath, texName, texExt);
-
-    cache->ResetDependencies(this);
-
-    loadParameters_ = new XMLFile(context_);
-    if (!loadParameters_->Load(source))
-    {
-        loadParameters_.Reset();
-        return false;
-    }
-
-    XMLElement textureElem = loadParameters_->GetRoot();
-    XMLElement volumeElem = textureElem.GetChild("volume");
-    XMLElement colorlutElem = textureElem.GetChild("colorlut");
-
-    if (volumeElem)
-    {
-        QString name = volumeElem.GetAttribute("name");
-
-        QString volumeTexPath, volumeTexName, volumeTexExt;
-        SplitPath(name, volumeTexPath, volumeTexName, volumeTexExt);
-        // If path is empty, add the XML file path
-        if (volumeTexPath.isEmpty())
-            name = texPath + name;
-
-        loadImage_ = cache->GetTempResource<Image>(name);
-        // Precalculate mip levels if async loading
-        if (loadImage_ && GetAsyncLoadState() == ASYNC_LOADING)
-            loadImage_->PrecalculateLevels();
-        cache->StoreResourceDependency(this, name);
-        return true;
-    }
-    else if (colorlutElem)
-    {
-        QString name = colorlutElem.GetAttribute("name");
-
-        QString colorlutTexPath, colorlutTexName, colorlutTexExt;
-        SplitPath(name, colorlutTexPath, colorlutTexName, colorlutTexExt);
-        // If path is empty, add the XML file path
-        if (colorlutTexPath.isEmpty())
-            name = texPath + name;
-
-        SharedPtr<File> file = GetSubsystem<ResourceCache>()->GetFile(name);
-        loadImage_ = new Image(context_);
-        if (!loadImage_->LoadColorLUT(*(file.Get())))
-        {
-            loadParameters_.Reset();
-            loadImage_.Reset();
-            return false;
-        }
-        // Precalculate mip levels if async loading
-        if (loadImage_ && GetAsyncLoadState() == ASYNC_LOADING)
-            loadImage_->PrecalculateLevels();
-        cache->StoreResourceDependency(this, name);
-        return true;
-    }
-
-    URHO3D_LOGERROR("Texture3D XML data for " + GetName() + " did not contain either volume or colorlut element");
-    return false;
-}
-
-
-bool Texture3D::EndLoad()
-{
-    // In headless mode, do not actually load the texture, just return success
-    if (!graphics_ || graphics_->IsDeviceLost())
-        return true;
-
-    // If over the texture budget, see if materials can be freed to allow textures to be freed
-    CheckTextureBudget(GetTypeStatic());
-
-    SetParameters(loadParameters_);
-    bool success = SetData(loadImage_);
-
-    loadImage_.Reset();
-    loadParameters_.Reset();
-
-    return success;
-}
 
 void Texture3D::OnDeviceLost()
 {
@@ -191,29 +78,6 @@ void Texture3D::Release()
         glDeleteTextures(1, &object_);
         object_ = 0;
     }
-}
-
-bool Texture3D::SetSize(int width, int height, int depth, GLenum format, TextureUsage usage)
-{
-    if (width <= 0 || height <= 0 || depth <= 0)
-    {
-        URHO3D_LOGERROR("Zero or negative 3D texture dimensions");
-        return false;
-    }
-
-    if (usage >= TEXTURE_RENDERTARGET)
-    {
-        URHO3D_LOGERROR("Rendertarget or depth-stencil usage not supported for 3D textures");
-        return false;
-    }
-
-    usage_ = usage;
-    width_ = width;
-    height_ = height;
-    depth_ = depth;
-    format_ = format;
-
-    return Create();
 }
 
 bool Texture3D::SetData(unsigned level, int x, int y, int z, int width, int height, int depth, const void* data)
@@ -263,14 +127,13 @@ bool Texture3D::SetData(unsigned level, int x, int y, int z, int width, int heig
 
     graphics_->SetTextureForUpdate(this);
 
-    #ifndef GL_ES_VERSION_2_0
     bool wholeLevel = x == 0 && y == 0 && z == 0 && width == levelWidth && height == levelHeight && depth == levelDepth;
     GLenum format = GetSRGB() ? GetSRGBFormat(format_) : format_;
 
     if (!IsCompressed())
     {
         if (wholeLevel)
-            glTexImage3D(target_, level, (GLint)format, width, height, depth, 0, GetExternalFormat(format_), GetDataType(format_), data);
+            glTexImage3D(target_, level, format, width, height, depth, 0, GetExternalFormat(format_), GetDataType(format_), data);
         else
             glTexSubImage3D(target_, level, x, y, z, width, height, depth, GetExternalFormat(format_), GetDataType(format_), data);
     }
@@ -281,20 +144,20 @@ bool Texture3D::SetData(unsigned level, int x, int y, int z, int width, int heig
         else
             glCompressedTexSubImage3D(target_, level, x, y, z, width, height, depth, format, GetDataSize(width, height, depth), data);
     }
-    #endif
 
     graphics_->SetTexture(0, nullptr);
     return true;
 }
 
-bool Texture3D::SetData(SharedPtr<Image> image, bool useAlpha)
+bool Texture3D::SetData(Urho3D::Image *image, bool useAlpha)
 {
     if (!image)
     {
         URHO3D_LOGERROR("Null image, can not set data");
         return false;
     }
-
+    // Use a shared ptr for managing the temporary mip images created during this function
+    SharedPtr<Image> mipImage;
     unsigned memoryUse = sizeof(Texture3D);
 
     int quality = QUALITY_HIGH;
@@ -306,9 +169,10 @@ bool Texture3D::SetData(SharedPtr<Image> image, bool useAlpha)
     {
         // Convert unsuitable formats to RGBA
         unsigned components = image->GetComponents();
-        if (Graphics::GetGL3Support() && ((components == 1 && !useAlpha) || components == 2))
+        if (((components == 1 && !useAlpha) || components == 2))
         {
-            image = image->ConvertToRGBA();
+            mipImage = image->ConvertToRGBA();
+            image = mipImage;
             if (!image)
                 return false;
             components = image->GetComponents();
@@ -322,7 +186,8 @@ bool Texture3D::SetData(SharedPtr<Image> image, bool useAlpha)
         // Discard unnecessary mip levels
         for (unsigned i = 0; i < mipsToSkip_[quality]; ++i)
         {
-            image = image->GetNextLevel();
+            mipImage = image->GetNextLevel();
+            image = mipImage;
             levelData = image->GetData();
             levelWidth = image->GetWidth();
             levelHeight = image->GetHeight();
@@ -366,7 +231,7 @@ bool Texture3D::SetData(SharedPtr<Image> image, bool useAlpha)
 
             if (i < levels_ - 1)
             {
-                image = image->GetNextLevel();
+                mipImage = image->GetNextLevel(); image = mipImage;
                 levelData = image->GetData();
                 levelWidth = image->GetWidth();
                 levelHeight = image->GetHeight();
@@ -398,7 +263,7 @@ bool Texture3D::SetData(SharedPtr<Image> image, bool useAlpha)
         height /= (1 << mipsToSkip);
         depth /= (1 << mipsToSkip);
 
-        SetNumLevels(Max((int)(levels - mipsToSkip), 1));
+        SetNumLevels(Max((levels - mipsToSkip), 1U));
         SetSize(width, height, depth, format);
 
         for (unsigned i = 0; i < levels_ && i < levels - mipsToSkip; ++i)
@@ -426,7 +291,6 @@ bool Texture3D::SetData(SharedPtr<Image> image, bool useAlpha)
 
 bool Texture3D::GetData(unsigned level, void* dest) const
 {
-    #ifndef GL_ES_VERSION_2_0
     if (!object_ || !graphics_)
     {
         URHO3D_LOGERROR("No texture created, can not get data");
@@ -460,20 +324,12 @@ bool Texture3D::GetData(unsigned level, void* dest) const
 
     graphics_->SetTexture(0, nullptr);
     return true;
-    #else
-    URHO3D_LOGERROR("Getting texture data not supported");
-    return false;
-    #endif
 }
 
 bool Texture3D::Create()
 {
     Release();
 
-    #ifdef GL_ES_VERSION_2_0
-    URHO3D_LOGERROR("Failed to create 3D texture, currently unsupported on OpenGL ES 2");
-    return false;
-    #else
     if (!graphics_ || !width_ || !height_ || !depth_)
         return false;
 
@@ -498,7 +354,7 @@ bool Texture3D::Create()
     if (!IsCompressed())
     {
         glGetError();
-        glTexImage3D(target_, 0, (GLint)format, width_, height_, depth_, 0, externalFormat, dataType, nullptr);
+        glTexImage3D(target_, 0, format, width_, height_, depth_, 0, externalFormat, dataType, nullptr);
         if (glGetError()!=GL_NONE)
         {
             URHO3D_LOGERROR("Failed to create texture");
@@ -507,16 +363,7 @@ bool Texture3D::Create()
     }
 
     // Set mipmapping
-    levels_ = requestedLevels_;
-    if (!levels_)
-    {
-        unsigned maxSize = Max(Max((int)width_, (int)height_), (int)depth_);
-        while (maxSize)
-        {
-            maxSize >>= 1;
-            ++levels_;
-        }
-    }
+    levels_ = CheckMaxLevels(width_, height_, depth_, requestedLevels_);
 
     glTexParameteri(target_, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(target_, GL_TEXTURE_MAX_LEVEL, levels_ - 1);
@@ -526,7 +373,6 @@ bool Texture3D::Create()
     graphics_->SetTexture(0, nullptr);
 
     return success;
-    #endif
 }
 
 }

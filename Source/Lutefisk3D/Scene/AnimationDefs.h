@@ -34,6 +34,7 @@ enum WrapMode
     WM_ONCE,
     /// Clamp mode.
     WM_CLAMP,
+    WM_NUM_WRAP_MODES
 };
 
 }

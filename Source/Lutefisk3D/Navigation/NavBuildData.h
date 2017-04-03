@@ -42,7 +42,7 @@ namespace Urho3D
 {
 
 /// Navigation area stub.
-struct NavAreaStub
+struct URHO3D_API NavAreaStub
 {
     /// Area bounding box.
     BoundingBox bounds_;
@@ -51,7 +51,7 @@ struct NavAreaStub
 };
 
 /// Navigation build data.
-struct NavBuildData
+struct URHO3D_API NavBuildData
 {
     /// Constructor.
     NavBuildData();

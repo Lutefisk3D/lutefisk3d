@@ -27,6 +27,7 @@
 #include "../Core/Context.h"
 #include "../IO/Deserializer.h"
 #include "../IO/Log.h"
+#include "../IO/MemoryBuffer.h"
 #include "../Core/Profiler.h"
 #include "../IO/Serializer.h"
 #include <rapidjson/document.h>
@@ -167,7 +168,7 @@ static void ToRapidjsonValue(rapidjson::Value& rapidjsonValue, const JSONValue& 
         break;
 
     case JSON_STRING:
-        rapidjsonValue.SetString(jsonValue.GetCString(), allocator);
+        rapidjsonValue.SetString(qPrintable(jsonValue.GetString()), allocator);
         break;
 
     case JSON_ARRAY:
@@ -223,6 +224,15 @@ bool JSONFile::Save(Serializer& dest, const QString& indendation) const
     document.Accept(writer);
     unsigned size = (unsigned)buffer.GetSize();
     return dest.Write(buffer.GetString(), size) == size;
+}
+
+bool JSONFile::FromString(const QString & source)
+{
+    if (source.isEmpty())
+        return false;
+    QByteArray ba = source.toLocal8Bit();
+    MemoryBuffer buffer(ba.data(), source.length());
+    return Load(buffer);
 }
 
 }

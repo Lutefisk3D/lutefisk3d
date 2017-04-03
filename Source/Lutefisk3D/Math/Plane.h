@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// Surface in three-dimensional space.
-class Plane
+class URHO3D_API Plane
 {
 public:
     /// Construct a degenerate plane with zero normal and parameter.

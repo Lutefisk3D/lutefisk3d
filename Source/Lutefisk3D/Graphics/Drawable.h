@@ -76,7 +76,7 @@ struct FrameInfo
 };
 
 /// Source data for a 3D geometry draw call.
-struct SourceBatch
+struct URHO3D_API SourceBatch
 {
     /// Construct with defaults.
     SourceBatch();
@@ -97,12 +97,14 @@ struct SourceBatch
     const Matrix3x4* worldTransform_;
     /// Number of world transforms.
     unsigned numWorldTransforms_;
+    /// Per-instance data. If not null, must contain enough data to fill instancing buffer.
+    void* instancingData_;
     /// %Geometry type.
     GeometryType geometryType_;
 };
 
 /// Base class for visible components.
-class Drawable : public Component
+class URHO3D_API Drawable : public Component
 {
     URHO3D_OBJECT(Drawable,Component);
 
@@ -122,12 +124,12 @@ public:
     virtual void OnSetEnabled() override;
     /// Process octree raycast. May be called from a worker thread.
     virtual void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results);
-    /// Update before octree reinsertion. Is called from a worker thread.
-    virtual void Update(const FrameInfo& frame);
+    /// Update before octree reinsertion. Is called from a worker thread
+    virtual void Update(const FrameInfo& frame) { }
     /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
     virtual void UpdateBatches(const FrameInfo& frame);
     /// Prepare geometry for rendering.
-    virtual void UpdateGeometry(const FrameInfo& frame);
+    virtual void UpdateGeometry(const FrameInfo& frame) {}
     /// Return whether a geometry update is necessary, and if it can happen in a worker thread.
     virtual UpdateGeometryType GetUpdateGeometryType() { return UPDATE_NONE; }
     /// Return the geometry for a specific LOD level.
@@ -202,7 +204,7 @@ public:
     /// Set new zone. Zone assignment may optionally be temporary, meaning it needs to be re-evaluated on the next frame.
     void SetZone(Zone* zone, bool temporary = false);
     /// Set sorting value.
-    void SetSortValue(float value) { sortValue_ = value; }
+    void SetSortValue(float value);
     /// Set view-space depth bounds.
     void SetMinMaxZ(float minZ, float maxZ) { minZ_ = minZ; maxZ_ = maxZ; }
     /// Mark in view. Also clear the light list.
@@ -245,17 +247,17 @@ public:
     float GetMaxZ() const { return maxZ_; }
 
 
-    // Add a per-pixel light affecting the object this frame.
+    /// Add a per-pixel light affecting the object this frame.
     void AddLight(Light* light)
     {
         firstLight_ = firstLight_ ? firstLight_ : light;
-        // Need to store into the light list only if the per-pixel lights are being limited.
+        // Need to store into the light list only if the per-pixel lights are being limited
         // Otherwise recording the first light is enough
         if (maxLights_)
             lights_.push_back(light);
     }
 
-    // Add a per-vertex light affecting the object this frame.
+    /// Add a per-vertex light affecting the object this frame.
     void AddVertexLight(Light* light)
     {
         vertexLights_.push_back(light);
@@ -333,7 +335,7 @@ protected:
     unsigned basePassFlags_;
     /// Maximum per-pixel lights.
     unsigned maxLights_;
-    /// Set of cameras from which is seen on the current frame.
+    /// Set of cameras from which the drawable is seen on the current frame.
     SmallMembershipSet<Camera *,4> viewCameras_;
     /// First per-pixel light added this frame.
     Light* firstLight_;
@@ -347,6 +349,6 @@ inline bool CompareDrawables(Drawable* lhs, Drawable* rhs)
 {
     return lhs->GetSortValue() < rhs->GetSortValue();
 }
- bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, bool asZUp, bool asRightHanded, bool writeLightmapUV = false);
+URHO3D_API bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, bool asZUp, bool asRightHanded, bool writeLightmapUV = false);
 
 }

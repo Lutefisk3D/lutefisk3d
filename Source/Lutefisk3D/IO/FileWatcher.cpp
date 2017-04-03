@@ -30,12 +30,14 @@
 #include <windows.h>
 #elif __linux__
 #include <sys/inotify.h>
-extern "C" {
+extern "C"
+{
 // Need read/close for inotify
 #include "unistd.h"
 }
 #elif defined(__APPLE__) && !defined(IOS)
-extern "C" {
+extern "C"
+{
 #include "../IO/MacFileWatcher.h"
 }
 #endif
@@ -52,7 +54,7 @@ FileWatcher::FileWatcher(Context* context) :
     delay_(1.0f),
     watchSubDirs_(false)
 {
-#ifdef URHO3D_FILEWATCHER
+#ifdef LUTEFISK3D_FILEWATCHER
 #ifdef __linux__
     watchHandle_ = inotify_init();
 #elif defined(__APPLE__) && !defined(IOS)
@@ -64,7 +66,7 @@ FileWatcher::FileWatcher(Context* context) :
 FileWatcher::~FileWatcher()
 {
     StopWatching();
-#ifdef URHO3D_FILEWATCHER
+#ifdef LUTEFISK3D_FILEWATCHER
 #ifdef __linux__
     close(watchHandle_);
 #endif
@@ -192,16 +194,19 @@ void FileWatcher::StopWatching()
         shouldRun_ = false;
 
         // Create and delete a dummy file to make sure the watcher loop terminates
-        // This is not required with iNotify
-#if !defined(__linux__)
+        // This is only required on Windows platform
+        // TODO: Remove this temp write approach as it depends on user write privilege
+#ifdef _WIN32
         QString dummyFileName = path_ + "dummy.tmp";
         File file(context_, dummyFileName, FILE_WRITE);
         file.Close();
         if (fileSystem_)
             fileSystem_->Delete(dummyFileName);
 #endif
-        // Remove watch - On linux this will cause read() to return with
-        // the IN_IGNORED flag set
+#if defined(__APPLE__) && !defined(IOS)
+        // Our implementation of file watcher requires the thread to be stopped first before closing the watcher
+        Stop();
+#endif
 #ifdef _WIN32
         CloseHandle((HANDLE)dirHandle_);
 #elif defined(__linux__)
@@ -211,9 +216,9 @@ void FileWatcher::StopWatching()
 #elif defined(__APPLE__) && !defined(IOS)
         CloseFileWatcher(watcher_);
 #endif
-        // Join thread *after* removing watch as to avoid getting stuck in
-        // read()
+#ifndef __APPLE__
         Stop();
+#endif
         URHO3D_LOGDEBUG("Stopped watching path " + path_);
         path_.clear();
     }
@@ -226,7 +231,7 @@ void FileWatcher::SetDelay(float interval)
 
 void FileWatcher::ThreadFunction()
 {
-#ifdef URHO3D_FILEWATCHER
+#ifdef LUTEFISK3D_FILEWATCHER
 #ifdef _WIN32
     unsigned char buffer[BUFFERSIZE];
     DWORD bytesFilled = 0;

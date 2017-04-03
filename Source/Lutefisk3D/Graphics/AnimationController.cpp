@@ -26,9 +26,10 @@
 #include "Animation.h"
 #include "AnimationState.h"
 #include "../Core/Context.h"
+#include "../Core/Profiler.h"
+#include "../IO/FileSystem.h"
 #include "../IO/Log.h"
 #include "../IO/MemoryBuffer.h"
-#include "../Core/Profiler.h"
 #include "../Resource/ResourceCache.h"
 #include "../Scene/Scene.h"
 #include "../Scene/SceneEvents.h"
@@ -42,6 +43,7 @@ static const unsigned char CTRL_AUTOFADE = 0x4;
 static const unsigned char CTRL_SETTIME = 0x08;
 static const unsigned char CTRL_SETWEIGHT = 0x10;
 static const unsigned char CTRL_REMOVEONCOMPLETION = 0x20;
+static const unsigned char CTRL_ADDITIVE = 0x40;
 static const float EXTRA_ANIM_FADEOUT_TIME = 0.1f;
 static const float COMMAND_STAY_TIME = 0.25f;
 static const unsigned MAX_NODE_ANIMATION_STATES = 256;
@@ -50,10 +52,6 @@ extern const char* LOGIC_CATEGORY;
 
 AnimationController::AnimationController(Context* context) :
     Component(context)
-{
-}
-
-AnimationController::~AnimationController()
 {
 }
 
@@ -85,8 +83,8 @@ void AnimationController::Update(float timeStep)
     for (std::vector<AnimationControl>::iterator i = animations_.begin(); i != animations_.end();)
     {
         AnimationControl& ctrl(*i);
+        AnimationState* state = GetAnimationState(ctrl.hash_);
         bool remove = false;
-        AnimationState* state = GetAnimationState(i->hash_);
         if (!state)
             remove = true;
         else
@@ -357,6 +355,9 @@ bool AnimationController::SetWeight(const QString& name, float weight)
     animations_[index].setWeight_ = (unsigned char)(weight * 255.0f);
     animations_[index].setWeightTtl_ = COMMAND_STAY_TIME;
     ++animations_[index].setWeightRev_;
+    // Cancel any ongoing weight fade
+    animations_[index].targetWeight_ = weight;
+    animations_[index].fadeTime_ = 0.0f;
     MarkNetworkUpdate();
     return true;
 }
@@ -384,13 +385,13 @@ bool AnimationController::SetLooped(const QString& name, bool enable)
     return true;
 }
 
-bool AnimationController::SetBlendingMode(const QString& name, AnimationBlendMode mode)
+bool AnimationController::SetBlendMode(const QString& name, AnimationBlendMode mode)
 {
     AnimationState* state = GetAnimationState(name);
     if (!state)
         return false;
 
-    state->SetBlendingMode(mode);
+    state->SetBlendMode(mode);
     MarkNetworkUpdate();
     return true;
 }
@@ -414,6 +415,18 @@ bool AnimationController::IsPlaying(const QString& name) const
     AnimationState* state;
     FindAnimation(name, index, state);
     return index != M_MAX_UNSIGNED;
+}
+
+bool AnimationController::IsPlaying(unsigned char layer) const
+{
+    for (auto &entry : animations_)
+    {
+        AnimationState* state = GetAnimationState(entry.hash_);
+        if (state && state->GetLayer() == layer)
+            return true;
+    }
+
+    return false;
 }
 
 bool AnimationController::IsFadingIn(const QString& name) const
@@ -453,7 +466,7 @@ bool AnimationController::IsAtEnd(const QString& name) const
 unsigned char AnimationController::GetLayer(const QString& name) const
 {
     AnimationState* state = GetAnimationState(name);
-    return state ? state->GetLayer() : 0;
+    return (unsigned char)(state ? state->GetLayer() : 0);
 }
 
 Bone* AnimationController::GetStartBone(const QString& name) const
@@ -486,10 +499,10 @@ bool AnimationController::IsLooped(const QString& name) const
     return state ? state->IsLooped() : false;
 }
 
-AnimationBlendMode AnimationController::GetBlendingMode(const QString& name) const
+AnimationBlendMode AnimationController::GetBlendMode(const QString& name) const
 {
     AnimationState* state = GetAnimationState(name);
-    return state ? state->GetBlendingMode() : ABM_LERP;
+    return state ? state->GetBlendMode() : ABM_LERP;
 }
 
 float AnimationController::GetLength(const QString& name) const
@@ -519,7 +532,7 @@ float AnimationController::GetFadeTime(const QString& name) const
     unsigned index;
     AnimationState* state;
     FindAnimation(name, index, state);
-    return index != M_MAX_UNSIGNED ? animations_[index].targetWeight_ : 0.0f;
+    return index != M_MAX_UNSIGNED ? animations_[index].fadeTime_ : 0.0f; // TODO: this fix should be PRd to upstream
 }
 
 float AnimationController::GetAutoFade(const QString& name) const
@@ -553,7 +566,7 @@ AnimationState* AnimationController::GetAnimationState(StringHash nameHash) cons
     // Node hierarchy mode
     for (const SharedPtr<AnimationState> & elem : nodeAnimationStates_)
     {
-        Animation* animation = (elem)->GetAnimation();
+        Animation* animation = elem->GetAnimation();
         if (animation->GetNameHash() == nameHash || animation->GetAnimationNameHash() == nameHash)
             return elem;
     }
@@ -625,6 +638,7 @@ void AnimationController::SetNetAnimationsAttr(const std::vector<unsigned char>&
         unsigned char ctrl = buf.ReadUByte();
         state->SetLayer(buf.ReadUByte());
         state->SetLooped((ctrl & CTRL_LOOPED) != 0);
+        state->SetBlendMode((ctrl & CTRL_ADDITIVE) != 0 ? ABM_ADDITIVE : ABM_LERP);
         animations_[index].speed_ = (float)buf.ReadShort() / 2048.0f; // 11 bits of decimal precision, max. 16x playback speed
         animations_[index].targetWeight_ = (float)buf.ReadUByte() / 255.0f; // 8 bits of decimal precision
         animations_[index].fadeTime_ = (float)buf.ReadUByte() / 64.0f; // 6 bits of decimal precision, max. 4 seconds fade
@@ -751,6 +765,8 @@ const std::vector<unsigned char>& AnimationController::GetNetAnimationsAttr() co
         Bone* startBone = state->GetStartBone();
         if (state->IsLooped())
             ctrl |= CTRL_LOOPED;
+        if (state->GetBlendMode() == ABM_ADDITIVE)
+            ctrl |= CTRL_ADDITIVE;
         if (startBone && model && startBone != model->GetSkeleton().GetRootBone())
             ctrl |= CTRL_STARTBONE;
         if (elem.autoFadeTime_ > 0.0f)
@@ -841,19 +857,14 @@ void AnimationController::RemoveAnimationState(AnimationState* state)
     }
 
     // Node hierarchy mode
-    for (std::vector<SharedPtr<AnimationState> >::iterator i = nodeAnimationStates_.begin(); i != nodeAnimationStates_.end(); ++i)
-    {
-        if ((*i) == state)
-        {
-            nodeAnimationStates_.erase(i);
-            return;
-        }
-    }
+    auto iter = std::find(nodeAnimationStates_.begin(),nodeAnimationStates_.end(),state);
+    if(iter!=nodeAnimationStates_.end())
+        nodeAnimationStates_.erase(iter);
 }
 
 void AnimationController::FindAnimation(const QString& name, unsigned& index, AnimationState*& state) const
 {
-    StringHash nameHash(name);
+    StringHash nameHash(GetInternalPath(name));
 
     // Find the AnimationState
     state = GetAnimationState(nameHash);

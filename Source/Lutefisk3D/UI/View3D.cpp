@@ -66,10 +66,10 @@ void View3D::RegisterObject(Context* context)
     URHO3D_UPDATE_ATTRIBUTE_DEFAULT_VALUE("Is Enabled", true);
 }
 
-void View3D::OnResize()
+void View3D::OnResize(const IntVector2& newSize, const IntVector2& delta)
 {
-    int width = GetWidth();
-    int height = GetHeight();
+    int width = newSize.x_;
+    int height = newSize.y_;
 
     if (width > 0 && height > 0)
     {
@@ -106,7 +106,7 @@ void View3D::SetFormat(gl::GLenum format)
     if (format != rttFormat_)
     {
         rttFormat_ = format;
-        OnResize();
+        OnResize(GetSize(), IntVector2::ZERO);
     }
 }
 
@@ -125,11 +125,6 @@ void View3D::QueueUpdate()
 Scene* View3D::GetScene() const
 {
     return scene_;
-}
-void View3D::HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData)
-{
-    if (autoUpdate_ && IsVisibleEffective())
-        QueueUpdate();
 }
 
 Node* View3D::GetCameraNode() const
@@ -166,6 +161,12 @@ void View3D::ResetScene()
     }
     else
         scene_ = 0;
+}
+
+void View3D::HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData)
+{
+    if (autoUpdate_ && IsVisibleEffective())
+        QueueUpdate();
 }
 
 }

@@ -32,7 +32,7 @@ namespace Urho3D
 {
 
 /// Abstract stream for reading.
-class Deserializer
+class URHO3D_API Deserializer
 {
 public:
     /// Construct with zero size.
@@ -50,19 +50,23 @@ public:
     virtual const QString& GetName() const;
     /// Return a checksum if applicable.
     virtual unsigned GetChecksum();
+    /// Return whether the end of stream has been reached.
+    virtual bool IsEof() const { return position_ >= size_; }
     /// Return current position.
     unsigned GetPosition() const { return position_; }
     /// Return size.
     unsigned GetSize() const { return size_; }
-    /// Return whether the end of stream has been reached.
-    bool IsEof() const { return position_ >= size_; }
     
+    /// Read a 64-bit integer.
+    long long ReadInt64();
     /// Read a 32-bit integer.
     int ReadInt();
     /// Read a 16-bit integer.
     short ReadShort();
     /// Read an 8-bit integer.
     signed char ReadByte();
+    /// Read a 64-bit unsigned integer.
+    unsigned long long ReadUInt64();
     /// Read a 32-bit unsigned integer.
     unsigned ReadUInt();
     /// Read a 16-bit unsigned integer.

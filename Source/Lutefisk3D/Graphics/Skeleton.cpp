@@ -172,7 +172,7 @@ Bone* Skeleton::GetBone(StringHash nameHash)
     for (Bone & elem : bones_)
     {
         if (elem.nameHash_ == nameHash)
-            return &(elem);
+            return &elem;
     }
 
     return nullptr;

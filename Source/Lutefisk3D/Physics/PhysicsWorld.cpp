@@ -60,6 +60,8 @@ static const int MAX_SOLVER_ITERATIONS = 256;
 static const int DEFAULT_FPS = 60;
 static const Vector3 DEFAULT_GRAVITY = Vector3(0.0f, -9.81f, 0.0f);
 
+PhysicsWorldConfig PhysicsWorld::config;
+
 static bool CompareRaycastResults(const PhysicsRaycastResult& lhs, const PhysicsRaycastResult& rhs)
 {
     return lhs.distance_ < rhs.distance_;
@@ -133,7 +135,10 @@ PhysicsWorld::PhysicsWorld(Context* context) :
 {
     gContactAddedCallback = CustomMaterialCombinerCallback;
 
-    collisionConfiguration_ = new btDefaultCollisionConfiguration();
+    if (PhysicsWorld::config.collisionConfig_)
+        collisionConfiguration_ = PhysicsWorld::config.collisionConfig_;
+    else
+        collisionConfiguration_ = new btDefaultCollisionConfiguration();
     collisionDispatcher_ = new btCollisionDispatcher(collisionConfiguration_);
     broadphase_ = new btDbvtBroadphase();
     solver_ = new btSequentialImpulseConstraintSolver();
@@ -174,7 +179,9 @@ PhysicsWorld::~PhysicsWorld()
     delete collisionDispatcher_;
     collisionDispatcher_ = nullptr;
 
-    delete collisionConfiguration_;
+    // Delete configuration only if it was the default created by PhysicsWorld
+    if (!PhysicsWorld::config.collisionConfig_)
+        delete collisionConfiguration_;
     collisionConfiguration_ = nullptr;
 }
 
@@ -459,7 +466,7 @@ void PhysicsWorld::SphereCast(PhysicsRaycastResult& result, const Ray& ray, floa
     Vector3 endPos = ray.origin_ + maxDistance * ray.direction_;
 
     btCollisionWorld::ClosestConvexResultCallback
-        convexCallback(ToBtVector3(ray.origin_), ToBtVector3(endPos));
+            convexCallback(ToBtVector3(ray.origin_), ToBtVector3(endPos));
     convexCallback.m_collisionFilterGroup = (short)0xffff;
     convexCallback.m_collisionFilterMask = (short)collisionMask;
 
@@ -788,7 +795,7 @@ void PhysicsWorld::PreStep(float timeStep)
     SendEvent(E_PHYSICSPRESTEP, eventData);
 
     // Start profiling block for the actual simulation step
-#ifdef URHO3D_PROFILING
+#ifdef LUTEFISK3D_PROFILING
     Profiler* profiler = GetSubsystem<Profiler>();
     if (profiler)
         profiler->BeginBlock("StepSimulation");
@@ -797,7 +804,7 @@ void PhysicsWorld::PreStep(float timeStep)
 
 void PhysicsWorld::PostStep(float timeStep)
 {
-#ifdef URHO3D_PROFILING
+#ifdef LUTEFISK3D_PROFILING
     Profiler* profiler = GetSubsystem<Profiler>();
     if (profiler)
         profiler->EndBlock();
@@ -856,15 +863,19 @@ void PhysicsWorld::SendCollisionEvents()
             WeakPtr<RigidBody> bodyWeakA(bodyA);
             WeakPtr<RigidBody> bodyWeakB(bodyB);
 
-            std::pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> > bodyPair;
-            if (bodyA < bodyB)
-                bodyPair = std::make_pair(bodyWeakA, bodyWeakB);
-            else
-                bodyPair = std::make_pair(bodyWeakB, bodyWeakA);
-
             // First only store the collision pair as weak pointers and the manifold pointer, so user code can safely destroy
             // objects during collision event handling
-            currentCollisions_[bodyPair] = contactManifold;
+            std::pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> > bodyPair;
+            if (bodyA < bodyB)
+            {
+                bodyPair = std::make_pair(bodyWeakA, bodyWeakB);
+                currentCollisions_[bodyPair].manifold_ = contactManifold;
+            }
+            else
+            {
+                bodyPair = std::make_pair(bodyWeakB, bodyWeakA);
+                currentCollisions_[bodyPair].flippedManifold_ = contactManifold;
+            }
         }
 
         for (auto elem = currentCollisions_.begin(),fin=currentCollisions_.end(); elem!=fin; ++elem)
@@ -874,7 +885,7 @@ void PhysicsWorld::SendCollisionEvents()
             if (!bodyA || !bodyB)
                 continue;
 
-            btPersistentManifold* contactManifold = MAP_VALUE(elem);
+            btPersistentManifold* contactManifold = MAP_VALUE(elem).manifold_;
 
             Node* nodeA = bodyA->GetNode();
             Node* nodeB = bodyB->GetNode();
@@ -892,13 +903,30 @@ void PhysicsWorld::SendCollisionEvents()
 
             contacts_.clear();
 
-            for (int j = 0; j < contactManifold->getNumContacts(); ++j)
+            // "Pointers not flipped"-manifold, send unmodified normals
+            if (contactManifold)
             {
-                btManifoldPoint& point = contactManifold->getContactPoint(j);
-                contacts_.WriteVector3(ToVector3(point.m_positionWorldOnB));
-                contacts_.WriteVector3(ToVector3(point.m_normalWorldOnB));
-                contacts_.WriteFloat(point.m_distance1);
-                contacts_.WriteFloat(point.m_appliedImpulse);
+                for (int j = 0; j < contactManifold->getNumContacts(); ++j)
+                {
+                    btManifoldPoint& point = contactManifold->getContactPoint(j);
+                    contacts_.WriteVector3(ToVector3(point.m_positionWorldOnB));
+                    contacts_.WriteVector3(ToVector3(point.m_normalWorldOnB));
+                    contacts_.WriteFloat(point.m_distance1);
+                    contacts_.WriteFloat(point.m_appliedImpulse);
+                }
+            }
+            // "Pointers flipped"-manifold, flip normals also
+            contactManifold = MAP_VALUE(elem).flippedManifold_;
+            if (contactManifold)
+            {
+                for (int j = 0; j < contactManifold->getNumContacts(); ++j)
+                {
+                    btManifoldPoint& point = contactManifold->getContactPoint(j);
+                    contacts_.WriteVector3(ToVector3(point.m_positionWorldOnB));
+                    contacts_.WriteVector3(-ToVector3(point.m_normalWorldOnB));
+                    contacts_.WriteFloat(point.m_distance1);
+                    contacts_.WriteFloat(point.m_appliedImpulse);
+                }
             }
 
             physicsCollisionData_[PhysicsCollision::P_CONTACTS] = contacts_.GetBuffer();
@@ -934,14 +962,31 @@ void PhysicsWorld::SendCollisionEvents()
             if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                 continue;
 
+            // Flip perspective to body B
             contacts_.clear();
-            for (int j = 0; j < contactManifold->getNumContacts(); ++j)
+            contactManifold = MAP_VALUE(elem).manifold_;
+            if (contactManifold)
             {
-                btManifoldPoint& point = contactManifold->getContactPoint(j);
-                contacts_.WriteVector3(ToVector3(point.m_positionWorldOnB));
-                contacts_.WriteVector3(-ToVector3(point.m_normalWorldOnB));
-                contacts_.WriteFloat(point.m_distance1);
-                contacts_.WriteFloat(point.m_appliedImpulse);
+                for (int j = 0; j < contactManifold->getNumContacts(); ++j)
+                {
+                    btManifoldPoint& point = contactManifold->getContactPoint(j);
+                    contacts_.WriteVector3(ToVector3(point.m_positionWorldOnB));
+                    contacts_.WriteVector3(-ToVector3(point.m_normalWorldOnB));
+                    contacts_.WriteFloat(point.m_distance1);
+                    contacts_.WriteFloat(point.m_appliedImpulse);
+                }
+            }
+            contactManifold = MAP_VALUE(elem).flippedManifold_;
+            if (contactManifold)
+            {
+                for (int j = 0; j < contactManifold->getNumContacts(); ++j)
+                {
+                    btManifoldPoint& point = contactManifold->getContactPoint(j);
+                    contacts_.WriteVector3(ToVector3(point.m_positionWorldOnB));
+                    contacts_.WriteVector3(ToVector3(point.m_normalWorldOnB));
+                    contacts_.WriteFloat(point.m_distance1);
+                    contacts_.WriteFloat(point.m_appliedImpulse);
+                }
             }
 
             nodeCollisionData_[NodeCollision::P_BODY] = bodyB;

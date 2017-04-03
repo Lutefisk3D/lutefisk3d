@@ -66,7 +66,7 @@ enum ResourceRequest
 };
 
 /// Optional resource request processor. Can deny requests, re-route resource file names, or perform other processing per request.
-class ResourceRouter : public Object
+class URHO3D_API ResourceRouter : public Object
 {
 public:
     /// Construct.
@@ -80,7 +80,7 @@ public:
 };
 
 /// %Resource cache subsystem. Loads resources on demand and stores them for later access.
-class ResourceCache : public Object
+class URHO3D_API ResourceCache : public Object
 {
     URHO3D_OBJECT(ResourceCache, Object);
 
@@ -160,6 +160,8 @@ public:
     template <class T> T* GetExistingResource(const QString& name);
     /// Template version of loading a resource without storing it to the cache.
     template <class T> SharedPtr<T> GetTempResource(const QString& name, bool sendEventOnFailure = true);
+    /// Template version of releasing a resource by name.
+    template <class T> void ReleaseResource(const QString& name, bool force = false);
     /// Template version of queueing a resource background load.
     template <class T> bool BackgroundLoadResource(const QString& name, bool sendEventOnFailure = true, Resource* caller = nullptr);
     /// Template version of returning loaded resources of a specific type.
@@ -172,7 +174,7 @@ public:
     uint64_t GetMemoryUse(StringHash type) const;
     /// Return total memory use for all resources.
     uint64_t GetTotalMemoryUse() const;
-    /// Return full absolute file name of resource if possible.
+    /// Return full absolute file name of resource if possible, or empty if not found.
     QString GetResourceFileName(const QString& name) const;
     /// Return whether automatic resource reloading is enabled.
     bool GetAutoReloadResources() const { return autoReloadResources_; }
@@ -252,7 +254,11 @@ template <class T> T* ResourceCache::GetResource(const QString& name, bool sendE
     StringHash type = T::GetTypeStatic();
     return static_cast<T*>(GetResource(type, name, sendEventOnFailure));
 }
-
+template <class T> void ResourceCache::ReleaseResource(const QString& name, bool force)
+{
+    StringHash type = T::GetTypeStatic();
+    ReleaseResource(type, name, force);
+}
 template <class T> SharedPtr<T> ResourceCache::GetTempResource(const QString& name, bool sendEventOnFailure)
 {
     StringHash type = T::GetTypeStatic();
@@ -280,6 +286,6 @@ template <class T> void ResourceCache::GetResources(std::vector<T*>& result) con
 }
 
 /// Register Resource library subsystems and objects.
-extern void RegisterResourceLibrary(Context* context);
+void URHO3D_API RegisterResourceLibrary(Context* context);
 
 }

@@ -19,15 +19,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "TileMap2D.h"
+
+#include "TileMapLayer2D.h"
+#include "TmxFile2D.h"
 
 #include "../Core/Context.h"
 #include "../Graphics/DebugRenderer.h"
 #include "../Scene/Node.h"
 #include "../Resource/ResourceCache.h"
 #include "../Scene/Scene.h"
-#include "../Urho2D/TileMap2D.h"
-#include "../Urho2D/TileMapLayer2D.h"
-#include "../Urho2D/TmxFile2D.h"
 
 
 
@@ -42,9 +43,7 @@ TileMap2D::TileMap2D(Context* context) :
 {
 }
 
-TileMap2D::~TileMap2D()
-{
-}
+
 
 void TileMap2D::RegisterObject(Context* context)
 {
@@ -76,6 +75,13 @@ void TileMap2D::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
         break;
 
     case O_STAGGERED:
+        debug->AddLine(Vector2(0.0f, 0.0f), Vector2(mapW, 0.0f), color);
+        debug->AddLine(Vector2(mapW, 0.0f), Vector2(mapW, mapH), color);
+        debug->AddLine(Vector2(mapW, mapH), Vector2(0.0f, mapH), color);
+        debug->AddLine(Vector2(0.0f, mapH), Vector2(0.0f, 0.0f), color);
+        break;
+
+    case O_HEXAGONAL:
         debug->AddLine(Vector2(0.0f, 0.0f), Vector2(mapW, 0.0f), color);
         debug->AddLine(Vector2(mapW, 0.0f), Vector2(mapW, mapH), color);
         debug->AddLine(Vector2(mapW, mapH), Vector2(0.0f, mapH), color);

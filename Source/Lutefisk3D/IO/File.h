@@ -27,25 +27,9 @@
 #include "../IO/Serializer.h"
 #include "../Core/Object.h"
 
-#ifdef ANDROID
-#include <SDL/SDL_rwops.h>
-#endif
-
 namespace Urho3D
 {
 
-#ifdef ANDROID
-extern const char* APK;
-
-// Macro for checking if a given pathname is inside APK's assets directory
-#define URHO3D_IS_ASSET(p) p.StartsWith(APK)
-// Macro for truncating the APK prefix string from the asset pathname and at the same time patching the directory name components (see custom_rules.xml)
-#ifdef ASSET_DIR_INDICATOR
-#define URHO3D_ASSET(p) qPrintable(p.mid(5).replace("/", ASSET_DIR_INDICATOR "/"))
-#else
-#define URHO3D_ASSET(p) qPrintable(p.mid(5))
-#endif
-#endif
 /// File open mode.
 enum FileMode
 {
@@ -57,7 +41,7 @@ enum FileMode
 class PackageFile;
 
 /// %File opened either through the filesystem or from within a package file.
-class File : public Object, public Deserializer, public Serializer
+class URHO3D_API File : public Object, public Deserializer, public Serializer
 {
     URHO3D_OBJECT(File, Object);
 
@@ -103,16 +87,18 @@ public:
     bool IsPackaged() const { return offset_ != 0; }
 
 private:
+    /// Open file internally using either C standard IO functions or SDL RWops for Android asset files. Return true if successful.
+    bool OpenInternal(const QString& fileName, FileMode mode, bool fromPackage = false);
+    /// Perform the file read internally using either C standard IO functions or SDL RWops for Android asset files. Return true if successful. This does not handle compressed package file reading.
+    bool ReadInternal(void* dest, unsigned size);
+    /// Seek in file internally using either C standard IO functions or SDL RWops for Android asset files.
+    void SeekInternal(unsigned newPosition);
     /// File name.
     QString fileName_;
     /// Open mode.
     FileMode mode_;
     /// File handle.
     void* handle_;
-#ifdef ANDROID
-    /// SDL RWops context for Android asset loading.
-    SDL_RWops* assetHandle_;
-#endif
     /// Read buffer for Android asset or compressed file loading.
     SharedArrayPtr<uint8_t> readBuffer_;
     /// Decompression input buffer for compressed file loading.

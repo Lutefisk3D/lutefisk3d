@@ -31,7 +31,7 @@ namespace Urho3D
 class SoundStream;
 
 /// %Sound resource.
-class Sound : public Resource
+class URHO3D_API Sound : public Resource
 {
     URHO3D_OBJECT(Sound,Resource);
 

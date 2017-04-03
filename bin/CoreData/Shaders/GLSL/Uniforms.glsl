@@ -12,7 +12,6 @@ uniform vec3 cAmbientStartColor;
 uniform vec3 cAmbientEndColor;
 uniform mat3 cBillboardRot;
 uniform vec3 cCameraPos;
-uniform mat3 cCameraRot;
 uniform float cNearClip;
 uniform float cFarClip;
 uniform vec4 cDepthMode;
@@ -20,8 +19,9 @@ uniform vec3 cFrustumSize;
 uniform float cDeltaTime;
 uniform float cElapsedTime;
 uniform vec4 cGBufferOffsets;
-uniform vec3 cLightDir;
 uniform vec4 cLightPos;
+uniform vec3 cLightDir;
+uniform vec4 cNormalOffsetScale;
 uniform mat4 cModel;
 uniform mat4 cView;
 uniform mat4 cViewInv;
@@ -32,7 +32,7 @@ uniform mat4 cZone;
 #if !defined(GL_ES) || defined(WEBGL)
     uniform mat4 cLightMatrices[4];
 #else
-    uniform mat4 cLightMatrices[2];
+    uniform highp mat4 cLightMatrices[2];
 #endif
 #ifdef SKINNED
     uniform vec4 cSkinMatrices[MAXBONES*3];
@@ -52,7 +52,7 @@ uniform mat4 cZone;
     precision mediump float;
 #endif
 
-uniform vec3 cAmbientColor;
+uniform vec4 cAmbientColor;
 uniform vec3 cCameraPosPS;
 uniform float cDeltaTimePS;
 uniform vec4 cDepthReconstruct;
@@ -61,12 +61,17 @@ uniform vec4 cFogParams;
 uniform vec3 cFogColor;
 uniform vec2 cGBufferInvSize;
 uniform vec4 cLightColor;
-uniform vec3 cLightDirPS;
 uniform vec4 cLightPosPS;
+uniform vec3 cLightDirPS;
+uniform vec4 cNormalOffsetScalePS;
 uniform vec4 cMatDiffColor;
 uniform vec3 cMatEmissiveColor;
 uniform vec3 cMatEnvMapColor;
 uniform vec4 cMatSpecColor;
+#ifdef PBR
+    uniform float cRoughness;
+    uniform float cMetallic;
+#endif
 uniform float cNearClipPS;
 uniform float cFarClipPS;
 uniform vec4 cShadowCubeAdjust;
@@ -95,7 +100,6 @@ uniform FrameVS
 uniform CameraVS
 {
     vec3 cCameraPos;
-    mat3 cCameraRot;
     float cNearClip;
     float cFarClip;
     vec4 cDepthMode;
@@ -116,8 +120,9 @@ uniform ZoneVS
 
 uniform LightVS
 {
-    vec3 cLightDir;
     vec4 cLightPos;
+    vec3 cLightDir;
+    vec4 cNormalOffsetScale;
 #ifdef NUMVERTEXLIGHTS
     vec4 cVertexLights[4 * 3];
 #else
@@ -166,7 +171,7 @@ uniform CameraPS
 
 uniform ZonePS
 {
-    vec3 cAmbientColor;
+    vec4 cAmbientColor;
     vec4 cFogParams;
     vec3 cFogColor;
 };
@@ -176,6 +181,7 @@ uniform LightPS
     vec4 cLightColor;
     vec4 cLightPosPS;
     vec3 cLightDirPS;
+    vec4 cNormalOffsetScalePS;
     vec4 cShadowCubeAdjust;
     vec4 cShadowDepthFade;
     vec2 cShadowIntensity;
@@ -194,6 +200,10 @@ uniform MaterialPS
     vec3 cMatEmissiveColor;
     vec3 cMatEnvMapColor;
     vec4 cMatSpecColor;
+    #ifdef PBR
+        float cRoughness;
+        float cMetallic;
+    #endif
 };
 #endif
 

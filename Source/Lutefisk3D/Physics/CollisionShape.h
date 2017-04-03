@@ -126,7 +126,7 @@ struct HeightfieldData : public CollisionGeometryData
 };
 
 /// Physics collision shape component.
-class CollisionShape : public Component
+class URHO3D_API CollisionShape : public Component
 {
     URHO3D_OBJECT(CollisionShape,Component);
 
@@ -225,6 +225,14 @@ protected:
     virtual void OnSceneSet(Scene* scene) override;
     /// Handle node transform being dirtied.
     virtual void OnMarkedDirty(Node* node) override;
+    /**
+     * Called when instantiating a collision shape that is not one of ShapeType (default no-op).
+     *
+     * Useful for custom shape types that subclass CollisionShape and use a non-standard underlying
+     * btCollisionShape. UpdateDerivedShape can then be overridden to create the required
+     * btCollisionShape subclass.
+     */
+    virtual btCollisionShape* UpdateDerivedShape(int shapeType, const Vector3& newWorldScale);
 
 private:
     /// Find the parent rigid body component and return its compound collision shape.

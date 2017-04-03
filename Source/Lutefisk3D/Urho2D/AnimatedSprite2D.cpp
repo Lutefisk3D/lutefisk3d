@@ -51,12 +51,12 @@ const char* loopModeNames[] =
 
 AnimatedSprite2D::AnimatedSprite2D(Context* context) :
     StaticSprite2D(context),
-#ifdef URHO3D_SPINE
+    #ifdef LUTEFISK3D_SPINE
     skeleton_(0),
     animationStateData_(0),
     animationState_(0),
-#endif
-    spriterInstance_(0),
+    #endif
+    spriterInstance_(nullptr),
     speed_(1.0f),
     loopMode_(LM_DEFAULT)
 {
@@ -96,13 +96,13 @@ void AnimatedSprite2D::OnSetEnabled()
 }
 
 void AnimatedSprite2D::SetAnimationSet(AnimationSet2D* animationSet)
-    {
-    if (animationSet == animationSet_) 
+{
+    if (animationSet == animationSet_)
         return;
 
     Dispose();
 
-    animationSet_ = animationSet;    
+    animationSet_ = animationSet;
     if (!animationSet_)
         return;
 
@@ -110,7 +110,7 @@ void AnimatedSprite2D::SetAnimationSet(AnimationSet2D* animationSet)
 
 #ifdef LUTEFISK3D_SPINE
     if (animationSet_->GetSkeletonData())
-{
+    {
         spSkeletonData* skeletonData = animationSet->GetSkeletonData();
 
         // Create skeleton
@@ -119,7 +119,7 @@ void AnimatedSprite2D::SetAnimationSet(AnimationSet2D* animationSet)
         skeleton_->flipY = flipY_;
 
         if (skeleton_->data->skinsCount > 0)
-{
+        {
             // If entity is empty use first skin in spine
             if (entity_.Empty())
                 entity_ = skeleton_->data->skins[0]->name;
@@ -127,14 +127,14 @@ void AnimatedSprite2D::SetAnimationSet(AnimationSet2D* animationSet)
         }
 
         spSkeleton_updateWorldTransform(skeleton_);
-}
+    }
 #endif
     if (animationSet_->GetSpriterData())
     {
-        spriterInstance_ = new Spriter::SpriterInstance(animationSet_->GetSpriterData());
+        spriterInstance_ = new Spriter::SpriterInstance(this, animationSet_->GetSpriterData());
 
         if (!animationSet_->GetSpriterData()->entities_.empty())
-{
+        {
             // If entity is empty use first entity in spriter
             if (entity_.isEmpty())
                 entity_ = animationSet_->GetSpriterData()->entities_[0]->name_;
@@ -172,14 +172,14 @@ void AnimatedSprite2D::SetAnimation(const QString& name, LoopMode2D loopMode)
 
 #ifdef LUTEFISK3D_SPINE
     if (skeleton_)
-        SetSpineAnimation();    
+        SetSpineAnimation();
 #endif
     if (spriterInstance_)
         SetSpriterAnimation();
 }
 
 void AnimatedSprite2D::SetLoopMode(LoopMode2D loopMode)
-    {
+{
     loopMode_ = loopMode;
 }
 
@@ -237,7 +237,7 @@ void AnimatedSprite2D::UpdateSourceBatches()
     if (spriterInstance_ && spriterInstance_->GetAnimation())
         UpdateSourceBatchesSpriter();
 
-    sourceBatchesDirty_ = false;   
+    sourceBatchesDirty_ = false;
 }
 
 void AnimatedSprite2D::HandleScenePostUpdate(StringHash eventType, VariantMap& eventData)
@@ -245,7 +245,7 @@ void AnimatedSprite2D::HandleScenePostUpdate(StringHash eventType, VariantMap& e
     using namespace ScenePostUpdate;
     float timeStep = eventData[P_TIMESTEP].GetFloat();
     UpdateAnimation(timeStep);
-    }
+}
 
 void AnimatedSprite2D::UpdateAnimation(float timeStep)
 {
@@ -267,15 +267,15 @@ void AnimatedSprite2D::SetSpineAnimation()
         {
             URHO3D_LOGERROR("Create animation state data failed");
             return;
+        }
     }
-}
 
 
     if (!animationState_)
-{
+    {
         animationState_ = spAnimationState_create(animationStateData_);
         if (!animationState_)
-    {
+        {
             URHO3D_LOGERROR("Create animation state failed");
             return;
         }
@@ -295,17 +295,17 @@ void AnimatedSprite2D::UpdateSpineAnimation(float timeStep)
     skeleton_->flipX = flipX_;
     skeleton_->flipY = flipY_;
 
-    spSkeleton_update(skeleton_, timeStep); 
+    spSkeleton_update(skeleton_, timeStep);
     spAnimationState_update(animationState_, timeStep);
     spAnimationState_apply(animationState_, skeleton_);
     spSkeleton_updateWorldTransform(skeleton_);
 
     sourceBatchesDirty_ = true;
     worldBoundingBoxDirty_ = true;
-    }
+}
 
 void AnimatedSprite2D::UpdateSourceBatchesSpine()
-    {
+{
     const Matrix3x4& worldTransform = GetNode()->GetWorldTransform();
 
     SourceBatch2D& sourceBatch = sourceBatches_[0];
@@ -321,13 +321,13 @@ void AnimatedSprite2D::UpdateSourceBatchesSpine()
         if (!attachment)
             continue;
 
-        unsigned color = Color(color_.r_ * slot->r, 
-            color_.g_ * slot->g, 
-            color_.b_ * slot->b, 
-            color_.a_ * slot->a).ToUInt();
+        unsigned color = Color(color_.r_ * slot->r,
+                               color_.g_ * slot->g,
+                               color_.b_ * slot->b,
+                               color_.a_ * slot->a).ToUInt();
 
         if (attachment->type == SP_ATTACHMENT_REGION)
-    {
+        {
             spRegionAttachment* region = (spRegionAttachment*)attachment;
             spRegionAttachment_computeWorldVertices(region, slot->bone, slotVertices);
 
@@ -395,7 +395,7 @@ void AnimatedSprite2D::UpdateSourceBatchesSpine()
                 // Add padding vertex
                 if (j % 3 == 2)
                     sourceBatches_[0].vertices_.push_back(vertex);
-}
+            }
         }
     }
 }
@@ -404,7 +404,7 @@ void AnimatedSprite2D::UpdateSourceBatchesSpine()
 void AnimatedSprite2D::SetSpriterAnimation()
 {
     if (!spriterInstance_)
-        spriterInstance_ = new Spriter::SpriterInstance(animationSet_->GetSpriterData());
+        spriterInstance_ = new Spriter::SpriterInstance(this,animationSet_->GetSpriterData());
 
     // Use entity is empty first entity
     if (entity_.isEmpty())
@@ -427,14 +427,14 @@ void AnimatedSprite2D::SetSpriterAnimation()
 }
 
 void AnimatedSprite2D::UpdateSpriterAnimation(float timeStep)
-        {
+{
     spriterInstance_->Update(timeStep * speed_);
     sourceBatchesDirty_ = true;
     worldBoundingBoxDirty_ = true;
-            }
+}
 
 void AnimatedSprite2D::UpdateSourceBatchesSpriter()
-            {
+{
     const Matrix3x4& nodeWorldTransform = GetNode()->GetWorldTransform();
 
     std::vector<Vertex2D>& vertices = sourceBatches_[0].vertices_;
@@ -450,27 +450,27 @@ void AnimatedSprite2D::UpdateSourceBatchesSpriter()
     Vertex2D vertex3;
 
     const std::vector<Spriter::SpatialTimelineKey*>& timelineKeys = spriterInstance_->GetTimelineKeys();
-    for (size_t i = 0; i < timelineKeys.size(); ++i)
+    for (auto key : timelineKeys)
     {
-        if (timelineKeys[i]->GetObjectType() != Spriter::SPRITE)
+        if (key->GetObjectType() != Spriter::SPRITE)
             continue;
 
-        Spriter::SpriteTimelineKey* timelineKey = (Spriter::SpriteTimelineKey*)timelineKeys[i];
+        Spriter::SpriteTimelineKey* timelineKey = (Spriter::SpriteTimelineKey*)key;
 
-        Spriter::SpatialInfo& info = timelineKey->info_;        
+        Spriter::SpatialInfo& info = timelineKey->info_;
         Vector3 position(info.x_, info.y_, 0.0f);
-            if (flipX_)
-                position.x_ = -position.x_;
-            if (flipY_)
-                position.y_ = -position.y_;
+        if (flipX_)
+            position.x_ = -position.x_;
+        if (flipY_)
+            position.y_ = -position.y_;
 
         float angle = info.angle_;
-            if (flipX_ != flipY_)
-                angle = -angle;
+        if (flipX_ != flipY_)
+            angle = -angle;
 
-        Matrix3x4 localTransform(position * PIXEL_SIZE, 
-            Quaternion(angle), 
-            Vector3(info.scaleX_, info.scaleY_, 1.0f));
+        Matrix3x4 localTransform(position * PIXEL_SIZE,
+                                 Quaternion(angle),
+                                 Vector3(info.scaleX_, info.scaleY_, 1.0f));
 
         Matrix3x4 worldTransform = nodeWorldTransform * localTransform;
         Sprite2D* sprite = animationSet_->GetSpriterFileSprite(timelineKey->folderId_, timelineKey->fileId_);
@@ -483,7 +483,7 @@ void AnimatedSprite2D::UpdateSourceBatchesSpriter()
             sprite->GetDrawRectangle(drawRect, Vector2(timelineKey->pivotX_, timelineKey->pivotY_), flipX_, flipY_);
 
         if (!sprite->GetTextureRectangle(textureRect, flipX_, flipY_))
-        return;
+            return;
 
         vertex0.position_ = worldTransform * Vector3(drawRect.min_.x_, drawRect.min_.y_, 0.0f);
         vertex1.position_ = worldTransform * Vector3(drawRect.min_.x_, drawRect.max_.y_, 0.0f);
@@ -505,7 +505,7 @@ void AnimatedSprite2D::UpdateSourceBatchesSpriter()
 }
 
 void AnimatedSprite2D::Dispose()
-    {
+{
 #ifdef LUTEFISK3D_SPINE
     if (animationState_)
     {
@@ -516,10 +516,10 @@ void AnimatedSprite2D::Dispose()
     {
         spAnimationStateData_dispose(animationStateData_);
         animationStateData_ = 0;
-}
+    }
 
     if (skeleton_)
-{
+    {
         spSkeleton_dispose(skeleton_);
         skeleton_ = 0;
     }
@@ -527,7 +527,7 @@ void AnimatedSprite2D::Dispose()
     if (spriterInstance_)
     {
         delete spriterInstance_;
-        spriterInstance_ = 0;
+        spriterInstance_ = nullptr;
     }
 }
 

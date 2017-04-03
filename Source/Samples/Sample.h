@@ -68,7 +68,7 @@ public:
 
 protected:
     /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
-    virtual QString GetScreenJoystickPatchString() const { return QString::null; }
+    virtual QString GetScreenJoystickPatchString() const { return QString(); }
     /// Initialize touch input on mobile platform.
     void InitTouchInput();
     /// Initialize mouse mode on non-web platform.

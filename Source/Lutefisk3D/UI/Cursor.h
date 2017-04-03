@@ -27,8 +27,7 @@
 #include "../Graphics/Texture.h"
 #include "../Container/HashMap.h"
 
-#include <SDL2/SDL_mouse.h>
-
+struct SDL_Cursor;
 namespace Urho3D
 {
 

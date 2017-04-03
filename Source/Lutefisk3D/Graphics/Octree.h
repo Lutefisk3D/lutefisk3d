@@ -36,7 +36,7 @@ static const int NUM_OCTANTS = 8;
 static const unsigned ROOT_INDEX = M_MAX_UNSIGNED;
 
 /// %Octree octant
-class Octant
+class URHO3D_API Octant
 {
 public:
     /// Construct.
@@ -153,7 +153,7 @@ protected:
 };
 
 /// %Octree component. Should be added only to the root scene node
-class Octree : public Component, public Octant
+class URHO3D_API Octree : public Component, public Octant
 {
     friend void RaycastDrawablesWork(const WorkItem* item, unsigned threadIndex);
 
@@ -201,10 +201,10 @@ private:
     /// Handle render update in case of headless execution.
     void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
 
-    /// Drawable objects that were inserted during threaded update phase.
-    std::vector<Drawable*> threadedDrawableUpdates_;
     /// Drawable objects that require update.
     std::vector<Drawable*> drawableUpdates_;
+    /// Drawable objects that were inserted during threaded update phase.
+    std::vector<Drawable*> threadedDrawableUpdates_;
     /// Mutex for octree reinsertions.
     Mutex octreeMutex_;
     /// Ray query temporary list of drawables.

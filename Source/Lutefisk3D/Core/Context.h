@@ -32,11 +32,53 @@
 namespace Urho3D
 {
 
+/// Tracking structure for event receivers.
+class URHO3D_API EventReceiverGroup : public RefCounted
+{
+public:
+    /// Construct.
+    EventReceiverGroup() :
+        inSend_(0),
+        dirty_(false)
+    {
+    }
+
+    /// Begin event send. When receivers are removed during send, group has to be cleaned up afterward.
+    void BeginSendEvent();
+
+    /// End event send. Clean up if necessary.
+    void EndSendEvent();
+
+    /// Add receiver. Same receiver must not be double-added!
+    void Add(Object* object);
+
+    /// Remove receiver. Leave holes during send, which requires later cleanup.
+    void Remove(Object* object);
+
+    /// Receivers. May contain holes during sending.
+    std::vector<Object*> receivers_;
+
+private:
+    /// "In send" recursion counter.
+    unsigned inSend_;
+    /// Cleanup required flag.
+    bool dirty_;
+};
+class EventReceiverGroup_Guard {
+    EventReceiverGroup &m_guarded;
+public:
+    EventReceiverGroup_Guard(EventReceiverGroup & guarded) : m_guarded(guarded) {
+        m_guarded.BeginSendEvent();
+    }
+    ~EventReceiverGroup_Guard() {
+        m_guarded.EndSendEvent();
+    }
+};
 /// Urho3D execution context. Provides access to subsystems, object factories and attributes, and event receivers.
-class Context : public RefCounted
+class URHO3D_API Context : public RefCounted
 {
     friend class Object;
-
+    friend class Context_EventGuard;
 public:
     /// Construct.
     Context();
@@ -128,23 +170,23 @@ public:
     const HashMap<StringHash, std::vector<AttributeInfo> >& GetAllAttributes() const { return attributes_; }
 
     /// Return event receivers for a sender and event type, or null if they do not exist.
-    HashSet<Object*>* GetEventReceivers(Object* sender, StringHash eventType)
+    EventReceiverGroup* GetEventReceivers(Object* sender, StringHash eventType)
     {
-        HashMap<Object*, HashMap<StringHash, HashSet<Object*> > >::iterator i = specificEventReceivers_.find(sender);
+        auto i = specificEventReceivers_.find(sender);
         if (i != specificEventReceivers_.end())
         {
-            HashMap<StringHash, HashSet<Object*> >::iterator j = MAP_VALUE(i).find(eventType);
-            return j != MAP_VALUE(i).end() ? &MAP_VALUE(j) : nullptr;
+            auto j = MAP_VALUE(i).find(eventType);
+            return j != MAP_VALUE(i).end() ? MAP_VALUE(j) : nullptr;
         }
         else
             return nullptr;
     }
 
     /// Return event receivers for an event type, or null if they do not exist.
-    HashSet<Object*>* GetEventReceivers(StringHash eventType)
+    EventReceiverGroup* GetEventReceivers(StringHash eventType)
     {
-        HashMap<StringHash, HashSet<Object*> >::iterator i = eventReceivers_.find(eventType);
-        return i != eventReceivers_.end() ? &MAP_VALUE(i) : nullptr;
+        auto i = eventReceivers_.find(eventType);
+        return i != eventReceivers_.end() ? MAP_VALUE(i) : nullptr;
     }
 
 private:
@@ -158,12 +200,12 @@ private:
     void RemoveEventReceiver(Object* receiver, Object* sender, StringHash eventType);
     /// Remove event receiver from non-specific events.
     void RemoveEventReceiver(Object* receiver, StringHash eventType);
+    /// Begin event send.
+    void BeginSendEvent(Object* sender, StringHash eventType);
+    /// End event send. Clean up event receivers removed in the meanwhile.
+    void EndSendEvent();
     /// Set current event handler. Called by Object.
     void SetEventHandler(EventHandler* handler) { eventHandler_ = handler; }
-    /// Begin event send.
-    void BeginSendEvent(Object* sender) { eventSenders_.push_back(sender); }
-    /// End event send. Clean up event receivers removed in the meanwhile.
-    void EndSendEvent() { eventSenders_.pop_back(); }
 
     /// Object factories.
     HashMap<StringHash, SharedPtr<ObjectFactory> > factories_;
@@ -174,9 +216,9 @@ private:
     /// Network replication attribute descriptions per object type.
     HashMap<StringHash, std::vector<AttributeInfo> > networkAttributes_;
     /// Event receivers for non-specific events.
-    HashMap<StringHash, HashSet<Object*> > eventReceivers_;
+    HashMap<StringHash, SharedPtr<EventReceiverGroup> > eventReceivers_;
     /// Event receivers for specific senders' events.
-    HashMap<Object*, HashMap<StringHash, HashSet<Object*> > > specificEventReceivers_;
+    HashMap<Object*, HashMap<StringHash, SharedPtr<EventReceiverGroup> > > specificEventReceivers_;
     /// Event sender stack.
     std::vector<Object*> eventSenders_;
     /// Event data stack.
@@ -189,6 +231,16 @@ private:
     VariantMap globalVars_;
 };
 
+class Context_EventGuard {
+    Context &m_guarded;
+public:
+    Context_EventGuard(Context & guarded,Object *ob,StringHash etype) : m_guarded(guarded) {
+        m_guarded.BeginSendEvent(ob,etype);
+    }
+    ~Context_EventGuard() {
+        m_guarded.EndSendEvent();
+    }
+};
 template <class T> void Context::RegisterFactory() { RegisterFactory(new ObjectFactoryImpl<T>(this)); }
 template <class T> void Context::RegisterFactory(const char* category) { RegisterFactory(new ObjectFactoryImpl<T>(this), category); }
 template <class T> void Context::RemoveSubsystem() { RemoveSubsystem(T::GetTypeStatic()); }

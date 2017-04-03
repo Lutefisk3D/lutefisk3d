@@ -40,20 +40,21 @@ namespace Urho3D
 
 Node::Node(Context* context) :
     Animatable(context),
-    networkUpdate_(false),
     worldTransform_(Matrix3x4::IDENTITY),
     dirty_(false),
     enabled_(true),
     enabledPrev_(true),
+    networkUpdate_(false),
     parent_(nullptr),
     scene_(nullptr),
     id_(0),
     position_(Vector3::ZERO),
     rotation_(Quaternion::IDENTITY),
     scale_(Vector3::ONE),
-    worldRotation_(Quaternion::IDENTITY),
-    owner_(nullptr)
+    worldRotation_(Quaternion::IDENTITY)
 {
+    impl_ = new NodeImpl();
+    impl_->owner_ = 0;
 }
 
 Node::~Node()
@@ -64,6 +65,7 @@ Node::~Node()
     // Remove from the scene
     if (scene_ != nullptr)
         scene_->NodeRemoved(this);
+    delete impl_;
 }
 
 void Node::RegisterObject(Context* context)
@@ -308,10 +310,10 @@ bool Node::SaveJSON(Serializer& dest, const QString& indentation) const
 
 void Node::SetName(const QString& name)
 {
-    if (name != name_)
+    if (name != impl_->name_)
     {
-        name_ = name;
-        nameHash_ = name_;
+        impl_->name_ = name;
+        impl_->nameHash_ = name;
 
         MarkNetworkUpdate();
 
@@ -343,7 +345,7 @@ void Node::AddTag(const QString & tag)
         return;
 
     // Add tag
-    tags_.push_back(tag);
+    impl_->tags_.push_back(tag);
 
     // Cache
     scene_->NodeTagAdded(this, tag);
@@ -375,7 +377,7 @@ void Node::AddTags(const QStringList& tags)
 
 bool Node::RemoveTag(const QString & tag)
 {
-    bool removed = tags_.removeAll(tag) != 0;
+    bool removed = impl_->tags_.removeAll(tag) != 0;
 
     // Nothing to do
     if (!removed)
@@ -404,21 +406,21 @@ void Node::RemoveAllTags()
     // Clear old scene cache
     if (scene_ != nullptr)
     {
-        for (unsigned i = 0; i < tags_.size(); ++i)
+        for (unsigned i = 0; i < impl_->tags_.size(); ++i)
         {
-            scene_->NodeTagRemoved(this, tags_[i]);
+            scene_->NodeTagRemoved(this, impl_->tags_[i]);
 
             // Send event
             using namespace NodeTagRemoved;
             VariantMap& eventData = GetEventDataMap();
             eventData[P_SCENE] = scene_;
             eventData[P_NODE] = this;
-            eventData[P_TAG] = tags_[i];
+            eventData[P_TAG] = impl_->tags_[i];
             scene_->SendEvent(E_NODETAGREMOVED, eventData);
         }
     }
 
-    tags_.clear();
+    impl_->tags_.clear();
 
     // Sync
     MarkNetworkUpdate();
@@ -711,7 +713,7 @@ void Node::SetEnabledRecursive(bool enable)
 
 void Node::SetOwner(Connection* owner)
 {
-    owner_ = owner;
+    impl_->owner_ = owner;
 }
 
 void Node::MarkDirty()
@@ -820,6 +822,9 @@ void Node::AddChild(Node* node, unsigned index)
     node->parent_ = this;
     node->MarkDirty();
     node->MarkNetworkUpdate();
+    // If the child node has components, also mark network update on them to ensure they have a valid NetworkState
+    for (std::vector<SharedPtr<Component> >::iterator i = node->components_.begin(); i != node->components_.end(); ++i)
+        (*i)->MarkNetworkUpdate();
 
     // Send change event
     if (scene_ != nullptr)
@@ -956,7 +961,10 @@ Component* Node::CloneComponent(Component* component, CreateMode mode, unsigned 
         }
         cloneComponent->ApplyAttributes();
     }
-
+    {
+        using namespace ComponentCloned;
+        scene_->SendEvent(E_COMPONENTCLONED, P_SCENE,scene_,P_COMPONENT,component,P_CLONECOMPONENT,cloneComponent);
+    }
     return cloneComponent;
 }
 
@@ -1037,6 +1045,23 @@ void Node::RemoveComponents(StringHash type)
 void Node::RemoveAllComponents()
 {
     RemoveComponents(true, true);
+}
+void Node::ReorderComponent(Component* component, unsigned index)
+{
+    if (nullptr==component || component->GetNode() != this)
+        return;
+
+    for (std::vector<SharedPtr<Component> >::iterator i = components_.begin(); i != components_.end(); ++i)
+    {
+        if (*i == component)
+        {
+            // Need shared ptr to insert. Also, prevent destruction when removing first
+            SharedPtr<Component> componentShared(component);
+            components_.erase(i);
+            components_.insert(components_.begin()+index, componentShared);
+            return;
+        }
+    }
 }
 Node* Node::Clone(CreateMode mode)
 {
@@ -1282,7 +1307,7 @@ bool Node::HasComponent(StringHash type) const
 
 bool Node::HasTag(const QString & tag) const
 {
-    return tags_.contains(tag);
+    return impl_->tags_.contains(tag);
 }
 
 const Variant& Node::GetVar(StringHash key) const
@@ -1408,21 +1433,21 @@ const Vector3& Node::GetNetPositionAttr() const
 
 const std::vector<unsigned char>& Node::GetNetRotationAttr() const
 {
-    attrBuffer_.clear();
-    attrBuffer_.WritePackedQuaternion(rotation_);
-    return attrBuffer_.GetBuffer();
+    impl_->attrBuffer_.clear();
+    impl_->attrBuffer_.WritePackedQuaternion(rotation_);
+    return impl_->attrBuffer_.GetBuffer();
 }
 
 const std::vector<unsigned char>& Node::GetNetParentAttr() const
 {
-    attrBuffer_.clear();
+    impl_->attrBuffer_.clear();
     Scene* scene = GetScene();
     if ((scene != nullptr) && (parent_ != nullptr) && parent_ != scene)
     {
         // If parent is replicated, can write the ID directly
         unsigned parentID = parent_->GetID();
         if (parentID < FIRST_LOCAL_ID)
-            attrBuffer_.WriteNetID(parentID);
+            impl_->attrBuffer_.WriteNetID(parentID);
         else
         {
             // Parent is local: traverse hierarchy to find a non-local base node
@@ -1432,12 +1457,12 @@ const std::vector<unsigned char>& Node::GetNetParentAttr() const
                 current = current->GetParent();
 
             // Then write the base node ID and the parent's name hash
-            attrBuffer_.WriteNetID(current->GetID());
-            attrBuffer_.WriteStringHash(parent_->GetNameHash());
+            impl_->attrBuffer_.WriteNetID(current->GetID());
+            impl_->attrBuffer_.WriteStringHash(parent_->GetNameHash());
         }
     }
 
-    return attrBuffer_.GetBuffer();
+    return impl_->attrBuffer_.GetBuffer();
 }
 
 bool Node::Load(Deserializer& source, SceneResolver& resolver, bool readChildren, bool rewriteIDs, CreateMode mode)
@@ -1457,7 +1482,7 @@ bool Node::Load(Deserializer& source, SceneResolver& resolver, bool readChildren
         StringHash compType = compBuffer.ReadStringHash();
         unsigned compID = compBuffer.ReadUInt();
 
-        Component* newComponent = SafeCreateComponent(QString::null, compType,
+        Component* newComponent = SafeCreateComponent(QString(), compType,
                                                       (mode == REPLICATED && compID < FIRST_LOCAL_ID) ? REPLICATED : LOCAL, rewriteIDs ? 0 : compID);
         if (newComponent != nullptr)
         {
@@ -1577,7 +1602,7 @@ bool Node::LoadJSON(const JSONValue& source, SceneResolver& resolver, bool loadC
 void Node::PrepareNetworkUpdate()
 {
     // Update dependency nodes list first
-    dependencyNodes_.clear();
+    impl_->dependencyNodes_.clear();
 
     // Add the parent node, but if it is local, traverse to the first non-local node
     if ((parent_ != nullptr) && parent_ != scene_)
@@ -1586,7 +1611,7 @@ void Node::PrepareNetworkUpdate()
         while (current->id_ >= FIRST_LOCAL_ID)
             current = current->parent_;
         if ((current != nullptr) && current != scene_)
-            dependencyNodes_.push_back(current);
+           impl_->dependencyNodes_.push_back(current);
     }
 
     // Let the components add their dependencies
@@ -1594,7 +1619,7 @@ void Node::PrepareNetworkUpdate()
     {
         Component* component = *i;
         if (component->GetID() < FIRST_LOCAL_ID)
-            component->GetDependencyNodes(dependencyNodes_);
+            component->GetDependencyNodes(impl_->dependencyNodes_);
     }
 
     // Then check for node attribute changes
@@ -1604,15 +1629,6 @@ void Node::PrepareNetworkUpdate()
     const std::vector<AttributeInfo>* attributes = networkState_->attributes_;
     unsigned numAttributes = attributes->size();
 
-    if (networkState_->currentValues_.size() != numAttributes)
-    {
-        networkState_->currentValues_.resize(numAttributes);
-        networkState_->previousValues_.resize(numAttributes);
-
-        // Copy the default attribute values to the previous state as a starting point
-        for (unsigned i = 0; i < numAttributes; ++i)
-            networkState_->previousValues_[i] = attributes->at(i).defaultValue_;
-    }
 
     // Check for attribute changes
     for (unsigned i = 0; i < numAttributes; ++i)
@@ -1671,8 +1687,8 @@ void Node::PrepareNetworkUpdate()
 
 void Node::CleanupConnection(Connection* connection)
 {
-    if (owner_ == connection)
-        owner_ = nullptr;
+    if (impl_->owner_ == connection)
+        impl_->owner_ = nullptr;
 
     if (networkState_ == nullptr)
         return;
@@ -2101,7 +2117,10 @@ Node* Node::CloneRecursive(Node* parent, SceneResolver& resolver, CreateMode mod
 
         node->CloneRecursive(cloneNode, resolver, mode);
     }
-
+    {
+        using namespace NodeCloned;
+        scene_->SendEvent(E_NODECLONED, P_SCENE,scene_,P_NODE,this,P_CLONENODE,cloneNode);
+    }
     return cloneNode;
 }
 

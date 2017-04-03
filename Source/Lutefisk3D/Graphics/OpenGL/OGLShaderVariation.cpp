@@ -20,30 +20,31 @@
 // THE SOFTWARE.
 //
 
+#include "../../Graphics/ShaderVariation.h"
+
 #include "../../Graphics/Graphics.h"
 #include "../../Graphics/GraphicsImpl.h"
 #include "../../IO/Log.h"
 #include "../../Graphics/Shader.h"
 #include "../../Graphics/ShaderProgram.h"
-#include "../../Graphics/ShaderVariation.h"
 #include <QString>
 #include <QDebug>
 using namespace gl;
 
 namespace Urho3D
 {
-
-ShaderVariation::ShaderVariation(Shader* owner, ShaderType type) :
-    GPUObject(owner->GetSubsystem<Graphics>()),
-    owner_(owner),
-    type_(type)
+const char* ShaderVariation::elementSemanticNames[] =
 {
-}
-
-ShaderVariation::~ShaderVariation()
-{
-    Release();
-}
+    "POS",
+    "NORMAL",
+    "BINORMAL",
+    "TANGENT",
+    "TEXCOORD",
+    "COLOR",
+    "BLENDWEIGHT",
+    "BLENDINDICES",
+    "OBJECTINDEX"
+};
 
 void ShaderVariation::OnDeviceLost()
 {
@@ -124,7 +125,7 @@ bool ShaderVariation::Create()
         }
     }
     // Force GLSL version 150 if no version define and GL3 is being used
-    if (!verEnd && Graphics::GetGL3Support())
+    if (!verEnd)
         shaderCode += "#version 150\n";
 
     // Distinguish between VS and PS compile in case the shader code wants to include/omit different things
@@ -138,7 +139,6 @@ bool ShaderVariation::Create()
     {
         // Add extra space for the checking code below
         QString defineString = "#define " + defineVec[i].replace('=', ' ') + " \n";
-        assert(defineString.size()>QLatin1String("#define ").size());
         shaderCode += defineString;
 
         // In debug mode, check that all defines are referenced by the shader code
@@ -149,12 +149,7 @@ bool ShaderVariation::Create()
         #endif
     }
 
-    #ifdef RPI
-    if (type_ == VS)
-        shaderCode += "#define RPI\n";
-    #endif
-    if (Graphics::GetGL3Support())
-        shaderCode += "#define GL3\n";
+    shaderCode += "#define GL3\n";
 
     // When version define found, do not insert it a second time
     if (verEnd > 0)
@@ -184,19 +179,9 @@ bool ShaderVariation::Create()
     return object_ != 0;
 }
 
-void ShaderVariation::SetName(const QString& name)
-{
-    name_ = name;
-}
-
 void ShaderVariation::SetDefines(const QString& defines)
 {
-    defines_ = defines.trimmed();
-}
-
-Shader* ShaderVariation::GetOwner() const
-{
-    return owner_;
+    defines_ = defines;
 }
 
 }

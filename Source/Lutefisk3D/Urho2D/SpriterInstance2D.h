@@ -28,6 +28,8 @@
 namespace Urho3D
 {
 
+class Component;
+
 namespace Spriter
 {
 
@@ -44,7 +46,7 @@ class SpriterInstance
 {
 public:
     /// Constructor with spriter data.
-    SpriterInstance(SpriterData* spriteData);
+    SpriterInstance(Component* owner, SpriterData* spriteData);
     /// Destructor.
     ~SpriterInstance();
 
@@ -65,7 +67,7 @@ public:
 
     /// Return current entity.
     Entity* GetEntity() const { return entity_; }
-    // Return current animation.
+    /// Return current animation.
     Animation* GetAnimation() const { return animation_; }
     /// Return root spatial info.
     const SpatialInfo& GetSpatialInfo() const { return spatialInfo_; }
@@ -86,6 +88,8 @@ private:
     /// Clear mainline key and timeline keys.
     void Clear();
 
+    /// Parent component.
+    Component* owner_;
     /// Spriter data.
     SpriterData* spriterData_;
     /// Current entity.

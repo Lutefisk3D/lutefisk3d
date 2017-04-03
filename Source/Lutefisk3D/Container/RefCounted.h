@@ -21,6 +21,7 @@
 //
 
 #pragma once
+#include "../Core/Lutefisk3D.h"
 
 namespace Urho3D
 {
@@ -50,7 +51,7 @@ struct RefCount
 };
 
 /// Base class for intrusively reference-counted objects. These are noncopyable and non-assignable.
-class RefCounted
+class URHO3D_API RefCounted
 {
 public:
     /// Construct. Allocate the reference count structure and set an initial self weak reference.

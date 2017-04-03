@@ -70,7 +70,7 @@ struct StoredLogMessage
 };
 
 /// Logging subsystem.
-class Log : public Object
+class URHO3D_API Log : public Object
 {
     URHO3D_OBJECT(Log, Object);
 

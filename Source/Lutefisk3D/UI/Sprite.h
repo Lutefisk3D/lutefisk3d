@@ -48,7 +48,11 @@ public:
     /// Return UI rendering batches.
     virtual void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor) override;
     /// React to position change.
-    virtual void OnPositionSet() override;
+    virtual void OnPositionSet(const IntVector2& newPosition) override;
+    /// Convert screen coordinates to element coordinates.
+    virtual IntVector2 ScreenToElement(const IntVector2& screenPosition) override;
+    /// Convert element coordinates to screen coordinates.
+    virtual IntVector2 ElementToScreen(const IntVector2& position) override;
 
     /// Set floating point position.
     void SetPosition(const Vector2& position);

@@ -32,7 +32,7 @@ namespace Urho3D
 class Engine;
 
 /// Base class for creating applications which initialize the Urho3D engine and run a main loop until exited.
-class Application : public Object
+class URHO3D_API Application : public Object
 {
     URHO3D_OBJECT(Application,Object);
 
@@ -50,7 +50,7 @@ public:
     /// Initialize the engine and run the main loop, then return the application exit code. Catch out-of-memory exceptions while running.
     int Run();
     /// Show an error message (last log message if empty), terminate the main loop, and set failure exit code.
-    void ErrorExit(const QString& message = QString::null);
+    void ErrorExit(const QString& message = QString());
 
 protected:
     /// Handle log message.
@@ -67,7 +67,6 @@ protected:
 };
 
 // Macro for defining a main function which creates a Context and the application, then runs it
-#ifndef IOS
 #define URHO3D_DEFINE_APPLICATION_MAIN(className) \
 int RunApplication() \
 { \
@@ -76,16 +75,5 @@ int RunApplication() \
     return application->Run(); \
 } \
 URHO3D_DEFINE_MAIN(RunApplication());
-#else
-// On iOS we will let this function exit, so do not hold the context and application in SharedPtr's
-#define URHO3D_DEFINE_APPLICATION_MAIN(className) \
-int RunApplication() \
-{ \
-    Urho3D::Context* context = new Urho3D::Context(); \
-    className* application = new className(context); \
-    return application->Run(); \
-} \
-URHO3D_DEFINE_MAIN(RunApplication());
-#endif
 
 }

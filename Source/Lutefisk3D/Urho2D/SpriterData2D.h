@@ -53,7 +53,7 @@ struct TimelineKey;
 /// Spriter data.
 struct SpriterData
 {
-    SpriterData();
+    SpriterData() = default;
     ~SpriterData();
 
     void Reset();
@@ -70,7 +70,7 @@ struct SpriterData
 /// Folder.
 struct Folder
 {
-    Folder();
+    Folder() = default;
     ~Folder();
 
     void Reset();
@@ -85,7 +85,7 @@ struct Folder
 struct File
 {
     File(Folder* folder);
-    ~File();
+    ~File() = default;
 
     bool Load(const pugi::xml_node& node);
 
@@ -101,7 +101,7 @@ struct File
 /// Entity.
 struct Entity
 {
-    Entity();
+    Entity() = default;
     ~Entity();
 
     void Reset();
@@ -116,8 +116,8 @@ struct Entity
 /// Character map.
 struct CharacterMap
 {
-    CharacterMap();
-    ~CharacterMap();
+    CharacterMap() = default;
+    ~CharacterMap() = default;
 
     void Reset();
     bool Load(const pugi::xml_node& node);
@@ -130,9 +130,8 @@ struct CharacterMap
 /// Map instruction.
 struct MapInstruction
 {
-    MapInstruction();
-    ~MapInstruction();
-
+    MapInstruction() = default;
+    ~MapInstruction() = default;
     bool Load(const pugi::xml_node& node);
 
     int folder_;
@@ -144,7 +143,7 @@ struct MapInstruction
 /// Animation.
 struct Animation
 {
-    Animation();
+    Animation() = default;
     ~Animation();
 
     void Reset();
@@ -161,7 +160,7 @@ struct Animation
 /// Mainline key.
 struct MainlineKey
 {
-    MainlineKey();
+    MainlineKey() = default;
     ~MainlineKey();
 
     void Reset();
@@ -176,8 +175,8 @@ struct MainlineKey
 /// Ref.
 struct Ref
 {
-    Ref();
-    ~Ref();
+    Ref() = default;
+    ~Ref() = default;
 
     bool Load(const pugi::xml_node& node);
 
@@ -198,7 +197,7 @@ enum ObjectType
 /// Timeline.
 struct Timeline
 {
-    Timeline();
+    Timeline() = default;
     ~Timeline();
 
     void Reset();
@@ -211,7 +210,7 @@ struct Timeline
 };
 
 /// Curve type.
-enum CurveType 
+enum CurveType
 {
     INSTANT = 0,
     LINEAR,
@@ -223,7 +222,7 @@ enum CurveType
 struct TimelineKey
 {
     TimelineKey(Timeline* timeline);
-    virtual ~TimelineKey();
+    virtual ~TimelineKey()  = default;
 
     virtual ObjectType GetObjectType() const = 0;
     virtual TimelineKey* Clone() const = 0;
@@ -262,11 +261,11 @@ struct SpatialTimelineKey : TimelineKey
     SpatialInfo info_;
 
     SpatialTimelineKey(Timeline* timeline);
-    virtual ~SpatialTimelineKey();
+    virtual ~SpatialTimelineKey()   = default;
 
     virtual bool Load(const pugi::xml_node& node);
     virtual void Interpolate(const TimelineKey& other, float t);
-    SpatialTimelineKey& operator=(const SpatialTimelineKey& rhs);
+    SpatialTimelineKey& operator=(const SpatialTimelineKey& rhs) = default;
 };
 
 /// Bone timeline key.
@@ -276,13 +275,13 @@ struct BoneTimelineKey : SpatialTimelineKey
     float width_;
 
     BoneTimelineKey(Timeline* timeline);
-    virtual ~BoneTimelineKey();
+    virtual ~BoneTimelineKey() = default;
 
     virtual ObjectType GetObjectType() const { return BONE; }
     virtual TimelineKey* Clone() const;
     virtual bool Load(const pugi::xml_node& node);
     virtual void Interpolate(const TimelineKey& other, float t);
-    BoneTimelineKey& operator=(const BoneTimelineKey& rhs);
+    BoneTimelineKey& operator=(const BoneTimelineKey& rhs) = default;
 };
 
 /// Sprite timeline key.
@@ -294,11 +293,11 @@ struct SpriteTimelineKey : SpatialTimelineKey
     float pivotX_;
     float pivotY_;
 
-    // Run time data.
+    /// Run time data.
     int zIndex_;
 
     SpriteTimelineKey(Timeline* timeline);
-    virtual ~SpriteTimelineKey();
+    virtual ~SpriteTimelineKey() = default;
 
     virtual ObjectType GetObjectType() const { return SPRITE; }
     virtual TimelineKey* Clone() const;

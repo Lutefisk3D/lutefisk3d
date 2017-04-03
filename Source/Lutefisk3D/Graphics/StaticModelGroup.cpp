@@ -20,15 +20,16 @@
 // THE SOFTWARE.
 //
 
+#include "../Graphics/StaticModelGroup.h"
 #include "../Graphics/Batch.h"
 #include "../Graphics/Camera.h"
-#include "../Core/Context.h"
 #include "../Graphics/Geometry.h"
 #include "../Graphics/Material.h"
 #include "../Graphics/OcclusionBuffer.h"
 #include "../Graphics/OctreeQuery.h"
+#include "../Graphics/VertexBuffer.h"
 #include "../Scene/Scene.h"
-#include "../Graphics/StaticModelGroup.h"
+#include "../Core/Context.h"
 
 
 
@@ -39,6 +40,7 @@ extern const char* GEOMETRY_CATEGORY;
 
 StaticModelGroup::StaticModelGroup(Context* context) :
     StaticModel(context),
+    nodesDirty_(false),
     nodeIDsDirty_(false)
 {
     // Initialize the default node IDs attribute
@@ -59,11 +61,10 @@ void StaticModelGroup::RegisterObject(Context* context)
 
 void StaticModelGroup::ApplyAttributes()
 {
-    if (!nodeIDsDirty_)
+    if (!nodesDirty_)
         return;
 
-    // Remove all old instance nodes before searching for new. Can not call RemoveAllInstances() as that would modify
-    // the ID list on its own
+    // Remove all old instance nodes before searching for new
     for (unsigned i = 0; i < instanceNodes_.size(); ++i)
     {
         Node* node = instanceNodes_[i];
@@ -91,7 +92,8 @@ void StaticModelGroup::ApplyAttributes()
     }
 
     worldTransforms_.resize(instanceNodes_.size());
-    nodeIDsDirty_ = false;
+    numWorldTransforms_ = 0; // Correct amount will be found during world bounding box update
+    nodesDirty_ = false;
     OnMarkedDirty(GetNode());
 }
 
@@ -243,11 +245,11 @@ bool StaticModelGroup::DrawOcclusion(OcclusionBuffer* buffer)
             unsigned vertexSize;
             const unsigned char* indexData;
             unsigned indexSize;
-            unsigned elementMask;
+            const std::vector<VertexElement>* elements;
 
-            geometry->GetRawData(vertexData, vertexSize, indexData, indexSize, elementMask);
+            geometry->GetRawData(vertexData, vertexSize, indexData, indexSize, elements);
             // Check for valid geometry data
-            if (!vertexData || !indexData)
+            if (!vertexData || !indexData || !elements || VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR3, SEM_POSITION) != 0)
                 continue;
 
             unsigned indexStart = geometry->GetIndexStart();
@@ -277,9 +279,7 @@ void StaticModelGroup::AddInstanceNode(Node* node)
     node->AddListener(this);
     instanceNodes_.push_back(instanceWeak);
 
-    UpdateNodeIDs();
-    OnMarkedDirty(GetNode());
-    MarkNetworkUpdate();
+    UpdateNumTransforms();
 }
 
 void StaticModelGroup::RemoveInstanceNode(Node* node)
@@ -288,14 +288,13 @@ void StaticModelGroup::RemoveInstanceNode(Node* node)
         return;
 
     WeakPtr<Node> instanceWeak(node);
-    node->RemoveListener(this);
     auto iter = std::find(instanceNodes_.begin(),instanceNodes_.end(),instanceWeak);
-    if(iter!=instanceNodes_.end())
-        instanceNodes_.erase(iter);
+    if(iter==instanceNodes_.end())
+        return;
 
-    UpdateNodeIDs();
-    OnMarkedDirty(GetNode());
-    MarkNetworkUpdate();
+    node->RemoveListener(this);
+    instanceNodes_.erase(iter);
+    UpdateNumTransforms();
 }
 
 void StaticModelGroup::RemoveAllInstanceNodes()
@@ -309,9 +308,7 @@ void StaticModelGroup::RemoveAllInstanceNodes()
 
     instanceNodes_.clear();
 
-    UpdateNodeIDs();
-    OnMarkedDirty(GetNode());
-    MarkNetworkUpdate();
+    UpdateNumTransforms();
 }
 
 Node* StaticModelGroup::GetInstanceNode(unsigned index) const
@@ -348,7 +345,16 @@ void StaticModelGroup::SetNodeIDsAttr(const VariantVector& value)
         nodeIDsAttr_.clear();
         nodeIDsAttr_.push_back(0);
     }
-    nodeIDsDirty_ = true;
+    nodesDirty_ = true;
+    nodeIDsDirty_ = false;
+}
+
+const VariantVector& StaticModelGroup::GetNodeIDsAttr() const
+{
+    if (nodeIDsDirty_)
+        UpdateNodeIDs();
+
+    return nodeIDsAttr_;
 }
 
 void StaticModelGroup::OnNodeSetEnabled(Node* node)
@@ -381,20 +387,29 @@ void StaticModelGroup::OnWorldBoundingBoxUpdate()
     numWorldTransforms_ = index;
 }
 
-void StaticModelGroup::UpdateNodeIDs()
+void StaticModelGroup::UpdateNumTransforms()
+{
+    worldTransforms_.resize(instanceNodes_.size());
+    numWorldTransforms_ = 0; // Correct amount will be during world bounding box update
+    nodeIDsDirty_ = true;
+
+    OnMarkedDirty(GetNode());
+    MarkNetworkUpdate();
+}
+
+void StaticModelGroup::UpdateNodeIDs() const
 {
     unsigned numInstances = instanceNodes_.size();
 
     nodeIDsAttr_.clear();
     nodeIDsAttr_.push_back(numInstances);
-    worldTransforms_.resize(numInstances);
-    numWorldTransforms_ = 0; // For safety. OnWorldBoundingBoxUpdate() will calculate the proper amount
 
     for (unsigned i = 0; i < numInstances; ++i)
     {
         Node* node = instanceNodes_[i];
         nodeIDsAttr_.push_back(node ? node->GetID() : 0);
     }
+    nodeIDsDirty_ = false;
 }
 
 }

@@ -204,8 +204,8 @@ void LineEdit::OnKey(int key, int buttons, int qualifiers)
 
     switch (key)
     {
-    case 'X':
-    case 'C':
+    case KEY_X:
+    case KEY_C:
         if (textCopyable_ && qualifiers & QUAL_CTRL)
         {
             unsigned start = text_->GetSelectionStart();
@@ -227,7 +227,7 @@ void LineEdit::OnKey(int key, int buttons, int qualifiers)
         }
         break;
 
-    case 'V':
+    case KEY_V:
         if (editable_ && textCopyable_ && qualifiers & QUAL_CTRL)
         {
             const QString& clipBoard = GetSubsystem<UI>()->GetClipboardText();

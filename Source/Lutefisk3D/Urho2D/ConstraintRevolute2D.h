@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// 2D revolute constraint component.
-class ConstraintRevolute2D : public Constraint2D
+class URHO3D_API ConstraintRevolute2D : public Constraint2D
 {
     URHO3D_OBJECT(ConstraintRevolute2D,Constraint2D);
 

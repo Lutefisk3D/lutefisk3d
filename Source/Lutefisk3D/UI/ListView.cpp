@@ -80,12 +80,13 @@ class HierarchyContainer : public UIElement
 
 public:
     /// Construct.
-    HierarchyContainer(Context *context, ListView *listView, UIElement *overlayContainer)
-        : UIElement(context), listView_(listView), overlayContainer_(overlayContainer)
+    HierarchyContainer(Context* context, ListView* listView, UIElement* overlayContainer) :
+        UIElement(context),
+        listView_(listView),
+        overlayContainer_(overlayContainer)
     {
         SubscribeToEvent(this, E_LAYOUTUPDATED, URHO3D_HANDLER(HierarchyContainer, HandleLayoutUpdated));
-        SubscribeToEvent(overlayContainer->GetParent(), E_VIEWCHANGED,
-                         URHO3D_HANDLER(HierarchyContainer, HandleViewChanged));
+        SubscribeToEvent(overlayContainer->GetParent(), E_VIEWCHANGED, URHO3D_HANDLER(HierarchyContainer, HandleViewChanged));
         SubscribeToEvent(E_UIMOUSECLICK, URHO3D_HANDLER(HierarchyContainer, HandleUIMouseClick));
     }
 
@@ -144,8 +145,7 @@ public:
     void InsertChild(unsigned index, UIElement *element)
     {
         // Insert the overlay at the same index position to the overlay container
-        CheckBox *overlay =
-            static_cast<CheckBox *>(overlayContainer_->CreateChild(CheckBox::GetTypeStatic(), QString::null, index));
+        CheckBox *overlay = static_cast<CheckBox *>(overlayContainer_->CreateChild(CheckBox::GetTypeStatic(), QString(), index));
         overlay->SetStyle("HierarchyListViewOverlay");
         int baseIndent = listView_->GetBaseIndent();
         int indent     = element->GetIndent() - baseIndent - 1;
@@ -293,6 +293,7 @@ void ListView::OnKey(int key, int buttons, int qualifiers)
         case KEY_END:
             delta = GetNumItems();
             break;
+
         default: break;
         }
     }
@@ -313,9 +314,9 @@ void ListView::OnKey(int key, int buttons, int qualifiers)
     SendEvent(E_UNHANDLEDKEY, eventData);
 }
 
-void ListView::OnResize()
+void ListView::OnResize(const IntVector2& newSize, const IntVector2& delta)
 {
-    ScrollView::OnResize();
+    ScrollView::OnResize(newSize, delta);
 
     // When in hierarchy mode also need to resize the overlay container
     if (hierarchyMode_)
@@ -984,8 +985,8 @@ void ListView::EnsureItemVisibility(UIElement* item)
     IntVector2 newView = GetViewPosition();
     IntVector2 currentOffset = item->GetPosition() - newView;
     const IntRect& clipBorder = scrollPanel_->GetClipBorder();
-    IntVector2 windowSize(scrollPanel_->GetWidth() - clipBorder.left_ - clipBorder.right_, scrollPanel_->GetHeight() -
-        clipBorder.top_ - clipBorder.bottom_);
+    IntVector2 windowSize(scrollPanel_->GetWidth() - clipBorder.left_ - clipBorder.right_,
+        scrollPanel_->GetHeight() - clipBorder.top_ - clipBorder.bottom_);
 
     if (currentOffset.y_ < 0)
         newView.y_ += currentOffset.y_;

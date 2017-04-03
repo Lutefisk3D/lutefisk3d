@@ -39,7 +39,7 @@ static const unsigned SCAN_DIRS = 0x2;
 static const unsigned SCAN_HIDDEN = 0x4;
 
 /// Subsystem for file and directory operations and access control.
-class FileSystem : public Object
+class URHO3D_API FileSystem : public Object
 {
     URHO3D_OBJECT(FileSystem,Object);
 
@@ -120,30 +120,30 @@ private:
 };
 
 /// Split a full path to path, filename and extension. The extension will be converted to lowercase by default.
-void SplitPath(const QString& fullPath, QString& pathName, QString& fileName, QString& extension, bool lowercaseExtension = true);
+URHO3D_API void SplitPath(const QString& fullPath, QString& pathName, QString& fileName, QString& extension, bool lowercaseExtension = true);
 /// Return the path from a full path.
-QString GetPath(const QString& fullPath);
+URHO3D_API QString GetPath(const QString& fullPath);
 /// Return the filename from a full path.
-QString GetFileName(const QString& fullPath);
+URHO3D_API QString GetFileName(const QString& fullPath);
 /// Return the extension from a full path, converted to lowercase by default.
-QString GetExtension(const QString& fullPath, bool lowercaseExtension = true);
+URHO3D_API QString GetExtension(const QString& fullPath, bool lowercaseExtension = true);
 /// Return the filename and extension from a full path. The case of the extension is preserved by default, so that the file can be opened in case-sensitive operating systems.
-QString GetFileNameAndExtension(const QString& fullPath, bool lowercaseExtension = false);
+URHO3D_API QString GetFileNameAndExtension(const QString& fullPath, bool lowercaseExtension = false);
 /// Replace the extension of a file name with another.
-QString ReplaceExtension(const QString& fullPath, const QString& newExtension);
+URHO3D_API QString ReplaceExtension(const QString& fullPath, const QString& newExtension);
 /// Add a slash at the end of the path if missing and convert to internal format (use slashes.)
-QString AddTrailingSlash(const QString& pathName);
+URHO3D_API QString AddTrailingSlash(const QString& pathName);
 /// Remove the slash from the end of a path if exists and convert to internal format (use slashes.)
-QString RemoveTrailingSlash(const QString& pathName);
+URHO3D_API QString RemoveTrailingSlash(const QString& pathName);
 /// Return the parent path, or the path itself if not available.
-QString GetParentPath(const QString& pathName);
+URHO3D_API QString GetParentPath(const QString& pathName);
 /// Convert a path to internal format (use slashes.)
-QString GetInternalPath(const QString& pathName);
+URHO3D_API QString GetInternalPath(const QString& pathName);
 /// Convert a path to the format required by the operating system.
-QString GetNativePath(const QString& pathName);
+URHO3D_API QString GetNativePath(const QString& pathName);
 /// Convert a path to the format required by the operating system in wide characters.
 //WString GetWideNativePath(const String& pathName);
 /// Return whether a path is absolute.
-bool IsAbsolutePath(const QString& pathName);
+URHO3D_API bool IsAbsolutePath(const QString& pathName);
 
 }

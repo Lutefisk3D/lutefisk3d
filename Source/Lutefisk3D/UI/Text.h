@@ -53,7 +53,7 @@ struct CharLocation
 /// Glyph and its location within the text. Used when preparing text rendering.
 struct GlyphLocation
 {
-    // Construct.
+    /// Construct.
     GlyphLocation(int x, int y, const FontGlyph* glyph) :
         x_(x),
         y_(y),
@@ -89,14 +89,16 @@ public:
     /// Return UI rendering batches.
     virtual void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor) override;
     /// React to resize.
-    virtual void OnResize() override;
+    virtual void OnResize(const IntVector2& newSize, const IntVector2& delta);
     /// React to indent change.
     virtual void OnIndentSet() override;
 
-    /// Set font and font size and use signed distance field.
+    /// Set font by looking from resource cache by name and font size. Return true if successful.
     bool SetFont(const QString& fontName, int size = DEFAULT_FONT_SIZE);
-    /// Set font and font size and use signed distance field.
+    /// Set font and font size. Return true if successful.
     bool SetFont(Font* font, int size = DEFAULT_FONT_SIZE);
+    /// Set font size only while retaining the existing font. Return true if successful.
+    bool SetFontSize(int size);
     /// Set text. Text is assumed to be either ASCII or UTF8-encoded.
     void SetText(const QString& text);
     /// Set row alignment.
@@ -117,13 +119,21 @@ public:
     void SetHoverColor(const Color& color);
     /// Set text effect.
     void SetTextEffect(TextEffect textEffect);
+    /// Set shadow offset.
+    void SetEffectShadowOffset(const IntVector2& offset);
+    /// Set stroke thickness.
+    void SetEffectStrokeThickness(int thickness);
+    /// Set stroke rounding. Corners of the font will be rounded off in the stroke so the stroke won't have corners.
+    void SetEffectRoundStroke(bool roundStroke);
     /// Set effect color.
     void SetEffectColor(const Color& effectColor);
 
     /// Return font.
     Font* GetFont() const { return font_; }
+
     /// Return font size.
     int GetFontSize() const { return fontSize_; }
+
     /// Return text.
     const QString& GetText() const { return text_; }
     /// Return row alignment.
@@ -144,6 +154,16 @@ public:
     const Color& GetHoverColor() const { return hoverColor_; }
     /// Return text effect.
     TextEffect GetTextEffect() const { return textEffect_; }
+
+    /// Return effect shadow offset.
+    const IntVector2& GetEffectShadowOffset() const { return shadowOffset_; }
+
+    /// Return effect stroke thickness.
+    int GetEffectStrokeThickness() const { return strokeThickness_; }
+
+    /// Return effect round stroke.
+    bool GetEffectRoundStroke() const { return roundStroke_; }
+
     /// Return effect color.
     const Color& GetEffectColor() const { return effectColor_; }
     /// Return row height.
@@ -159,8 +179,6 @@ public:
     /// Return size of character by index.
     IntVector2 GetCharSize(unsigned index);
 
-    /// Set used in Text3D.
-    void SetUsedInText3D(bool usedInText3D);
     /// Set text effect Z bias. Zero by default, adjusted only in 3D mode.
     void SetEffectDepthBias(float bias);
     /// Return effect Z bias.
@@ -169,6 +187,10 @@ public:
     void SetFontAttr(const ResourceRef& value);
     /// Return font attribute.
     ResourceRef GetFontAttr() const;
+    /// Set text attribute.
+    void SetTextAttr(const QString& value);
+    /// Return text attribute.
+    QString GetTextAttr() const;
 
 protected:
     /// Filter implicit attributes in serialization process.
@@ -184,8 +206,6 @@ protected:
     /// Contruct batch.
     void ConstructBatch(UIBatch& pageBatch, const std::vector<GlyphLocation>& pageGlyphLocation, int dx = 0, int dy = 0, Color* color = nullptr, float depthBias = 0.0f);
 
-    /// Used in Text3D.
-    bool usedInText3D_;
     /// Font.
     SharedPtr<Font> font_;
     /// Current face.
@@ -212,6 +232,12 @@ protected:
     Color hoverColor_;
     /// Text effect.
     TextEffect textEffect_;
+    /// Text effect shadow offset.
+    IntVector2 shadowOffset_;
+    /// Text effect stroke thickness.
+    int strokeThickness_;
+    /// Text effect stroke rounding flag.
+    bool roundStroke_;
     /// Effect color.
     Color effectColor_;
     /// Text effect Z bias.
@@ -232,7 +258,7 @@ protected:
     std::vector<CharLocation> charLocations_;
     /// The text will be automatically translated.
     bool autoLocalizable_;
-    /// Storage string id. Used when enabled autoLocalizable.
+    /// Localization string id storage. Used when autoLocalizable flag is set.
     QString stringId_;
     /// Handle change Language.
     void HandleChangeLanguage(StringHash eventType, VariantMap& eventData);

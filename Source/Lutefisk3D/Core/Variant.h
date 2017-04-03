@@ -129,7 +129,19 @@ struct ResourceRef
         name_(name)
     {
     }
+    /// Construct with type and resource name.
+    ResourceRef(const QString& type, const QString& name) :
+        type_(type),
+        name_(name)
+    {
+    }
 
+    /// Construct with type and resource name.
+    ResourceRef(const char* type, const char* name) :
+        type_(type),
+        name_(name)
+    {
+    }
     // Construct from another ResourceRef.
     ResourceRef(const ResourceRef& rhs) :
         type_(rhs.type_),

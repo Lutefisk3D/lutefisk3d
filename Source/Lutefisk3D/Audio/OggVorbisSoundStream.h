@@ -30,7 +30,7 @@ namespace Urho3D
 class Sound;
 
 /// Ogg Vorbis sound stream.
-class OggVorbisSoundStream : public SoundStream
+class URHO3D_API OggVorbisSoundStream : public SoundStream
 {
 public:
     /// Construct from an Ogg Vorbis compressed sound.

@@ -84,7 +84,8 @@ extern const char* PHYSICS_CATEGORY;
 class TriangleMeshInterface : public btTriangleIndexVertexArray
 {
 public:
-    TriangleMeshInterface(Model* model, unsigned lodLevel) : btTriangleIndexVertexArray()
+    TriangleMeshInterface(Model* model, unsigned lodLevel) :
+        btTriangleIndexVertexArray()
     {
         unsigned numGeometries = model->GetNumGeometries();
         unsigned totalTriangles = 0;
@@ -102,12 +103,12 @@ public:
             SharedArrayPtr<unsigned char> indexData;
             unsigned vertexSize;
             unsigned indexSize;
-            unsigned elementMask;
+            const std::vector<VertexElement>* elements;
 
-            geometry->GetRawDataShared(vertexData, vertexSize, indexData, indexSize, elementMask);
-            if (!vertexData || !indexData)
+            geometry->GetRawDataShared(vertexData, vertexSize, indexData, indexSize, elements);
+            if (!vertexData || !indexData || !elements || VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR3, SEM_POSITION) != 0)
             {
-                URHO3D_LOGWARNING("Skipping geometry with no CPU-side geometry data for triangle mesh collision");
+                URHO3D_LOGWARNING("Skipping geometry with no or unsuitable CPU-side geometry data for triangle mesh collision");
                 continue;
             }
 
@@ -230,8 +231,8 @@ ConvexData::ConvexData(Model* model, unsigned lodLevel)
 
     for (unsigned i = 0; i < numGeometries; ++i)
     {
-        Geometry* geom = model->GetGeometry(i, lodLevel);
-        if (!geom)
+        Geometry* geometry = model->GetGeometry(i, lodLevel);
+        if (!geometry)
         {
             URHO3D_LOGWARNING("Skipping null geometry for convex hull collision");
             continue;
@@ -241,17 +242,17 @@ ConvexData::ConvexData(Model* model, unsigned lodLevel)
         const unsigned char* indexData;
         unsigned vertexSize;
         unsigned indexSize;
-        unsigned elementMask;
+        const std::vector<VertexElement>* elements;
 
-        geom->GetRawData(vertexData, vertexSize, indexData, indexSize, elementMask);
-        if (!vertexData)
+        geometry->GetRawData(vertexData, vertexSize, indexData, indexSize, elements);
+        if (!vertexData || VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR3, SEM_POSITION) != 0)
         {
-            URHO3D_LOGWARNING("Skipping geometry with no CPU-side geometry data for convex hull collision");
+            URHO3D_LOGWARNING("Skipping geometry with no or unsuitable CPU-side geometry data for convex hull collision");
             continue;
         }
 
-        unsigned vertexStart = geom->GetVertexStart();
-        unsigned vertexCount = geom->GetVertexCount();
+        unsigned vertexStart = geometry->GetVertexStart();
+        unsigned vertexCount = geometry->GetVertexCount();
 
         // Copy vertex data
         for (unsigned j = 0; j < vertexCount; ++j)
@@ -1147,6 +1148,7 @@ void CollisionShape::UpdateShape()
             break;
 
         default:
+            shape_ = this->UpdateDerivedShape(shapeType_, newWorldScale);
             break;
         }
 
@@ -1164,6 +1166,11 @@ void CollisionShape::UpdateShape()
 
     recreateShape_ = false;
     retryCreation_ = false;
+}
+btCollisionShape* CollisionShape::UpdateDerivedShape(int shapeType, const Vector3& newWorldScale)
+{
+    // To be overridden in derived classes.
+    return nullptr;
 }
 
 void CollisionShape::HandleTerrainCreated(StringHash eventType, VariantMap& eventData)

@@ -34,9 +34,6 @@
 
 
 #include <algorithm>
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
 
 namespace Urho3D
 {
@@ -174,17 +171,17 @@ bool Octant::CheckDrawableFit(const BoundingBox& box) const
 
     // If max split level, size always OK, otherwise check that box is at least half size of octant
     if (level_ >= root_->GetNumLevels() || boxSize.x_ >= halfSize_.x_ || boxSize.y_ >= halfSize_.y_ ||
-        boxSize.z_ >= halfSize_.z_)
+            boxSize.z_ >= halfSize_.z_)
         return true;
     // Also check if the box can not fit a child octant's culling box, in that case size OK (must insert here)
     else
     {
         if (box.min_.x_ <= worldBoundingBox_.min_.x_ - 0.5f * halfSize_.x_ ||
-            box.max_.x_ >= worldBoundingBox_.max_.x_ + 0.5f * halfSize_.x_ ||
-            box.min_.y_ <= worldBoundingBox_.min_.y_ - 0.5f * halfSize_.y_ ||
-            box.max_.y_ >= worldBoundingBox_.max_.y_ + 0.5f * halfSize_.y_ ||
-            box.min_.z_ <= worldBoundingBox_.min_.z_ - 0.5f * halfSize_.z_ ||
-            box.max_.z_ >= worldBoundingBox_.max_.z_ + 0.5f * halfSize_.z_)
+                box.max_.x_ >= worldBoundingBox_.max_.x_ + 0.5f * halfSize_.x_ ||
+                box.min_.y_ <= worldBoundingBox_.min_.y_ - 0.5f * halfSize_.y_ ||
+                box.max_.y_ >= worldBoundingBox_.max_.y_ + 0.5f * halfSize_.y_ ||
+                box.min_.z_ <= worldBoundingBox_.min_.z_ - 0.5f * halfSize_.z_ ||
+                box.max_.z_ >= worldBoundingBox_.max_.z_ + 0.5f * halfSize_.z_)
             return true;
     }
 
@@ -369,7 +366,7 @@ void Octree::SetSize(const BoundingBox& box, unsigned numLevels)
 
     Initialize(box);
     numDrawables_ = drawables_.size();
-    numLevels_ = Max((int)numLevels, 1);
+    numLevels_ = std::max(numLevels, 1U);
 }
 
 void Octree::Update(const FrameInfo& frame)
@@ -436,6 +433,7 @@ void Octree::Update(const FrameInfo& frame)
 
             threadedDrawableUpdates_.clear();
         }
+
     // Notify drawable update being finished. Custom animation (eg. IK) can be done at this point
     Scene* scene = GetScene();
     if (scene)
@@ -470,15 +468,15 @@ void Octree::Update(const FrameInfo& frame)
 
             InsertDrawable(drawable);
 
-            #ifdef _DEBUG
+#ifdef _DEBUG
             // Verify that the drawable will be culled correctly
             octant = drawable->GetOctant();
             if (octant != this && octant->GetCullingBox().IsInside(box) != INSIDE)
             {
                 URHO3D_LOGERROR("Drawable is not fully inside its octant's culling bounds: drawable box " + box.ToString() +
-                    " octant box " + octant->GetCullingBox().ToString());
+                                " octant box " + octant->GetCullingBox().ToString());
             }
-            #endif
+#endif
         }
     }
 
@@ -515,7 +513,7 @@ void Octree::Raycast(RayOctreeQuery& query) const
 
     query.result_.clear();
 
-        GetDrawablesInternal(query);
+    GetDrawablesInternal(query);
 
     std::sort(query.result_.begin(), query.result_.end(), CompareRayQueryResults);
 }
@@ -578,7 +576,7 @@ void Octree::CancelUpdate(Drawable* drawable)
 {
     // This doesn't have to take into account scene being in threaded update, because it is called only
     // when removing a drawable from octree, which should only ever happen from the main thread.
-
+    // TODO: add thread assert ?
     auto iter = std::find(drawableUpdates_.begin(),drawableUpdates_.end(),drawable);
     if(iter!=drawableUpdates_.end())
         drawableUpdates_.erase(iter);

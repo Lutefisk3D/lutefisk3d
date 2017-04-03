@@ -68,7 +68,6 @@ int Application::Run()
             engine_->RunFrame();
 
         Stop();
-
         return exitCode_;
     }
     catch (std::bad_alloc& e)
@@ -83,7 +82,7 @@ void Application::ErrorExit(const QString& message)
     engine_->Exit(); // Close the rendering window
     exitCode_ = EXIT_FAILURE;
 
-    if (!message.length())
+    if (message.isEmpty())
     {
         ErrorDialog(GetTypeName(), startupErrors_.length() ? startupErrors_ :
             "Application has been terminated due to unexpected error.");

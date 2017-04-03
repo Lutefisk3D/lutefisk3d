@@ -128,6 +128,7 @@ void Console::SetVisible(bool enable)
     Input* input = GetSubsystem<Input>();
     UI* ui = GetSubsystem<UI>();
     Cursor* cursor = ui->GetCursor();
+
     background_->SetVisible(enable);
     closeButton_->SetVisible(enable);
     if (enable)
@@ -143,10 +144,11 @@ void Console::SetVisible(bool enable)
 
         if (!cursor)
         {
-        // Show OS mouse
+            // Show OS mouse
             input->SetMouseMode(MM_FREE, true);
-        input->SetMouseVisible(true, true);
-    }
+            input->SetMouseVisible(true, true);
+        }
+
         input->SetMouseGrabbed(false, true);
     }
     else
@@ -160,7 +162,7 @@ void Console::SetVisible(bool enable)
         {
             // Restore OS mouse visibility
             input->ResetMouseMode();
-        input->ResetMouseVisible();
+            input->ResetMouseVisible();
         }
 
         input->ResetMouseGrabbed();
@@ -240,7 +242,7 @@ void Console::UpdateElements()
     const IntRect& panelBorder = rowContainer_->GetScrollPanel()->GetClipBorder();
     rowContainer_->SetFixedWidth(width - border.left_ - border.right_);
     rowContainer_->SetFixedHeight(displayedRows_ * rowContainer_->GetItem((unsigned)0)->GetHeight() + panelBorder.top_ + panelBorder.bottom_ +
-        (rowContainer_->GetHorizontalScrollBar()->IsVisible() ? rowContainer_->GetHorizontalScrollBar()->GetHeight() : 0));
+                                  (rowContainer_->GetHorizontalScrollBar()->IsVisible() ? rowContainer_->GetHorizontalScrollBar()->GetHeight() : 0));
     background_->SetFixedWidth(width);
     background_->SetHeight(background_->GetMinHeight());
 }
@@ -274,12 +276,12 @@ bool Console::PopulateInterpreter()
 {
     interpreters_->RemoveAllItems();
 
-    HashSet<Object*>* receivers = context_->GetEventReceivers(E_CONSOLECOMMAND);
-    if (!receivers || receivers->isEmpty())
+    EventReceiverGroup * group = context_->GetEventReceivers(E_CONSOLECOMMAND);
+    if (!group || group->receivers_.empty())
         return false;
 
     QStringList names;
-    for (const Object* receiver : *receivers)
+    for (const Object* receiver : group->receivers_)
         names.push_back(receiver->GetTypeName());
     std::sort(names.begin(), names.end());
 
@@ -326,11 +328,7 @@ void Console::HandleTextFinished(StringHash eventType, VariantMap& eventData)
     {
         // Send the command as an event for script subsystem
         using namespace ConsoleCommand;
-
-        VariantMap& newEventData = GetEventDataMap();
-        newEventData[P_COMMAND] = line;
-        newEventData[P_ID] = static_cast<Text*>(interpreters_->GetSelectedItem())->GetText();
-        SendEvent(E_CONSOLECOMMAND, newEventData);
+        SendEvent(E_CONSOLECOMMAND, P_COMMAND, line, P_ID, static_cast<Text*>(interpreters_->GetSelectedItem())->GetText());
 
         // Store to history, then clear the lineedit
         history_.push_back(line);

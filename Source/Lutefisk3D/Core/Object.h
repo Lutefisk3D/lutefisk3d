@@ -21,7 +21,7 @@
 //
 
 #pragma once
-
+#include "../Core/Lutefisk3D.h"
 #include "../Container/RefCounted.h"
 #include "../Container/HashMap.h"
 #include "../Container/Ptr.h"
@@ -32,7 +32,12 @@
 #include <QtCore/QString>
 #include <cassert>
 #include <deque>
+#include <functional>
 
+template<typename T>
+constexpr unsigned ptrHash(T *v) {
+    return unsigned(uintptr_t(v)/sizeof(T));
+};
 namespace Urho3D
 {
 typedef HashMap<StringHash, Variant> VariantMap;
@@ -49,7 +54,7 @@ public:
     /// Construct.
     TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo);
     /// Destruct.
-    ~TypeInfo();
+    ~TypeInfo() = default;
 
     /// Check current type is type of specified type.
     bool IsTypeOf(StringHash type) const;
@@ -121,6 +126,10 @@ public:
     template<typename T> bool IsInstanceOf() const { return IsInstanceOf(T::GetTypeInfoStatic()); }
     /// Subscribe to an event that can be sent by any sender.
     void SubscribeToEvent(StringHash eventType, EventHandler* handler);
+    /// Subscribe to an event that can be sent by any sender.
+    void SubscribeToEvent(StringHash eventType, const std::function<void(StringHash, VariantMap&)>& function, void* userData=0);
+    /// Subscribe to a specific sender's event.
+    void SubscribeToEvent(Object* sender, StringHash eventType, const std::function<void(StringHash, VariantMap&)>& function, void* userData=0);
     /// Subscribe to a specific sender's event.
     void SubscribeToEvent(Object* sender, StringHash eventType, EventHandler* handler);
     /// Unsubscribe from an event.
@@ -139,6 +148,11 @@ public:
     void SendEvent(StringHash eventType, VariantMap& eventData);
     /// Return a preallocated map for event data. Used for optimization to avoid constant re-allocation of event data maps.
     VariantMap& GetEventDataMap() const;
+    /// Send event with variadic parameter pairs to all subscribers. The parameter pairs is a list of paramID and paramValue separated by comma, one pair after another.
+    template <typename... Args> void SendEvent(StringHash eventType, Args... args)
+    {
+        SendEvent(eventType, PopulateEventDataMap(GetEventDataMap(), args...));
+    }
 
     /// Return execution context.
     Context* GetContext() const { return context_; }
@@ -178,7 +192,18 @@ private:
     cilEventHandler FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous = 0) const;
     /// Remove event handlers related to a specific sender.
     void RemoveEventSender(Object* sender);
-
+    /// Populate event data map using variadic template. This handles the base case.
+    template <typename T> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue)
+    {
+        eventData[paramID] = paramValue;
+        return eventData;
+    }
+    /// Populate event data map using variadic template.
+    template <typename T, typename... Args> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue, Args... args)
+    {
+        eventData[paramID] = paramValue;
+        return PopulateEventDataMap(eventData, args...);
+    }
     /// Event handlers. Sender is null for non-specific handlers.
     std::deque<EventHandler *> eventHandlers_;
 };
@@ -234,17 +259,8 @@ public:
 class EventHandler
 {
 public:
-    /// Construct with specified receiver.
-    EventHandler(Object* receiver) :
-        receiver_(receiver),
-        sender_(nullptr),
-        userData_(nullptr)
-    {
-        assert(receiver_);
-    }
-
     /// Construct with specified receiver and userdata.
-    EventHandler(Object* receiver, void* userData) :
+    EventHandler(Object* receiver, void* userData = nullptr) :
         receiver_(receiver),
         sender_(nullptr),
         userData_(userData)
@@ -293,16 +309,8 @@ template <class T> class EventHandlerImpl : public EventHandler
 public:
     typedef void (T::*HandlerFunctionPtr)(StringHash, VariantMap&);
 
-    /// Construct with receiver and function pointers.
-    EventHandlerImpl(T* receiver, HandlerFunctionPtr function) :
-        EventHandler(receiver),
-        function_(function)
-    {
-        assert(function_);
-    }
-
-    /// Construct with receiver and function pointers and userdata.
-    EventHandlerImpl(T* receiver, HandlerFunctionPtr function, void* userData) :
+    /// Construct with receiver and function pointers and optional userdata.
+    EventHandlerImpl(T* receiver, HandlerFunctionPtr function, void* userData = nullptr) :
         EventHandler(receiver, userData),
         function_(function)
     {
@@ -326,7 +334,46 @@ private:
     /// Class-specific pointer to handler function.
     HandlerFunctionPtr function_;
 };
+/// Template implementation of the event handler invoke helper (std::function instance).
+class EventHandler11Impl : public EventHandler
+{
+public:
+    /// Construct with receiver and function pointers and userdata.
+    EventHandler11Impl(std::function<void(StringHash, VariantMap&)> function, void* userData = 0) :
+        EventHandler((Object*)0xDEADBEEF /* EventHandler insists for receiver_ not being null but it is captured in
+                                          * `function_` already and is not used by `EventHandler11Impl` */, userData),
+        function_(function)
+    {
+        assert(function_);
+    }
 
+    /// Invoke event handler function.
+    virtual void Invoke(VariantMap& eventData)
+    {
+        function_(eventType_, eventData);
+    }
+
+    /// Return a unique copy of the event handler.
+    virtual EventHandler* Clone() const
+    {
+        return new EventHandler11Impl(function_, userData_);
+    }
+
+private:
+    /// Class-specific pointer to handler function.
+    std::function<void(StringHash, VariantMap&)> function_;
+};
+
+/// Register event names.
+struct EventNameRegistrar
+{
+    /// Register an event name for hash reverse mapping.
+    static StringHash RegisterEventName(const char* eventName);
+    /// Return Event name or empty string if not found.
+    static const QString& GetEventName(StringHash eventID);
+    /// Return Event name map.
+    static HashMap<StringHash, QString>& GetEventNameMap();
+};
 /// Describe an event's hash ID and begin a namespace in which to define its parameters.
 #define URHO3D_EVENT(eventID, eventName) static const Urho3D::StringHash eventID(#eventName); namespace eventName
 /// Describe an event's parameter hash ID. Should be used inside an event namespace.

@@ -35,7 +35,7 @@ class AnimationState;
 struct Bone;
 
 /// Control data for an animation.
-struct AnimationControl
+struct URHO3D_API AnimationControl
 {
     /// Construct with defaults.
     AnimationControl() :
@@ -82,7 +82,7 @@ struct AnimationControl
 };
 
 /// %Component that drives an AnimatedModel's animations.
-class AnimationController : public Component
+class URHO3D_API AnimationController : public Component
 {
     URHO3D_OBJECT(AnimationController,Component);
 
@@ -90,7 +90,8 @@ public:
     /// Construct.
     AnimationController(Context* context);
     /// Destruct.
-    virtual ~AnimationController();
+    virtual ~AnimationController() = default;
+
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -131,10 +132,12 @@ public:
     /// Set whether an animation auto-removes on completion.
     bool SetRemoveOnCompletion(const QString& name, bool removeOnCompletion);
     /// Set animation blending mode. Return true on success.
-    bool SetBlendingMode(const QString& name, AnimationBlendMode mode);
+    bool SetBlendMode(const QString& name, AnimationBlendMode mode);
 
     /// Return whether an animation is active. Note that non-looping animations that are being clamped at the end also return true.
     bool IsPlaying(const QString& name) const;
+    /// Return whether any animation is active on a specific layer.
+    bool IsPlaying(unsigned char layer) const;
     /// Return whether an animation is fading in.
     bool IsFadingIn(const QString& name) const;
     /// Return whether an animation is fading out.
@@ -154,7 +157,7 @@ public:
     /// Return animation looping.
     bool IsLooped(const QString& name) const;
     /// Return animation blending mode.
-    AnimationBlendMode GetBlendingMode(const QString& name) const;
+    AnimationBlendMode GetBlendMode(const QString& name) const;
     /// Return animation length.
     float GetLength(const QString& name) const;
     /// Return animation speed.
@@ -169,8 +172,10 @@ public:
     bool GetRemoveOnCompletion(const QString& name) const;
     /// Find an animation state by animation name.
     AnimationState* GetAnimationState(const QString& name) const;
-    /// Find an animation state by animation name hash
+    /// Find an animation state by animation name hash.
     AnimationState* GetAnimationState(StringHash nameHash) const;
+    /// Return the animation control structures for inspection.
+    const std::vector<AnimationControl>& GetAnimations() const { return animations_; }
 
     /// Set animation control structures attribute.
     void SetAnimationsAttr(const VariantVector& value);

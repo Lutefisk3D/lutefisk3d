@@ -296,7 +296,7 @@ bool XMLElement::SetBuffer(const QString& name, const void* data, unsigned size)
 bool XMLElement::SetBuffer(const QString& name, const std::vector<unsigned char>& value)
 {
     if (!value.size())
-        return SetAttribute(name, QString::null);
+        return SetAttribute(name, QString());
     else
         return SetBuffer(name, &value[0], value.size());
 }
@@ -714,11 +714,11 @@ std::vector<unsigned char> XMLElement::GetBuffer(const QString& name) const
 
 bool XMLElement::GetBuffer(const QString& name, void* dest, unsigned size) const
 {
-    std::vector<unsigned char> ret;
     QStringList bytes = GetAttribute(name).split(' ');
-    unsigned char* destBytes = (unsigned char*)dest;
     if (size < bytes.size())
         return false;
+
+    unsigned char* destBytes = (unsigned char*)dest;
 
     for (unsigned i = 0; i < bytes.size(); ++i)
         destBytes[i] = bytes[i].toInt();
@@ -860,8 +860,11 @@ VariantMap XMLElement::GetVariantMap() const
     XMLElement variantElem = GetChild("variant");
     while (variantElem)
     {
-        StringHash key(variantElem.GetUInt("hash"));
-        ret[key] = variantElem.GetVariant();
+        // If this is a manually edited map, user can not be expected to calculate hashes manually. Also accept "name" attribute
+        if (variantElem.HasAttribute("name"))
+            ret[StringHash(variantElem.GetAttribute("name"))] = variantElem.GetVariant();
+        else if (variantElem.HasAttribute("hash"))
+            ret[StringHash(variantElem.GetUInt("hash"))] = variantElem.GetVariant();
         variantElem = variantElem.GetNext("variant");
     }
 

@@ -29,7 +29,7 @@ class QString;
 namespace Urho3D
 {
 /// Three-dimensional vector.
-class Vector3
+class URHO3D_API Vector3
 {
 public:
     /// Construct a zero vector.

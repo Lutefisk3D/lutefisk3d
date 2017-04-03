@@ -26,7 +26,9 @@
 #include "../../Container/RefCounted.h"
 #include "../../Graphics/GPUObject.h"
 #include "../../Graphics/GraphicsDefs.h"
+#include "../ShaderVariation.h"
 
+#include <QtCore/QString>
 
 namespace Urho3D
 {
@@ -34,26 +36,9 @@ namespace Urho3D
 class ConstantBuffer;
 class Graphics;
 class ShaderVariation;
-
-/// %Shader parameter definition.
-struct ShaderParameter
-{
-    /// Construct with defaults.
-    ShaderParameter() :
-        bufferPtr_(nullptr)
-    {
-    }
-
-    /// Uniform location or byte offset in constant buffer.
-    int location_;
-    /// Element type.
-    gl::GLenum type_;
-    /// Constant buffer pointer.
-    ConstantBuffer* bufferPtr_;
-};
-
+struct ShaderParameter;
 /// Linked shader program on the GPU.
-class ShaderProgram : public RefCounted, public GPUObject
+class URHO3D_API ShaderProgram : public RefCounted, public GPUObject
 {
 public:
     /// Construct.
@@ -81,6 +66,10 @@ public:
     const ShaderParameter* GetParameter(StringHash param) const;
     /// Return linker output.
     const QString& GetLinkerOutput() const { return linkerOutput_; }
+    /// Return semantic to vertex attributes location mappings used by the shader.
+    const HashMap<std::pair<unsigned char, unsigned char>, unsigned>& GetVertexAttributes() const { return vertexAttributes_; }
+    /// Return attribute location use bitmask.
+    unsigned GetUsedVertexAttributes() const { return usedVertexAttributes_; }
     /// Return all constant buffers.
     const SharedPtr<ConstantBuffer>* GetConstantBuffers() const { return &constantBuffers_[0]; }
 
@@ -103,6 +92,10 @@ private:
     HashMap<StringHash, ShaderParameter> shaderParameters_;
     /// Texture unit use.
     bool useTextureUnit_[MAX_TEXTURE_UNITS];
+    /// Vertex attributes.
+    HashMap<std::pair<unsigned char, unsigned char>, unsigned> vertexAttributes_;
+    /// Used vertex attribute location bitmask.
+    unsigned usedVertexAttributes_;
     /// Constant buffers by binding index.
     SharedPtr<ConstantBuffer> constantBuffers_[MAX_SHADER_PARAMETER_GROUPS * 2];
     /// Remembered shader parameter sources for individual uniform mode.

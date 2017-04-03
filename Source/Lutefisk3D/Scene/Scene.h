@@ -78,7 +78,7 @@ struct AsyncProgress
 };
 
 /// Root scene node, represents the whole scene.
-class Scene : public Node
+class URHO3D_API Scene : public Node
 {
     URHO3D_OBJECT(Scene,Node);
 
@@ -311,6 +311,6 @@ private:
 };
 
 /// Register Scene library objects.
-void RegisterSceneLibrary(Context* context);
+void URHO3D_API RegisterSceneLibrary(Context* context);
 
 }

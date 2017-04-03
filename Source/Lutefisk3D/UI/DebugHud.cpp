@@ -22,16 +22,16 @@
 
 #include "DebugHud.h"
 
-#include "../Core/CoreEvents.h"
-#include "../Engine/Engine.h"
-#include "../UI/Font.h"
-#include "../Graphics/Graphics.h"
-#include "../IO/Log.h"
-#include "../Core/Profiler.h"
-#include "../Graphics/Renderer.h"
 #include "../UI/Text.h"
 #include "../UI/UI.h"
+#include "../Graphics/Graphics.h"
+#include "../Graphics/Renderer.h"
 #include "../Resource/ResourceCache.h"
+#include "../IO/Log.h"
+#include "../Core/CoreEvents.h"
+#include "../Core/Profiler.h"
+#include "../Core/EventProfiler.h"
+
 namespace Urho3D
 {
 
@@ -39,7 +39,8 @@ static const char* qualityTexts[] =
 {
     "Low",
     "Med",
-    "High"
+    "High",
+    "High+"
 };
 
 static const char* shadowQualityTexts[] =
@@ -80,10 +81,16 @@ DebugHud::DebugHud(Context* context) :
     profilerText_->SetVisible(false);
     uiRoot->AddChild(profilerText_);
     memoryText_ = new Text(context_);
-    memoryText_->SetAlignment(HA_RIGHT, VA_TOP);
+    memoryText_->SetAlignment(HA_LEFT, VA_BOTTOM);
     memoryText_->SetPriority(100);
     memoryText_->SetVisible(false);
     uiRoot->AddChild(memoryText_);
+
+    eventProfilerText_ = new Text(context_);
+    eventProfilerText_->SetAlignment(HA_RIGHT, VA_TOP);
+    eventProfilerText_->SetPriority(100);
+    eventProfilerText_->SetVisible(false);
+    uiRoot->AddChild(eventProfilerText_);
 
     SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(DebugHud, HandlePostUpdate));
 }
@@ -94,6 +101,7 @@ DebugHud::~DebugHud()
     modeText_->Remove();
     profilerText_->Remove();
     memoryText_->Remove();
+    eventProfilerText_->Remove();
 }
 
 void DebugHud::Update()
@@ -127,7 +135,8 @@ void DebugHud::Update()
             batches = renderer->GetNumBatches();
         }
 
-        QString stats = QString("Triangles %1\nBatches %2\nViews %3\nLights %4\nShadowmaps %5\nOccluders %6")
+        QString stats;
+        stats += QString("Triangles %1\nBatches %2\nViews %3\nLights %4\nShadowmaps %5\nOccluders %6")
             .arg(primitives)
             .arg(batches)
             .arg(renderer->GetNumViews())
@@ -137,9 +146,9 @@ void DebugHud::Update()
 
         if (!appStats_.isEmpty())
         {
-            stats.append("\n");
-            for (QMap<QString, QString>::const_iterator i = appStats_.cbegin(); i != appStats_.cend(); ++i)
-                stats += QString("\n%1 %2").arg(i.key()).arg(*i);
+            stats += "\n";
+            for (auto i = appStats_.cbegin(); i != appStats_.cend(); ++i)
+                stats += QString("\n%1 %2").arg(i.key()).arg(i.value());
         }
 
         statsText_->SetText(stats);
@@ -147,9 +156,10 @@ void DebugHud::Update()
 
     if (modeText_->IsVisible())
     {
-        QString mode = QString("Tex:%1 Mat:%2 Spec:%3 Shadows:%4 Size:%5 Quality:%6 Occlusion:%7 Instancing:%8 API:%9")
+        QString mode;
+        mode = QString("Tex:%1 Mat:%2 Spec:%3 Shadows:%4 Size:%5 Quality:%6 Occlusion:%7 Instancing:%8 API:%9")
             .arg(qualityTexts[renderer->GetTextureQuality()])
-            .arg(qualityTexts[renderer->GetMaterialQuality()])
+            .arg(qualityTexts[Min(renderer->GetMaterialQuality(), 3)])
             .arg(renderer->GetSpecularLighting() ? "On" : "Off")
             .arg(renderer->GetDrawShadows() ? "On" : "Off")
             .arg(renderer->GetShadowMapSize())
@@ -162,6 +172,7 @@ void DebugHud::Update()
     }
 
     Profiler* profiler = GetSubsystem<Profiler>();
+    EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
     if (profiler)
     {
         if (profilerTimer_.GetMSec(false) >= profilerInterval_)
@@ -169,19 +180,21 @@ void DebugHud::Update()
             profilerTimer_.Reset();
 
             if (profilerText_->IsVisible())
-            {
-                QString profilerOutput = profiler->PrintData(false, false, profilerMaxDepth_);
-                profilerText_->SetText(profilerOutput);
-            }
+                profilerText_->SetText(profiler->PrintData(false, false, profilerMaxDepth_));
 
             profiler->BeginInterval();
+
+            if (eventProfiler)
+            {
+                if (eventProfilerText_->IsVisible())
+                    eventProfilerText_->SetText(eventProfiler->PrintData(false, false, profilerMaxDepth_));
+
+                eventProfiler->BeginInterval();
+            }
         }
     }
     if (memoryText_->IsVisible())
-    {
-        ResourceCache* cache = GetSubsystem<ResourceCache>();
-        memoryText_->SetText(cache->PrintMemoryUsage());
-    }
+        memoryText_->SetText(GetSubsystem<ResourceCache>()->PrintMemoryUsage());
 }
 
 void DebugHud::SetDefaultStyle(XMLFile* style)
@@ -197,6 +210,8 @@ void DebugHud::SetDefaultStyle(XMLFile* style)
     profilerText_->SetStyle("DebugHudText");
     memoryText_->SetDefaultStyle(style);
     memoryText_->SetStyle("DebugHudText");
+    eventProfilerText_->SetDefaultStyle(style);
+    eventProfilerText_->SetStyle("DebugHudText");
 }
 
 void DebugHud::SetMode(unsigned mode)
@@ -205,6 +220,16 @@ void DebugHud::SetMode(unsigned mode)
     modeText_->SetVisible((mode & DEBUGHUD_SHOW_MODE) != 0);
     profilerText_->SetVisible((mode & DEBUGHUD_SHOW_PROFILER) != 0);
     memoryText_->SetVisible((mode & DEBUGHUD_SHOW_MEMORY) != 0);
+    eventProfilerText_->SetVisible((mode & DEBUGHUD_SHOW_EVENTPROFILER) != 0);
+
+    memoryText_->SetPosition(0, modeText_->IsVisible() ? modeText_->GetHeight() * -2 : 0);
+
+#ifdef LUTEFISK3D_PROFILING
+    // Event profiler is created on engine initialization if "EventProfiler" parameter is set
+    EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
+    if (eventProfiler)
+        EventProfiler::SetActive((mode & DEBUGHUD_SHOW_EVENTPROFILER) != 0);
+#endif
 
     mode_ = mode;
 }
@@ -216,7 +241,7 @@ void DebugHud::SetProfilerMaxDepth(unsigned depth)
 
 void DebugHud::SetProfilerInterval(float interval)
 {
-    profilerInterval_ = Max((int)(interval * 1000.0f), 0);
+    profilerInterval_ = Max((unsigned)(interval * 1000.0f), 0U);
 }
 
 void DebugHud::SetUseRendererStats(bool enable)
@@ -253,6 +278,7 @@ void DebugHud::SetAppStats(const QString& label, const QString& stats)
 {
     //bool newLabel = !appStats_.contains(label);
     appStats_[label] = stats;
+// TODO: sorting hashmaps ??
     //if (newLabel)
     //   appStats_.Sort();
 }

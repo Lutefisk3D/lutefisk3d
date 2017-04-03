@@ -291,7 +291,7 @@ bool DynamicNavigationMesh::Build()
             ++tileBits;
         }
 
-        unsigned maxPolys = 1 << (22 - tileBits);
+        unsigned maxPolys = 1U << (22 - tileBits);
 
         dtNavMeshParams params;
         rcVcopy(params.orig, &boundingBox_.min_.x_);

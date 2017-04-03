@@ -22,15 +22,62 @@
 
 #include "Context.h"
 #include "Thread.h"
+#include "EventProfiler.h"
 #include "../IO/Log.h"
 #include "../Container/HashMap.h"
 
 namespace Urho3D
 {
 
+void EventReceiverGroup::BeginSendEvent()
+{
+    ++inSend_;
+}
+
+void EventReceiverGroup::EndSendEvent()
+{
+    assert(inSend_ > 0);
+    --inSend_;
+
+    if (inSend_ == 0 && dirty_)
+    {
+        /// \todo Could be optimized by erase-swap, but this keeps the receiver order
+        for (unsigned i = receivers_.size() - 1; i < receivers_.size(); --i)
+        {
+            if (!receivers_[i])
+                receivers_.erase(receivers_.begin()+i);
+        }
+
+        dirty_ = false;
+    }
+}
+
+void EventReceiverGroup::Add(Object* object)
+{
+    if (object)
+        receivers_.push_back(object);
+}
+
+void EventReceiverGroup::Remove(Object* object)
+{
+    auto i = std::find(receivers_.begin(),receivers_.end(),object);
+    if (inSend_ > 0)
+    {
+        if (i != receivers_.end())
+        {
+            (*i) = nullptr;
+            dirty_ = true;
+        }
+    }
+    else
+    {
+        assert(i!=receivers_.end());
+        receivers_.erase(i);
+    }
+}
 void RemoveNamedAttribute(HashMap<StringHash, std::vector<AttributeInfo> >& attributes, StringHash objectType, const char* name)
 {
-    HashMap<StringHash, std::vector<AttributeInfo> >::iterator i = attributes.find(objectType);
+    auto i = attributes.find(objectType);
     if (i == attributes.end())
         return;
 
@@ -166,11 +213,11 @@ void Context::CopyBaseAttributes(StringHash baseType, StringHash derivedType)
         return;
     }
 
-    std::vector<AttributeInfo> &target(attributes_[derivedType]);
-    const std::vector<AttributeInfo> *src(GetAttributes(baseType));
-    if(!src)
+    const std::vector<AttributeInfo> * baseAttributes(GetAttributes(baseType));
+    if(!baseAttributes)
         return;
-    for (const AttributeInfo& attr : *src)
+    std::vector<AttributeInfo> &target(attributes_[derivedType]);
+    for (const AttributeInfo& attr : *baseAttributes)
     {
         target.push_back(attr);
         if (attr.mode_ & AM_NET)
@@ -202,8 +249,7 @@ Object* Context::GetEventSender() const
 {
     if (!eventSenders_.empty())
         return eventSenders_.back();
-    else
-        return nullptr;
+    return nullptr;
 }
 
 const QString& Context::GetTypeName(StringHash objectType) const
@@ -215,7 +261,7 @@ const QString& Context::GetTypeName(StringHash objectType) const
 
 AttributeInfo* Context::GetAttribute(StringHash objectType, const char* name)
 {
-    HashMap<StringHash, std::vector<AttributeInfo> >::iterator i = attributes_.find(objectType);
+    auto i = attributes_.find(objectType);
     if (i == attributes_.end())
         return nullptr;
 
@@ -232,39 +278,76 @@ AttributeInfo* Context::GetAttribute(StringHash objectType, const char* name)
 
 void Context::AddEventReceiver(Object* receiver, StringHash eventType)
 {
-    eventReceivers_[eventType].insert(receiver);
+    SharedPtr<EventReceiverGroup>& group = eventReceivers_[eventType];
+    if (!group)
+        group = new EventReceiverGroup();
+    group->Add(receiver);
 }
 
 void Context::AddEventReceiver(Object* receiver, Object* sender, StringHash eventType)
 {
-    specificEventReceivers_[sender][eventType].insert(receiver);
+    SharedPtr<EventReceiverGroup>& group = specificEventReceivers_[sender][eventType];
+    if (!group)
+        group = new EventReceiverGroup();
+    group->Add(receiver);
 }
 
 void Context::RemoveEventSender(Object* sender)
 {
-    HashMap<Object*, HashMap<StringHash, HashSet<Object*> > >::iterator i = specificEventReceivers_.find(sender);
+    auto i = specificEventReceivers_.find(sender);
     if (i == specificEventReceivers_.end())
         return;
-    for (const std::pair<const StringHash,HashSet<Object*>> & elem : MAP_VALUE(i))
+    for (const std::pair<const StringHash,SharedPtr<EventReceiverGroup> > & elem : MAP_VALUE(i))
     {
-        for (Object* k : ELEMENT_VALUE(elem))
-            k->RemoveEventSender(sender);
+        for (Object* receiver : ELEMENT_VALUE(elem)->receivers_)
+        {
+            if(receiver)
+                receiver->RemoveEventSender(sender);
+        }
     }
     specificEventReceivers_.erase(i);
 }
 
 void Context::RemoveEventReceiver(Object* receiver, StringHash eventType)
 {
-    HashSet<Object*>* group = GetEventReceivers(eventType);
+    EventReceiverGroup* group = GetEventReceivers(eventType);
     if (group)
-        group->remove(receiver);
+        group->Remove(receiver);
 }
 
 void Context::RemoveEventReceiver(Object* receiver, Object* sender, StringHash eventType)
 {
-    HashSet<Object*>* group = GetEventReceivers(sender, eventType);
+    EventReceiverGroup* group = GetEventReceivers(sender, eventType);
     if (group)
-        group->remove(receiver);
+        group->Remove(receiver);
+}
+
+void Context::BeginSendEvent(Object* sender, StringHash eventType)
+{
+#ifdef LUTEFISK3D_PROFILING
+    if (EventProfiler::IsActive())
+    {
+        EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
+        if (eventProfiler)
+            eventProfiler->BeginBlock(eventType);
+    }
+#endif
+
+    eventSenders_.push_back(sender);
+}
+
+void Context::EndSendEvent()
+{
+    eventSenders_.pop_back();
+
+#ifdef LUTEFISK3D_PROFILING
+    if (EventProfiler::IsActive())
+    {
+        EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
+        if (eventProfiler)
+            eventProfiler->EndBlock();
+    }
+#endif
 }
 
 }

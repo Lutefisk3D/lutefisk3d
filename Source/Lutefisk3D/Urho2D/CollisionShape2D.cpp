@@ -33,8 +33,6 @@
 namespace Urho3D
 {
 
-extern const char* URHO2D_CATEGORY;
-
 CollisionShape2D::CollisionShape2D(Context* context) :
     Component(context),
     fixture_(nullptr),

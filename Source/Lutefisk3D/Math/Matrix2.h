@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// 2x2 matrix for rotation and scaling.
-class Matrix2
+class URHO3D_API Matrix2
 {
 public:
     /// Construct an identity matrix.

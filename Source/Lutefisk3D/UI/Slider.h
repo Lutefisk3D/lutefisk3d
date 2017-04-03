@@ -55,7 +55,7 @@ public:
     /// React to mouse drag end.
     virtual void OnDragEnd(const IntVector2& position, const IntVector2& screenPosition, int dragButtons, int buttons, Cursor* cursor) override;
     /// React to resize.
-    virtual void OnResize() override;
+    virtual void OnResize(const IntVector2& newSize, const IntVector2& delta) override;
 
     /// Set orientation type.
     void SetOrientation(Orientation orientation);

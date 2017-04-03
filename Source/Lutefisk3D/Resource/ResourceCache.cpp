@@ -40,7 +40,8 @@
 namespace Urho3D
 {
 
-static const char* checkDirs[] = {
+static const char* checkDirs[] =
+{
     "Fonts",
     "Materials",
     "Models",
@@ -759,7 +760,7 @@ uint64_t ResourceCache::GetMemoryUse(StringHash type) const
 
 uint64_t ResourceCache::GetTotalMemoryUse() const
 {
-    unsigned total = 0;
+    uint64_t total = 0;
     for (const auto & elem : resourceGroups_)
         total += ELEMENT_VALUE(elem).memoryUse_;
     return total;
@@ -767,7 +768,6 @@ uint64_t ResourceCache::GetTotalMemoryUse() const
 
 QString ResourceCache::GetResourceFileName(const QString& name) const
 {
-    MutexLock lock(resourceMutex_);
 
     FileSystem* fileSystem = GetSubsystem<FileSystem>();
     for (unsigned i = 0; i < resourceDirs_.size(); ++i)
@@ -776,6 +776,9 @@ QString ResourceCache::GetResourceFileName(const QString& name) const
             return resourceDirs_[i] + name;
     }
 
+    if (IsAbsolutePath(name) && fileSystem->FileExists(name))
+        return name;
+    else
     return QString();
 }
 

@@ -41,7 +41,7 @@ struct NetworkState;
 struct ReplicationState;
 
 /// Base class for objects with automatic serialization through attributes.
-class Serializable : public Object
+class URHO3D_API Serializable : public Object
 {
     URHO3D_OBJECT(Serializable, Object);
 

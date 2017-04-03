@@ -30,15 +30,15 @@ namespace Urho3D
 {
 
 /// %Component that describes global rendering properties.
-class Zone : public Drawable
+class URHO3D_API Zone : public Drawable
 {
-    URHO3D_OBJECT(Zone,Drawable);
+    URHO3D_OBJECT(Zone,Drawable)
 
 public:
     /// Construct.
     Zone(Context* context);
     /// Destruct.
-    virtual ~Zone();
+    virtual ~Zone() = default;
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);
 

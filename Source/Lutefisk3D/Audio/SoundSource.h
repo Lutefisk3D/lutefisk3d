@@ -35,8 +35,8 @@ class SoundStream;
 // Compressed audio decode buffer length in milliseconds
 static const int STREAM_BUFFER_LENGTH = 100;
 
-/// %Sound source component with stereo position.
-class SoundSource : public Component
+/// %Sound source component with stereo position. A sound source needs to be created to a node to be considered "enabled" and be able to play, however that node does not need to belong to a scene.
+class URHO3D_API SoundSource : public Component
 {
     URHO3D_OBJECT(SoundSource,Component);
 
@@ -70,8 +70,8 @@ public:
     void SetAttenuation(float attenuation);
     /// Set stereo panning. -1.0 is full left and 1.0 is full right.
     void SetPanning(float panning);
-    /// Set whether sound source will be automatically removed from the scene node when playback stops. Note: this is deprecated, consider subscribing to the SoundFinished event instead.
-    //URHO3D_DEPRECATED void SetAutoRemove(bool enable);
+    //// Set to remove either the sound source component or its owner node from the scene automatically on sound playback completion. Disabled by default.
+    void SetAutoRemoveMode(AutoRemoveMode mode);
     /// Set new playback position.
     void SetPlayPosition(signed char* pos);
 
@@ -91,8 +91,8 @@ public:
     float GetAttenuation() const { return attenuation_; }
     /// Return stereo panning.
     float GetPanning() const { return panning_; }
-    /// Return autoremove mode.
-    //bool GetAutoRemove() const { return autoRemove_; }
+    /// Return automatic removal mode on sound playback completion.
+    AutoRemoveMode GetAutoRemoveMode() const { return autoRemove_; }
     /// Return whether is playing.
     bool IsPlaying() const;
 
@@ -133,6 +133,8 @@ protected:
     float masterGain_;
     /// Whether finished event should be sent on playback stop.
     bool sendFinishedEvent_;
+    /// Automatic removal mode.
+    AutoRemoveMode autoRemove_;
 
 private:
     /// Play a sound without locking the audio mutex. Called internally.

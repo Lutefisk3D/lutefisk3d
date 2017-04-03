@@ -83,7 +83,7 @@ bool Sound::BeginLoad(Deserializer& source)
 {
     URHO3D_PROFILE(LoadSound);
 
-    bool success = false;
+    bool success;
     if (GetExtension(source.GetName()) == ".ogg")
         success = LoadOggVorbis(source);
     else if (GetExtension(source.GetName()) == ".wav")

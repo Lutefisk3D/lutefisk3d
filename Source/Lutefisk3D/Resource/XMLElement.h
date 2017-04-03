@@ -44,7 +44,7 @@ class XPathQuery;
 class XPathResultSet;
 
 /// Element in an XML file.
-class XMLElement
+class URHO3D_API XMLElement
 {
 public:
     /// Construct null element.
@@ -71,11 +71,11 @@ public:
     /// Remove a child element by name. Return true if successful.
     bool RemoveChild(const char* name);
     /// Remove child elements of certain name, or all child elements if name is empty. Return true if successful.
-    bool RemoveChildren(const QString& name = QString::null);
+    bool RemoveChildren(const QString& name = QString());
     /// Remove child elements of certain name, or all child elements if name is empty. Return true if successful.
     bool RemoveChildren(const char* name);
     /// Remove an attribute by name. Return true if successful.
-    bool RemoveAttribute(const QString& name = QString::null);
+    bool RemoveAttribute(const QString& name = QString());
     /// Remove an attribute by name. Return true if successful.
     bool RemoveAttribute(const char* name);
 
@@ -170,11 +170,11 @@ public:
     /// Return whether has a child element.
     bool HasChild(const char* name) const;
     /// Return child element, or null if missing.
-    XMLElement GetChild(const QString& name = QString::null) const;
+    XMLElement GetChild(const QString& name = QString()) const;
     /// Return child element, or null if missing.
     XMLElement GetChild(const char* name) const;
     /// Return next sibling element.
-    XMLElement GetNext(const QString& name = QString::null) const;
+    XMLElement GetNext(const QString& name = QString()) const;
     /// Return next sibling element.
     XMLElement GetNext(const char* name) const;
     /// Return parent element.
@@ -188,7 +188,7 @@ public:
     /// Return inner value, or empty if missing for nodes like <node>value</node>
     QString GetValue() const;
     /// Return attribute, or empty if missing.
-    QString GetAttribute(const QString& name = QString::null) const;
+    QString GetAttribute(const QString& name = QString()) const;
     /// Return attribute, or empty if missing.
     QString GetAttribute(const char* name) const;
     /// Return attribute as C string, or null if missing.
@@ -289,14 +289,14 @@ private:
 };
 
 /// XPath query result set.
-class XPathResultSet
+class URHO3D_API XPathResultSet
 {
 public:
     /// Construct empty result set.
     XPathResultSet();
     /// Construct with result set from XPath query.
     XPathResultSet(XMLFile* file, pugi::xpath_node_set* resultSet);
-    // Copy-construct.
+    /// Copy-construct.
     XPathResultSet(const XPathResultSet& rhs);
     /// Destruct.
     ~XPathResultSet();
@@ -323,13 +323,13 @@ private:
 };
 
 /// XPath query.
-class XPathQuery
+class URHO3D_API XPathQuery
 {
 public:
     /// Construct empty.
     XPathQuery();
     /// Construct XPath query object with query string and variable string. The variable string format is "name1:type1,name2:type2,..." where type is one of "Bool", "Float", "String", "ResultSet".
-    XPathQuery(const QString& queryString, const QString& variableString = QString::null);
+    XPathQuery(const QString& queryString, const QString& variableString = QString());
     /// Destruct.
     ~XPathQuery();
     /// Bind query object with variable set.
@@ -345,7 +345,7 @@ public:
     /// Add/Set an XPath query result set variable. Return true if successful.
     bool SetVariable(const QString& name, const XPathResultSet& value);
     /// Set XPath query string and variable string. The variable string format is "name1:type1,name2:type2,..." where type is one of "Bool", "Float", "String", "ResultSet".
-    bool SetQuery(const QString& queryString, const QString& variableString = QString::null, bool bind = true);
+    bool SetQuery(const QString& queryString, const QString& variableString = QString(), bool bind = true);
     /// Clear by removing all variables and XPath query object.
     void Clear();
     /// Evaluate XPath query and expecting a boolean return value.

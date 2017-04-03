@@ -38,7 +38,7 @@ namespace Urho3D
 class OffMeshConnection;
 class Obstacle;
 
-class DynamicNavigationMesh : public NavigationMesh
+class URHO3D_API DynamicNavigationMesh : public NavigationMesh
 {
     URHO3D_OBJECT(DynamicNavigationMesh,NavigationMesh)
     friend class Obstacle;

@@ -30,6 +30,9 @@
 #include "../IO/FileSystem.h"
 #include "../Graphics/Graphics.h"
 #include "../Core/StringUtils.h"
+#ifdef LUTEFISK3D_PROFILING
+#include "../Core/EventProfiler.h"
+#endif
 #ifdef LUTEFISK3D_INPUT
 #include "../Input/Input.h"
 #include "../Input/InputEvents.h"
@@ -41,9 +44,6 @@
 #endif
 #ifdef LUTEFISK3D_NETWORK
 #include "../Network/Network.h"
-#endif
-#ifdef LUTEFISK3D_DATABASE
-#include "../Database/Database.h"
 #endif
 #ifdef LUTEFISK3D_PHYSICS
 #include "../Physics/PhysicsWorld.h"
@@ -120,9 +120,6 @@ Engine::Engine(Context* context) :
 #ifdef LUTEFISK3D_NETWORK
     context_->RegisterSubsystem(new Network(context_));
 #endif
-#ifdef LUTEFISK3D_DATABASE
-    context_->RegisterSubsystem(new Database(context_));
-#endif
 #ifdef LUTEFISK3D_INPUT
     context_->RegisterSubsystem(new Input(context_));
 #endif
@@ -147,9 +144,7 @@ Engine::Engine(Context* context) :
 #endif
 }
 
-Engine::~Engine()
-{
-}
+
 
 bool Engine::Initialize(const VariantMap& parameters)
 {
@@ -258,7 +253,7 @@ bool Engine::Initialize(const VariantMap& parameters)
     }
 
     // Then add specified packages
-    for (QString & resourcePackage : resourcePackages)
+    for (const QString & resourcePackage : resourcePackages)
     {
         int j=0;
         for(QString &prefix : resourcePrefixPaths) {
@@ -347,20 +342,20 @@ bool Engine::Initialize(const VariantMap& parameters)
         if (HasParameter(parameters, "WindowPositionX") && HasParameter(parameters, "WindowPositionY"))
             graphics->SetWindowPosition(GetParameter(parameters, "WindowPositionX").GetInt(), GetParameter(parameters, "WindowPositionY").GetInt());
 
-        if (HasParameter(parameters, "ForceGL2"))
-            graphics->SetForceGL2(GetParameter(parameters, "ForceGL2").GetBool());
-
         if (!graphics->SetMode(
                     GetParameter(parameters, "WindowWidth", 0).GetInt(),
                     GetParameter(parameters, "WindowHeight", 0).GetInt(),
                     GetParameter(parameters, "FullScreen", true).GetBool(),
                     GetParameter(parameters, "Borderless", false).GetBool(),
                     GetParameter(parameters, "WindowResizable", false).GetBool(),
+                    GetParameter(parameters, "HighDPI", false).GetBool(),
                     GetParameter(parameters, "VSync", false).GetBool(),
                     GetParameter(parameters, "TripleBuffer", false).GetBool(),
                     GetParameter(parameters, "MultiSample", 1).GetInt()
                     ))
             return false;
+
+        graphics->SetShaderCacheDir(GetParameter(parameters, "ShaderCacheDir", fileSystem->GetAppPreferencesDir("urho3d", "shadercache")).GetString());
 
         if (HasParameter(parameters, "DumpShaders"))
             graphics->BeginDumpShaders(GetParameter(parameters, "DumpShaders", QString()).GetString());
@@ -394,21 +389,23 @@ bool Engine::Initialize(const VariantMap& parameters)
     if (HasParameter(parameters, "TouchEmulation"))
         GetSubsystem<Input>()->SetTouchEmulation(GetParameter(parameters, "TouchEmulation").GetBool());
 #endif
+    // Initialize network
+#ifdef LUTEFISK3D_NETWORK
+    if (HasParameter(parameters, "PackageCacheDir"))
+        GetSubsystem<Network>()->SetPackageCacheDir(GetParameter(parameters, "PackageCacheDir").GetString());
+#endif
 #ifdef LUTEFISK3D_TESTING
     if (HasParameter(parameters, "TimeOut"))
         timeOut_ = GetParameter(parameters, "TimeOut", 0).GetInt() * 1000000LL;
 #endif
 
-    // In debug mode, check now that all factory created objects can be created without crashing
-#ifdef _DEBUG
-    if (!resourcePaths.empty())
+#ifdef LUTEFISK3D_PROFILING
+    if (GetParameter(parameters, "EventProfiler", true).GetBool())
     {
-        const HashMap<StringHash, SharedPtr<ObjectFactory> >& factories = context_->GetObjectFactories();
-        for (const auto & factorie : factories)
-            SharedPtr<Object> object = ELEMENT_VALUE(factorie)->CreateObject();
+        context_->RegisterSubsystem(new EventProfiler(context_));
+        EventProfiler::SetActive(true);
     }
 #endif
-
     frameTimer_.Reset();
 
     URHO3D_LOGINFO("Initialized engine");
@@ -436,6 +433,15 @@ void Engine::RunFrame()
     isMinimized = input->IsMinimized();
 #endif
     Audio* audio = GetSubsystem<Audio>();
+
+#ifdef LUTEFISK3D_PROFILING
+    if (EventProfiler::IsActive())
+    {
+        EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
+        if (eventProfiler)
+            eventProfiler->BeginFrame();
+    }
+#endif
 
     time->BeginFrame(timeStep_);
 
@@ -500,36 +506,22 @@ DebugHud* Engine::CreateDebugHud()
 
 void Engine::SetTimeStepSmoothing(int frames)
 {
-    timeStepSmoothing_ = Clamp(frames, 1, 20);
+    timeStepSmoothing_ = (unsigned)Clamp(frames, 1, 20);
 }
 
 void Engine::SetMinFps(int fps)
 {
-    minFps_ = Max(fps, 0);
+    minFps_ = (unsigned)Max(fps, 0);
 }
 
-void Engine::SetMaxFps(int fps)
+void Engine::SetMaxFps(unsigned fps)
 {
-    maxFps_ = Max(fps, 0);
+    maxFps_ = std::max(fps, 0U);
 }
 
-void Engine::SetMaxInactiveFps(int fps)
+void Engine::SetMaxInactiveFps(unsigned fps)
 {
-    maxInactiveFps_ = Max(fps, 0);
-}
-
-void Engine::SetPauseMinimized(bool enable)
-{
-    pauseMinimized_ = enable;
-}
-
-void Engine::SetAutoExit(bool enable)
-{
-    // On mobile platforms exit is mandatory if requested by the platform itself and should not be attempted to be disabled
-#if defined(ANDROID) || defined(IOS)
-    enable = true;
-#endif
-    autoExit_ = enable;
+    maxInactiveFps_ = std::max(fps, 0U);
 }
 
 void Engine::SetNextTimeStep(float seconds)
@@ -539,27 +531,29 @@ void Engine::SetNextTimeStep(float seconds)
 
 void Engine::Exit()
 {
-#if defined(IOS)
-    // On iOS it's not legal for the application to exit on its own, instead it will be minimized with the home key
-#else
     DoExit();
-#endif
 }
 
 void Engine::DumpProfiler()
 {
+#ifdef LUTEFISK3D_LOGGING
+    if (!Thread::IsMainThread())
+        return;
+
     Profiler* profiler = GetSubsystem<Profiler>();
     if (profiler)
         URHO3D_LOGRAW(profiler->PrintData(true, true) + "\n");
+#endif
 }
 
 void Engine::DumpResources(bool dumpFileName)
 {
 #ifdef LUTEFISK3D_LOGGING
+    if (!Thread::IsMainThread())
+        return;
+
     ResourceCache* cache = GetSubsystem<ResourceCache>();
     const HashMap<StringHash, ResourceGroup>& resourceGroups = cache->GetAllResources();
-    URHO3D_LOGRAW("\n");
-
     if (dumpFileName)
     {
         URHO3D_LOGRAW("Used resources:\n");
@@ -601,9 +595,9 @@ void Engine::DumpMemory()
         if (block->nBlockUse > 0)
         {
             if (block->szFileName)
-                URHO3D_LOGRAW("Block " + String::number((int)block->lRequest) + ": " + String::number(block->nDataSize) + " bytes, file " + String::number(block->szFileName) + " line " + String(block->nLine) + "\n");
+                URHO3D_LOGRAW("Block " + QString::number((int)block->lRequest) + ": " + QString::number(block->nDataSize) + " bytes, file " + block->szFileName + " line " + QString::number(block->nLine) + "\n");
             else
-                URHO3D_LOGRAW("Block " + String::number((int)block->lRequest) + ": " + String::number(block->nDataSize) + " bytes\n");
+                URHO3D_LOGRAW("Block " + QString::number((int)block->lRequest) + ": " + QString::number(block->nDataSize) + " bytes\n");
 
             total += block->nDataSize;
             ++blocks;
@@ -611,7 +605,7 @@ void Engine::DumpMemory()
         block = block->pBlockHeaderPrev;
     }
 
-    URHO3D_LOGRAW("Total allocated memory " + String::number(total) + " bytes in " + String::number(blocks) + " blocks\n\n");
+    URHO3D_LOGRAW("Total allocated memory " + QString::number(total) + " bytes in " + QString::number(blocks) + " blocks\n\n");
 #else
     URHO3D_LOGRAW("DumpMemory() supported on MSVC debug mode only\n\n");
 #endif
@@ -663,11 +657,11 @@ void Engine::ApplyFrameLimit()
     if (!initialized_)
         return;
 
-    int maxFps = maxFps_;
+    unsigned maxFps = maxFps_;
 #ifdef LUTEFISK3D_INPUT
     Input* input = GetSubsystem<Input>();
     if (input && !input->HasFocus())
-        maxFps = std::min<int>(maxInactiveFps_, maxFps);
+        maxFps = std::min(maxInactiveFps_, maxFps);
 #endif
 
     long long elapsed = 0;
@@ -780,10 +774,12 @@ VariantMap Engine::ParseParameters(const QStringList& arguments)
                 ret["TripleBuffer"] = true;
             else if (argument == "w")
                 ret["FullScreen"] = false;
-            else if (argument == "s")
-                ret["WindowResizable"] = true;
             else if (argument == "borderless")
                 ret["Borderless"] = true;
+            else if (argument == "s")
+                ret["WindowResizable"] = true;
+            else if (argument == "hd")
+                ret["HighDPI"] = true;
             else if (argument == "q")
                 ret["LogQuiet"] = true;
             else if (argument == "log" && !value.isEmpty())
@@ -911,9 +907,6 @@ void Engine::DoExit()
         graphics->Close();
 
     exiting_ = true;
-#if defined(__EMSCRIPTEN__) && defined(LUTEFISK3D_TESTING)
-    emscripten_force_exit(EXIT_SUCCESS);    // Some how this is required to signal emrun to stop
-#endif
 }
 
 }

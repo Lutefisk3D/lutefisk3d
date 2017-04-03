@@ -35,9 +35,7 @@ namespace Urho3D
 namespace Spriter
 {
 
-SpriterData::SpriterData()
-{
-}
+
 
 SpriterData::~SpriterData()
 {
@@ -48,15 +46,15 @@ void SpriterData::Reset()
 {
     if (!folders_.empty())
     {
-        for (size_t i = 0; i < folders_.size(); ++i)
-            delete folders_[i];
+        for (Folder * folder : folders_)
+            delete folder;
         folders_.clear();
     }
 
     if (!entities_.empty())
     {
-        for (size_t i = 0; i < entities_.size(); ++i)
-            delete entities_[i];
+        for (Entity *entity : entities_)
+            delete entity;
         entities_.clear();
     }
 }
@@ -98,11 +96,6 @@ bool SpriterData::Load(const void* data, size_t size)
     return Load(document.child("spriter_data"));
 }
 
-Folder::Folder()
-{
-
-}
-
 Folder::~Folder()
 {
     Reset();
@@ -110,8 +103,8 @@ Folder::~Folder()
 
 void Folder::Reset()
 {
-    for (size_t i = 0; i < files_.size(); ++i)
-        delete files_[i];
+    for (File * file : files_)
+        delete file;
     files_.clear();
 }
 
@@ -135,12 +128,8 @@ bool Folder::Load(const pugi::xml_node& node)
     return true;
 }
 
-File::File(Folder* folder) : 
+File::File(Folder* folder) :
     folder_(folder)
-{
-}
-
-File::~File()
 {
 }
 
@@ -159,11 +148,6 @@ bool File::Load(const pugi::xml_node& node)
     return true;
 }
 
-Entity::Entity()
-{
-
-}
-
 Entity::~Entity()
 {
     Reset();
@@ -171,12 +155,12 @@ Entity::~Entity()
 
 void Entity::Reset()
 {
-    for (size_t i = 0; i < characterMaps_.size(); ++i)
-        delete characterMaps_[i];
+    for (CharacterMap * characterMap : characterMaps_)
+        delete characterMap;
     characterMaps_.clear();
 
-    for (size_t i = 0; i < animations_.size(); ++i)
-        delete animations_[i];
+    for (Animation * animation : animations_)
+        delete animation;
     animations_.clear();
 }
 
@@ -207,20 +191,10 @@ bool Entity::Load(const pugi::xml_node& node)
     return true;
 }
 
-CharacterMap::CharacterMap()
-{
-
-}
-
-CharacterMap::~CharacterMap()
-{
-
-}
-
 void CharacterMap::Reset()
 {
-    for (size_t i = 0; i < maps_.size(); ++i)
-        delete maps_[i];
+    for (MapInstruction * map : maps_)
+        delete map;
     maps_.clear();
 }
 
@@ -244,16 +218,6 @@ bool CharacterMap::Load(const pugi::xml_node& node)
     return false;
 }
 
-MapInstruction::MapInstruction()
-{
-
-}
-
-MapInstruction::~MapInstruction()
-{
-
-}
-
 bool MapInstruction::Load(const pugi::xml_node& node)
 {
     if (strcmp(node.name(), "map"))
@@ -267,11 +231,6 @@ bool MapInstruction::Load(const pugi::xml_node& node)
     return true;
 }
 
-Animation::Animation()
-{
-
-}
-
 Animation::~Animation()
 {
     Reset();
@@ -281,13 +240,13 @@ void Animation::Reset()
 {
     if (!mainlineKeys_.empty())
     {
-        for (size_t i = 0; i < mainlineKeys_.size(); ++i)
-            delete mainlineKeys_[i];
+        for (MainlineKey * mainlineKey : mainlineKeys_)
+            delete mainlineKey;
         mainlineKeys_.clear();
     }
 
-    for (size_t i = 0; i < timelines_.size(); ++i)
-        delete timelines_[i];
+    for (Timeline * timeline : timelines_)
+        delete timeline;
     timelines_.clear();
 }
 
@@ -321,11 +280,6 @@ bool Animation::Load(const pugi::xml_node& node)
     return true;
 }
 
-MainlineKey::MainlineKey()
-{
-
-}
-
 MainlineKey::~MainlineKey()
 {
     Reset();
@@ -333,12 +287,12 @@ MainlineKey::~MainlineKey()
 
 void MainlineKey::Reset()
 {
-    for (size_t i = 0; i < boneRefs_.size(); ++i)
-        delete boneRefs_[i];
+    for (Ref * boneRef : boneRefs_)
+        delete boneRef;
     boneRefs_.clear();
 
-    for (size_t i = 0; i < objectRefs_.size(); ++i)
-        delete objectRefs_[i];
+    for (Ref * objectRef : objectRefs_)
+        delete objectRef;
     objectRefs_.clear();
 }
 
@@ -364,15 +318,6 @@ bool MainlineKey::Load(const pugi::xml_node& node)
     return true;
 }
 
-Ref::Ref()
-{
-
-}
-
-Ref::~Ref()
-{
-}
-
 bool Ref::Load(const pugi::xml_node& node)
 {
     if (strcmp(node.name(), "bone_ref") && strcmp(node.name(), "object_ref"))
@@ -387,11 +332,6 @@ bool Ref::Load(const pugi::xml_node& node)
     return true;
 }
 
-Timeline::Timeline()
-{
-
-}
-
 Timeline::~Timeline()
 {
     Reset();
@@ -399,8 +339,8 @@ Timeline::~Timeline()
 
 void Timeline::Reset()
 {
-    for (size_t i = 0; i < keys_.size(); ++i)
-        delete keys_[i];
+    for (SpatialTimelineKey * key : keys_)
+        delete key;
     keys_.clear();
 }
 
@@ -420,7 +360,7 @@ bool Timeline::Load(const pugi::xml_node& node)
         typeString = node.attribute("object_type").as_string("sprite");
     else
         typeString = typeAttr.as_string("sprite");
-    
+
     if (typeString == "bone")
     {
         objectType_ = BONE;
@@ -453,10 +393,6 @@ bool Timeline::Load(const pugi::xml_node& node)
 TimelineKey::TimelineKey(Timeline* timeline)
 {
     this->timeline_ = timeline;
-}
-
-TimelineKey::~TimelineKey()
-{
 }
 
 bool TimelineKey::Load(const pugi::xml_node& node)
@@ -536,11 +472,11 @@ float TimelineKey::GetTByCurveType(float currentTime, float nextTimelineTime) co
 
 SpatialInfo::SpatialInfo(float x, float y, float angle, float scale_x, float scale_y, float a, int spin)
 {
-    this->x_ = x; 
-    this->y_ = y; 
+    this->x_ = x;
+    this->y_ = y;
     this->angle_ = angle;
-    this->scaleX_ = scale_x; 
-    this->scaleY_ = scale_y; 
+    this->scaleX_ = scale_x;
+    this->scaleY_ = scale_y;
     this->alpha_ = a;
     this->spin = spin;
 }
@@ -597,13 +533,8 @@ void SpatialInfo::Interpolate(const SpatialInfo& other, float t)
     alpha_ = Linear(alpha_, other.alpha_, t);
 }
 
-SpatialTimelineKey::SpatialTimelineKey(Timeline* timeline) : 
+SpatialTimelineKey::SpatialTimelineKey(Timeline* timeline) :
     TimelineKey(timeline)
-{
-
-}
-
-SpatialTimelineKey::~SpatialTimelineKey()
 {
 
 }
@@ -629,26 +560,14 @@ bool SpatialTimelineKey::Load(const xml_node& node)
     return true;
 }
 
-SpatialTimelineKey& SpatialTimelineKey::operator=(const SpatialTimelineKey& rhs)
-{
-    TimelineKey::operator=(rhs);
-    info_ = rhs.info_;
-    return *this;
-}   
-
 void SpatialTimelineKey::Interpolate(const TimelineKey& other, float t)
 {
     const SpatialTimelineKey& o = (const SpatialTimelineKey&)other;
     info_.Interpolate(o.info_, t);
 }
 
-BoneTimelineKey::BoneTimelineKey(Timeline* timeline) : 
+BoneTimelineKey::BoneTimelineKey(Timeline* timeline) :
     SpatialTimelineKey(timeline)
-{
-
-}
-
-BoneTimelineKey::~BoneTimelineKey()
 {
 
 }
@@ -672,15 +591,6 @@ bool BoneTimelineKey::Load(const xml_node& node)
     return true;
 }
 
-BoneTimelineKey& BoneTimelineKey::operator=(const BoneTimelineKey& rhs)
-{
-    SpatialTimelineKey::operator=(rhs);
-    length_ = rhs.length_;
-    width_ = rhs.width_;
-
-    return *this;
-}
-
 void BoneTimelineKey::Interpolate(const TimelineKey& other, float t)
 {
     SpatialTimelineKey::Interpolate(other, t);
@@ -697,14 +607,9 @@ TimelineKey* SpriteTimelineKey::Clone() const
     return result;
 }
 
-SpriteTimelineKey::SpriteTimelineKey(Timeline* timeline) : 
+SpriteTimelineKey::SpriteTimelineKey(Timeline* timeline) :
     SpatialTimelineKey(timeline)
 {
-}
-
-SpriteTimelineKey::~SpriteTimelineKey()
-{
-
 }
 
 bool SpriteTimelineKey::Load(const pugi::xml_node& node)
@@ -733,7 +638,7 @@ bool SpriteTimelineKey::Load(const pugi::xml_node& node)
 void SpriteTimelineKey::Interpolate(const TimelineKey& other, float t)
 {
     SpatialTimelineKey::Interpolate(other, t);
-        
+
     const SpriteTimelineKey& o = (const SpriteTimelineKey&)other;
     pivotX_ = Linear(pivotX_, o.pivotX_, t);
     pivotY_ = Linear(pivotY_, o.pivotY_, t);
@@ -742,7 +647,7 @@ void SpriteTimelineKey::Interpolate(const TimelineKey& other, float t)
 SpriteTimelineKey& SpriteTimelineKey::operator=(const SpriteTimelineKey& rhs)
 {
     SpatialTimelineKey::operator=(rhs);
-        
+
     folderId_ = rhs.folderId_;
     fileId_ = rhs.fileId_;
     useDefaultPivot_ = rhs.useDefaultPivot_;

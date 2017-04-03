@@ -32,18 +32,6 @@
 namespace Urho3D
 {
 
-AnimationStateTrack::AnimationStateTrack() :
-    track_(nullptr),
-    bone_(nullptr),
-    weight_(1.0f),
-    keyFrame_(0)
-{
-}
-
-AnimationStateTrack::~AnimationStateTrack()
-{
-}
-
 AnimationState::AnimationState(AnimatedModel* model, Animation* animation) :
     model_(model),
     animation_(animation),
@@ -65,7 +53,8 @@ AnimationState::AnimationState(Node* node, Animation* animation) :
     looped_(false),
     weight_(1.0f),
     time_(0.0f),
-    layer_(0)
+    layer_(0),
+    blendingMode_(ABM_LERP)
 {
     if (animation_)
     {
@@ -97,11 +86,6 @@ AnimationState::AnimationState(Node* node, Animation* animation) :
             }
         }
     }
-}
-
-
-AnimationState::~AnimationState()
-{
 }
 
 void AnimationState::SetStartBone(Bone* startBone)
@@ -178,7 +162,7 @@ void AnimationState::SetWeight(float weight)
     }
 }
 
-void AnimationState::SetBlendingMode(AnimationBlendMode mode)
+void AnimationState::SetBlendMode(AnimationBlendMode mode)
 {
     if (model_)
     {
@@ -331,8 +315,7 @@ void AnimationState::AddTime(float delta)
         if (oldTime > time)
             std::swap(oldTime, time);
 
-        const std::vector<AnimationTriggerPoint>& triggers = animation_->GetTriggers();
-        for (const AnimationTriggerPoint & trigger : triggers)
+        for (const AnimationTriggerPoint & trigger : animation_->GetTriggers())
         {
             float frameTime = trigger.time_;
             if (looped_ && wrap)
@@ -469,7 +452,7 @@ void AnimationState::ApplyToNodes()
 {
     // When applying to a node hierarchy, can only use full weight (nothing to blend to)
     for (AnimationStateTrack & elem : stateTracks_)
-        ApplyTrack(elem, 1.0, false);
+        ApplyTrack(elem, 1.0f, false);
 }
 
 void AnimationState::ApplyTrack(AnimationStateTrack& stateTrack, float weight, bool silent)
@@ -512,7 +495,6 @@ void AnimationState::ApplyTrack(AnimationStateTrack& stateTrack, float weight, b
             timeInterval += animation_->GetLength();
         float t = timeInterval > 0.0f ? (time_ - keyFrame->time_) / timeInterval : 1.0f;
 
-        // Interpolation, full weight
         if (channelMask & CHANNEL_POSITION)
             newPosition = keyFrame->position_.Lerp(nextKeyFrame->position_, t);
         if (channelMask & CHANNEL_ROTATION)
@@ -529,32 +511,37 @@ void AnimationState::ApplyTrack(AnimationStateTrack& stateTrack, float weight, b
         if (channelMask & CHANNEL_SCALE)
             newScale = keyFrame->scale_;
     }
-    if (!Equals(weight, 1.0f)) // not full weight
-    {
-        if (channelMask & CHANNEL_POSITION)
-            newPosition = node->GetPosition().Lerp(newPosition, weight);
-        if (channelMask & CHANNEL_ROTATION)
-            newRotation = node->GetRotation().Slerp(newRotation, weight);
-        if (channelMask & CHANNEL_SCALE)
-            newScale = node->GetScale().Lerp(newScale, weight);
-    }
 
-    if (blendingMode_ == ABM_ADDITIVE) // not ABM_OVERRIDE
+    if (blendingMode_ == ABM_ADDITIVE) // not ABM_LERP
     {
         if (channelMask & CHANNEL_POSITION)
         {
             Vector3 delta = newPosition - stateTrack.bone_->initialPosition_;
-            newPosition = node->GetPosition() + delta;
+            newPosition = node->GetPosition() + delta * weight;
         }
         if (channelMask & CHANNEL_ROTATION)
         {
             Quaternion delta = newRotation * stateTrack.bone_->initialRotation_.Inverse();
             newRotation = (delta * node->GetRotation()).Normalized();
+            if (!Equals(weight, 1.0f))
+                newRotation = node->GetRotation().Slerp(newRotation, weight);
         }
         if (channelMask & CHANNEL_SCALE)
         {
             Vector3 delta = newScale - stateTrack.bone_->initialScale_;
-            newScale = node->GetScale() + delta;
+            newScale = node->GetScale() + delta * weight;
+        }
+    }
+    else
+    {
+        if (!Equals(weight, 1.0f)) // not full weight
+        {
+            if (channelMask & CHANNEL_POSITION)
+                newPosition = node->GetPosition().Lerp(newPosition, weight);
+            if (channelMask & CHANNEL_ROTATION)
+                newRotation = node->GetRotation().Slerp(newRotation, weight);
+            if (channelMask & CHANNEL_SCALE)
+                newScale = node->GetScale().Lerp(newScale, weight);
         }
     }
 

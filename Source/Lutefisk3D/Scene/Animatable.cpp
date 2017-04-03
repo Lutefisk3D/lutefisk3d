@@ -149,7 +149,7 @@ bool Animatable::LoadJSON(const JSONValue& source, bool setInstanceDefault)
 
         QString wrapModeString = source.Get("wrapmode").GetString();
         WrapMode wrapMode = WM_LOOP;
-        for (int i = 0; i <= WM_CLAMP; ++i)
+        for (int i = 0; i < WM_NUM_WRAP_MODES; ++i)
         {
             if (wrapModeString == wrapModeNames[i])
             {
@@ -499,8 +499,8 @@ void Animatable::UpdateAttributeAnimations(float timeStep)
             finishedNames.push_back(i->GetAttributeInfo().name_);
     }
 
-    for (unsigned i = 0; i < finishedNames.size(); ++i)
-        SetAttributeAnimation(finishedNames[i], nullptr);
+    for(QString &name : finishedNames)
+        SetAttributeAnimation(name, nullptr);
 }
 
 bool Animatable::IsAnimatedNetworkAttribute(const AttributeInfo& attrInfo) const

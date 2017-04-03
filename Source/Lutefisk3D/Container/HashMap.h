@@ -177,7 +177,7 @@ public:
         members.push_back(val);
     }
     bool empty() const { return members.empty(); }
-
+    size_t size() const { return members.size(); }
 };
 #endif
 }

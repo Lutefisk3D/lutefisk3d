@@ -28,7 +28,7 @@ class QString;
 namespace Urho3D
 {
 /// Two-dimensional vector.
-class Vector2
+class URHO3D_API Vector2
 {
 public:
     /// Construct a zero vector.
@@ -207,7 +207,7 @@ public:
 inline Vector2 operator * (float lhs, const Vector2& rhs) { return rhs * lhs; }
 
 /// Two-dimensional vector with integer values.
-class IntVector2
+class URHO3D_API IntVector2
 {
 public:
     /// Construct a zero vector.
@@ -296,6 +296,8 @@ public:
     const int* Data() const { return &x_; }
     /// Return as string.
     QString ToString() const;
+    /// Return hash value for HashSet & HashMap.
+    unsigned ToHash() const { return (unsigned)x_ * 31 + (unsigned)y_; }
 
     /// X coordinate.
     int x_;

@@ -100,7 +100,7 @@ class XMLFile;
 class XMLElement;
 
 /// %Particle effect definition.
-class ParticleEffect : public Resource
+class URHO3D_API ParticleEffect : public Resource
 {
     URHO3D_OBJECT(ParticleEffect,Resource);
 
@@ -129,12 +129,14 @@ public:
     void SetNumParticles(unsigned num);
     /// Set whether to update when particles are not visible.
     void SetUpdateInvisible(bool enable);
-    /// Set whether billboards are relative to the scene node. Default true.
+    /// Set whether billboards are relative to the scene node.
     void SetRelative(bool enable);
-    /// Set scaled.
+    /// Set whether scene node scale affects billboards' size.
     void SetScaled(bool enable);
-    /// Set sorted.
+    /// Set whether billboards are sorted by distance.
     void SetSorted(bool enable);
+    /// Set whether billboards have fixed size on screen (measured in pixels) regardless of distance to camera.
+    void SetFixedScreenSize(bool enable);
     /// Set animation LOD bias.
     void SetAnimationLodBias(float lodBias);
     /// Set emitter type.
@@ -213,6 +215,8 @@ public:
     void SetNumTextureFrames(unsigned number);
     /// Sort the list of texture frames based on time.
     void SortTextureFrames();
+    /// Clone the particle effect.
+    SharedPtr<ParticleEffect> Clone(const QString& cloneName = QString()) const;
 
     /// Return material.
     Material* GetMaterial() const { return material_; }
@@ -226,6 +230,8 @@ public:
     bool IsScaled() const { return scaled_; }
     /// Return whether billboards are sorted.
     bool IsSorted() const { return sorted_; }
+    /// Return whether billboards are fixed screen size.
+    bool IsFixedScreenSize() const { return fixedScreenSize_; }
     /// Return animation Lod bias.
     float GetAnimationLodBias() const { return animationLodBias_; }
     /// Return emitter type.
@@ -320,6 +326,8 @@ private:
     bool scaled_;
     /// Billboards sorted flag.
     bool sorted_;
+    /// Billboards fixed screen size flag.
+    bool fixedScreenSize_;
     /// Animation LOD bias.
     float animationLodBias_;
     /// Emitter shape.

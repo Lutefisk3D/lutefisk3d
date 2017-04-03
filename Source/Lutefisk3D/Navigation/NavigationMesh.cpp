@@ -43,6 +43,7 @@
 #include "../Scene/Scene.h"
 #include "../Graphics/StaticModel.h"
 #include "../Graphics/TerrainPatch.h"
+#include "../Graphics/VertexBuffer.h"
 #include "../IO/VectorBuffer.h"
 
 #include <cfloat>
@@ -93,8 +94,6 @@ struct FindPathData
     Vector3 pathPoints_[MAX_POLYS];
     // Flags on the path.
     unsigned char pathFlags_[MAX_POLYS];
-    // Area Ids on the path.
-    unsigned char pathAreras_[MAX_POLYS];
 };
 
 NavigationMesh::NavigationMesh(Context* context) :
@@ -216,11 +215,9 @@ void NavigationMesh::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
         // Draw NavArea components
         if (drawNavAreas_)
         {
-            std::vector<Node*> areas;
-            scene->GetChildrenWithComponent<NavArea>(areas, true);
-            for (unsigned i = 0; i < areas.size(); ++i)
+            for (unsigned i = 0; i < areas_.size(); ++i)
             {
-                NavArea* area = areas[i]->GetComponent<NavArea>();
+                NavArea* area = areas_[i];
                 if (area && area->IsEnabledEffective())
                     area->DrawDebugGeometry(debug, depthTest);
             }
@@ -574,8 +571,30 @@ void NavigationMesh::FindPath(std::deque<NavigationPathPoint>& dest, const Vecto
         NavigationPathPoint pt;
         pt.position_ = transform * pathData_->pathPoints_[i];
         pt.flag_ = (NavigationPathPointFlag)pathData_->pathFlags_[i];
-        pt.areaID_ = pathData_->pathAreras_[i];
 
+        // Walk through all NavAreas and find nearest
+        unsigned nearestNavAreaID = 0;   // 0 is the default nav area ID
+        float nearestDistance = std::numeric_limits<float>::max();
+        for (unsigned j = 0; j < areas_.size(); j++)
+        {
+            NavArea* area = areas_[j].Get();
+            if (area && area->IsEnabledEffective())
+            {
+                BoundingBox bb = area->GetWorldBoundingBox();
+                if (bb.IsInside(pt.position_) == INSIDE)
+                {
+                    Vector3 areaWorldCenter = area->GetNode()->GetWorldPosition();
+                    float distance = (areaWorldCenter - pt.position_).LengthSquared();
+
+                    if (distance < nearestDistance)
+                    {
+                        nearestDistance = distance;
+                        nearestNavAreaID = area->GetAreaID();
+                    }
+                }
+            }
+        }
+        pt.areaID_ = (unsigned char)nearestNavAreaID;
         dest.push_back(pt);
     }
 }
@@ -807,8 +826,8 @@ std::vector<unsigned char> NavigationMesh::GetNavigationDataAttr() const
                 ret.WriteInt(x);
                 ret.WriteInt(z);
                 ret.WriteUInt(navMesh->getTileRef(tile));
-                ret.WriteUInt(tile->dataSize);
-                ret.Write(tile->data, tile->dataSize);
+                ret.WriteUInt((unsigned)tile->dataSize);
+                ret.Write(tile->data, (unsigned)tile->dataSize);
             }
         }
     }
@@ -854,17 +873,18 @@ void NavigationMesh::CollectGeometries(std::vector<NavigationGeometryInfo>& geom
     // Get nav area volumes
     std::vector<NavArea*> navAreas;
     node_->GetComponents<NavArea>(navAreas, true);
+    areas_.clear();
     for (unsigned i = 0; i < navAreas.size(); ++i)
     {
         NavArea* area = navAreas[i];
-        // Ignore disabled AND any areas that have no meaningful settings
-        if (area->IsEnabledEffective() && area->GetAreaID() != 0)
+        if (area->IsEnabledEffective())
         {
             NavigationGeometryInfo info;
             info.component_ = area;
             info.boundingBox_ = area->GetWorldBoundingBox();
             geometryList.push_back(info);
-        }
+            areas_.emplace_back(WeakPtr<NavArea>(area));   
+         }
     }
 }
 
@@ -1065,10 +1085,10 @@ void NavigationMesh::AddTriMeshGeometry(NavBuildData* build, Geometry* geometry,
     const unsigned char* indexData;
     unsigned vertexSize;
     unsigned indexSize;
-    unsigned elementMask;
+    const std::vector<VertexElement>* elements;
 
-    geometry->GetRawData(vertexData, vertexSize, indexData, indexSize, elementMask);
-    if (!vertexData || !indexData || (elementMask & MASK_POSITION) == 0)
+    geometry->GetRawData(vertexData, vertexSize, indexData, indexSize, elements);
+    if (!vertexData || !indexData || !elements || VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR3, SEM_POSITION) != 0)
         return;
 
     unsigned srcIndexStart = geometry->GetIndexStart();

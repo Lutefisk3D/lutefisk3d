@@ -93,7 +93,7 @@ void LogicComponent::OnSceneSet(Scene* scene)
     {
         UnsubscribeFromEvent(E_SCENEUPDATE);
         UnsubscribeFromEvent(E_SCENEPOSTUPDATE);
-#if defined(URHO3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
+#if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
         UnsubscribeFromEvent(E_PHYSICSPRESTEP);
         UnsubscribeFromEvent(E_PHYSICSPOSTSTEP);
 #endif
@@ -127,7 +127,7 @@ void LogicComponent::UpdateEventSubscription()
         SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(LogicComponent, HandleScenePostUpdate));
         currentEventMask_ |= USE_POSTUPDATE;
     }
-    else if (!needUpdate && ((currentEventMask_ & USE_POSTUPDATE) != 0))
+    else if (!needPostUpdate && ((currentEventMask_ & USE_POSTUPDATE) != 0))
     {
         UnsubscribeFromEvent(scene, E_SCENEPOSTUPDATE);
         currentEventMask_ &= ~USE_POSTUPDATE;
@@ -200,6 +200,12 @@ void LogicComponent::HandlePhysicsPreStep(StringHash eventType, VariantMap& even
 {
     using namespace PhysicsPreStep;
 
+    // Execute user-defined delayed start function before first fixed update if not called yet
+    if (!delayedStartCalled_)
+    {
+        DelayedStart();
+        delayedStartCalled_ = true;
+    }
     // Execute user-defined fixed update function
     FixedUpdate(eventData[P_TIMESTEP].GetFloat());
 }

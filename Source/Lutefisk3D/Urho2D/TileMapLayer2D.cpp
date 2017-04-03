@@ -288,7 +288,7 @@ void TileMapLayer2D::SetTileLayer(const TmxTileLayer2D* tileLayer)
 
     int width = tileLayer->GetWidth();
     int height = tileLayer->GetHeight();
-    nodes_.resize(width * height);
+    nodes_.resize((unsigned)(width * height));
 
     const TileMapInfo2D& info = tileMap_->GetInfo();
     for (int y = 0; y < height; ++y)

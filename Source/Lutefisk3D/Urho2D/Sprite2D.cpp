@@ -132,15 +132,16 @@ void Sprite2D::SetOffset(const IntVector2& offset)
     offset_ = offset;
 }
 
+void Sprite2D::SetTextureEdgeOffset(float offset)
+{
+    edgeOffset_ = offset;
+}
+
 void Sprite2D::SetSpriteSheet(SpriteSheet2D* spriteSheet)
 {
     spriteSheet_ = spriteSheet;
 }
 
-void Sprite2D::SetTextureEdgeOffset(float offset)
-{
-    edgeOffset_ = offset;
-}
 
 bool Sprite2D::GetDrawRectangle(Rect& rect, bool flipX, bool flipY) const
 {
@@ -176,8 +177,8 @@ bool Sprite2D::GetTextureRectangle(Rect& rect, bool flipX, bool flipY) const
     rect.min_.x_ = (float(rectangle_.left_) + edgeOffset_) * invWidth;
     rect.max_.x_ = (float(rectangle_.right_) - edgeOffset_) * invWidth;
 
-    rect.min_.y_ = (float(rectangle_.bottom_) + edgeOffset_) * invHeight;
-    rect.max_.y_ = (float(rectangle_.top_) - edgeOffset_) * invHeight;
+    rect.min_.y_ = (float(rectangle_.bottom_) - edgeOffset_) * invHeight;
+    rect.max_.y_ = (float(rectangle_.top_) + edgeOffset_) * invHeight;
 
     if (flipX)
         std::swap(rect.min_.x_, rect.max_.x_);

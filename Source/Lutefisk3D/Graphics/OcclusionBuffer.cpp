@@ -78,7 +78,7 @@ bool OcclusionBuffer::SetSize(int width, int height, bool threaded)
 
     if (!IsPowerOfTwo((unsigned)width))
     {
-        URHO3D_LOGERROR("Width is not a power of two");
+        URHO3D_LOGERROR(QString("Requested occlusion buffer width %1 is not a power of two").arg(width));
         return false;
     }
 
@@ -123,7 +123,7 @@ void OcclusionBuffer::SetView(Camera* camera)
         return;
 
     view_ = camera->GetView();
-    projection_ = camera->GetProjection(false);
+    projection_ = camera->GetProjection();
     viewProj_ = projection_ * view_;
     nearClip_ = camera->GetNearClip();
     farClip_ = camera->GetFarClip();
@@ -175,7 +175,7 @@ bool OcclusionBuffer::AddTriangles(const Matrix3x4& model, const void* vertexDat
     batch.model_ = model;
     batch.vertexData_ = vertexData;
     batch.vertexSize_ = vertexSize;
-    batch.indexData_ = 0;
+    batch.indexData_ = nullptr;
     batch.indexSize_ = 0;
     batch.drawStart_ = vertexStart;
     batch.drawCount_ = vertexCount;

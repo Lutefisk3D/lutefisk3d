@@ -24,7 +24,6 @@
 #include "../Core/ProcessUtils.h"
 #include "../Math/MathDefs.h"
 #include "../IO/FileSystem.h" // used for minidump support functions
-
 #include <QtCore/QThread>
 #ifndef MINI_URHO
 #include <SDL2/SDL.h>
@@ -82,7 +81,6 @@ static bool consoleOpened = false;
 static QString currentLine;
 static QStringList arguments;
 static QString miniDumpDir;
-
 
 void InitFPU()
 {
@@ -315,7 +313,6 @@ QString GetPlatform()
     return String::null;
 #endif
 }
-
 
 unsigned GetNumPhysicalCPUs()
 {

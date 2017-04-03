@@ -37,11 +37,6 @@
 #include "TargetConditionals.h"
 #endif
 
-#if defined(IOS)
-#include "../Math/MathDefs.h"
-#include <mach/mach_host.h>
-#elif !defined(ANDROID) && !defined(RPI)
-#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -52,7 +47,7 @@
 
 #if defined(_MSC_VER)
 #include <float.h>
-#elif !defined(ANDROID) && !defined(IOS) && !defined(RPI)
+#else
 // From http://stereopsis.com/FPU.html
 
 #define FPU_CW_PREC_MASK        0x0300
@@ -138,7 +133,6 @@ void OpenConsoleWindow()
 
 void PrintUnicode(const QString& str, bool error)
 {
-#if !defined(ANDROID) && !defined(IOS)
 #ifdef _WIN32
     // If the output stream has been redirected, use fprintf instead of WriteConsoleW,
     // though it means that proper Unicode output will not work
@@ -157,7 +151,6 @@ void PrintUnicode(const QString& str, bool error)
 #else
     fprintf(error ? stderr : stdout, "%s", qPrintable(str));
 #endif
-#endif
 }
 
 void PrintUnicodeLine(const QString& str, bool error)
@@ -167,9 +160,7 @@ void PrintUnicodeLine(const QString& str, bool error)
 
 void PrintLine(const QString& str, bool error)
 {
-#if !defined(ANDROID) && !defined(IOS)
     fprintf(error ? stderr: stdout, "%s\n", qPrintable(str));
-#endif
 }
 
 const QStringList& ParseArguments(const QString& cmdLine, bool skipFirstArgument)
@@ -296,7 +287,7 @@ QString GetConsoleInput()
             }
         }
     }
-#elif !defined(ANDROID) && !defined(IOS)
+#else
     int flags = fcntl(STDIN_FILENO, F_GETFL);
     fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
     for (;;)
@@ -314,18 +305,10 @@ QString GetConsoleInput()
 
 QString GetPlatform()
 {
-#if defined(ANDROID)
-    return "Android";
-#elif defined(IOS)
-    return "iOS";
-#elif defined(_WIN32)
+#if   defined(_WIN32)
     return "Windows";
 #elif defined(__APPLE__)
     return "Mac OS X";
-#elif defined(RPI)
-    return "Raspberry Pi";
-#elif defined(__EMSCRIPTEN__)
-    return "Web";
 #elif defined(__linux__)
     return "Linux";
 #else

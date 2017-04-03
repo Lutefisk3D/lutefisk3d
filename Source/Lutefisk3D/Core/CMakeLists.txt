@@ -1,8 +1,10 @@
 set(INCLUDES
+    LAssert.h
     Attribute.h
     CoreEvents.h
     Condition.h
     Context.h
+    EventProfiler.h
     Mutex.h
     Main.h
     Object.h
@@ -17,6 +19,7 @@ set(INCLUDES
 set(SOURCE
     Condition.cpp
     Context.cpp
+    EventProfiler.cpp
     Mutex.cpp
     Object.cpp
     ProcessUtils.cpp

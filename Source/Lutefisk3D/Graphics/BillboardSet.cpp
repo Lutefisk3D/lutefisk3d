@@ -646,8 +646,8 @@ void BillboardSet::UpdateVertexBuffer(const FrameInfo& frame)
                 size *= billboard.screenScaleFactor_;
 
             float rotationMatrix[2][2];
-            rotationMatrix[0][0] = std::cos(billboard.rotation_);
-            rotationMatrix[0][1] = std::sin(billboard.rotation_);
+            rotationMatrix[0][0] = std::cos(billboard.rotation_* M_DEGTORAD);
+            rotationMatrix[0][1] = std::sin(billboard.rotation_* M_DEGTORAD);
             rotationMatrix[1][0] = -rotationMatrix[0][1];
             rotationMatrix[1][1] = rotationMatrix[0][0];
 
@@ -702,8 +702,8 @@ void BillboardSet::UpdateVertexBuffer(const FrameInfo& frame)
                 size *= billboard.screenScaleFactor_;
 
             float rot2D[2][2];
-            rot2D[0][0] = std::cos(billboard.rotation_);
-            rot2D[0][1] = std::sin(billboard.rotation_);
+            rot2D[0][0] = std::cos(billboard.rotation_* M_DEGTORAD);
+            rot2D[0][1] = std::sin(billboard.rotation_* M_DEGTORAD);
             rot2D[1][0] = -rot2D[0][1];
             rot2D[1][1] = rot2D[0][0];
 

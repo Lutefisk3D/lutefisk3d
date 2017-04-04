@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -165,22 +165,6 @@ public:
     void SetMouseMode(MouseMode mode, bool suppressEvent = false);
     /// Reset the last mouse mode that wasn't suppressed in SetMouseMode
     void ResetMouseMode();
-    /// Add screen joystick.
-    /** Return the joystick instance ID when successful or negative on error.
-     *  If layout file is not given, use the default screen joystick layout.
-     *  If style file is not given, use the default style file from root UI element.
-     *
-     *  This method should only be called in main thread.
-     */
-    SDL_JoystickID AddScreenJoystick(XMLFile* layoutFile = nullptr, XMLFile* styleFile = nullptr);
-    /// Remove screen joystick by instance ID.
-    /** Return true if successful.
-     *
-     *  This method should only be called in main thread.
-     */
-    bool RemoveScreenJoystick(SDL_JoystickID id);
-    /// Set whether the virtual joystick is visible.
-    void SetScreenJoystickVisible(SDL_JoystickID id, bool enable);
     /// Show or hide on-screen keyboard on platforms that support it. When shown, keypresses from it are delivered as key events.
     void SetScreenKeyboardVisible(bool enable);
     /// Set touch emulation by mouse. Only available on desktop platforms. When enabled, actual mouse events are no longer sent and the mouse cursor is forced visible.
@@ -197,7 +181,7 @@ public:
     bool RemoveGesture(unsigned gestureID);
     /// Remove all in-memory gestures.
     void RemoveAllGestures();
-    /// Set the mouse cursor position.
+    /// Set the mouse cursor position. Uses the backbuffer (Graphics width/height) coordinates.
     void SetMousePosition(const IntVector2& position);
     /// Center the mouse position.
     void CenterMousePosition();
@@ -232,10 +216,10 @@ public:
     bool GetQualifierPress(int qualifier) const;
     /// Return the currently held down qualifiers.
     int GetQualifiers() const;
-    /// Return mouse position within window. Should only be used with a visible mouse cursor.
+    /// Return mouse position within window. Should only be used with a visible mouse cursor. Uses the backbuffer (Graphics width/height) coordinates.
     IntVector2 GetMousePosition() const;
     /// Return mouse movement since last frame.
-    const IntVector2& GetMouseMove() const;
+    IntVector2 GetMouseMove() const;
     /// Return horizontal mouse movement since last frame.
     int GetMouseMoveX() const;
     /// Return vertical mouse movement since last frame.
@@ -359,6 +343,8 @@ private:
     IntVector2 mouseMove_;
     /// Mouse wheel movement since last frame.
     int mouseMoveWheel_;
+    /// Input coordinate scaling. Non-unity when window and backbuffer have different sizes (e.g. Retina display.)
+    Vector2 inputScale_;
     /// SDL window ID.
     unsigned windowID_;
     /// Fullscreen toggle flag.
@@ -387,10 +373,8 @@ private:
     bool focusedThisFrame_;
     /// Next mouse move suppress flag.
     bool suppressNextMouseMove_;
-    /// Handling a window resize event flag.
-    bool inResize_;
-    /// Flag for automatic focus (without click inside window) after screen mode change, needed on Linux.
-    bool screenModeChanged_;
+    /// Whether mouse move is accumulated in backbuffer scale or not (when using events directly).
+    bool mouseMoveScaled_;
     /// Initialized flag.
     bool initialized_;
 };

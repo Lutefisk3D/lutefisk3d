@@ -191,7 +191,8 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
             else if (blend == BLEND_ADDALPHA)
                 blend = BLEND_SUBTRACTALPHA;
         }
-        graphics->SetBlendMode(blend);
+        graphics->SetBlendMode(blend, pass_->GetAlphaToCoverage() || material_->GetAlphaToCoverage());
+        graphics->SetLineAntiAlias(material_->GetLineAntiAlias());
 
         bool isShadowPass = pass_->GetIndex() == Technique::shadowPassIndex;
         CullMode effectiveCullMode = pass_->GetCullMode();
@@ -274,6 +275,8 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
 
         graphics->SetShaderParameter(PSP_AMBIENTCOLOR, zone_->GetAmbientColor());
         graphics->SetShaderParameter(PSP_FOGCOLOR, overrideFogColorToBlack ? Color::BLACK : zone_->GetFogColor());
+        graphics->SetShaderParameter(PSP_ZONEMIN, zone_->GetBoundingBox().min_);
+        graphics->SetShaderParameter(PSP_ZONEMAX, zone_->GetBoundingBox().max_);
 
         float farClip = camera->GetFarClip();
         float fogStart = std::min(zone_->GetFogStart(), farClip);
@@ -361,6 +364,8 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
                                                                light->GetEffectiveSpecularIntensity()) * fade);
             graphics->SetShaderParameter(PSP_LIGHTDIR, lightDir);
             graphics->SetShaderParameter(PSP_LIGHTPOS, lightPos);
+            graphics->SetShaderParameter(PSP_LIGHTRAD, light->GetRadius());
+            graphics->SetShaderParameter(PSP_LIGHTLENGTH, light->GetLength());
 
             if (graphics->HasShaderParameter(PSP_LIGHTMATRICES))
             {
@@ -396,6 +401,8 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
                 case LIGHT_POINT:
                 {
                     Matrix4 lightVecRot(lightNode->GetWorldRotation().RotationMatrix());
+                        // HLSL compiler will pack the parameters as if the matrix is only 3x4, so must be careful to not overwrite
+                        // the next parameter
                     graphics->SetShaderParameter(PSP_LIGHTMATRICES, lightVecRot.Data(), 16);
                 }
                     break;
@@ -554,6 +561,9 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
         }
     }
 
+    // Set zone texture if necessary
+    if (zone_ && graphics->HasTextureUnit(TU_ZONE))
+        graphics->SetTexture(TU_ZONE, zone_->GetZoneTexture());
     // Set material-specific shader parameters and textures
     if (nullptr!=material_)
     {
@@ -592,10 +602,6 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
             graphics->SetTexture(TU_LIGHTSHAPE, shapeTexture);
         }
     }
-
-    // Set zone texture if necessary
-    if (nullptr!=zone_ && graphics->HasTextureUnit(TU_ZONE))
-        graphics->SetTexture(TU_ZONE, zone_->GetZoneTexture());
 }
 
 void Batch::Draw(View* view, Camera* camera, bool allowDepthWrite) const
@@ -762,7 +768,7 @@ void BatchQueue::SortFrontToBack2Pass(std::vector<Batch*>& batches)
             shaderID = MAP_VALUE(j);
         else
         {
-            shaderID = shaderRemapping_[shaderID] = freeShaderID | (shaderID & 0xc0000000);
+            shaderID = shaderRemapping_[shaderID] = freeShaderID | (shaderID & 0x80000000);
             ++freeShaderID;
         }
 

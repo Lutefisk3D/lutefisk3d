@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -370,8 +370,8 @@ public:
     void StorePreparedView(View* view, Camera* cullCamera);
     /// Return a prepared view if exists for the specified camera. Used to avoid duplicate view preparation CPU work.
     View* GetPreparedView(Camera* cullCamera);
-    /// Choose shaders for a forward rendering batch.
-    void SetBatchShaders(Batch& batch, const Technique* tech, bool allowShadows = true);
+    /// Choose shaders for a forward rendering batch. The related batch queue is provided in case it has extra shader compilation defines.
+    void SetBatchShaders(Batch& batch, const Technique* tech, const BatchQueue& queue, bool allowShadows = true);
     /// Choose shaders for a deferred light volume batch.
     void SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const QString& vsName, const QString& psName, const QString& vsDefines, const QString& psDefines);
     /// Set cull mode while taking possible projection flipping into account.
@@ -396,8 +396,8 @@ private:
     void Initialize();
     /// Reload shaders.
     void LoadShaders();
-    /// Reload shaders for a material pass.
-    void LoadPassShaders(Pass* pass);
+    /// Reload shaders for a material pass. The related batch queue is provided in case it has extra shader compilation defines.
+    void LoadPassShaders(Pass* pass, std::vector<SharedPtr<ShaderVariation> >& vertexShaders, std::vector<SharedPtr<ShaderVariation> >& pixelShaders, const BatchQueue& queue);
     /// Release shaders used in materials.
     void ReleaseMaterialShaders();
     /// Reload textures.

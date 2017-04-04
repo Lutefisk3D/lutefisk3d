@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -169,6 +169,8 @@ void Pass::ReleaseShaders()
 {
     vertexShaders_.clear();
     pixelShaders_.clear();
+    extraVertexShaders_.clear();
+    extraPixelShaders_.clear();
 }
 
 void Pass::MarkShadersLoaded(unsigned frameNumber)
@@ -201,6 +203,22 @@ QString Pass::GetEffectivePixelShaderDefines() const
         psDefines.removeAll(psExcludes[i]);
 
     return psDefines.join(" ");
+}
+std::vector<SharedPtr<ShaderVariation> >& Pass::GetVertexShaders(const StringHash& extraDefinesHash)
+{
+    // If empty hash, return the base shaders
+    if (!extraDefinesHash.Value())
+        return vertexShaders_;
+    else
+        return extraVertexShaders_[extraDefinesHash];
+}
+
+std::vector<SharedPtr<ShaderVariation> >& Pass::GetPixelShaders(const StringHash& extraDefinesHash)
+{
+    if (!extraDefinesHash.Value())
+        return pixelShaders_;
+    else
+        return extraPixelShaders_[extraDefinesHash];
 }
 unsigned Technique::basePassIndex = 0;
 unsigned Technique::alphaPassIndex = 0;

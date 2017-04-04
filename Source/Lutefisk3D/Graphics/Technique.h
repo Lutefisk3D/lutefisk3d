@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -116,6 +116,10 @@ public:
     std::vector<SharedPtr<ShaderVariation> >& GetVertexShaders() { return vertexShaders_; }
     /// Return pixel shaders.
     std::vector<SharedPtr<ShaderVariation> >& GetPixelShaders() { return pixelShaders_; }
+    /// Return vertex shaders with extra defines from the renderpath.
+    std::vector<SharedPtr<ShaderVariation> >& GetVertexShaders(const StringHash& extraDefinesHash);
+    /// Return pixel shaders with extra defines from the renderpath.
+    std::vector<SharedPtr<ShaderVariation> >& GetPixelShaders(const StringHash& extraDefinesHash);
     /// Return the effective vertex shader defines, accounting for excludes. Called internally by Renderer.
     QString GetEffectiveVertexShaderDefines() const;
     /// Return the effective pixel shader defines, accounting for excludes. Called internally by Renderer.
@@ -156,6 +160,10 @@ private:
     std::vector<SharedPtr<ShaderVariation> > vertexShaders_;
     /// Pixel shaders.
     std::vector<SharedPtr<ShaderVariation> > pixelShaders_;
+    /// Vertex shaders with extra defines from the renderpath.
+    HashMap<StringHash, std::vector<SharedPtr<ShaderVariation> > > extraVertexShaders_;
+    /// Pixel shaders with extra defines from the renderpath.
+    HashMap<StringHash, std::vector<SharedPtr<ShaderVariation> > > extraPixelShaders_;
     /// Pass name.
     QString name_;
 };

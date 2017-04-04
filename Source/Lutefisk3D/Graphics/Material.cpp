@@ -1329,18 +1329,25 @@ void Material::HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& 
 {
     // Timestep parameter is same no matter what event is being listened to
     float timeStep = eventData[Update::P_TIMESTEP].GetFloat();
+    // Keep weak pointer to self to check for destruction caused by event handling
+    WeakPtr<Object> self(this);
 
     QStringList finishedNames;
 
     for (auto &i : shaderParameterAnimationInfos_)
     {
-        if (ELEMENT_VALUE(i)->Update(timeStep))
+        bool finished = ELEMENT_VALUE(i)->Update(timeStep);
+        // If self deleted as a result of an event sent during animation playback, nothing more to do
+        if (self.Expired())
+            return;
+
+        if (finished)
             finishedNames.push_back(ELEMENT_VALUE(i)->GetName());
     }
 
     // Remove finished animations
-    for (unsigned i = 0; i < finishedNames.size(); ++i)
-        SetShaderParameterAnimation(finishedNames[i], nullptr);
+    for (const QString &fin_name : finishedNames)
+        SetShaderParameterAnimation(fin_name, nullptr);
 }
 
 void Material::ApplyShaderDefines(unsigned index)

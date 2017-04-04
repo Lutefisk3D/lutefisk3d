@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -187,7 +187,7 @@ void DropDownList::SetSelection(unsigned index)
 
 void DropDownList::SetPlaceholderText(const QString& text)
 {
-    static_cast<Text*>(placeholder_->GetChild(0))->SetText(text);
+    placeholder_->GetChildStaticCast<Text>(0)->SetText(text);
 }
 
 void DropDownList::SetResizePopup(bool enable)
@@ -222,7 +222,7 @@ UIElement* DropDownList::GetSelectedItem() const
 
 const QString& DropDownList::GetPlaceholderText() const
 {
-    return static_cast<Text*>(placeholder_->GetChild(0))->GetText();
+    return placeholder_->GetChildStaticCast<Text>(0)->GetText();
 }
 
 void DropDownList::SetSelectionAttr(unsigned index)

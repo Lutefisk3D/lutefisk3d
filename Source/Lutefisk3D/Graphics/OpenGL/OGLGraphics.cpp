@@ -286,6 +286,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     URHO3D_PROFILE(SetScreenMode);
 
     bool maximize = false;
+    // Make sure monitor index is not bigger than the currently detected monitors
     int monitors = SDL_GetNumVideoDisplays();
     if (monitor >= monitors || monitor < 0)
         monitor = 0; // this monitor is not present, use first monitor
@@ -392,6 +393,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
             SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
         }
 
+        // Reposition the window on the specified monitor
         SDL_Rect display_rect;
         SDL_GetDisplayBounds(monitor, &display_rect);
         SDL_SetWindowPosition(window_, display_rect.x, display_rect.y);
@@ -461,8 +463,6 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
 
     // Set vsync
     SDL_GL_SetSwapInterval(vsync ? 1 : 0);
-
-    // Store the system FBO on IOS now
 
     fullscreen_ = fullscreen;
     borderless_ = borderless;
@@ -1425,6 +1425,8 @@ void Graphics::SetTexture(unsigned index, Texture* texture)
 
             if (texture->GetParametersDirty())
                 texture->UpdateParameters();
+            if (texture->GetLevelsDirty())
+                texture->RegenerateLevels();
         }
         else if (GL_NONE!=impl_->textureTypes_[index])
         {
@@ -1435,7 +1437,7 @@ void Graphics::SetTexture(unsigned index, Texture* texture)
     }
     else
     {
-        if (texture && texture->GetParametersDirty())
+        if (texture && (texture->GetParametersDirty() || texture->GetLevelsDirty()))
         {
             if (impl_->activeTexture_ != index)
             {
@@ -1444,7 +1446,10 @@ void Graphics::SetTexture(unsigned index, Texture* texture)
             }
 
             glBindTexture(texture->GetTarget(), texture->GetGPUObject());
-            texture->UpdateParameters();
+            if (texture->GetParametersDirty())
+                texture->UpdateParameters();
+            if (texture->GetLevelsDirty())
+                texture->RegenerateLevels();
         }
     }
 }
@@ -1541,6 +1546,9 @@ void Graphics::SetRenderTarget(unsigned index, RenderSurface* renderTarget)
                 parentTexture->SetResolveDirty(true);
                 renderTarget->SetResolveDirty(true);
             }
+            // If mipmapped, mark the levels needing regeneration
+            if (parentTexture->GetLevels() > 1)
+                parentTexture->SetLevelsDirty();
         }
 
         impl_->fboDirty_ = true;
@@ -1688,7 +1696,7 @@ void Graphics::SetDepthBias(float constantBias, float slopeScaledBias)
     {
         if (slopeScaledBias != 0.0f)
         {
-            // OpenGL constant bias is unreliable and dependant on depth buffer bitdepth, apply in the projection matrix instead
+            // OpenGL constant bias is unreliable and dependent on depth buffer bitdepth, apply in the projection matrix instead
             glEnable(GL_POLYGON_OFFSET_FILL);
             glPolygonOffset(slopeScaledBias, 0.0f);
         }
@@ -1905,7 +1913,10 @@ std::vector<int> Graphics::GetMultiSampleLevels() const
     std::vector<int> ret;
     // No multisampling always supported
     ret.push_back(1);
-    /// \todo Implement properly, if possible
+    int maxSamples = 0;
+    glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
+    for (int i = 2; i <= maxSamples && i <= 16; i *= 2)
+        ret.push_back(i);
 
     return ret;
 }

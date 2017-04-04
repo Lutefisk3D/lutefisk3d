@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -291,6 +291,7 @@ void ParticleEmitter::SetEmitting(bool enable)
     if (enable != emitting_)
     {
         emitting_ = enable;
+        // If stopping emission now, and there are active particles, send finish event once they are gone
         sendFinishedEvent_ = enable || CheckActiveParticles();
         periodTimer_ = 0.0f;
         // Note: network update does not need to be marked as this is a file only attribute
@@ -547,9 +548,9 @@ void ParticleEmitter::HandleScenePostUpdate(StringHash eventType, VariantMap& ev
         MarkForUpdate();
     }
 
+    // Send finished event only once all particles are gone
     if (node_ && !emitting_ && sendFinishedEvent_ && !CheckActiveParticles())
     {
-        // Send finished event only once all billboards are gone
         sendFinishedEvent_ = false;
 
         // Make a weak pointer to self to check for destruction during event handling

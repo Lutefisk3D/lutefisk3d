@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -93,9 +93,9 @@ enum LayoutMode
 /// Traversal mode for rendering.
 enum TraversalMode
 {
-    /// Traverse thru children having same priority first and recurse into their children before traversing children having higher priority.
+    /// Traverse through children having same priority first and recurse into their children before traversing children having higher priority.
     TM_BREADTH_FIRST = 0,
-    /// Traverse thru each child and its children immediately after in sequence.
+    /// Traverse through each child and its children immediately after in sequence.
     TM_DEPTH_FIRST
 };
 
@@ -112,7 +112,7 @@ class Cursor;
 class ResourceCache;
 
 /// Base class for %UI elements.
-class UIElement : public Animatable
+class URHO3D_API UIElement : public Animatable
 {
     URHO3D_OBJECT(UIElement,Animatable);
 
@@ -130,8 +130,8 @@ public:
     virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
     /// Load from XML data with style. Return true if successful.
     virtual bool LoadXML(const XMLElement& source, XMLFile* styleFile, bool setInstanceDefault = false);
-    /// Create a child by loading from XML data with style. Return true if successful.
-    virtual bool LoadChildXML(const XMLElement& childElem, XMLFile* styleFile = nullptr, bool setInstanceDefault = false);
+    /// Create a child by loading from XML data with style. Returns the child element if successful, null if otherwise.
+    virtual UIElement *LoadChildXML(const XMLElement& childElem, XMLFile* styleFile = nullptr, bool setInstanceDefault = false);
     /// Save as XML data. Return true if successful.
     virtual bool SaveXML(XMLElement& dest) const override;
 
@@ -170,7 +170,7 @@ public:
     /// React to a key press.
     virtual void OnKey(int key, int buttons, int qualifiers) { }
     /// React to text input event.
-    virtual void OnTextInput(const QString& text, int buttons, int qualifiers) { }
+    virtual void OnTextInput(const QString& text) { }
 
     /// React to resize.
     virtual void OnResize(const IntVector2& newSize, const IntVector2& delta) { }
@@ -565,6 +565,8 @@ public:
 
     /// Return child elements with a specific tag either recursively or non-recursively.
     void GetChildrenWithTag(std::vector<UIElement*>& dest, const QString &tag, bool recursive = false) const;
+    /// Return child elements with a specific tag either recursively or non-recursively.
+    std::vector<UIElement*> GetChildrenWithTag(const QString& tag, bool recursive = false) const;
     /// Return the drag button combo if this element is being dragged.
     int GetDragButtonCombo() const { return dragButtonCombo_; }
     /// Return the number of buttons dragging this element.

@@ -765,6 +765,10 @@ template<> QString Variant::Get<QString>() const
     return GetString();
 }
 
+template <> Rect Variant::Get<Rect>() const
+{
+    return GetRect();
+}
 template<> IntRect Variant::Get<IntRect>() const
 {
     return GetIntRect();

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -75,7 +75,7 @@ public:
 #endif
 
     /// Return spriter data.
-    Spriter::SpriterData* GetSpriterData() const { return spriterData_; }
+    Spriter::SpriterData* GetSpriterData() const { return spriterData_.get(); }
     /// Return spriter file sprite.
     Sprite2D* GetSpriterFileSprite(int folderId, int fileId) const;
 
@@ -108,7 +108,7 @@ private:
 #endif
     
     /// Spriter data.
-    Spriter::SpriterData* spriterData_;
+    std::unique_ptr<Spriter::SpriterData> spriterData_;
     /// Has sprite sheet.
     bool hasSpriteSheet_;
     /// Sprite sheet file path.

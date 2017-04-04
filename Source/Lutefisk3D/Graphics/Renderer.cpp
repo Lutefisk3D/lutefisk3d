@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -269,7 +269,7 @@ Renderer::Renderer(Context* context) :
     shadowMapSize_(1024),
     shadowQuality_(SHADOWQUALITY_PCF_16BIT),
     shadowSoftness_(1.0f),
-    vsmShadowParams_(0.0000001f, 0.2f),
+    vsmShadowParams_(0.0000001f, 0.9f),
     vsmMultiSample_(1),
     maxShadowMaps_(1),
     minInstances_(2),
@@ -669,7 +669,7 @@ void Renderer::Update(float timeStep)
         LoadShaders();
 
     // Queue update of the main viewports. Use reverse order, as rendering order is also reverse
-    // to render auxiliary views before dependant main views
+    // to render auxiliary views before dependent main views
     for (unsigned i = viewports_.size() - 1; i < viewports_.size(); --i)
         QueueViewport(nullptr, viewports_[i]);
 
@@ -722,7 +722,6 @@ void Renderer::Render()
         graphics_->SetStencilTest(false);
         graphics_->ResetRenderTargets();
         graphics_->Clear(CLEAR_COLOR | CLEAR_DEPTH | CLEAR_STENCIL, defaultZone_->GetFogColor());
-
     }
     // Render views from last to first. Each main (backbuffer) view is rendered after the auxiliary views it depends on
         for (unsigned i = views_.size() - 1; i < views_.size(); --i)
@@ -743,6 +742,9 @@ void Renderer::Render()
 
     // Remove unused occlusion buffers and renderbuffers
     RemoveUnusedBuffers();
+
+    // All views done, custom rendering can now be done before UI
+    SendEvent(E_ENDALLVIEWSRENDER);
 }
 
 void Renderer::DrawDebugGeometry(bool depthTest)
@@ -941,6 +943,8 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
     SharedPtr<Texture2D> newShadowMap(new Texture2D(context_));
     int retries = 3;
     gl::GLenum dummyColorFormat = graphics_->GetDummyColorFormat();
+    // Disable mipmaps from the shadow map
+    newShadowMap->SetNumLevels(1);
 
     while (retries)
     {
@@ -963,6 +967,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
                 if (!colorShadowMaps_.contains(searchKey))
                 {
                     colorShadowMaps_[searchKey] = new Texture2D(context_);
+                    colorShadowMaps_[searchKey]->SetNumLevels(1);
                     colorShadowMaps_[searchKey]->SetSize(width, height, dummyColorFormat, TEXTURE_RENDERTARGET);
                 }
                 // Link the color rendertarget to the shadow map
@@ -1029,6 +1034,8 @@ Texture* Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, int
         if (!cubemap)
         {
             SharedPtr<Texture2D> newTex2D(new Texture2D(context_));
+            /// \todo Mipmaps disabled for now. Allow to request mipmapped buffer?
+            newTex2D->SetNumLevels(1);
             newTex2D->SetSize(width, height, format, depthStencil ? TEXTURE_DEPTHSTENCIL : TEXTURE_RENDERTARGET, multiSample, autoResolve);
         // OpenGL hack: clear persistent floating point screen buffers to ensure the initial contents aren't illegal (NaN)?
         // Otherwise eg. the AutoExposure post process will not work correctly
@@ -1046,6 +1053,7 @@ Texture* Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, int
         else
         {
             SharedPtr<TextureCube> newTexCube(new TextureCube(context_));
+            newTexCube->SetNumLevels(1);
             newTexCube->SetSize(width, format, TEXTURE_RENDERTARGET, multiSample);
 
             newBuffer = newTexCube;
@@ -1139,19 +1147,19 @@ View* Renderer::GetActualView(View* view)
         return view;
 }
 
-void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, bool allowShadows)
+void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, const BatchQueue& queue, bool allowShadows)
 {
-    // Check if shaders are unloaded or need reloading
     Pass* pass = batch.pass_;
-    std::vector<SharedPtr<ShaderVariation> >& vertexShaders = pass->GetVertexShaders();
-    std::vector<SharedPtr<ShaderVariation> >& pixelShaders = pass->GetPixelShaders();
-    if (vertexShaders.empty() || pixelShaders.empty() || pass->GetShadersLoadedFrameNumber() != shadersChangedFrameNumber_)
-    {
-        // First release all previous shaders, then load
+    // Check if need to release/reload all shaders
+    if (pass->GetShadersLoadedFrameNumber() != shadersChangedFrameNumber_)
         pass->ReleaseShaders();
-        LoadPassShaders(pass);
-    }
 
+    std::vector<SharedPtr<ShaderVariation> >& vertexShaders = queue.hasExtraDefines_ ? pass->GetVertexShaders(queue.vsExtraDefinesHash_) : pass->GetVertexShaders();
+    std::vector<SharedPtr<ShaderVariation> >& pixelShaders = queue.hasExtraDefines_ ? pass->GetPixelShaders(queue.psExtraDefinesHash_) : pass->GetPixelShaders();
+
+    // Load shaders now if necessary
+    if (vertexShaders.empty() || pixelShaders.empty())
+        LoadPassShaders(pass, vertexShaders, pixelShaders, queue);
     // Make sure shaders are loaded now
     if (vertexShaders.size() && pixelShaders.size())
     {
@@ -1624,27 +1632,42 @@ void Renderer::LoadShaders()
     shadersDirty_ = false;
 }
 
-void Renderer::LoadPassShaders(Pass* pass)
+void Renderer::LoadPassShaders(Pass* pass, std::vector<SharedPtr<ShaderVariation> >& vertexShaders, std::vector<SharedPtr<ShaderVariation> >& pixelShaders, const BatchQueue& queue)
 {
 
     URHO3D_PROFILE(LoadPassShaders);
 
-
-    std::vector<SharedPtr<ShaderVariation> >& vertexShaders = pass->GetVertexShaders();
-    std::vector<SharedPtr<ShaderVariation> >& pixelShaders = pass->GetPixelShaders();
-
     // Forget all the old shaders
     vertexShaders.clear();
     pixelShaders.clear();
-    QString extraShaderDefines = " ";
-    if (pass->GetName() == "shadow"
-        && (shadowQuality_ == SHADOWQUALITY_VSM || shadowQuality_ == SHADOWQUALITY_BLUR_VSM))
-    {
-        extraShaderDefines = " VSM_SHADOW ";
-    }
 
     QString vsDefines = pass->GetEffectiveVertexShaderDefines();
     QString psDefines = pass->GetEffectivePixelShaderDefines();
+    // Make sure to end defines with space to allow appending engine's defines
+    if (!vsDefines.isEmpty() && !vsDefines.endsWith(" "))
+        vsDefines += ' ';
+    if (!psDefines.isEmpty() && !psDefines.endsWith(" "))
+        psDefines += ' ';
+    // Append defines from batch queue (renderpath command) if needed
+    if (!queue.vsExtraDefines_.isEmpty())
+    {
+        vsDefines += queue.vsExtraDefines_;
+        vsDefines += ' ';
+    }
+    if (!queue.psExtraDefines_.isEmpty())
+    {
+        psDefines += queue.psExtraDefines_;
+        psDefines += ' ';
+    }
+
+    // Add defines for VSM in the shadow pass if necessary
+    if (pass->GetName() == "shadow"
+        && (shadowQuality_ == SHADOWQUALITY_VSM || shadowQuality_ == SHADOWQUALITY_BLUR_VSM))
+    {
+        vsDefines += "VSM_SHADOW ";
+        psDefines += "VSM_SHADOW ";
+    }
+
     if (pass->GetLightingMode() == LIGHTING_PERPIXEL)
     {
         // Load forward pixel lit variations
@@ -1657,7 +1680,7 @@ void Renderer::LoadPassShaders(Pass* pass)
             unsigned l = j % MAX_LIGHT_VS_VARIATIONS;
 
             vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(),
-                vsDefines + extraShaderDefines + lightVSVariations[l] + geometryVSVariations[g]);
+                vsDefines + lightVSVariations[l] + geometryVSVariations[g]);
         }
         for (unsigned j = 0; j < MAX_LIGHT_PS_VARIATIONS * 2; ++j)
         {
@@ -1667,12 +1690,12 @@ void Renderer::LoadPassShaders(Pass* pass)
             if (l & LPS_SHADOW)
             {
                 pixelShaders[j] = graphics_->GetShader(PS, pass->GetPixelShader(),
-                    psDefines + extraShaderDefines + lightPSVariations[l] + GetShadowVariations() +
+                    psDefines + lightPSVariations[l] + GetShadowVariations() +
                     heightFogVariations[h]);
             }
             else
                 pixelShaders[j] = graphics_->GetShader(PS, pass->GetPixelShader(),
-                    psDefines + extraShaderDefines + lightPSVariations[l] + heightFogVariations[h]);
+                    psDefines + lightPSVariations[l] + heightFogVariations[h]);
         }
     }
     else
@@ -1686,7 +1709,7 @@ void Renderer::LoadPassShaders(Pass* pass)
                 unsigned g = j / MAX_VERTEXLIGHT_VS_VARIATIONS;
                 unsigned l = j % MAX_VERTEXLIGHT_VS_VARIATIONS;
                 vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(),
-                    vsDefines + extraShaderDefines + vertexLightVSVariations[l] + geometryVSVariations[g]);
+                    vsDefines + vertexLightVSVariations[l] + geometryVSVariations[g]);
             }
         }
         else
@@ -1695,7 +1718,7 @@ void Renderer::LoadPassShaders(Pass* pass)
             for (unsigned j = 0; j < MAX_GEOMETRYTYPES; ++j)
             {
                 vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(),
-                    vsDefines + extraShaderDefines + geometryVSVariations[j]);
+                    vsDefines + geometryVSVariations[j]);
             }
         }
 
@@ -1703,7 +1726,7 @@ void Renderer::LoadPassShaders(Pass* pass)
         for (unsigned j = 0; j < 2; ++j)
         {
             pixelShaders[j] =
-                graphics_->GetShader(PS, pass->GetPixelShader(), psDefines + extraShaderDefines + heightFogVariations[j]);
+                graphics_->GetShader(PS, pass->GetPixelShader(), psDefines + heightFogVariations[j]);
         }
     }
 

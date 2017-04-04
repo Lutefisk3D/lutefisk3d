@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -90,6 +90,9 @@ void ConstraintGear2D::SetRatio(float ratio)
 
     jointDef_.ratio = ratio;
 
+    if (joint_)
+        static_cast<b2GearJoint*>(joint_)->SetRatio(ratio);
+    else
     RecreateJoint();
     MarkNetworkUpdate();
 }

@@ -361,7 +361,6 @@ void Drawable::LimitVertexLights(bool removeConvertedLights)
         return;
 
     const BoundingBox& box = GetWorldBoundingBox();
-
     for (auto &vlight : vertexLights_)
         vlight->SetIntensitySortValue(box);
 

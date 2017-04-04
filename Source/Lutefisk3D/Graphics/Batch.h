@@ -67,7 +67,6 @@ struct Batch
     /// Construct from a drawable's source batch.
     Batch(const SourceBatch& rhs,bool is_base=false) :
         distance_(rhs.distance_),
-        renderOrder_(rhs.material_ ? rhs.material_->GetRenderOrder() : DEFAULT_RENDER_ORDER),
         geometry_(rhs.geometry_),
         material_(rhs.material_),
         worldTransform_(rhs.worldTransform_),
@@ -75,6 +74,7 @@ struct Batch
         instancingData_(rhs.instancingData_),
         lightQueue_(nullptr),
         geometryType_(rhs.geometryType_),
+        renderOrder_(rhs.material_ ? rhs.material_->GetRenderOrder() : DEFAULT_RENDER_ORDER),
         isBase_(is_base)
     {
     }
@@ -82,7 +82,6 @@ struct Batch
           uint8_t lmask=uint8_t(DEFAULT_LIGHTMASK),bool is_base=false) :
         sortKey_(0),
         distance_(rhs.distance_),
-        renderOrder_(rhs.material_ ? rhs.material_->GetRenderOrder() : DEFAULT_RENDER_ORDER),
         geometry_(rhs.geometry_),
         material_(rhs.material_),
         worldTransform_(rhs.worldTransform_),
@@ -93,6 +92,7 @@ struct Batch
         vertexShader_(nullptr),
         pixelShader_(nullptr),
         geometryType_(rhs.geometryType_),
+        renderOrder_(rhs.material_ ? rhs.material_->GetRenderOrder() : DEFAULT_RENDER_ORDER),
         lightMask_(lmask),
         isBase_(is_base)
     {
@@ -295,6 +295,16 @@ public:
     std::vector<BatchGroup*> sortedBatchGroups_;
     /// Maximum sorted instances.
     unsigned maxSortedInstances_;
+    /// Whether the pass command contains extra shader defines.
+    bool hasExtraDefines_;
+    /// Vertex shader extra defines.
+    QString vsExtraDefines_;
+    /// Pixel shader extra defines.
+    QString psExtraDefines_;
+    /// Hash for vertex shader extra defines.
+    StringHash vsExtraDefinesHash_;
+    /// Hash for pixel shader extra defines.
+    StringHash psExtraDefinesHash_;
 };
 
 /// Queue for shadow map draw calls

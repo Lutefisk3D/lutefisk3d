@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -247,7 +247,7 @@ public:
     void SetDebugDepthTest(bool enable);
 
     /// Return the Bullet physics world.
-    btDiscreteDynamicsWorld* GetWorld() { return world_; }
+    btDiscreteDynamicsWorld* GetWorld() { return world_.get(); }
     /// Clean up the geometry cache.
     void CleanupGeometryCache();
     /// Return trimesh collision geometry cache.
@@ -280,13 +280,13 @@ private:
     /// Bullet collision configuration.
     btCollisionConfiguration* collisionConfiguration_;
     /// Bullet collision dispatcher.
-    btDispatcher* collisionDispatcher_;
+    std::unique_ptr<btDispatcher> collisionDispatcher_;
     /// Bullet collision broadphase.
-    btBroadphaseInterface* broadphase_;
+    std::unique_ptr<btBroadphaseInterface> broadphase_;
     /// Bullet constraint solver.
-    btConstraintSolver* solver_;
+    std::unique_ptr<btConstraintSolver> solver_;
     /// Bullet physics world.
-    btDiscreteDynamicsWorld* world_;
+    std::unique_ptr<btDiscreteDynamicsWorld> world_;
     /// Extra weak pointer to scene to allow for cleanup in case the world is destroyed before other components.
     WeakPtr<Scene> scene_;
     /// Rigid bodies in the world.

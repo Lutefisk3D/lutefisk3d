@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -59,11 +59,13 @@ public:
     bool FromString(const QString& source);
     /// Clear the document and create a root element.
     XMLElement CreateRoot(const QString& name);
+    /// Get the root element if it has matching name, otherwise create it and clear the document.
+    XMLElement GetOrCreateRoot(const QString& name);
 
     /// Return the root element, with optionally specified name. Return null element if not found.
     XMLElement GetRoot(const QString& name = QString());
     /// Return the pugixml document.
-    pugi::xml_document* GetDocument() const { return document_; }
+    pugi::xml_document* GetDocument() const { return document_.get(); }
     /// Serialize the XML content to a string.
     QString  ToString(const QString &indentation = "\t") const;
 
@@ -88,7 +90,7 @@ private:
     bool CombineText(const pugi::xml_node& patch, const pugi::xml_node& original, bool prepend) const;
 
     /// Pugixml document.
-    pugi::xml_document* document_;
+    std::unique_ptr<pugi::xml_document> document_;
 };
 
 }

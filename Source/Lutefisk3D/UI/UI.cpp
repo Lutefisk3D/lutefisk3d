@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -101,7 +101,8 @@ UI::UI(Context* context) :
     nonModalBatchSize_(0),
     dragElementsCount_(0),
     dragConfirmedCount_(0),
-    uiScale_(1.0f)
+    uiScale_(1.0f),
+    customSize_(IntVector2::ZERO)
 {
     rootElement_->SetTraversalMode(TM_DEPTH_FIRST);
     rootModalElement_->SetTraversalMode(TM_DEPTH_FIRST);
@@ -144,8 +145,9 @@ void UI::SetCursor(Cursor* cursor)
 
         IntVector2 pos = cursor_->GetPosition();
         const IntVector2& rootSize = rootElement_->GetSize();
-        pos.x_ = Clamp(pos.x_, 0, rootSize.x_ - 1);
-        pos.y_ = Clamp(pos.y_, 0, rootSize.y_ - 1);
+        const IntVector2& rootPos = rootElement_->GetPosition();
+        pos.x_ = Clamp(pos.x_, rootPos.x_, rootPos.x_ + rootSize.x_ - 1);
+        pos.y_ = Clamp(pos.y_, rootPos.y_, rootPos.y_ + rootSize.y_ - 1);
         cursor_->SetPosition(pos);
     }
 }
@@ -398,8 +400,9 @@ void UI::RenderUpdate()
     batches_.clear();
     vertexData_.clear();
     const IntVector2& rootSize = rootElement_->GetSize();
+    const IntVector2& rootPos = rootElement_->GetPosition();
     // Note: the scissors operate on unscaled coordinates. Scissor scaling is only performed during render
-    IntRect currentScissor = IntRect(0, 0, rootSize.x_, rootSize.y_);
+    IntRect currentScissor = IntRect(rootPos.x_, rootPos.y_, rootPos.x_ + rootSize.x_, rootPos.y_ + rootSize.y_);
     if (rootElement_->IsVisible())
         GetBatches(rootElement_, currentScissor);
 
@@ -451,7 +454,10 @@ void UI::DebugDraw(UIElement* element)
     if (element)
     {
         const IntVector2& rootSize = rootElement_->GetSize();
-        element->GetDebugDrawBatches(debugDrawBatches_, debugVertexData_, IntRect(0, 0, rootSize.x_, rootSize.y_));
+        const IntVector2& rootPos = rootElement_->GetPosition();
+        element->GetDebugDrawBatches(debugDrawBatches_, debugVertexData_, IntRect(rootPos.x_, rootPos.y_,
+                                                                                  rootPos.x_ + rootSize.x_,
+                                                                                  rootPos.y_ + rootSize.y_));
     }
 }
 
@@ -586,6 +592,35 @@ void UI::SetForceAutoHint(bool enable)
     }
 }
 
+void UI::SetScale(float scale)
+{
+    uiScale_ = Max(scale, M_EPSILON);
+    ResizeRootElement();
+}
+
+void UI::SetWidth(float width)
+{
+    IntVector2 size = GetEffectiveRootElementSize(false);
+    SetScale((float)size.x_ / width);
+}
+
+void UI::SetHeight(float height)
+{
+    IntVector2 size = GetEffectiveRootElementSize(false);
+    SetScale((float)size.y_ / height);
+}
+
+void UI::SetCustomSize(const IntVector2& size)
+{
+    customSize_ = IntVector2(Max(0, size.x_), Max(0, size.y_));
+    ResizeRootElement();
+}
+
+void UI::SetCustomSize(int width, int height)
+{
+    customSize_ = IntVector2(Max(0, width), Max(0, height));
+    ResizeRootElement();
+}
 IntVector2 UI::GetCursorPosition() const
 {
     return cursor_ ? cursor_->GetPosition() : GetSubsystem<Input>()->GetMousePosition();
@@ -593,8 +628,28 @@ IntVector2 UI::GetCursorPosition() const
 
 UIElement* UI::GetElementAt(const IntVector2& position, bool enabledOnly)
 {
-    UIElement* result = nullptr;
-    GetElementAt(result, HasModalElement() ? rootModalElement_ : rootElement_, position, enabledOnly);
+    IntVector2 positionCopy(position);
+    const IntVector2& rootSize = rootElement_->GetSize();
+    const IntVector2& rootPos = rootElement_->GetPosition();
+
+    // If position is out of bounds of root element return null.
+    if (position.x_ < rootPos.x_ || position.x_ > rootPos.x_ + rootSize.x_)
+        return 0;
+
+    if (position.y_ < rootPos.y_ || position.y_ > rootPos.y_ + rootSize.y_)
+        return 0;
+
+    // If UI is smaller than the screen, wrap if necessary
+    if (rootSize.x_ > 0 && rootSize.y_ > 0)
+    {
+        if (positionCopy.x_ >= rootPos.x_ + rootSize.x_)
+            positionCopy.x_ = rootPos.x_ + ((positionCopy.x_ - rootPos.x_) % rootSize.x_);
+        if (positionCopy.y_ >= rootPos.y_ + rootSize.y_)
+            positionCopy.y_ = rootPos.y_ + ((positionCopy.y_ - rootPos.y_) % rootSize.y_);
+    }
+
+    UIElement* result = 0;
+    GetElementAt(result, HasModalElement() ? rootModalElement_ : rootElement_, positionCopy, enabledOnly);
     return result;
 }
 
@@ -691,8 +746,8 @@ void UI::Initialize()
     graphics_ = graphics;
     UIBatch::posAdjust = Vector3(Graphics::GetPixelUVOffset(), 0.0f);
 
-    // Apply initial UI scale to set the root elements size
-    SetScale(uiScale_);
+    // Set initial root element size
+    ResizeRootElement();
 
     vertexBuffer_ = new VertexBuffer(context_);
     debugVertexBuffer_ = new VertexBuffer(context_);
@@ -742,8 +797,11 @@ void UI::Render(bool resetRenderTargets, VertexBuffer* buffer, const std::vector
 
     if (batches.empty())
         return;
+    if (resetRenderTargets)
+        graphics_->ResetRenderTargets();
 
-    Vector2 invScreenSize(1.0f / (float)graphics_->GetWidth(), 1.0f / (float)graphics_->GetHeight());
+    IntVector2 viewSize = graphics_->GetViewport().Size();
+    Vector2 invScreenSize(1.0f / (float)viewSize.x_, 1.0f / (float)viewSize.y_);
     Vector2 scale(2.0f * invScreenSize.x_, -2.0f * invScreenSize.y_);
     Vector2 offset(-1.0f, 1.0f);
 
@@ -763,8 +821,6 @@ void UI::Render(bool resetRenderTargets, VertexBuffer* buffer, const std::vector
     graphics_->SetDepthWrite(false);
     graphics_->SetFillMode(FILL_SOLID);
     graphics_->SetStencilTest(false);
-    if (resetRenderTargets)
-        graphics_->ResetRenderTargets();
     graphics_->SetVertexBuffer(buffer);
 
     ShaderVariation* noTextureVS = graphics_->GetShader(VS, "Basic", "VERTEXCOLOR");
@@ -936,12 +992,18 @@ void UI::GetElementAt(UIElement*& result, UIElement* current, const IntVector2& 
                     }
                     else if (parentLayoutMode == LM_HORIZONTAL)
                     {
-                        if (element->GetScreenPosition().x_ >= rootElement_->GetSize().x_)
+                        if (element->GetScreenPosition().x_ < rootElement_->GetPosition().x_)
+                            break;
+
+                        if (element->GetScreenPosition().x_ >= rootElement_->GetPosition().x_ + rootElement_->GetSize().x_)
                             break;
                     }
                     else if (parentLayoutMode == LM_VERTICAL)
                     {
-                        if (element->GetScreenPosition().y_ >= rootElement_->GetSize().y_)
+                        if (element->GetScreenPosition().y_ < rootElement_->GetPosition().y_)
+                            break;
+
+                        if (element->GetScreenPosition().y_ >= rootElement_->GetPosition().y_ + rootElement_->GetSize().y_)
                             break;
                     }
                 }
@@ -1351,6 +1413,18 @@ void UI::SendClickEvent(StringHash eventType, UIElement* beginElement, UIElement
     if (eventType == E_UIMOUSECLICKEND)
         eventData[UIMouseClickEnd::P_BEGINELEMENT] = beginElement;
 
+    if (endElement)
+    {
+        // Send also element version of the event
+        if (eventType == E_UIMOUSECLICK)
+            endElement->SendEvent(E_CLICK, eventData);
+        else if (eventType == E_UIMOUSECLICKEND)
+            endElement->SendEvent(E_CLICKEND, eventData);
+        else if (eventType == E_UIMOUSEDOUBLECLICK)
+            endElement->SendEvent(E_DOUBLECLICK, eventData);
+    }
+
+    // Send the global event from the UI subsystem last
     SendEvent(eventType, eventData);
 }
 
@@ -1361,10 +1435,7 @@ void UI::HandleScreenMode(StringHash eventType, VariantMap& eventData)
     if (!initialized_)
         Initialize();
     else
-    {
-        // Reapply UI scale to resize the root elements
-        SetScale(uiScale_);
-    }
+        ResizeRootElement();
 }
 
 void UI::HandleMouseButtonDown(StringHash eventType, VariantMap& eventData)
@@ -1412,6 +1483,7 @@ void UI::HandleMouseMove(StringHash eventType, VariantMap& eventData)
 
     Input* input = GetSubsystem<Input>();
     const IntVector2& rootSize = rootElement_->GetSize();
+    const IntVector2& rootPos = rootElement_->GetPosition();
 
     IntVector2 DeltaP = IntVector2(eventData[P_DX].GetInt(), eventData[P_DY].GetInt());
 
@@ -1427,8 +1499,8 @@ void UI::HandleMouseMove(StringHash eventType, VariantMap& eventData)
                 IntVector2 pos = cursor_->GetPosition();
                 pos.x_ += eventData[P_DX].GetInt();
                 pos.y_ += eventData[P_DY].GetInt();
-                pos.x_ = Clamp(pos.x_, 0, rootSize.x_ - 1);
-                pos.y_ = Clamp(pos.y_, 0, rootSize.y_ - 1);
+                pos.x_ = Clamp(pos.x_, rootPos.x_, rootPos.x_ + rootSize.x_ - 1);
+                pos.y_ = Clamp(pos.y_, rootPos.y_, rootPos.y_ + rootSize.y_ - 1);
                 cursor_->SetPosition(pos);
             }
         }
@@ -1645,12 +1717,10 @@ void UI::HandleTextInput(StringHash eventType, VariantMap& eventData)
 {
     using namespace TextInput;
 
-    mouseButtons_ = eventData[P_BUTTONS].GetInt();
-    qualifiers_ = eventData[P_QUALIFIERS].GetInt();
 
     UIElement* element = focusElement_;
     if (element)
-        element->OnTextInput(eventData[P_TEXT].GetString(), mouseButtons_, qualifiers_);
+        element->OnTextInput(eventData[P_TEXT].GetString());
 }
 
 void UI::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
@@ -1709,6 +1779,7 @@ HashMap<WeakPtr<UIElement>, UI::DragData*>::iterator UI::DragElementErase(HashMa
     // If running the engine frame in response to an event (re-entering UI frame logic) the dragElements_ may already be empty
     if (dragElements_.empty())
         return dragElements_.end();
+
     dragElementsConfirmed_.clear();
 
     DragData* dragData = MAP_VALUE(i);
@@ -1774,32 +1845,28 @@ IntVector2 UI::SumTouchPositions(UI::DragData* dragData, const IntVector2& oldSe
     return sendPos;
 }
 
-void UI::SetScale(float scale)
+void UI::ResizeRootElement()
 {
-    uiScale_ = Max(scale, M_EPSILON);
-    Graphics* graphics = GetSubsystem<Graphics>();
-    if (graphics)
+    IntVector2 effectiveSize = GetEffectiveRootElementSize();
+    rootElement_->SetSize(effectiveSize);
+    rootModalElement_->SetSize(effectiveSize);
+}
+
+IntVector2 UI::GetEffectiveRootElementSize(bool applyScale) const
+{
+    // Use a fake size in headless mode
+    IntVector2 size = graphics_ ? IntVector2(graphics_->GetWidth(), graphics_->GetHeight()) : IntVector2(1024, 768);
+    if (customSize_.x_ > 0 && customSize_.y_ > 0)
+        size = customSize_;
+
+    if (applyScale)
     {
-        rootElement_->SetSize((int)((float)graphics->GetWidth() / uiScale_ + 0.5f), (int)((float)graphics_->GetHeight() /
-                                                                                          uiScale_ + 0.5));
-        rootModalElement_->SetSize(rootElement_->GetSize());
+        size.x_ = (int)((float)size.x_ / uiScale_ + 0.5f);
+        size.y_ = (int)((float)size.y_ / uiScale_ + 0.5f);
     }
-}
 
-void UI::SetWidth(float size)
-{
-    Graphics* graphics = GetSubsystem<Graphics>();
-    if (graphics)
-        SetScale((float)graphics->GetWidth() / size);
+    return size;
 }
-
-void UI::SetHeight(float size)
-{
-    Graphics* graphics = GetSubsystem<Graphics>();
-    if (graphics)
-        SetScale((float)graphics->GetHeight() / size);
-}
-
 void RegisterUILibrary(Context* context)
 {
     Font::RegisterObject(context);

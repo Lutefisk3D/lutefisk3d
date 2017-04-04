@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -117,10 +117,6 @@ struct PhysicsQueryCallback : public btCollisionWorld::ContactResultCallback
 PhysicsWorld::PhysicsWorld(Context* context) :
     Component(context),
     collisionConfiguration_(nullptr),
-    collisionDispatcher_(nullptr),
-    broadphase_(nullptr),
-    solver_(nullptr),
-    world_(nullptr),
     fps_(DEFAULT_FPS),
     maxSubSteps_(0),
     timeAcc_(0.0f),
@@ -139,10 +135,10 @@ PhysicsWorld::PhysicsWorld(Context* context) :
         collisionConfiguration_ = PhysicsWorld::config.collisionConfig_;
     else
         collisionConfiguration_ = new btDefaultCollisionConfiguration();
-    collisionDispatcher_ = new btCollisionDispatcher(collisionConfiguration_);
-    broadphase_ = new btDbvtBroadphase();
-    solver_ = new btSequentialImpulseConstraintSolver();
-    world_ = new btDiscreteDynamicsWorld(collisionDispatcher_, broadphase_, solver_, collisionConfiguration_);
+    collisionDispatcher_.reset(new btCollisionDispatcher(collisionConfiguration_));
+    broadphase_.reset(new btDbvtBroadphase());
+    solver_.reset(new btSequentialImpulseConstraintSolver());
+    world_.reset(new btDiscreteDynamicsWorld(collisionDispatcher_.get(), broadphase_.get(), solver_.get(), collisionConfiguration_));
 
     world_->setGravity(ToBtVector3(DEFAULT_GRAVITY));
     world_->getDispatchInfo().m_useContinuous = true;
@@ -167,17 +163,10 @@ PhysicsWorld::~PhysicsWorld()
             elem->ReleaseShape();
     }
 
-    delete world_;
-    world_ = nullptr;
-
-    delete solver_;
-    solver_ = nullptr;
-
-    delete broadphase_;
-    broadphase_ = nullptr;
-
-    delete collisionDispatcher_;
-    collisionDispatcher_ = nullptr;
+    world_.reset();
+    solver_.reset();
+    broadphase_.reset();
+    collisionDispatcher_.reset();
 
     // Delete configuration only if it was the default created by PhysicsWorld
     if (!PhysicsWorld::config.collisionConfig_)
@@ -358,8 +347,7 @@ void PhysicsWorld::Raycast(std::vector<PhysicsRaycastResult>& result, const Ray&
     if (maxDistance >= M_INFINITY)
         URHO3D_LOGWARNING("Infinite maxDistance in physics raycast is not supported");
 
-    btCollisionWorld::AllHitsRayResultCallback rayCallback(ToBtVector3(ray.origin_), ToBtVector3(ray.origin_ +
-                                                                                                 maxDistance * ray.direction_));
+    btCollisionWorld::AllHitsRayResultCallback rayCallback(ToBtVector3(ray.origin_), ToBtVector3(ray.origin_ + maxDistance * ray.direction_));
     rayCallback.m_collisionFilterGroup = (short)0xffff;
     rayCallback.m_collisionFilterMask = (short)collisionMask;
 
@@ -607,17 +595,16 @@ void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const 
     result.clear();
 
     btSphereShape sphereShape(sphere.radius_);
-    btRigidBody* tempRigidBody = new btRigidBody(1.0f, nullptr, &sphereShape);
+    std::unique_ptr<btRigidBody> tempRigidBody(new btRigidBody(1.0f, nullptr, &sphereShape));
     tempRigidBody->setWorldTransform(btTransform(btQuaternion::getIdentity(), ToBtVector3(sphere.center_)));
     // Need to activate the temporary rigid body to get reliable results from static, sleeping objects
     tempRigidBody->activate();
-    world_->addRigidBody(tempRigidBody);
+    world_->addRigidBody(tempRigidBody.get());
 
     PhysicsQueryCallback callback(result, collisionMask);
-    world_->contactTest(tempRigidBody, callback);
+    world_->contactTest(tempRigidBody.get(), callback);
 
-    world_->removeRigidBody(tempRigidBody);
-    delete tempRigidBody;
+    world_->removeRigidBody(tempRigidBody.get());
 }
 
 void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const BoundingBox& box, unsigned collisionMask)
@@ -627,16 +614,15 @@ void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const 
     result.clear();
 
     btBoxShape boxShape(ToBtVector3(box.HalfSize()));
-    btRigidBody* tempRigidBody = new btRigidBody(1.0f, nullptr, &boxShape);
+    std::unique_ptr<btRigidBody> tempRigidBody(new btRigidBody(1.0f, nullptr, &boxShape));
     tempRigidBody->setWorldTransform(btTransform(btQuaternion::getIdentity(), ToBtVector3(box.Center())));
     tempRigidBody->activate();
-    world_->addRigidBody(tempRigidBody);
+    world_->addRigidBody(tempRigidBody.get());
 
     PhysicsQueryCallback callback(result, collisionMask);
-    world_->contactTest(tempRigidBody, callback);
+    world_->contactTest(tempRigidBody.get(), callback);
 
-    world_->removeRigidBody(tempRigidBody);
-    delete tempRigidBody;
+    world_->removeRigidBody(tempRigidBody.get());
 }
 
 void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const RigidBody* body)

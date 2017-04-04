@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -408,7 +408,7 @@ bool ParticleEffect::Save(XMLElement& dest) const
         childElem.SetColor("value", colorFrames_[0].color_);
     }
 
-    else if (colorFrames_.size() > 1)
+    if (colorFrames_.size() > 1)
     {
         for (unsigned i = 0; i < colorFrames_.size(); ++i)
         {
@@ -435,7 +435,7 @@ void ParticleEffect::SetMaterial(Material* material)
 
 void ParticleEffect::SetNumParticles(unsigned num)
 {
-    numParticles_ = std::max(0U, num);
+     numParticles_ = std::max(0U, num);
 }
 
 void ParticleEffect::SetUpdateInvisible(bool enable)

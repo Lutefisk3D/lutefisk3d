@@ -2789,7 +2789,7 @@ void View::AddBatchToQueue(BatchQueue& batchQueue, Batch batch, const Technique*
             BatchGroup &newGroup(batchQueue.batchGroupStorage_.back());
             grp_ptr = &batchQueue.batchGroupStorage_.back();
             newGroup.geometryType_ = GEOM_STATIC;
-            ren->SetBatchShaders(newGroup, tech, allowShadows);
+            ren->SetBatchShaders(newGroup, tech, batchQueue,allowShadows);
             newGroup.CalculateSortKey();
             batchQueue.batchGroups_.emplace(key, batchQueue.batchGroupStorage_.size()-1);
         }
@@ -2802,13 +2802,13 @@ void View::AddBatchToQueue(BatchQueue& batchQueue, Batch batch, const Technique*
         if (oldSize < minInstances_ && (int)group.instances_.size() >= minInstances_)
         {
             group.geometryType_ = GEOM_INSTANCED;
-            ren->SetBatchShaders(group, tech, allowShadows);
+            ren->SetBatchShaders(group, tech, batchQueue,allowShadows);
             group.CalculateSortKey();
         }
     }
     else
     {
-        ren->SetBatchShaders(batch, tech, allowShadows);
+        ren->SetBatchShaders(batch, tech, batchQueue,allowShadows);
         batch.CalculateSortKey();
 
         // If batch is static with multiple world transforms and cannot instance, we must push copies of the batch individually

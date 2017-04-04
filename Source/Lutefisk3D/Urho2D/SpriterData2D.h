@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -228,7 +228,7 @@ struct TimelineKey
     virtual TimelineKey* Clone() const = 0;
     virtual bool Load(const pugi::xml_node& node);
     virtual void Interpolate(const TimelineKey& other, float t) = 0;
-    TimelineKey& operator=(const TimelineKey& rhs);
+
     float GetTByCurveType(float currentTime, float nextTimelineTime) const;
 
     Timeline* timeline_;
@@ -237,6 +237,16 @@ struct TimelineKey
     CurveType curveType_;
     float c1_;
     float c2_;
+
+    TimelineKey& operator=(const TimelineKey& rhs)
+    {
+        id_ = rhs.id_;
+        time_ = rhs.time_;
+        curveType_ = rhs.curveType_;
+        c1_ = rhs.c1_;
+        c2_ = rhs.c2_;
+        return *this;
+    }
 };
 
 /// Spatial info.
@@ -265,7 +275,12 @@ struct SpatialTimelineKey : TimelineKey
 
     virtual bool Load(const pugi::xml_node& node);
     virtual void Interpolate(const TimelineKey& other, float t);
-    SpatialTimelineKey& operator=(const SpatialTimelineKey& rhs) = default;
+    SpatialTimelineKey& operator=(const SpatialTimelineKey& rhs)
+    {
+        TimelineKey::operator=(rhs);
+        info_ = rhs.info_;
+        return *this;
+    }
 };
 
 /// Bone timeline key.
@@ -281,7 +296,13 @@ struct BoneTimelineKey : SpatialTimelineKey
     virtual TimelineKey* Clone() const;
     virtual bool Load(const pugi::xml_node& node);
     virtual void Interpolate(const TimelineKey& other, float t);
-    BoneTimelineKey& operator=(const BoneTimelineKey& rhs) = default;
+    BoneTimelineKey& operator=(const BoneTimelineKey& rhs)
+    {
+        SpatialTimelineKey::operator=(rhs);
+        length_ = rhs.length_;
+        width_ = rhs.width_;
+        return *this;
+    }
 };
 
 /// Sprite timeline key.

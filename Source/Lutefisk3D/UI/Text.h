@@ -89,7 +89,7 @@ public:
     /// Return UI rendering batches.
     virtual void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor) override;
     /// React to resize.
-    virtual void OnResize(const IntVector2& newSize, const IntVector2& delta);
+    virtual void OnResize(const IntVector2& newSize, const IntVector2& delta) override;
     /// React to indent change.
     virtual void OnIndentSet() override;
 

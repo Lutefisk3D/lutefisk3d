@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@ enum HighlightMode
 };
 
 /// Scrollable list %UI element.
-class ListView : public ScrollView
+class URHO3D_API ListView : public ScrollView
 {
     URHO3D_OBJECT(ListView,ScrollView);
 
@@ -122,7 +122,7 @@ public:
     std::vector<UIElement*> GetSelectedItems() const;
     /// Return whether an item at index is seleccted.
     bool IsSelected(unsigned index) const;
-    /// Return whether an item at index has its children expanded (in hierachy mode only).
+    /// Return whether an item at index has its children expanded (in hierarchy mode only).
     bool IsExpanded(unsigned index) const;
     /// Return highlight mode.
     HighlightMode GetHighlightMode() const { return highlightMode_; }

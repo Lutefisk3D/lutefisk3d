@@ -211,7 +211,7 @@ private:
 template <class T> T* Object::GetSubsystem() const { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }
 
 /// Base class for object factories.
-class ObjectFactory : public RefCounted
+class URHO3D_API ObjectFactory : public RefCounted
 {
 public:
     /// Construct.
@@ -256,7 +256,7 @@ public:
 };
 
 /// Internal helper class for invoking event handler functions.
-class EventHandler
+class URHO3D_API EventHandler
 {
 public:
     /// Construct with specified receiver and userdata.
@@ -265,7 +265,6 @@ public:
         sender_(nullptr),
         userData_(userData)
     {
-        assert(receiver_);
     }
 
     /// Destruct.
@@ -340,8 +339,7 @@ class EventHandler11Impl : public EventHandler
 public:
     /// Construct with receiver and function pointers and userdata.
     EventHandler11Impl(std::function<void(StringHash, VariantMap&)> function, void* userData = 0) :
-        EventHandler((Object*)0xDEADBEEF /* EventHandler insists for receiver_ not being null but it is captured in
-                                          * `function_` already and is not used by `EventHandler11Impl` */, userData),
+        EventHandler(0, userData),
         function_(function)
     {
         assert(function_);
@@ -365,7 +363,7 @@ private:
 };
 
 /// Register event names.
-struct EventNameRegistrar
+struct URHO3D_API EventNameRegistrar
 {
     /// Register an event name for hash reverse mapping.
     static StringHash RegisterEventName(const char* eventName);

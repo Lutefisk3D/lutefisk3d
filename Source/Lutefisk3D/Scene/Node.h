@@ -227,7 +227,7 @@ public:
     /// Mark node and child nodes to need world transform recalculation. Notify listener components.
     void MarkDirty();
     /// Create a child scene node (with specified ID if provided).
-    Node* CreateChild(const QString& name = QString(), CreateMode mode = REPLICATED, unsigned id = 0, bool temporary=false);
+    Node* CreateChild(const QString& name = QString(), CreateMode mode = REPLICATED, unsigned id = 0, bool temporary = false);
     /// Create a temporary child scene node (with specified ID if provided).
     Node* CreateTemporaryChild(const QString& name = QString(), CreateMode mode = REPLICATED, unsigned id = 0);
     /// Add a child scene node at a specific index. If index is not explicitly specified or is greater than current children size, append the new child at the end.
@@ -537,7 +537,7 @@ protected:
     /// Handle attribute animation removed.
     virtual void OnAttributeAnimationRemoved() override;
     /// Find target of an attribute animation from object hierarchy by name.
-    virtual Animatable* FindAttributeAnimationTarget(const QString& name, QString& outName);
+    virtual Animatable* FindAttributeAnimationTarget(const QString& name, QString& outName) override;
 
 
 private:

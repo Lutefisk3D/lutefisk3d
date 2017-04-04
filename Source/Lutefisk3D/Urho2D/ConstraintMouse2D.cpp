@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,7 @@ extern const char* URHO2D_CATEGORY;
 
 ConstraintMouse2D::ConstraintMouse2D(Context* context) :
     Constraint2D(context),
-    target_(Vector2::ZERO),
-    targetSetted_(false)
+    target_(Vector2::ZERO)
 {
 }
 
@@ -60,18 +59,12 @@ void ConstraintMouse2D::SetTarget(const Vector2& target)
         return;
 
     target_ = target;
-    if (joint_ && targetSetted_)
-    {
-        b2MouseJoint* mouseJoint = (b2MouseJoint*)joint_;
-        mouseJoint->SetTarget(ToB2Vec2(target_));
 
-        MarkNetworkUpdate();
-        return;
-    }
+    if (joint_)
+        static_cast<b2MouseJoint*>(joint_)->SetTarget(ToB2Vec2(target));
+    else
+        RecreateJoint();
 
-    targetSetted_ = true;
-
-    RecreateJoint();
     MarkNetworkUpdate();
 }
 
@@ -82,6 +75,9 @@ void ConstraintMouse2D::SetMaxForce(float maxForce)
 
     jointDef_.maxForce = maxForce;
 
+    if (joint_)
+        static_cast<b2MouseJoint*>(joint_)->SetMaxForce(maxForce);
+    else
     RecreateJoint();
     MarkNetworkUpdate();
 }
@@ -93,6 +89,9 @@ void ConstraintMouse2D::SetFrequencyHz(float frequencyHz)
 
     jointDef_.frequencyHz = frequencyHz;
 
+    if (joint_)
+        static_cast<b2MouseJoint*>(joint_)->SetFrequency(frequencyHz);
+    else
     RecreateJoint();
     MarkNetworkUpdate();
 }
@@ -104,6 +103,9 @@ void ConstraintMouse2D::SetDampingRatio(float dampingRatio)
 
     jointDef_.dampingRatio = dampingRatio;
 
+    if (joint_)
+        static_cast<b2MouseJoint*>(joint_)->SetDampingRatio(dampingRatio);
+    else
     RecreateJoint();
     MarkNetworkUpdate();
 }

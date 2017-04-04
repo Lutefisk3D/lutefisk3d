@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -106,7 +106,6 @@ AnimationSet2D::AnimationSet2D(Context* context) :
     skeletonData_(0),
     atlas_(0),
     #endif
-    spriterData_(0),
     hasSpriteSheet_(false)
 {
 }
@@ -292,7 +291,7 @@ bool AnimationSet2D::BeginLoadSpriter(Deserializer& source)
     if (source.Read(buffer.Get(), dataSize) != dataSize)
         return false;
 
-    spriterData_ = new Spriter::SpriterData();
+    spriterData_.reset(new Spriter::SpriterData());
     if (!spriterData_->Load(buffer.Get(), dataSize))
     {
         URHO3D_LOGERROR("Could not spriter data from " + source.GetName());
@@ -522,11 +521,7 @@ void AnimationSet2D::Dispose()
     }
 #endif
 
-    if (spriterData_)
-    {
-        delete spriterData_;
-        spriterData_ = 0;
-    }
+    spriterData_.release();
 
     sprite_.Reset();
     spriteSheet_.Reset();

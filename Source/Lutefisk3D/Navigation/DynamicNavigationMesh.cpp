@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -212,6 +212,9 @@ struct LinearAllocator : public dtTileCacheAlloc
 DynamicNavigationMesh::DynamicNavigationMesh(Context* context) :
     NavigationMesh(context),
     tileCache_(0),
+    allocator_(new LinearAllocator(32000)), //32kb to start
+    compressor_(new TileCompressor()),
+    meshProcessor_(new MeshProcess(this)),
     maxObstacles_(1024),
     maxLayers_(DEFAULT_MAX_LAYERS),
     drawObstacles_(false)
@@ -219,20 +222,11 @@ DynamicNavigationMesh::DynamicNavigationMesh(Context* context) :
     //64 is the largest tile-size that DetourTileCache will tolerate without silently failing
     tileSize_ = 64;
     partitionType_ = NAVMESH_PARTITION_MONOTONE;
-    allocator_ = new LinearAllocator(32000); //32kb to start
-    compressor_ = new TileCompressor();
-    meshProcessor_ = new MeshProcess(this);
 }
 
 DynamicNavigationMesh::~DynamicNavigationMesh()
 {
     ReleaseNavigationMesh();
-    delete allocator_;
-    allocator_ = 0;
-    delete compressor_;
-    compressor_ = 0;
-    delete meshProcessor_;
-    meshProcessor_ = 0;
 }
 
 void DynamicNavigationMesh::RegisterObject(Context* context)
@@ -337,7 +331,7 @@ bool DynamicNavigationMesh::Build()
             return false;
         }
 
-        if (dtStatusFailed(tileCache_->init(&tileCacheParams, allocator_, compressor_, meshProcessor_)))
+        if (dtStatusFailed(tileCache_->init(&tileCacheParams, allocator_.get(), compressor_.get(), meshProcessor_.get())))
         {
             URHO3D_LOGERROR("Could not initialize tile cache");
             ReleaseNavigationMesh();
@@ -599,7 +593,7 @@ void DynamicNavigationMesh::SetNavigationDataAttr(const std::vector<unsigned cha
         ReleaseNavigationMesh();
         return;
     }
-    if (dtStatusFailed(tileCache_->init(&tcParams, allocator_, compressor_, meshProcessor_)))
+    if (dtStatusFailed(tileCache_->init(&tcParams, allocator_.get(), compressor_.get(), meshProcessor_.get())))
     {
         URHO3D_LOGERROR("Could not initialize tile cache");
         ReleaseNavigationMesh();
@@ -686,15 +680,13 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
     BoundingBox tileBoundingBox(Vector3(
         boundingBox_.min_.x_ + tileEdgeLength * (float)x,
         boundingBox_.min_.y_,
-        boundingBox_.min_.z_ + tileEdgeLength * (float)z
-        ),
+        boundingBox_.min_.z_ + tileEdgeLength * (float)z        ),
         Vector3(
         boundingBox_.min_.x_ + tileEdgeLength * (float)(x + 1),
         boundingBox_.max_.y_,
-        boundingBox_.min_.z_ + tileEdgeLength * (float)(z + 1)
-        ));
+        boundingBox_.min_.z_ + tileEdgeLength * (float)(z + 1)        ));
 
-    DynamicNavBuildData build(allocator_);
+    DynamicNavBuildData build(allocator_.get());
 
     rcConfig cfg;
     memset(&cfg, 0, sizeof cfg);
@@ -838,7 +830,7 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
         header.hmin = (unsigned short)layer->hmin;
         header.hmax = (unsigned short)layer->hmax;
 
-        if (dtStatusFailed(dtBuildTileCacheLayer(compressor_/*compressor*/, &header, layer->heights, layer->areas/*areas*/, layer->cons, &(tiles[retCt].data), &tiles[retCt].dataSize)))
+        if (dtStatusFailed(dtBuildTileCacheLayer(compressor_.get(), &header, layer->heights, layer->areas, layer->cons, &(tiles[retCt].data), &tiles[retCt].dataSize)))
         {
             URHO3D_LOGERROR("Failed to build tile cache layers");
             return 0;

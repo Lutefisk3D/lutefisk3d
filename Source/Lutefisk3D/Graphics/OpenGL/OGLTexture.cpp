@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,13 +38,6 @@ using namespace gl;
 namespace Urho3D
 {
 
-static GLenum glWrapModes[] =
-{
-    GL_REPEAT,
-    GL_MIRRORED_REPEAT,
-    GL_CLAMP_TO_EDGE,
-    GL_CLAMP
-};
 static GLenum gl3WrapModes[] =
 {
     GL_REPEAT,
@@ -100,25 +93,36 @@ void Texture::UpdateParameters()
     switch (filterMode)
     {
     case FILTER_NEAREST:
-        glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)GL_NEAREST);
+        if (levels_ < 2)
+            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)GL_NEAREST);
+        else
+            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)GL_NEAREST_MIPMAP_NEAREST);
         glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, (GLint)GL_NEAREST);
         break;
 
     case FILTER_BILINEAR:
         if (levels_ < 2)
-            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
+            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         else
-            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR_MIPMAP_NEAREST);
-        glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
+            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+        glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         break;
 
     case FILTER_ANISOTROPIC:
     case FILTER_TRILINEAR:
         if (levels_ < 2)
-            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR);
+            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         else
-            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, (GLint)GL_LINEAR);
+            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        break;
+
+    case FILTER_NEAREST_ANISOTROPIC:
+        if (levels_ < 2)
+            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        else
+            glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+        glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         break;
 
     default:
@@ -130,7 +134,7 @@ void Texture::UpdateParameters()
     {
         unsigned maxAnisotropy = anisotropy_ ? anisotropy_ : graphics_->GetDefaultTextureAnisotropy();
         glTexParameterf(target_, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-            filterMode == FILTER_ANISOTROPIC ? (float)maxAnisotropy : 1.0f);
+            (filterMode == FILTER_ANISOTROPIC || filterMode == FILTER_NEAREST_ANISOTROPIC) ? (float)maxAnisotropy : 1.0f);
     }
 
     // Shadow compare
@@ -262,6 +266,15 @@ gl::GLenum Texture::GetSRGBFormat(gl::GLenum format)
     default:
         return format;
     }
+}
+
+void Texture::RegenerateLevels()
+{
+    if (!object_)
+        return;
+
+    glGenerateMipmap(target_);
+    levelsDirty_ = false;
 }
 
 }

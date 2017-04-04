@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,8 +20,8 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/Batch.h"
 #include "../Graphics/BillboardSet.h"
+#include "../Graphics/Batch.h"
 #include "../Graphics/Camera.h"
 #include "../Core/Context.h"
 #include "../Graphics/Geometry.h"
@@ -57,7 +57,7 @@ const char* faceCameraModeNames[] =
     nullptr
 };
 
-const char* billboardsStructureElementNames[] =
+static const char* billboardsStructureElementNames[] =
 {
     "Billboard Count",
     "   Position",
@@ -192,16 +192,16 @@ void BillboardSet::UpdateBatches(const FrameInfo& frame)
     if (offset != previousOffset_ || frame.camera_->IsOrthographic() != hasOrthoCamera_)
     {
         if(sorted_)
-        sortThisFrame_ = true;
+            sortThisFrame_ = true;
         if(faceCameraMode_ == FC_DIRECTION)
             bufferDirty_ = true;
 
         hasOrthoCamera_ = frame.camera_->IsOrthographic();
     }
 
-        // Calculate fixed screen size scale factor for billboards if needed
-        if (fixedScreenSize_)
-            CalculateFixedScreenSize(frame);
+    // Calculate fixed screen size scale factor for billboards. Will not dirty the buffer unless actually changed
+    if (fixedScreenSize_)
+        CalculateFixedScreenSize(frame);
 
     distance_ = frame.camera_->GetDistance(GetWorldBoundingBox().Center());
 
@@ -231,7 +231,7 @@ void BillboardSet::UpdateGeometry(const FrameInfo& frame)
     if (faceCameraMode_ != FC_NONE)
     {
         transforms_[1] = Matrix3x4(Vector3::ZERO, frame.camera_->GetFaceCameraRotation(node_->GetWorldPosition(),
-            node_->GetWorldRotation(), faceCameraMode_, minAngle_), Vector3::ONE);
+                                                                                       node_->GetWorldRotation(), faceCameraMode_, minAngle_), Vector3::ONE);
     }
 
     if (bufferSizeDirty_ || indexBuffer_->IsDataLost())
@@ -245,7 +245,7 @@ UpdateGeometryType BillboardSet::GetUpdateGeometryType()
 {
     // If using camera facing, always need some kind of geometry update, in case the billboard set is rendered from several views
     if (bufferDirty_ || bufferSizeDirty_ || vertexBuffer_->IsDataLost() || indexBuffer_->IsDataLost() || sortThisFrame_ ||
-        faceCameraMode_ != FC_NONE || fixedScreenSize_)
+            faceCameraMode_ != FC_NONE || fixedScreenSize_)
         return UPDATE_MAIN_THREAD;
     else
         return UPDATE_NONE;
@@ -552,9 +552,9 @@ void BillboardSet::UpdateBufferSize()
     else
     {
         unsigned* dest = (unsigned*)destPtr;
-    unsigned vertexIndex = 0;
-    while (numBillboards--)
-    {
+        unsigned vertexIndex = 0;
+        while (numBillboards--)
+        {
             dest[0] = vertexIndex;
             dest[1] = vertexIndex + 1;
             dest[2] = vertexIndex + 2;
@@ -562,8 +562,8 @@ void BillboardSet::UpdateBufferSize()
             dest[4] = vertexIndex + 3;
             dest[5] = vertexIndex;
 
-        dest += 6;
-        vertexIndex += 4;
+            dest += 6;
+            vertexIndex += 4;
         }
     }
 
@@ -790,7 +790,7 @@ void BillboardSet::CalculateFixedScreenSize(const FrameInfo& frame)
                 billboards_[i].screenScaleFactor_ = newScaleFactor;
                 scaleFactorChanged = true;
             }
-}
+        }
     }
     else
     {
@@ -807,9 +807,9 @@ void BillboardSet::CalculateFixedScreenSize(const FrameInfo& frame)
 
     if (scaleFactorChanged)
     {
-    bufferDirty_ = true;
-    forceUpdate_ = true;
-    worldBoundingBoxDirty_ = true;
+        bufferDirty_ = true;
+        forceUpdate_ = true;
+        worldBoundingBoxDirty_ = true;
     }
 }
 

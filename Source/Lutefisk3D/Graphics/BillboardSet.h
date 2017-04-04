@@ -201,5 +201,5 @@ private:
     /// Attribute buffer for network replication.
     mutable VectorBuffer attrBuffer_;
 };
-
+extern const char* faceCameraModeNames[];
 }

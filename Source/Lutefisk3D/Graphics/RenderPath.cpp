@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -116,70 +116,57 @@ void RenderPathCommand::Load(const XMLElement& element)
 
     switch (type_)
     {
-    case CMD_CLEAR:
-        if (element.HasAttribute("color"))
-        {
-            clearFlags_ |= CLEAR_COLOR;
-            if (element.GetAttributeLower("color") == "fog")
-                useFogColor_ = true;
-            else
-                clearColor_ = element.GetColor("color");
-        }
-        if (element.HasAttribute("depth"))
-        {
-            clearFlags_ |= CLEAR_DEPTH;
-            clearDepth_ = element.GetFloat("depth");
-        }
-        if (element.HasAttribute("stencil"))
-        {
-            clearFlags_ |= CLEAR_STENCIL;
-            clearStencil_ = element.GetInt("stencil");
-        }
-        break;
+        case CMD_CLEAR:
+            if (element.HasAttribute("color"))
+            {
+                clearFlags_ |= CLEAR_COLOR;
+                if (element.GetAttributeLower("color") == "fog")
+                    useFogColor_ = true;
+                else
+                    clearColor_ = element.GetColor("color");
+            }
+            if (element.HasAttribute("depth"))
+            {
+                clearFlags_ |= CLEAR_DEPTH;
+                clearDepth_ = element.GetFloat("depth");
+            }
+            if (element.HasAttribute("stencil"))
+            {
+                clearFlags_ |= CLEAR_STENCIL;
+                clearStencil_ = element.GetInt("stencil");
+            }
+            break;
 
-    case CMD_SCENEPASS:
-        pass_ = element.GetAttribute("pass");
-        sortMode_ = (RenderCommandSortMode)GetStringListIndex(element.GetAttributeLower("sort"), sortModeNames, SORT_FRONTTOBACK);
-        if (element.HasAttribute("marktostencil"))
-            markToStencil_ = element.GetBool("marktostencil");
-        if (element.HasAttribute("vertexlights"))
-            vertexLights_ = element.GetBool("vertexlights");
-        break;
+        case CMD_SCENEPASS:
+            pass_ = element.GetAttribute("pass");
+            sortMode_ = (RenderCommandSortMode)GetStringListIndex(element.GetAttributeLower("sort"), sortModeNames, SORT_FRONTTOBACK);
+            if (element.HasAttribute("marktostencil"))
+                markToStencil_ = element.GetBool("marktostencil");
+            if (element.HasAttribute("vertexlights"))
+                vertexLights_ = element.GetBool("vertexlights");
+            break;
 
-    case CMD_FORWARDLIGHTS:
-        pass_ = element.GetAttribute("pass");
-        if (element.HasAttribute("uselitbase"))
-            useLitBase_ = element.GetBool("uselitbase");
-        break;
+        case CMD_FORWARDLIGHTS:
+            pass_ = element.GetAttribute("pass");
+            if (element.HasAttribute("uselitbase"))
+                useLitBase_ = element.GetBool("uselitbase");
+            break;
 
-    case CMD_LIGHTVOLUMES:
-    case CMD_QUAD:
-        vertexShaderName_ = element.GetAttribute("vs");
-        pixelShaderName_ = element.GetAttribute("ps");
-        vertexShaderDefines_ = element.GetAttribute("vsdefines");
-        pixelShaderDefines_ = element.GetAttribute("psdefines");
-
-        if (type_ == CMD_QUAD)
-        {
-            if (element.HasAttribute("blend"))
+        case CMD_LIGHTVOLUMES:
+        case CMD_QUAD:
+            vertexShaderName_ = element.GetAttribute("vs");
+            pixelShaderName_ = element.GetAttribute("ps");
+            if (type_ == CMD_QUAD && element.HasAttribute("blend"))
             {
                 QString blend = element.GetAttributeLower("blend");
-                blendMode_ = ((BlendMode)GetStringListIndex(blend, blendModeNames, BLEND_REPLACE));
+                blendMode_ = (BlendMode)GetStringListIndex(blend, blendModeNames, BLEND_REPLACE);
             }
-            XMLElement parameterElem = element.GetChild("parameter");
-            while (parameterElem)
-            {
-                QString name = parameterElem.GetAttribute("name");
-                shaderParameters_[name] = Material::ParseShaderParameterValue(parameterElem.GetAttribute("value"));
-                parameterElem = parameterElem.GetNext("parameter");
-            }
-        }
-        break;
-    case CMD_SENDEVENT:
-        eventName_ = element.GetAttribute("name");
-        break;
-    default:
-        break;
+            break;
+        case CMD_SENDEVENT:
+            eventName_ = element.GetAttribute("name");
+            break;
+        default:
+            break;
     }
 
     // By default use 1 output, which is the viewport
@@ -206,6 +193,18 @@ void RenderPathCommand::Load(const XMLElement& element)
         outputElem = outputElem.GetNext("output");
     }
 
+    // Shader compile flags & parameters
+    vertexShaderDefines_ = element.GetAttribute("vsdefines");
+    pixelShaderDefines_ = element.GetAttribute("psdefines");
+    XMLElement parameterElem = element.GetChild("parameter");
+    while (parameterElem)
+    {
+        QString name = parameterElem.GetAttribute("name");
+        shaderParameters_[name] = Material::ParseShaderParameterValue(parameterElem.GetAttribute("value"));
+        parameterElem = parameterElem.GetNext("parameter");
+    }
+
+    // Texture bindings
     XMLElement textureElem = element.GetChild("texture");
     while (textureElem)
     {

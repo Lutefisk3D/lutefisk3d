@@ -95,6 +95,7 @@ void Texture2DArray::Release()
 
         object_ = 0;
     }
+    levelsDirty_ = false;
 }
 
 bool Texture2DArray::SetData(unsigned layer, unsigned level, int x, int y, int width, int height, const void* data)
@@ -211,7 +212,7 @@ bool Texture2DArray::SetData(unsigned layer, Image *image, bool useAlpha)
     {
         // Convert unsuitable formats to RGBA
         unsigned components = image->GetComponents();
-        if (((components == 1 && !useAlpha) || components == 2))
+        if ((components == 1 && !useAlpha) || components == 2)
         {
             mipImage = image->ConvertToRGBA();
             image = mipImage;
@@ -444,6 +445,18 @@ bool Texture2DArray::Create()
         URHO3D_LOGERROR("Failed to create texture array");
 
     // Set mipmapping
+    if (usage_ == TEXTURE_DEPTHSTENCIL)
+        requestedLevels_ = 1;
+    else if (usage_ == TEXTURE_RENDERTARGET)
+    {
+        if (requestedLevels_ != 1)
+        {
+            // Generate levels for the first time now
+            RegenerateLevels();
+            // Determine max. levels automatically
+            requestedLevels_ = 0;
+        }
+    }
     levels_ = CheckMaxLevels(width_, height_, requestedLevels_);
 
     glTexParameteri(target_, GL_TEXTURE_BASE_LEVEL, 0);

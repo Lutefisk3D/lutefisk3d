@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -152,7 +152,7 @@ void Localization::Reset()
 
 void Localization::LoadJSON(const JSONValue& source)
 {
-    for (JSONObject::const_iterator i = source.GetObject().begin(), fin = source.GetObject().end(); i != fin; ++i)
+    for (JSONObject::const_iterator i = source.GetObject().begin(); i != source.GetObject().end(); ++i)
     {
         QString id = MAP_KEY(i);
         if (id.isEmpty())

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -122,6 +122,9 @@ bool Texture2D::SetSize(int width, int height, gl::GLenum format, TextureUsage u
         return false;
     }
 
+    // Disable mipmaps if multisample & custom resolve
+    if (multiSample > 1 && autoResolve == false)
+        requestedLevels_ = 1;
     // Delete the old rendersurface if any
     renderSurface_.Reset();
 
@@ -131,11 +134,10 @@ bool Texture2D::SetSize(int width, int height, gl::GLenum format, TextureUsage u
     {
         renderSurface_ = new RenderSurface(this);
 
-        // Clamp mode addressing by default, nearest filtering, and mipmaps disabled
+        // Clamp mode addressing by default and nearest filtering
         addressMode_[COORD_U] = ADDRESS_CLAMP;
         addressMode_[COORD_V] = ADDRESS_CLAMP;
         filterMode_ = FILTER_NEAREST;
-        requestedLevels_ = 1;
     }
 
     if (usage == TEXTURE_RENDERTARGET)

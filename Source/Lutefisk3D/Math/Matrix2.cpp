@@ -24,7 +24,6 @@
 
 #include <cstdio>
 #include <QtCore/QString>
-//#include "../DebugNew.h"
 
 namespace Urho3D
 {

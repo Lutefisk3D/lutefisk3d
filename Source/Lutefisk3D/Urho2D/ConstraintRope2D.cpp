@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -84,7 +84,10 @@ void ConstraintRope2D::SetMaxLength(float maxLength)
 
     jointDef_.maxLength = maxLength;
 
-    RecreateJoint();
+    if (joint_)
+        static_cast<b2RopeJoint*>(joint_)->SetMaxLength(maxLength);
+    else
+        RecreateJoint();
     MarkNetworkUpdate();
 }
 

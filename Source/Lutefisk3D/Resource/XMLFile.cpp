@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -69,8 +69,6 @@ XMLFile::XMLFile(Context* context) :
 
 XMLFile::~XMLFile()
 {
-    delete document_;
-    document_ = nullptr;
 }
 
 void XMLFile::RegisterObject(Context* context)
@@ -114,11 +112,12 @@ bool XMLFile::BeginLoad(Deserializer& source)
         }
 
         // Patch this XMLFile and leave the original inherited XMLFile as it is
-        pugi::xml_document* patchDocument = document_;
-        document_ = new pugi::xml_document();
+        std::unique_ptr<pugi::xml_document> patchDocument;
+        document_.swap(patchDocument);
+        document_.reset(new pugi::xml_document());
         document_->reset(*inheritedXMLFile->document_);
         Patch(rootElem);
-        delete patchDocument;
+        patchDocument.release();
 
         // Store resource dependencies so we know when to reload/repatch when the inherited resource changes
         cache->StoreResourceDependency(this, inherit);
@@ -151,6 +150,16 @@ XMLElement XMLFile::CreateRoot(const QString& name)
     return XMLElement(this, root.internal_object());
 }
 
+XMLElement XMLFile::GetOrCreateRoot(const QString& name)
+{
+    XMLElement root = GetRoot(name);
+    if (root.NotNull())
+        return root;
+    root = GetRoot();
+    if (root.NotNull())
+        URHO3D_LOGWARNING("XMLFile already has root " + root.GetName() + ", deleting it and creating root " + name);
+    return CreateRoot(name);
+}
 bool XMLFile::FromString(const QString& source)
 {
     if (source.isEmpty())

@@ -102,7 +102,7 @@ public:
         for (unsigned i = 0; i < children_.size(); ++i)
         {
             const IntVector2 &position = children_[i]->GetPosition();
-            CheckBox *        overlay  = static_cast<CheckBox *>(overlayContainer_->GetChild(i));
+            CheckBox* overlay = overlayContainer_->GetChildStaticCast<CheckBox>(i);
             bool              visible  = children_[i]->IsVisible() && GetItemHierarchyParent(children_[i]);
             overlay->SetVisible(visible);
             if (visible)
@@ -133,9 +133,8 @@ public:
         UIElement *overlay = static_cast<UIElement *>(eventData[UIMouseClick::P_ELEMENT].GetPtr());
         if (overlay)
         {
-            const std::vector<SharedPtr<UIElement>> &         children = overlayContainer_->GetChildren();
-            std::vector<SharedPtr<UIElement>>::const_iterator i =
-                std::find(children.begin(), children.end(), SharedPtr<UIElement>(overlay));
+            const std::vector<SharedPtr<UIElement>> &children(overlayContainer_->GetChildren());
+            std::vector<SharedPtr<UIElement>>::const_iterator i = std::find(children.begin(), children.end(), SharedPtr<UIElement>(overlay));
             if (i != children.end())
                 listView_->ToggleExpand(i - children.begin());
         }

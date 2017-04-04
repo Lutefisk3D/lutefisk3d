@@ -72,10 +72,7 @@ void Sample::Setup()
 
 void Sample::Start()
 {
-    if (GetPlatform() == "Android" || GetPlatform() == "iOS")
-        // On mobile platform, enable touch by adding a screen joystick
-        InitTouchInput();
-    else if (GetSubsystem<Input>()->GetNumJoysticks() == 0)
+    if (GetSubsystem<Input>()->GetNumJoysticks() == 0)
         // On desktop platform, do not detect touch when we already got a joystick
         SubscribeToEvent(E_TOUCHBEGIN, URHO3D_HANDLER(Sample, HandleTouchBegin));
 
@@ -99,25 +96,6 @@ void Sample::Start()
 void Sample::Stop()
 {
     engine_->DumpResources(true);
-}
-
-void Sample::InitTouchInput()
-{
-    touchEnabled_ = true;
-
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    Input* input = GetSubsystem<Input>();
-    XMLFile* layout = cache->GetResource<XMLFile>("UI/ScreenJoystick_Samples.xml");
-    const QString& patchString = GetScreenJoystickPatchString();
-    if (!patchString.isEmpty())
-    {
-        // Patch the screen joystick layout further on demand
-        SharedPtr<XMLFile> patchFile(new XMLFile(context_));
-        if (patchFile->FromString(patchString))
-            layout->Patch(patchFile);
-    }
-    screenJoystickIndex_ = input->AddScreenJoystick(layout, cache->GetResource<XMLFile>("UI/DefaultStyle.xml"));
-    input->SetScreenJoystickVisible(screenJoystickSettingsIndex_, true);
 }
 
 void Sample::InitMouseMode(MouseMode mode)
@@ -265,20 +243,8 @@ void Sample::HandleKeyDown(StringHash eventType, VariantMap& eventData)
         if (key == KEY_SELECT && touchEnabled_)
         {
             paused_ = !paused_;
-
-            Input* input = GetSubsystem<Input>();
-            if (screenJoystickSettingsIndex_ == M_MAX_UNSIGNED)
-            {
-                // Lazy initialization
-                ResourceCache* cache = GetSubsystem<ResourceCache>();
-                screenJoystickSettingsIndex_ = input->AddScreenJoystick(cache->GetResource<XMLFile>("UI/ScreenJoystickSettings_Samples.xml"), cache->GetResource<XMLFile>("UI/DefaultStyle.xml"));
-            }
-            else
-                input->SetScreenJoystickVisible(screenJoystickSettingsIndex_, paused_);
         }
-
-        // Texture quality
-        else if (key == '1')
+        else if (key == '1') // Texture quality
         {
             int quality = renderer->GetTextureQuality();
             ++quality;
@@ -286,9 +252,7 @@ void Sample::HandleKeyDown(StringHash eventType, VariantMap& eventData)
                 quality = QUALITY_LOW;
             renderer->SetTextureQuality(quality);
         }
-
-        // Material quality
-        else if (key == '2')
+        else if (key == '2') // Material quality
         {
             int quality = renderer->GetMaterialQuality();
             ++quality;
@@ -388,8 +352,6 @@ void Sample::HandleSceneUpdate(StringHash eventType, VariantMap& eventData)
 
 void Sample::HandleTouchBegin(StringHash eventType, VariantMap& eventData)
 {
-    // On some platforms like Windows the presence of touch input can only be detected dynamically
-    InitTouchInput();
     UnsubscribeFromEvent("TouchBegin");
 }
 

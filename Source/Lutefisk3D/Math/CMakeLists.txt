@@ -26,6 +26,7 @@ set(SOURCE
     BoundingBox.cpp
     Color.cpp
     Frustum.cpp
+    MathDefs.cpp
     Matrix2.cpp
     Matrix3.cpp
     Matrix3x4.cpp

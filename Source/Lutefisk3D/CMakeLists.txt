@@ -56,6 +56,8 @@ add_library(Lutefisk3D STATIC
 )
 
 target_link_libraries(Lutefisk3D Threads::Threads)
+set_property(TARGET Lutefisk3D PROPERTY CXX_INCLUDE_WHAT_YOU_USE /usr/bin/include-what-you-use)
+
 if(NOT LUTEFISK3D_HEADLESS)
     target_link_libraries(Lutefisk3D SDL2_LIB ${CMAKE_DL_LIBS}) # add imported SDL target
     target_link_libraries(Lutefisk3D glbinding_LIB) # add imported glbinding target

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,6 @@ AnimatedSprite2D::AnimatedSprite2D(Context* context) :
     animationStateData_(0),
     animationState_(0),
     #endif
-    spriterInstance_(nullptr),
     speed_(1.0f),
     loopMode_(LM_DEFAULT)
 {
@@ -131,7 +130,7 @@ void AnimatedSprite2D::SetAnimationSet(AnimationSet2D* animationSet)
 #endif
     if (animationSet_->GetSpriterData())
     {
-        spriterInstance_ = new Spriter::SpriterInstance(this, animationSet_->GetSpriterData());
+        spriterInstance_.reset(new Spriter::SpriterInstance(this, animationSet_->GetSpriterData()));
 
         if (!animationSet_->GetSpriterData()->entities_.empty())
         {
@@ -404,7 +403,7 @@ void AnimatedSprite2D::UpdateSourceBatchesSpine()
 void AnimatedSprite2D::SetSpriterAnimation()
 {
     if (!spriterInstance_)
-        spriterInstance_ = new Spriter::SpriterInstance(this,animationSet_->GetSpriterData());
+        spriterInstance_.reset(new Spriter::SpriterInstance(this,animationSet_->GetSpriterData()));
 
     // Use entity is empty first entity
     if (entity_.isEmpty())
@@ -524,11 +523,7 @@ void AnimatedSprite2D::Dispose()
         skeleton_ = 0;
     }
 #endif
-    if (spriterInstance_)
-    {
-        delete spriterInstance_;
-        spriterInstance_ = nullptr;
-    }
+    spriterInstance_.reset();
 }
 
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -172,7 +172,6 @@ void RigidBody2D::SetUseFixtureMass(bool useFixtureMass)
 
     if (body_)
     {
-        body_->m_useFixtureMass = useFixtureMass;
         if (useFixtureMass_)
             body_->ResetMassData();
         else
@@ -357,6 +356,11 @@ void RigidBody2D::ApplyLinearImpulse(const Vector2& impulse, const Vector2& poin
         body_->ApplyLinearImpulse(ToB2Vec2(impulse), ToB2Vec2(point), wake);
 }
 
+void RigidBody2D::ApplyLinearImpulseToCenter(const Vector2& impulse, bool wake)
+{
+    if (body_ && impulse != Vector2::ZERO)
+        body_->ApplyLinearImpulseToCenter(ToB2Vec2(impulse), wake);
+}
 void RigidBody2D::ApplyAngularImpulse(float impulse, bool wake)
 {
     if (body_)

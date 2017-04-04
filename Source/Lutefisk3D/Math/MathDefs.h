@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -229,4 +229,6 @@ inline float HalfToFloat(unsigned short value)
     return out;
 }
 
+/// Calculate both sine and cosine, with angle in degrees.
+URHO3D_API void SinCos(float angle, float& sin, float& cos);
 }

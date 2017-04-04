@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,9 +61,8 @@ extern const char* PHYSICS_CATEGORY;
 
 RigidBody::RigidBody(Context* context) :
     Component(context),
-    body_(nullptr),
-    compoundShape_(nullptr),
-    shiftedCompoundShape_(nullptr),
+    compoundShape_(new btCompoundShape()),
+    shiftedCompoundShape_(new btCompoundShape()),
     gravityOverride_(Vector3::ZERO),
     centerOfMass_(Vector3::ZERO),
     mass_(DEFAULT_MASS),
@@ -80,8 +79,6 @@ RigidBody::RigidBody(Context* context) :
     enableMassUpdate_(true),
     hasSimulated_(false)
 {
-    compoundShape_ = new btCompoundShape();
-    shiftedCompoundShape_ = new btCompoundShape();
 }
 
 RigidBody::~RigidBody()
@@ -90,11 +87,6 @@ RigidBody::~RigidBody()
 
     if (physicsWorld_)
         physicsWorld_->RemoveRigidBody(this);
-
-    delete compoundShape_;
-    compoundShape_ = nullptr;
-    delete shiftedCompoundShape_;
-    shiftedCompoundShape_ = nullptr;
 }
 
 void RigidBody::RegisterObject(Context* context)
@@ -210,7 +202,7 @@ void RigidBody::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
         physicsWorld_->SetDebugDepthTest(depthTest);
 
         btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
-        world->debugDrawObject(body_->getWorldTransform(), shiftedCompoundShape_, IsActive() ? btVector3(1.0f, 1.0f, 1.0f) :
+        world->debugDrawObject(body_->getWorldTransform(), shiftedCompoundShape_.get(), IsActive() ? btVector3(1.0f, 1.0f, 1.0f) :
                                                                                                btVector3(0.0f, 1.0f, 0.0f));
 
         physicsWorld_->SetDebugRenderer(nullptr);
@@ -784,7 +776,7 @@ void RigidBody::UpdateMass()
                 !ToQuaternion(childTransform.getRotation()).Equals(Quaternion::IDENTITY))
             useCompound = true;
     }
-    body_->setCollisionShape(useCompound ? shiftedCompoundShape_ : shiftedCompoundShape_->getChildShape(0));
+    body_->setCollisionShape(useCompound ? shiftedCompoundShape_.get() : shiftedCompoundShape_->getChildShape(0));
 
     // If we have one shape and this is a triangle mesh, we use a custom material callback in order to adjust internal edges
     if (!useCompound && body_->getCollisionShape()->getShapeType() == SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE &&
@@ -878,8 +870,7 @@ void RigidBody::ReleaseBody()
 
         RemoveBodyFromWorld();
 
-        delete body_;
-        body_ = nullptr;
+        body_.reset();
     }
 }
 
@@ -960,7 +951,7 @@ void RigidBody::AddBodyToWorld()
     {
         // Correct inertia will be calculated below
         btVector3 localInertia(0.0f, 0.0f, 0.0f);
-        body_ = new btRigidBody(mass_, this, shiftedCompoundShape_, localInertia);
+        body_.reset(new btRigidBody(mass_, this, shiftedCompoundShape_.get(), localInertia));
         body_->setUserPointer(this);
 
         // Check for existence of the SmoothedTransform component, which should be created by now in network client mode.
@@ -1006,7 +997,7 @@ void RigidBody::AddBodyToWorld()
         return;
 
     btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
-    world->addRigidBody(body_, collisionLayer_, collisionMask_);
+    world->addRigidBody(body_.get(), collisionLayer_, collisionMask_);
     inWorld_ = true;
     readdBody_ = false;
     hasSimulated_ = false;
@@ -1025,7 +1016,7 @@ void RigidBody::RemoveBodyFromWorld()
     if (physicsWorld_ && body_ && inWorld_)
     {
         btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
-        world->removeRigidBody(body_);
+        world->removeRigidBody(body_.get());
         inWorld_ = false;
     }
 }

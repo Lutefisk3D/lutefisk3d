@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -421,16 +421,6 @@ bool TimelineKey::Load(const pugi::xml_node& node)
     return true;
 }
 
-TimelineKey& TimelineKey::operator=(const TimelineKey& rhs)
-{
-    id_ = rhs.id_;
-    time_ = rhs.time_;
-    curveType_ = rhs.curveType_;
-    c1_ = rhs.c1_;
-    c2_ = rhs.c2_;
-    return *this;
-}
-
 // From http://www.brashmonkey.com/ScmlDocs/ScmlReference.html
 
 inline float Linear(float a, float b, float t)
@@ -590,7 +580,6 @@ bool BoneTimelineKey::Load(const xml_node& node)
 
     return true;
 }
-
 void BoneTimelineKey::Interpolate(const TimelineKey& other, float t)
 {
     SpatialTimelineKey::Interpolate(other, t);

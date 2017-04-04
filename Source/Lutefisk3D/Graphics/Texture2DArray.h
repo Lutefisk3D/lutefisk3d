@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,6 @@
 #pragma once
 
 #include "../Container/Ptr.h"
-//#include "../Graphics/RenderSurface.h"
 #include "../Graphics/Texture.h"
 
 namespace Urho3D
@@ -46,15 +45,15 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source);
+    virtual bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
-    virtual bool EndLoad();
+    virtual bool EndLoad() override;
     /// Mark the GPU resource destroyed on context destruction.
-    virtual void OnDeviceLost();
+    virtual void OnDeviceLost() override;
     /// Recreate the GPU resource and restore data if applicable.
-    virtual void OnDeviceReset();
+    virtual void OnDeviceReset() override;
     /// Release the texture.
-    virtual void Release();
+    virtual void Release() override;
 
     /// Set the number of layers in the texture. To be used before SetData.
     void SetLayers(unsigned layers);

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -54,7 +54,6 @@ extern const char* PHYSICS_CATEGORY;
 
 Constraint::Constraint(Context* context) :
     Component(context),
-    constraint_(nullptr),
     constraintType_(CONSTRAINT_POINT),
     position_(Vector3::ZERO),
     rotation_(Quaternion::IDENTITY),
@@ -167,7 +166,7 @@ void Constraint::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     {
         physicsWorld_->SetDebugRenderer(debug);
         physicsWorld_->SetDebugDepthTest(depthTest);
-        physicsWorld_->GetWorld()->debugDrawConstraint(constraint_);
+        physicsWorld_->GetWorld()->debugDrawConstraint(constraint_.get());
         physicsWorld_->SetDebugRenderer(nullptr);
     }
 }
@@ -380,10 +379,9 @@ void Constraint::ReleaseConstraint()
             otherBody_->RemoveConstraint(this);
 
         if (physicsWorld_)
-            physicsWorld_->GetWorld()->removeConstraint(constraint_);
+            physicsWorld_->GetWorld()->removeConstraint(constraint_.get());
 
-        delete constraint_;
-        constraint_ = nullptr;
+        constraint_.reset();
     }
 }
 
@@ -402,7 +400,7 @@ void Constraint::ApplyFrames()
     {
     case POINT2POINT_CONSTRAINT_TYPE:
         {
-            btPoint2PointConstraint* pointConstraint = static_cast<btPoint2PointConstraint*>(constraint_);
+            btPoint2PointConstraint* pointConstraint = static_cast<btPoint2PointConstraint*>(constraint_.get());
             pointConstraint->setPivotA(ToBtVector3(ownBodyScaledPosition));
             pointConstraint->setPivotB(ToBtVector3(otherBodyScaledPosition));
         }
@@ -410,7 +408,7 @@ void Constraint::ApplyFrames()
 
     case HINGE_CONSTRAINT_TYPE:
         {
-            btHingeConstraint* hingeConstraint = static_cast<btHingeConstraint*>(constraint_);
+            btHingeConstraint* hingeConstraint = static_cast<btHingeConstraint*>(constraint_.get());
             btTransform ownFrame(ToBtQuaternion(rotation_), ToBtVector3(ownBodyScaledPosition));
             btTransform otherFrame(ToBtQuaternion(otherRotation_), ToBtVector3(otherBodyScaledPosition));
             hingeConstraint->setFrames(ownFrame, otherFrame);
@@ -419,7 +417,7 @@ void Constraint::ApplyFrames()
 
     case SLIDER_CONSTRAINT_TYPE:
         {
-            btSliderConstraint* sliderConstraint = static_cast<btSliderConstraint*>(constraint_);
+            btSliderConstraint* sliderConstraint = static_cast<btSliderConstraint*>(constraint_.get());
             btTransform ownFrame(ToBtQuaternion(rotation_), ToBtVector3(ownBodyScaledPosition));
             btTransform otherFrame(ToBtQuaternion(otherRotation_), ToBtVector3(otherBodyScaledPosition));
             sliderConstraint->setFrames(ownFrame, otherFrame);
@@ -428,7 +426,7 @@ void Constraint::ApplyFrames()
 
     case CONETWIST_CONSTRAINT_TYPE:
         {
-            btConeTwistConstraint* coneTwistConstraint = static_cast<btConeTwistConstraint*>(constraint_);
+            btConeTwistConstraint* coneTwistConstraint = static_cast<btConeTwistConstraint*>(constraint_.get());
             btTransform ownFrame(ToBtQuaternion(rotation_), ToBtVector3(ownBodyScaledPosition));
             btTransform otherFrame(ToBtQuaternion(otherRotation_), ToBtVector3(otherBodyScaledPosition));
             coneTwistConstraint->setFrames(ownFrame, otherFrame);
@@ -512,8 +510,8 @@ void Constraint::CreateConstraint()
     {
     case CONSTRAINT_POINT:
         {
-            constraint_ = new btPoint2PointConstraint(*ownBody, *otherBody, ToBtVector3(ownBodyScaledPosition),
-                ToBtVector3(otherBodyScaledPosition));
+            constraint_.reset(new btPoint2PointConstraint(*ownBody, *otherBody, ToBtVector3(ownBodyScaledPosition),
+                ToBtVector3(otherBodyScaledPosition)));
         }
         break;
 
@@ -521,7 +519,7 @@ void Constraint::CreateConstraint()
         {
             btTransform ownFrame(ToBtQuaternion(rotation_), ToBtVector3(ownBodyScaledPosition));
             btTransform otherFrame(ToBtQuaternion(otherRotation_), ToBtVector3(otherBodyScaledPosition));
-            constraint_ = new btHingeConstraint(*ownBody, *otherBody, ownFrame, otherFrame);
+            constraint_.reset(new btHingeConstraint(*ownBody, *otherBody, ownFrame, otherFrame));
         }
         break;
 
@@ -529,7 +527,7 @@ void Constraint::CreateConstraint()
         {
             btTransform ownFrame(ToBtQuaternion(rotation_), ToBtVector3(ownBodyScaledPosition));
             btTransform otherFrame(ToBtQuaternion(otherRotation_), ToBtVector3(otherBodyScaledPosition));
-            constraint_ = new btSliderConstraint(*ownBody, *otherBody, ownFrame, otherFrame, false);
+            constraint_.reset(new btSliderConstraint(*ownBody, *otherBody, ownFrame, otherFrame, false));
         }
         break;
 
@@ -537,7 +535,7 @@ void Constraint::CreateConstraint()
         {
             btTransform ownFrame(ToBtQuaternion(rotation_), ToBtVector3(ownBodyScaledPosition));
             btTransform otherFrame(ToBtQuaternion(otherRotation_), ToBtVector3(otherBodyScaledPosition));
-            constraint_ = new btConeTwistConstraint(*ownBody, *otherBody, ownFrame, otherFrame);
+            constraint_.reset(new btConeTwistConstraint(*ownBody, *otherBody, ownFrame, otherFrame));
         }
         break;
 
@@ -555,7 +553,7 @@ void Constraint::CreateConstraint()
 
         ApplyLimits();
 
-        physicsWorld_->GetWorld()->addConstraint(constraint_, disableCollision_);
+        physicsWorld_->GetWorld()->addConstraint(constraint_.get(), disableCollision_);
     }
 
     recreateConstraint_ = false;
@@ -572,14 +570,14 @@ void Constraint::ApplyLimits()
     {
     case HINGE_CONSTRAINT_TYPE:
         {
-            btHingeConstraint* hingeConstraint = static_cast<btHingeConstraint*>(constraint_);
+            btHingeConstraint* hingeConstraint = static_cast<btHingeConstraint*>(constraint_.get());
             hingeConstraint->setLimit(lowLimit_.x_ * M_DEGTORAD, highLimit_.x_ * M_DEGTORAD);
         }
         break;
 
     case SLIDER_CONSTRAINT_TYPE:
         {
-            btSliderConstraint* sliderConstraint = static_cast<btSliderConstraint*>(constraint_);
+            btSliderConstraint* sliderConstraint = static_cast<btSliderConstraint*>(constraint_.get());
             sliderConstraint->setUpperLinLimit(highLimit_.x_);
             sliderConstraint->setUpperAngLimit(highLimit_.y_ * M_DEGTORAD);
             sliderConstraint->setLowerLinLimit(lowLimit_.x_);
@@ -589,7 +587,7 @@ void Constraint::ApplyLimits()
 
     case CONETWIST_CONSTRAINT_TYPE:
         {
-            btConeTwistConstraint* coneTwistConstraint = static_cast<btConeTwistConstraint*>(constraint_);
+            btConeTwistConstraint* coneTwistConstraint = static_cast<btConeTwistConstraint*>(constraint_.get());
             coneTwistConstraint->setLimit(highLimit_.y_ * M_DEGTORAD, highLimit_.y_ * M_DEGTORAD, highLimit_.x_ * M_DEGTORAD);
         }
         break;

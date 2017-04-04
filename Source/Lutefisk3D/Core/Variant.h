@@ -68,7 +68,7 @@ enum VariantType
     MAX_VAR_TYPES
 };
 
-/// Union for the possible variant values. Also stores non-POD objects such as String which must not exceed 16 bytes in size.
+/// Union for the possible variant values. Also stores non-POD objects such as String and math objects (excluding Matrix) which must not exceed 16 bytes in size (or 32 bytes in a 64-bit build.) Objects exceeding the limit are allocated on the heap and pointed to by _ptr.
 struct VariantValue
 {
     union
@@ -973,6 +973,8 @@ public:
     }
     /// Return a variant map or empty on type mismatch.
     const VariantMap& GetVariantMap() const { return type_ == VAR_VARIANTMAP ? *reinterpret_cast<const VariantMap*>(&value_) : emptyVariantMap; }
+    /// Return a rect or empty on type mismatch.
+    const Rect& GetRect() const { return type_ == VAR_RECT ? *reinterpret_cast<const Rect*>(&value_) : Rect::ZERO; }
     /// Return an integer rect or empty on type mismatch.
     const IntRect& GetIntRect() const { return type_ == VAR_INTRECT ? *reinterpret_cast<const IntRect*>(&value_) : IntRect::ZERO; }
     /// Return an IntVector2 or empty on type mismatch.
@@ -1074,6 +1076,8 @@ template <> inline VariantType GetVariantType<IntVector3>() { return VAR_INTVECT
 template<> inline VariantType GetVariantType<Matrix3>() { return VAR_MATRIX3; }
 template<> inline VariantType GetVariantType<Matrix3x4>() { return VAR_MATRIX3X4; }
 template<> inline VariantType GetVariantType<Matrix4>() { return VAR_MATRIX4; }
+template <> URHO3D_API Rect Variant::Get<Rect>() const;
+template <> URHO3D_API IntRect Variant::Get<IntRect>() const;
 
 static_assert(sizeof(VariantValue)>=sizeof(QString),"Variant value must be large enough to hold VariantMap");
 }

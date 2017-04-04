@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ class Font;
 class Text;
 
 /// Single-line text editor %UI element.
-class LineEdit : public BorderImage
+class URHO3D_API LineEdit : public BorderImage
 {
     URHO3D_OBJECT(LineEdit,BorderImage);
 
@@ -62,7 +62,7 @@ public:
     /// React to a key press.
     virtual void OnKey(int key, int buttons, int qualifiers) override;
     /// React to text input event.
-    virtual void OnTextInput(const QString& text, int buttons, int qualifiers) override;
+    virtual void OnTextInput(const QString& text) override;
 
     /// Set text.
     void SetText(const QString& text);

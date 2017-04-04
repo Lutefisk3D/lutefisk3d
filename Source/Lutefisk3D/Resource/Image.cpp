@@ -662,7 +662,6 @@ bool Image::BeginLoad(Deserializer& source)
             return false;
         }
 
-        compressedFormat_ = CF_NONE;
         switch (pixelFormatLo)
         {
         case 0:
@@ -703,6 +702,9 @@ bool Image::BeginLoad(Deserializer& source)
         case 11:
             compressedFormat_ = CF_DXT5;
             components_ = 4;
+            break;
+        default:
+            compressedFormat_ = CF_NONE;
             break;
         }
 

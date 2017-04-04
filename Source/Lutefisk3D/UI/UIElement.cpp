@@ -300,13 +300,13 @@ bool UIElement::LoadXML(const XMLElement& source, XMLFile* styleFile, bool setIn
     return true;
 }
 
-bool UIElement::LoadChildXML(const XMLElement& childElem, XMLFile* styleFile, bool setInstanceDefault)
+UIElement* UIElement::LoadChildXML(const XMLElement& childElem, XMLFile* styleFile, bool setInstanceDefault)
 {
     bool internalElem = childElem.GetBool("internal");
     if (internalElem)
     {
         URHO3D_LOGERROR("Loading internal child element is not supported");
-        return false;
+        return nullptr;
     }
 
     QString typeName = childElem.GetAttribute("type");
@@ -320,10 +320,13 @@ bool UIElement::LoadChildXML(const XMLElement& childElem, XMLFile* styleFile, bo
         if (!styleFile)
             styleFile = GetDefaultStyle();
         if (!child->LoadXML(childElem, styleFile, setInstanceDefault))
-            return false;
+        {
+            RemoveChild(child, index);
+            return nullptr;
+        }
     }
 
-    return true;
+    return child;
 }
 
 bool UIElement::SaveXML(XMLElement& dest) const
@@ -1736,6 +1739,12 @@ void UIElement::GetChildrenWithTag(std::vector<UIElement*>& dest, const QString 
         GetChildrenWithTagRecursive(dest, tag);
 }
 
+std::vector<UIElement*> UIElement::GetChildrenWithTag(const QString& tag, bool recursive) const
+{
+    std::vector<UIElement*> dest;
+    GetChildrenWithTag(dest, tag, recursive);
+    return dest;
+}
 void UIElement::GetChildrenWithTagRecursive(std::vector<UIElement*>& dest, const QString & tag) const
 {
     for (std::vector<SharedPtr<UIElement> >::const_iterator i = children_.begin(); i != children_.end(); ++i)

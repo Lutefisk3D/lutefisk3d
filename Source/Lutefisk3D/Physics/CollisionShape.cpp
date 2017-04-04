@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -189,39 +189,25 @@ private:
 };
 
 TriangleMeshData::TriangleMeshData(Model* model, unsigned lodLevel) :
-    meshInterface_(nullptr),
-    shape_(nullptr),
-    infoMap_(nullptr)
+    meshInterface_(new TriangleMeshInterface(model, lodLevel)),
+    infoMap_(new btTriangleInfoMap())
 {
-    meshInterface_ = new TriangleMeshInterface(model, lodLevel);
-    shape_ = new btBvhTriangleMeshShape(meshInterface_, meshInterface_->useQuantize_, true);
 
-    infoMap_ = new btTriangleInfoMap();
-    btGenerateInternalEdgeInfo(shape_, infoMap_);
+    shape_.reset(new btBvhTriangleMeshShape(meshInterface_.get(), meshInterface_->useQuantize_, true));
+    btGenerateInternalEdgeInfo(shape_.get(), infoMap_.get());
 }
 
 TriangleMeshData::TriangleMeshData(CustomGeometry* custom) :
-    meshInterface_(nullptr),
-    shape_(nullptr),
-    infoMap_(nullptr)
-{
-    meshInterface_ = new TriangleMeshInterface(custom);
-    shape_ = new btBvhTriangleMeshShape(meshInterface_, meshInterface_->useQuantize_, true);
+    meshInterface_(new TriangleMeshInterface(custom)),
+    infoMap_(new btTriangleInfoMap())
 
-    infoMap_ = new btTriangleInfoMap();
-    btGenerateInternalEdgeInfo(shape_, infoMap_);
+{
+    shape_.reset(new btBvhTriangleMeshShape(meshInterface_.get(), meshInterface_->useQuantize_, true));
+    btGenerateInternalEdgeInfo(shape_.get(), infoMap_.get());
 }
 
 TriangleMeshData::~TriangleMeshData()
 {
-    delete shape_;
-    shape_ = nullptr;
-
-    delete meshInterface_;
-    meshInterface_ = nullptr;
-
-    delete infoMap_;
-    infoMap_ = nullptr;
 }
 
 ConvexData::ConvexData(Model* model, unsigned lodLevel)
@@ -403,7 +389,6 @@ bool HasDynamicBuffers(Model* model, unsigned lodLevel)
 
 CollisionShape::CollisionShape(Context* context) :
     Component(context),
-    shape_(nullptr),
     shapeType_(SHAPE_BOX),
     position_(Vector3::ZERO),
     rotation_(Quaternion::IDENTITY),
@@ -494,7 +479,7 @@ void CollisionShape::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
         Quaternion worldRotation(worldTransform.Rotation() * rotation_);
 
         btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
-        world->debugDrawObject(btTransform(ToBtQuaternion(worldRotation), ToBtVector3(worldPosition)), shape_, bodyActive ?
+        world->debugDrawObject(btTransform(ToBtQuaternion(worldRotation), ToBtVector3(worldPosition)), shape_.get(), bodyActive ?
                                    WHITE : GREEN);
 
         physicsWorld_->SetDebugRenderer(nullptr);
@@ -852,7 +837,7 @@ void CollisionShape::NotifyRigidBody(bool updateMass)
     if (node_ && shape_ && compound)
     {
         // Remove the shape first to ensure it is not added twice
-        compound->removeChildShape(shape_);
+        compound->removeChildShape(shape_.get());
 
         if (IsEnabledEffective())
         {
@@ -868,7 +853,7 @@ void CollisionShape::NotifyRigidBody(bool updateMass)
             btTransform offset;
             offset.setOrigin(ToBtVector3(node_->GetWorldScale() * position));
             offset.setRotation(ToBtQuaternion(rotation_));
-            compound->addChildShape(offset, shape_);
+            compound->addChildShape(offset, shape_.get());
         }
 
         // Finally tell the rigid body to update its mass
@@ -895,12 +880,11 @@ void CollisionShape::ReleaseShape()
     btCompoundShape* compound = GetParentCompoundShape();
     if (shape_ && compound)
     {
-        compound->removeChildShape(shape_);
+        compound->removeChildShape(shape_.get());
         rigidBody_->UpdateMass();
     }
 
-    delete shape_;
-    shape_ = nullptr;
+    shape_.release();
 
     geometry_.Reset();
 
@@ -1024,31 +1008,31 @@ void CollisionShape::UpdateShape()
         switch (shapeType_)
         {
         case SHAPE_BOX:
-            shape_ = new btBoxShape(ToBtVector3(size_ * 0.5f));
+            shape_.reset(new btBoxShape(ToBtVector3(size_ * 0.5f)));
             shape_->setLocalScaling(ToBtVector3(newWorldScale));
             break;
 
         case SHAPE_SPHERE:
-            shape_ = new btSphereShape(size_.x_ * 0.5f);
+            shape_.reset(new btSphereShape(size_.x_ * 0.5f));
             shape_->setLocalScaling(ToBtVector3(newWorldScale));
             break;
 
         case SHAPE_STATICPLANE:
-            shape_ = new btStaticPlaneShape(btVector3(0.0f, 1.0f, 0.0f), 0.0f);
+            shape_.reset(new btStaticPlaneShape(btVector3(0.0f, 1.0f, 0.0f), 0.0f));
             break;
 
         case SHAPE_CYLINDER:
-            shape_ = new btCylinderShape(btVector3(size_.x_ * 0.5f, size_.y_ * 0.5f, size_.x_ * 0.5f));
+            shape_.reset(new btCylinderShape(btVector3(size_.x_ * 0.5f, size_.y_ * 0.5f, size_.x_ * 0.5f)));
             shape_->setLocalScaling(ToBtVector3(newWorldScale));
             break;
 
         case SHAPE_CAPSULE:
-            shape_ = new btCapsuleShape(size_.x_ * 0.5f, Max(size_.y_  - size_.x_, 0.0f));
+            shape_.reset(new btCapsuleShape(size_.x_ * 0.5f, Max(size_.y_  - size_.x_, 0.0f)));
             shape_->setLocalScaling(ToBtVector3(newWorldScale));
             break;
 
         case SHAPE_CONE:
-            shape_ = new btConeShape(size_.x_ * 0.5f, size_.y_);
+            shape_.reset(new btConeShape(size_.x_ * 0.5f, size_.y_));
             shape_->setLocalScaling(ToBtVector3(newWorldScale));
             break;
 
@@ -1061,7 +1045,7 @@ void CollisionShape::UpdateShape()
                 {
                     geometry_ = new TriangleMeshData(custom);
                     TriangleMeshData* triMesh = static_cast<TriangleMeshData*>(geometry_.Get());
-                    shape_ = new btScaledBvhTriangleMeshShape(triMesh->shape_, ToBtVector3(newWorldScale * size_));
+                    shape_.reset(new btScaledBvhTriangleMeshShape(triMesh->shape_.get(), ToBtVector3(newWorldScale * size_)));
                 }
                 else
                     URHO3D_LOGWARNING("Could not find custom geometry component from node ID " +
@@ -1084,7 +1068,7 @@ void CollisionShape::UpdateShape()
                 }
 
                 TriangleMeshData* triMesh = static_cast<TriangleMeshData*>(geometry_.Get());
-                shape_ = new btScaledBvhTriangleMeshShape(triMesh->shape_, ToBtVector3(newWorldScale * size_));
+                shape_.reset(new btScaledBvhTriangleMeshShape(triMesh->shape_.get(), ToBtVector3(newWorldScale * size_)));
                 // Watch for live reloads of the collision model to reload the geometry if necessary
                 SubscribeToEvent(model_, E_RELOADFINISHED, URHO3D_HANDLER(CollisionShape, HandleModelReloadFinished));
             }
@@ -1099,7 +1083,7 @@ void CollisionShape::UpdateShape()
                 {
                     geometry_ = new ConvexData(custom);
                     ConvexData* convex = static_cast<ConvexData*>(geometry_.Get());
-                    shape_ = new btConvexHullShape((btScalar*)convex->vertexData_.Get(), convex->vertexCount_, sizeof(Vector3));
+                    shape_.reset(new btConvexHullShape((btScalar*)convex->vertexData_.Get(), convex->vertexCount_, sizeof(Vector3)));
                     shape_->setLocalScaling(ToBtVector3(newWorldScale * size_));
                 }
                 else
@@ -1123,7 +1107,7 @@ void CollisionShape::UpdateShape()
                 }
 
                 ConvexData* convex = static_cast<ConvexData*>(geometry_.Get());
-                shape_ = new btConvexHullShape((btScalar*)convex->vertexData_.Get(), convex->vertexCount_, sizeof(Vector3));
+                shape_ .reset(new btConvexHullShape((btScalar*)convex->vertexData_.Get(), convex->vertexCount_, sizeof(Vector3)));
                 shape_->setLocalScaling(ToBtVector3(newWorldScale * size_));
                 SubscribeToEvent(model_, E_RELOADFINISHED, URHO3D_HANDLER(CollisionShape, HandleModelReloadFinished));
             }
@@ -1138,9 +1122,9 @@ void CollisionShape::UpdateShape()
                 geometry_ = new HeightfieldData(terrain, lodLevel_);
                 HeightfieldData* heightfield = static_cast<HeightfieldData*>(geometry_.Get());
 
-                shape_ = new btHeightfieldTerrainShape(heightfield->size_.x_, heightfield->size_.y_,
+                shape_ .reset(new btHeightfieldTerrainShape(heightfield->size_.x_, heightfield->size_.y_,
                                                        heightfield->heightData_.Get(), 1.0f, heightfield->minHeight_, heightfield->maxHeight_, 1, PHY_FLOAT,
-                                                       false);
+                                                       false));
                 shape_->setLocalScaling(ToBtVector3(Vector3(heightfield->spacing_.x_, 1.0f, heightfield->spacing_.z_) *
                                                     newWorldScale * size_));
             }
@@ -1148,7 +1132,7 @@ void CollisionShape::UpdateShape()
             break;
 
         default:
-            shape_ = this->UpdateDerivedShape(shapeType_, newWorldScale);
+            shape_.reset(this->UpdateDerivedShape(shapeType_, newWorldScale));
             break;
         }
 

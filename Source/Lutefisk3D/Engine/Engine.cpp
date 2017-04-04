@@ -588,7 +588,7 @@ void Engine::DumpResources(bool dumpFileName)
         }
     }
     else
-        URHO3D_LOGRAW(cache->PrintMemoryUsage());
+        URHO3D_LOGRAW(cache->PrintMemoryUsage()+ "\n");
 #endif
 }
 

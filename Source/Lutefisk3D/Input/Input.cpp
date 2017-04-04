@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -118,10 +118,10 @@ Input::Input(Context* context) :
     minimized_(false),
     focusedThisFrame_(false),
     suppressNextMouseMove_(false),
-    inResize_(false),
-    screenModeChanged_(false),
+    mouseMoveScaled_(false),
     initialized_(false)
 {
+    context_->RequireSDL(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
     for (int i = 0; i < TOUCHID_MAX; i++)
         availableTouchIDs_.push_back(i);
 
@@ -133,6 +133,7 @@ Input::Input(Context* context) :
 
 Input::~Input()
 {
+    context_->ReleaseSDL();
 }
 
 void Input::Update()
@@ -161,14 +162,11 @@ void Input::Update()
     {
 #ifdef REQUIRE_CLICK_TO_FOCUS
         // When using the "click to focus" mechanism, only focus automatically in fullscreen or non-hidden mouse mode
-        if (!inputFocus_ && ((mouseVisible_ || mouseMode_ == MM_FREE) || graphics_->GetFullscreen() || screenModeChanged_) && (flags & SDL_WINDOW_INPUT_FOCUS))
+        if (!inputFocus_ && ((mouseVisible_ || mouseMode_ == MM_FREE) || graphics_->GetFullscreen()) && (flags & SDL_WINDOW_INPUT_FOCUS))
 #else
         if (!inputFocus_ && (flags & SDL_WINDOW_INPUT_FOCUS))
 #endif
-        {
-            screenModeChanged_ = false;
             focusedThisFrame_ = true;
-        }
 
         if (focusedThisFrame_)
             GainFocus();
@@ -191,6 +189,9 @@ void Input::Update()
         const int buffer = 5;
         const int width = graphics_->GetWidth() - buffer * 2;
         const int height = graphics_->GetHeight() - buffer * 2;
+        // SetMousePosition utilizes backbuffer coordinate system, scale now from window coordinates
+        mpos.x_ = (int)(mpos.x_ * inputScale_.x_);
+        mpos.y_ = (int)(mpos.y_ * inputScale_.y_);
 
         bool warp = false;
         if (mpos.x_ < buffer)
@@ -228,6 +229,7 @@ void Input::Update()
     {
         const IntVector2 mousePosition = GetMousePosition();
         mouseMove_ = mousePosition - lastMousePosition_;
+        mouseMoveScaled_ = true; // Already in backbuffer scale, since GetMousePosition() operates in that
 
         if (graphics_->GetExternalWindow())
             lastMousePosition_ = mousePosition;
@@ -336,6 +338,11 @@ void Input::SetMouseVisible(bool enable, bool suppressEvent)
                 }
             }
         }
+        else
+        {
+            // Allow to set desired mouse visibility before initialization
+            mouseVisible_ = enable;
+        }
 
         if (mouseVisible_ != startMouseVisible)
         {
@@ -397,6 +404,8 @@ void Input::SetMouseMode(MouseMode mode, bool suppressEvent)
 
     if (mode != mouseMode_)
     {
+        if (initialized_)
+    {
         SuppressNextMouseMove();
 
         mouseMode_ = mode;
@@ -438,6 +447,12 @@ void Input::SetMouseMode(MouseMode mode, bool suppressEvent)
 
         if (mode != MM_WRAP)
             SetMouseGrabbed(!(mouseVisible_ || (cursor && cursor->IsVisible())), suppressEvent);
+    }
+        else
+        {
+            // Allow to set desired mouse mode before initialization
+            mouseMode_ = mode;
+        }
     }
 
     if (!suppressEvent)
@@ -513,216 +528,9 @@ static void PopulateMouseButtonBindingMap(HashMap<QString, int>& mouseButtonBind
     mouseButtonBindingMap.emplace("X2", SDL_BUTTON_X2);
 }
 
-SDL_JoystickID Input::AddScreenJoystick(XMLFile* layoutFile, XMLFile* styleFile)
-{
-    assert(false);
-    //    static HashMap<QString, int> keyBindingMap;
-    //    static HashMap<QString, int> mouseButtonBindingMap;
-
-    //    if (!graphics_)
-    //    {
-    //        LOGWARNING("Cannot add screen joystick in headless mode");
-    //        return -1;
-    //    }
-
-    //    // If layout file is not given, use the default screen joystick layout
-    //    if (!layoutFile)
-    //    {
-    //        ResourceCache* cache = GetSubsystem<ResourceCache>();
-    //        layoutFile = cache->GetResource<XMLFile>("UI/ScreenJoystick.xml");
-    //        if (!layoutFile)    // Error is already logged
-    //            return -1;
-    //    }
-
-    //    UI* ui = GetSubsystem<UI>();
-    //    SharedPtr<UIElement> screenJoystick = ui->LoadLayout(layoutFile, styleFile);
-    //    if (!screenJoystick)     // Error is already logged
-    //        return -1;
-
-    //    screenJoystick->SetSize(ui->GetRoot()->GetSize());
-    //    ui->GetRoot()->AddChild(screenJoystick);
-
-    //    // Get an unused ID for the screen joystick
-    //    /// \todo After a real joystick has been plugged in 1073741824 times, the ranges will overlap
-    SDL_JoystickID joystickID = SCREEN_JOYSTICK_START_ID;
-    //    while (joysticks_.contains(joystickID))
-    //        ++joystickID;
-
-    //    JoystickState& state = joysticks_[joystickID];
-    //    state.joystickID_ = joystickID;
-    //    state.name_ = screenJoystick->GetName();
-    //    state.screenJoystick_ = screenJoystick;
-
-    //    unsigned numButtons = 0;
-    //    unsigned numAxes = 0;
-    //    unsigned numHats = 0;
-    //    const std::vector<SharedPtr<UIElement> >& children = state.screenJoystick_->GetChildren();
-    //    for (const auto & elem : children)
-    //    {
-    //        UIElement* element = elem.Get();
-    //        QString name = element->GetName();
-    //        if (name.startsWith("Button"))
-    //        {
-    //            ++numButtons;
-
-    //            // Check whether the button has key binding
-    //            Text* text = dynamic_cast<Text*>(element->GetChild("KeyBinding", false));
-    //            if (text)
-    //            {
-    //                text->SetVisible(false);
-    //                const QString& key = text->GetText();
-    //                int keyBinding;
-    //                if (key.length() == 1)
-    //                    keyBinding = key[0].toLatin1();
-    //                else
-    //                {
-    //                    PopulateKeyBindingMap(keyBindingMap);
-
-    //                    auto i = keyBindingMap.find(key);
-    //                    if (i != keyBindingMap.end())
-    //                        keyBinding = MAP_VALUE(i);
-    //                    else
-    //                    {
-    //                        LOGERROR("Unsupported key binding: " + key);
-    //                        keyBinding = M_MAX_INT;
-    //                    }
-    //                }
-
-    //                if (keyBinding != M_MAX_INT)
-    //                    element->SetVar(VAR_BUTTON_KEY_BINDING, keyBinding);
-    //            }
-
-    //            // Check whether the button has mouse button binding
-    //            text = dynamic_cast<Text*>(element->GetChild("MouseButtonBinding", false));
-    //            if (text)
-    //            {
-    //                text->SetVisible(false);
-    //                const QString& mouseButton = text->GetText();
-    //                PopulateMouseButtonBindingMap(mouseButtonBindingMap);
-
-    //                auto i = mouseButtonBindingMap.find(mouseButton);
-    //                if (i != mouseButtonBindingMap.end())
-    //                    element->SetVar(VAR_BUTTON_MOUSE_BUTTON_BINDING, MAP_VALUE(i));
-    //                else
-    //                    LOGERROR("Unsupported mouse button binding: " + mouseButton);
-    //            }
-    //        }
-    //        else if (name.startsWith("Axis"))
-    //        {
-    //            ++numAxes;
-
-    //            ///\todo Axis emulation for screen joystick is not fully supported yet.
-    //            LOGWARNING("Axis emulation for screen joystick is not fully supported yet");
-    //        }
-    //        else if (name.startsWith("Hat"))
-    //        {
-    //            ++numHats;
-
-    //            Text* text = dynamic_cast<Text*>(element->GetChild("KeyBinding", false));
-    //            if (text)
-    //            {
-    //                text->SetVisible(false);
-    //                QString keyBinding = text->GetText();
-    //                if (keyBinding.contains(' '))   // e.g.: "UP DOWN LEFT RIGHT"
-    //                {
-    //                    // Attempt to split the text using ' ' as separator
-    //                    QStringList keyBindings(keyBinding.split(' '));
-    //                    QString mappedKeyBinding;
-    //                    if (keyBindings.size() == 4)
-    //                    {
-    //                        PopulateKeyBindingMap(keyBindingMap);
-
-    //                        for (unsigned j = 0; j < 4; ++j)
-    //                        {
-    //                            if (keyBindings[j].length() == 1)
-    //                                mappedKeyBinding.append(keyBindings[j][0]);
-    //                            else
-    //                            {
-    //                                auto i = keyBindingMap.find(keyBindings[j]);
-    //                                if (i != keyBindingMap.end())
-    //                                    mappedKeyBinding.append(MAP_VALUE(i));
-    //                                else
-    //                                    break;
-    //                            }
-    //                        }
-    //                    }
-    //                    if (mappedKeyBinding.length() != 4)
-    //                    {
-    //                        LOGERROR(QString("%1 has invalid key binding %2, fallback to WSAD").arg(name).arg(keyBinding));
-    //                        keyBinding = "WSAD";
-    //                    }
-    //                    else
-    //                        keyBinding = mappedKeyBinding;
-    //                }
-    //                else if (keyBinding.length() != 4)
-    //                {
-    //                    LOGERROR(QString("%1 has invalid key binding %2, fallback to WSAD").arg(name).arg(keyBinding));
-    //                    keyBinding = "WSAD";
-    //                }
-
-    //                element->SetVar(VAR_BUTTON_KEY_BINDING, keyBinding);
-    //            }
-    //        }
-
-    //        element->SetVar(VAR_SCREEN_JOYSTICK_ID, joystickID);
-    //    }
-
-    //    // Make sure all the children are non-focusable so they do not mistakenly to be considered as active UI input controls by application
-    //    std::vector<UIElement*> allChildren;
-    //    state.screenJoystick_->GetChildren(allChildren, true);
-    //    for (auto & elem : allChildren)
-    //        (elem)->SetFocusMode(FM_NOTFOCUSABLE);
-
-    //    state.Initialize(numButtons, numAxes, numHats);
-
-    //    // There could be potentially more than one screen joystick, however they all will be handled by a same handler method
-    //    // So there is no harm to replace the old handler with the new handler in each call to SubscribeToEvent()
-    //    SubscribeToEvent(E_TOUCHBEGIN, HANDLER(Input, HandleScreenJoystickTouch));
-    //    SubscribeToEvent(E_TOUCHMOVE, HANDLER(Input, HandleScreenJoystickTouch));
-    //    SubscribeToEvent(E_TOUCHEND, HANDLER(Input, HandleScreenJoystickTouch));
-
-    return joystickID;
-}
-
-bool Input::RemoveScreenJoystick(SDL_JoystickID id)
-{
-    if (!joysticks_.contains(id))
-    {
-        URHO3D_LOGERROR("Failed to remove non-existing screen joystick ID #"+QString::number(id) );
-        return false;
-    }
-
-    JoystickState& state = joysticks_[id];
-    if (!state.screenJoystick_)
-    {
-        URHO3D_LOGERROR(QString("Failed to remove joystick with ID #%1 which is not a screen joystick").arg(id) );
-        return false;
-    }
-    assert(false);
-    //    state.screenJoystick_->Remove();
-    //    joysticks_.remove(id);
-
-    return true;
-}
-
-void Input::SetScreenJoystickVisible(SDL_JoystickID id, bool enable)
-{
-    assert(false);
-    //    if (joysticks_.contains(id))
-    //    {
-    //        JoystickState& state = joysticks_[id];
-
-    //        if (state.screenJoystick_)
-    //            state.screenJoystick_->SetVisible(enable);
-    //    }
-}
-
 void Input::SetScreenKeyboardVisible(bool enable)
 {
-    if (!graphics_)
-        return;
-
-    if (enable != IsScreenKeyboardVisible())
+    if (enable != SDL_IsTextInputActive())
     {
         if (enable)
             SDL_StartTextInput();
@@ -942,13 +750,15 @@ IntVector2 Input::GetMousePosition() const
         return ret;
 
     SDL_GetMouseState(&ret.x_, &ret.y_);
+    ret.x_ = (int)(ret.x_ * inputScale_.x_);
+    ret.y_ = (int)(ret.y_ * inputScale_.y_);
 
     return ret;
 }
-const IntVector2& Input::GetMouseMove() const
+IntVector2 Input::GetMouseMove() const
 {
     if (!suppressNextMouseMove_)
-        return mouseMove_;
+        return mouseMoveScaled_ ? mouseMove_ : IntVector2((int)(mouseMove_.x_ * inputScale_.x_), (int)(mouseMove_.y_ * inputScale_.y_));
     else
         return IntVector2::ZERO;
 }
@@ -956,7 +766,7 @@ const IntVector2& Input::GetMouseMove() const
 int Input::GetMouseMoveX() const
 {
     if (!suppressNextMouseMove_)
-        return mouseMove_.x_;
+        return mouseMoveScaled_ ? mouseMove_.x_ : (int)(mouseMove_.x_ * inputScale_.x_);
     else
         return 0;
 }
@@ -964,7 +774,7 @@ int Input::GetMouseMoveX() const
 int Input::GetMouseMoveY() const
 {
     if (!suppressNextMouseMove_)
-        return mouseMove_.y_;
+        return mouseMoveScaled_ ? mouseMove_.y_ : mouseMove_.y_ * inputScale_.y_;
     else
         return 0;
 }
@@ -1020,18 +830,12 @@ bool Input::IsScreenJoystickVisible(SDL_JoystickID id) const
 
 bool Input::GetScreenKeyboardSupport() const
 {
-    return graphics_ ? SDL_HasScreenKeyboardSupport() != 0 : false;
+    return SDL_HasScreenKeyboardSupport();
 }
 
 bool Input::IsScreenKeyboardVisible() const
 {
-    if (graphics_)
-    {
-        SDL_Window* window = graphics_->GetWindow();
-        return SDL_IsScreenKeyboardShown(window) != SDL_FALSE;
-    }
-    else
-        return false;
+    return SDL_IsTextInputActive();
 }
 bool Input::IsMouseLocked() const
 {
@@ -1345,7 +1149,7 @@ void Input::SetMousePosition(const IntVector2& position)
     if (!graphics_)
         return;
 
-    SDL_WarpMouseInWindow(graphics_->GetWindow(), position.x_, position.y_);
+    SDL_WarpMouseInWindow(graphics_->GetWindow(), (int)(position.x_ / inputScale_.x_), (int)(position.y_ / inputScale_.y_));
 }
 
 void Input::CenterMousePosition()
@@ -1431,13 +1235,22 @@ void Input::HandleSDLEvent(void* sdlEvent)
             VariantMap textInputEventData;
 
             textInputEventData[P_TEXT] = textInput_;
-            textInputEventData[P_BUTTONS] = mouseButtonDown_;
-            textInputEventData[P_QUALIFIERS] = GetQualifiers();
             SendEvent(E_TEXTINPUT, textInputEventData);
         }
     }
         break;
+    case SDL_TEXTEDITING:
+        {
+            textInput_ = QString::fromUtf8(evt.text.text);
+            using namespace TextEditing;
 
+            VariantMap textEditingEventData;
+            textEditingEventData[P_COMPOSITION] = textInput_;
+            textEditingEventData[P_CURSOR] = evt.edit.start;
+            textEditingEventData[P_SELECTION_LENGTH] = evt.edit.length;
+            SendEvent(E_TEXTEDITING, textEditingEventData);
+        }
+        break;
     case SDL_MOUSEBUTTONDOWN:
         if (!touchEmulation_)
             SetMouseButton(1 << (evt.button.button - 1), true);
@@ -1445,6 +1258,8 @@ void Input::HandleSDLEvent(void* sdlEvent)
         {
             int x, y;
             SDL_GetMouseState(&x, &y);
+            x = (int)(x * inputScale_.x_);
+            y = (int)(y * inputScale_.y_);
 
             SDL_Event event;
             event.type = SDL_FINGERDOWN;
@@ -1466,6 +1281,8 @@ void Input::HandleSDLEvent(void* sdlEvent)
         {
             int x, y;
             SDL_GetMouseState(&x, &y);
+            x = (int)(x * inputScale_.x_);
+            y = (int)(y * inputScale_.y_);
 
             SDL_Event event;
             event.type = SDL_FINGERUP;
@@ -1483,18 +1300,21 @@ void Input::HandleSDLEvent(void* sdlEvent)
     case SDL_MOUSEMOTION:
         if ((sdlMouseRelative_ || mouseVisible_ || mouseMode_ == MM_FREE) && !touchEmulation_)
         {
+            // Accumulate without scaling for accuracy, needs to be scaled to backbuffer coordinates when asked
             mouseMove_.x_ += evt.motion.xrel;
             mouseMove_.y_ += evt.motion.yrel;
+            mouseMoveScaled_ = false;
 
             if (!suppressNextMouseMove_)
             {
                 using namespace MouseMove;
 
                 VariantMap& eventData = GetEventDataMap();
-                eventData[P_X] = evt.motion.x;
-                eventData[P_Y] = evt.motion.y;
-                eventData[P_DX] = evt.motion.xrel;
-                eventData[P_DY] = evt.motion.yrel;
+                eventData[P_X] = (int)(evt.motion.x * inputScale_.x_);
+                eventData[P_Y] = (int)(evt.motion.y * inputScale_.y_);
+                // The "on-the-fly" motion data needs to be scaled now, though this may reduce accuracy
+                eventData[P_DX] = (int)(evt.motion.xrel * inputScale_.x_);
+                eventData[P_DY] = (int)(evt.motion.yrel * inputScale_.y_);
                 eventData[P_BUTTONS] = mouseButtonDown_;
                 eventData[P_QUALIFIERS] = GetQualifiers();
                 SendEvent(E_MOUSEMOVE, eventData);
@@ -1505,6 +1325,8 @@ void Input::HandleSDLEvent(void* sdlEvent)
         {
             int x, y;
             SDL_GetMouseState(&x, &y);
+            x = (int)(x * inputScale_.x_);
+            y = (int)(y * inputScale_.y_);
 
             SDL_Event event;
             event.type = SDL_FINGERMOTION;
@@ -1513,8 +1335,8 @@ void Input::HandleSDLEvent(void* sdlEvent)
             event.tfinger.pressure = 1.0f;
             event.tfinger.x = (float)x / (float)graphics_->GetWidth();
             event.tfinger.y = (float)y / (float)graphics_->GetHeight();
-            event.tfinger.dx = (float)evt.motion.xrel / (float)graphics_->GetWidth();
-            event.tfinger.dy = (float)evt.motion.yrel / (float)graphics_->GetHeight();
+            event.tfinger.dx = (float)evt.motion.xrel * inputScale_.x_ / (float)graphics_->GetWidth();
+            event.tfinger.dy = (float)evt.motion.yrel * inputScale_.y_ / (float)graphics_->GetHeight();
             SDL_PushEvent(&event);
         }
         break;
@@ -1838,9 +1660,7 @@ void Input::HandleSDLEvent(void* sdlEvent)
             break;
 
         case SDL_WINDOWEVENT_RESIZED:
-            inResize_ = true;
             graphics_->OnWindowResized();
-            inResize_ = false;
             break;
         case SDL_WINDOWEVENT_MOVED:
             graphics_->OnWindowMoved();
@@ -1879,14 +1699,6 @@ void Input::HandleScreenMode(StringHash eventType, VariantMap& eventData)
     SDL_Window* window = graphics_->GetWindow();
     windowID_ = SDL_GetWindowID(window);
 
-    // If screen mode happens due to mouse drag resize, do not recenter the mouse as that would lead to erratic window sizes
-    if (!mouseVisible_ && mouseMode_ != MM_FREE && !inResize_)
-    {
-        CenterMousePosition();
-        focusedThisFrame_ = true;
-    }
-    else
-        lastMousePosition_ = GetMousePosition();
 
     // Resize screen joysticks to new screen size
     for (auto i : joysticks_)
@@ -1898,14 +1710,23 @@ void Input::HandleScreenMode(StringHash eventType, VariantMap& eventData)
         }
     }
 
-    if (graphics_->GetFullscreen())
+    if (graphics_->GetFullscreen() || !mouseVisible_)
         focusedThisFrame_ = true;
 
     // After setting a new screen mode we should not be minimized
     minimized_ = (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) != 0;
-    // Remember that screen mode changed in case we lose focus (needed on Linux)
-    if (!inResize_)
-        screenModeChanged_ = true;
+    // Calculate input coordinate scaling from SDL window to backbuffer ratio
+    int winWidth, winHeight;
+    int gfxWidth = graphics_->GetWidth();
+    int gfxHeight = graphics_->GetHeight();
+    SDL_GetWindowSize(window, &winWidth, &winHeight);
+    if (winWidth > 0 && winHeight > 0 && gfxWidth > 0 && gfxHeight > 0)
+    {
+        inputScale_.x_ = (float)gfxWidth / (float)winWidth;
+        inputScale_.y_ = (float)gfxHeight / (float)winHeight;
+    }
+    else
+        inputScale_ = Vector2::ONE;
 }
 
 void Input::HandleBeginFrame(StringHash eventType, VariantMap& eventData)

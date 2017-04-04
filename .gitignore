@@ -78,8 +78,6 @@ install_manifest.txt
 CPackConfig.cmake
 CPackSourceConfig.cmake
 CTestTestfile.cmake
-/Source/**/*.cmake
-/Docs/**/*.cmake
 
 # Precompiled header files
 *.gch/

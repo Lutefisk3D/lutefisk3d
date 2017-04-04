@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,17 +19,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "PhysicsWorld2D.h"
+
+#include "CollisionShape2D.h"
+#include "PhysicsEvents2D.h"
+#include "PhysicsUtils2D.h"
+#include "RigidBody2D.h"
 
 #include "../Core/Context.h"
 #include "../Graphics/DebugRenderer.h"
 #include "../Graphics/Graphics.h"
 #include "../IO/Log.h"
-#include "../Urho2D/PhysicsEvents2D.h"
-#include "../Urho2D/PhysicsUtils2D.h"
-#include "../Urho2D/PhysicsWorld2D.h"
 #include "../Core/Profiler.h"
 #include "../Graphics/Renderer.h"
-#include "../Urho2D/RigidBody2D.h"
 #include "../Scene/Scene.h"
 #include "../Scene/SceneEvents.h"
 #include "../Graphics/Viewport.h"
@@ -46,7 +48,6 @@ static const int DEFAULT_POSITION_ITERATIONS = 3;
 
 PhysicsWorld2D::PhysicsWorld2D(Context* context) :
     Component(context),
-    world_(nullptr),
     gravity_(DEFAULT_GRAVITY),
     velocityIterations_(DEFAULT_VELOCITY_ITERATIONS),
     positionIterations_(DEFAULT_POSITION_ITERATIONS),
@@ -57,9 +58,8 @@ PhysicsWorld2D::PhysicsWorld2D(Context* context) :
 {
     // Set default debug draw flags
     m_drawFlags = e_shapeBit;
-
     // Create Box2D world
-    world_ = new b2World(ToB2Vec2(gravity_));
+    world_.reset(new b2World(ToB2Vec2(gravity_)));
     // Set contact listener
     world_->SetContactListener(this);
     // Set debug draw
@@ -73,9 +73,6 @@ PhysicsWorld2D::~PhysicsWorld2D()
         if (rb)
             rb->ReleaseBody();
     }
-
-    delete world_;
-    world_ = nullptr;
 }
 
 void PhysicsWorld2D::RegisterObject(Context* context)
@@ -177,6 +174,13 @@ void PhysicsWorld2D::DrawCircle(const b2Vec2& center, float32 radius, const b2Co
 
         debugRenderer_->AddLine(p + Vector3(x1, y1, 0.0f), p + Vector3(x2, y2, 0.0f), c, debugDepthTest_);
     }
+}
+
+extern URHO3D_API const float PIXEL_SIZE;
+
+void PhysicsWorld2D::DrawPoint(const b2Vec2& p, float32 size, const b2Color& color)
+{
+    DrawSolidCircle(p, size * 0.5f * PIXEL_SIZE, b2Vec2(), color);
 }
 
 void PhysicsWorld2D::DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color)
@@ -672,6 +676,8 @@ void PhysicsWorld2D::SendBeginContactEvents()
         eventData[P_NODEA] = contactInfo.nodeA_.Get();
         eventData[P_NODEB] = contactInfo.nodeB_.Get();
         eventData[P_CONTACT] = (void*)contactInfo.contact_;
+        eventData[P_SHAPEA] = contactInfo.shapeA_.Get();
+        eventData[P_SHAPEB] = contactInfo.shapeB_.Get();
 
         SendEvent(E_PHYSICSBEGINCONTACT2D, eventData);
         nodeEventData[NodeBeginContact2D::P_CONTACT] = (void*)contactInfo.contact_;
@@ -681,6 +687,8 @@ void PhysicsWorld2D::SendBeginContactEvents()
             nodeEventData[NodeBeginContact2D::P_BODY] = contactInfo.bodyA_.Get();
             nodeEventData[NodeBeginContact2D::P_OTHERNODE] = contactInfo.nodeB_.Get();
             nodeEventData[NodeBeginContact2D::P_OTHERBODY] = contactInfo.bodyB_.Get();
+            nodeEventData[NodeBeginContact2D::P_SHAPE] = contactInfo.shapeA_.Get();
+            nodeEventData[NodeBeginContact2D::P_OTHERSHAPE] = contactInfo.shapeB_.Get();
 
             contactInfo.nodeA_->SendEvent(E_NODEBEGINCONTACT2D, nodeEventData);
         }
@@ -690,6 +698,8 @@ void PhysicsWorld2D::SendBeginContactEvents()
             nodeEventData[NodeBeginContact2D::P_BODY] = contactInfo.bodyB_.Get();
             nodeEventData[NodeBeginContact2D::P_OTHERNODE] = contactInfo.nodeA_.Get();
             nodeEventData[NodeBeginContact2D::P_OTHERBODY] = contactInfo.bodyA_.Get();
+            nodeEventData[NodeBeginContact2D::P_SHAPE] = contactInfo.shapeB_.Get();
+            nodeEventData[NodeBeginContact2D::P_OTHERSHAPE] = contactInfo.shapeA_.Get();
 
             contactInfo.nodeB_->SendEvent(E_NODEBEGINCONTACT2D, nodeEventData);
         }
@@ -716,6 +726,8 @@ void PhysicsWorld2D::SendEndContactEvents()
         eventData[P_NODEA] = contactInfo.nodeA_.Get();
         eventData[P_NODEB] = contactInfo.nodeB_.Get();
         eventData[P_CONTACT] = (void*)contactInfo.contact_;
+        eventData[P_SHAPEA] = contactInfo.shapeA_.Get();
+        eventData[P_SHAPEB] = contactInfo.shapeB_.Get();
         SendEvent(E_PHYSICSENDCONTACT2D, eventData);
         nodeEventData[NodeEndContact2D::P_CONTACT] = (void*)contactInfo.contact_;
 
@@ -724,6 +736,8 @@ void PhysicsWorld2D::SendEndContactEvents()
             nodeEventData[NodeEndContact2D::P_BODY] = contactInfo.bodyA_.Get();
             nodeEventData[NodeEndContact2D::P_OTHERNODE] = contactInfo.nodeB_.Get();
             nodeEventData[NodeEndContact2D::P_OTHERBODY] = contactInfo.bodyB_.Get();
+            nodeEventData[NodeBeginContact2D::P_SHAPE] = contactInfo.shapeA_.Get();
+            nodeEventData[NodeBeginContact2D::P_OTHERSHAPE] = contactInfo.shapeB_.Get();
 
             contactInfo.nodeA_->SendEvent(E_NODEENDCONTACT2D, nodeEventData);
         }
@@ -733,6 +747,8 @@ void PhysicsWorld2D::SendEndContactEvents()
             nodeEventData[NodeEndContact2D::P_BODY] = contactInfo.bodyB_.Get();
             nodeEventData[NodeEndContact2D::P_OTHERNODE] = contactInfo.nodeA_.Get();
             nodeEventData[NodeEndContact2D::P_OTHERBODY] = contactInfo.bodyA_.Get();
+            nodeEventData[NodeBeginContact2D::P_SHAPE] = contactInfo.shapeB_.Get();
+            nodeEventData[NodeBeginContact2D::P_OTHERSHAPE] = contactInfo.shapeA_.Get();
 
             contactInfo.nodeB_->SendEvent(E_NODEENDCONTACT2D, nodeEventData);
         }
@@ -754,6 +770,8 @@ PhysicsWorld2D::ContactInfo::ContactInfo(b2Contact* contact)
     nodeA_ = bodyA_->GetNode();
     nodeB_ = bodyB_->GetNode();
     contact_ = contact;
+    shapeA_ = (CollisionShape2D*)fixtureA->GetUserData();
+    shapeB_ = (CollisionShape2D*)fixtureB->GetUserData();
 }
 
 PhysicsWorld2D::ContactInfo::ContactInfo(const ContactInfo& other) :
@@ -761,7 +779,9 @@ PhysicsWorld2D::ContactInfo::ContactInfo(const ContactInfo& other) :
     bodyB_(other.bodyB_),
     nodeA_(other.nodeA_),
     nodeB_(other.nodeB_),
-    contact_(other.contact_)
+    contact_(other.contact_),
+    shapeA_(other.shapeA_),
+    shapeB_(other.shapeB_)
 {
 }
 

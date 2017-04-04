@@ -20,21 +20,24 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/AnimatedModel.h"
-#include "../Graphics/Batch.h"
-#include "../Graphics/Camera.h"
-#include "../Core/Context.h"
-#include "../IO/FileSystem.h"
-#include "../Graphics/Geometry.h"
-#include "../IO/Log.h"
-#include "../Graphics/Material.h"
-#include "../Graphics/Model.h"
-#include "../Graphics/OcclusionBuffer.h"
-#include "../Graphics/OctreeQuery.h"
-#include "../Graphics/VertexBuffer.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/ResourceEvents.h"
+#include "StaticModel.h"
+
+#include "Batch.h"
+#include "Camera.h"
+#include "Geometry.h"
+#include "Material.h"
+#include "Model.h"
+#include "OcclusionBuffer.h"
+#include "OctreeQuery.h"
+#include "VertexBuffer.h"
+
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/ResourceEvents.h"
 
 
 

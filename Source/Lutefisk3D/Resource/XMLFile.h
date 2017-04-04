@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Resource/Resource.h"
-#include "../Resource/XMLElement.h"
+#include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Resource/XMLElement.h"
 
 namespace pugi
 {
@@ -38,7 +38,7 @@ namespace Urho3D
 /// XML document resource.
 class URHO3D_API XMLFile : public Resource
 {
-    URHO3D_OBJECT(XMLFile,Resource);
+    URHO3D_OBJECT(XMLFile,Resource)
 
 public:
     /// Construct.

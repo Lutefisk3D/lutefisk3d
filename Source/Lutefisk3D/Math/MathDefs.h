@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Math/Random.h"
+#include "Lutefisk3D/Math/Random.h"
 
 #include <cstdlib>
 #include <cmath>

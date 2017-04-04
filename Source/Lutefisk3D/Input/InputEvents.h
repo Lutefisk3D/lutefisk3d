@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Core/Object.h"
+#include "Lutefisk3D/Core/Object.h"
 
 #include <SDL2/SDL_joystick.h>
 #include <SDL2/SDL_gamecontroller.h>

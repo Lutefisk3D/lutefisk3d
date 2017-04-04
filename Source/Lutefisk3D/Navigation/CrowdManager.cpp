@@ -20,18 +20,18 @@
 // THE SOFTWARE.
 //
 
-#include "../Scene/Component.h"
-#include "../Core/Context.h"
-#include "../Core/Profiler.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../IO/Log.h"
-#include "../Navigation/CrowdAgent.h"
-#include "../Navigation/CrowdManager.h"
-#include "../Navigation/DynamicNavigationMesh.h"
-#include "../Navigation/NavigationEvents.h"
-#include "../Scene/Node.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Navigation/CrowdAgent.h"
+#include "Lutefisk3D/Navigation/CrowdManager.h"
+#include "Lutefisk3D/Navigation/DynamicNavigationMesh.h"
+#include "Lutefisk3D/Navigation/NavigationEvents.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
 #include <vector>
 
 #include <DetourCrowd/DetourCrowd.h>

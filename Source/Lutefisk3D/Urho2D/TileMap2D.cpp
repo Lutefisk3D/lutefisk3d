@@ -24,11 +24,11 @@
 #include "TileMapLayer2D.h"
 #include "TmxFile2D.h"
 
-#include "../Core/Context.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../Scene/Node.h"
-#include "../Resource/ResourceCache.h"
-#include "../Scene/Scene.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Scene/Scene.h"
 
 
 

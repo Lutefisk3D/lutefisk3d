@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Container/ArrayPtr.h"
-#include "../Resource/Resource.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Resource/Resource.h"
 
 struct SDL_Surface;
 

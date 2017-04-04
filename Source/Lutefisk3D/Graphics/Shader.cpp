@@ -22,15 +22,16 @@
 
 #include "Shader.h"
 
-#include "../Core/Context.h"
-#include "../IO/Deserializer.h"
-#include "../IO/FileSystem.h"
-#include "Graphics.h"
-#include "../IO/Log.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
 #include "ShaderVariation.h"
-#include "../Resource/XMLFile.h"
+#include "Graphics.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Deserializer.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 namespace Urho3D
 {

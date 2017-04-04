@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Core/Context.h"
-#include "../Core/Main.h"
-#include "../Core/Object.h"
+#include "Lutefisk3D/Core/Object.h"
+//#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Main.h"
 
 namespace Urho3D
 {
@@ -34,7 +34,7 @@ class Engine;
 /// Base class for creating applications which initialize the Urho3D engine and run a main loop until exited.
 class URHO3D_API Application : public Object
 {
-    URHO3D_OBJECT(Application,Object);
+    URHO3D_OBJECT(Application,Object)
 
 public:
     /// Construct. Parse default engine parameters from the command line, and create the engine in an uninitialized state.

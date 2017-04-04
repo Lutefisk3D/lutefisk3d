@@ -22,9 +22,9 @@
 
 #include "Application.h"
 #include "Engine.h"
-#include "../IO/IOEvents.h"
-#include "../IO/Log.h"
-#include "../Core/ProcessUtils.h"
+#include "Lutefisk3D/IO/IOEvents.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/ProcessUtils.h"
 
 #include <exception>
 

@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Math/Plane.h"
+#include "Lutefisk3D/Math/Plane.h"
 
 namespace Urho3D
 {

@@ -22,18 +22,20 @@
 
 #include "AnimationSet2D.h"
 
-#include "../Core/Context.h"
-#include "../Graphics/Graphics.h"
-#include "../Graphics/Texture2D.h"
-#include "../IO/FileSystem.h"
-#include "../IO/Log.h"
-#include "../Math/AreaAllocator.h"
-#include "../Resource/Image.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/XMLFile.h"
 #include "Sprite2D.h"
 #include "SpriterData2D.h"
 #include "SpriteSheet2D.h"
+
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Math/AreaAllocator.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/Texture2D.h"
+#include "Lutefisk3D/Resource/Image.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 #ifdef LUTEFISK3D_SPINE
 #include <spine/spine.h>
@@ -75,7 +77,7 @@ void _spAtlasPage_disposeTexture(spAtlasPage* self)
 char* _spUtil_readFile(const char* path, int* length)
 {
     using namespace Urho3D;
-    
+
     if (!currentAnimationSet)
         return 0;
 
@@ -89,7 +91,7 @@ char* _spUtil_readFile(const char* path, int* length)
     char* data = MALLOC(char, size + 1);
     file->Read(data, size);
     data[size] = '\0';
-    
+
     file.Reset();
     *length = size;
 
@@ -189,7 +191,7 @@ bool AnimationSet2D::HasAnimation(const QString& animationName) const
         }
     }
 
-#endif    
+#endif
     if (spriterData_ && !spriterData_->entities_.empty())
     {
         const std::vector<Spriter::Animation*>& animations = spriterData_->entities_[0]->animations_;

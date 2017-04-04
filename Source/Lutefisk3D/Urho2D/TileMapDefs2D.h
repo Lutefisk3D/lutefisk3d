@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Container/RefCounted.h"
-#include "../Urho2D/Sprite2D.h"
+#include "Lutefisk3D/Container/RefCounted.h"
+#include "Lutefisk3D/Urho2D/Sprite2D.h"
 
 namespace Urho3D
 {

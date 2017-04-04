@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../Math/Vector2.h"
-#include "../Resource/XMLFile.h"
-#include "../Scene/Animatable.h"
-#include "../UI/UIBatch.h"
+#include "Lutefisk3D/Math/Vector2.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
+#include "Lutefisk3D/Scene/Animatable.h"
+#include "Lutefisk3D/UI/UIBatch.h"
 
 namespace Urho3D
 {

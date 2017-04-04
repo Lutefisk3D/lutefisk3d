@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
+#include "Lutefisk3D/Scene/Component.h"
 #include <Box2D/Box2D.h>
 #include <unordered_set>
 namespace Urho3D

@@ -22,13 +22,13 @@
 
 #pragma once
 
-#include "../Core/Mutex.h"
-#include "../Container/Ptr.h"
-#include "../Container/RefCounted.h"
-#include "../Math/StringHash.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Container/RefCounted.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Container/HashMap.h"
 
-#include "../Core/Thread.h"
+#include "Lutefisk3D/Core/Thread.h"
 #include <utility>
 #include <QtCore/QSet>
 

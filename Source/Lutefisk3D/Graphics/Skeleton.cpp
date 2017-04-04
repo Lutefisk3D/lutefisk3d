@@ -20,10 +20,10 @@
 // THE SOFTWARE.
 //
 
-#include "../IO/Deserializer.h"
-#include "../IO/Log.h"
-#include "../IO/Serializer.h"
-#include "../Graphics/Skeleton.h"
+#include "Lutefisk3D/IO/Deserializer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/Serializer.h"
+#include "Lutefisk3D/Graphics/Skeleton.h"
 
 
 

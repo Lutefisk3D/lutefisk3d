@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Container/ArrayPtr.h"
-#include "../Resource/Resource.h"
-#include "../Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 namespace Urho3D
 {
 

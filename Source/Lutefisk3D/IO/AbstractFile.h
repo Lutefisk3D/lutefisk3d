@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../IO/Serializer.h"
-#include "../IO/Deserializer.h"
+#include "Lutefisk3D/IO/Serializer.h"
+#include "Lutefisk3D/IO/Deserializer.h"
 
 namespace Urho3D
 {
@@ -37,7 +37,7 @@ public:
     /// Construct.
     AbstractFile(unsigned int size) : Deserializer(size) { }
     /// Destruct.
-    virtual ~AbstractFile() { }
+    virtual ~AbstractFile() = default;
 };
 
 };

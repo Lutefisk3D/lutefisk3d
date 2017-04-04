@@ -20,11 +20,11 @@
 // THE SOFTWARE.
 //
 
-#include "../Container/ArrayPtr.h"
-#include "../IO/Compression.h"
-#include "../IO/Deserializer.h"
-#include "../IO/Serializer.h"
-#include "../IO/VectorBuffer.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/IO/Compression.h"
+#include "Lutefisk3D/IO/Deserializer.h"
+#include "Lutefisk3D/IO/Serializer.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
 
 #include <LZ4/lz4.h>
 #include <LZ4/lz4hc.h>

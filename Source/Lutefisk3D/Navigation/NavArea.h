@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Math/BoundingBox.h"
-#include "../Scene/Component.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Scene/Component.h"
 
 namespace Urho3D
 {

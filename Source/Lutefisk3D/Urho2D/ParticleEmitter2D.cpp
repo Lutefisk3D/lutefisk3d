@@ -20,16 +20,16 @@
 // THE SOFTWARE.
 //
 
-#include "../Core/Context.h"
-#include "../Graphics/Camera.h"
-#include "../Graphics/Material.h"
-#include "../Resource/ResourceCache.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
-#include "../Urho2D/ParticleEffect2D.h"
-#include "../Urho2D/ParticleEmitter2D.h"
-#include "../Urho2D/Renderer2D.h"
-#include "../Urho2D/Sprite2D.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/Camera.h"
+#include "Lutefisk3D/Graphics/Material.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
+#include "Lutefisk3D/Urho2D/ParticleEffect2D.h"
+#include "Lutefisk3D/Urho2D/ParticleEmitter2D.h"
+#include "Lutefisk3D/Urho2D/Renderer2D.h"
+#include "Lutefisk3D/Urho2D/Sprite2D.h"
 
 
 

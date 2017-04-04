@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Navigation/NavBuildData.h"
+#include "Lutefisk3D/Navigation/NavBuildData.h"
 
 #include <DetourTileCache/DetourTileCacheBuilder.h>
 #include <Recast/Recast.h>

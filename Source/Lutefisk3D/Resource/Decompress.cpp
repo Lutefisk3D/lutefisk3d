@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Resource/Decompress.h"
+#include "Lutefisk3D/Resource/Decompress.h"
 
 // DXT decompression based on the Squish library, modified for Urho3D
 

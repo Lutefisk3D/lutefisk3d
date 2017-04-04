@@ -22,15 +22,15 @@
 
 #include "Audio.h"
 
-#include "../Core/Context.h"
-#include "../Core/CoreEvents.h"
-#include "../IO/Log.h"
-#include "../Core/Mutex.h"
-#include "../Core/ProcessUtils.h"
-#include "../Core/Profiler.h"
 #include "Sound.h"
 #include "SoundListener.h"
 #include "SoundSource3D.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/CoreEvents.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Core/ProcessUtils.h"
+#include "Lutefisk3D/Core/Profiler.h"
 
 #include <SDL2/SDL.h>
 

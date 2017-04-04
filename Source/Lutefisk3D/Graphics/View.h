@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "../Container/HashMap.h"
-#include "../Graphics/Batch.h"
-#include "../Graphics/Light.h"
-#include "../Core/Object.h"
-#include "../Math/Polyhedron.h"
-#include "../Graphics/Zone.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Graphics/Batch.h"
+#include "Lutefisk3D/Graphics/Light.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Math/Polyhedron.h"
+#include "Lutefisk3D/Graphics/Zone.h"
 #include <array>
 #include <deque>
 #include <vector>

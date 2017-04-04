@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Container/Allocator.h"
+#include "Lutefisk3D/Container/Allocator.h"
 
 #include <stdio.h>
 #include <stdint.h>

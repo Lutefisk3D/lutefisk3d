@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Urho2D/SpriterData2D.h"
+#include "Lutefisk3D/Urho2D/SpriterData2D.h"
 
 #include <vector>
 namespace Urho3D

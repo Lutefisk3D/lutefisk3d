@@ -23,8 +23,8 @@
 #include "ToolTip.h"
 
 #include "UI.h"
-#include "../Core/Context.h"
-#include "../Core/Timer.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Timer.h"
 
 namespace Urho3D
 {

@@ -21,9 +21,8 @@
 //
 
 #pragma once
-#include "../Core/Lutefisk3D.h"
-#include "../Container/Str.h"
-
+#include "Lutefisk3D/Core/Lutefisk3D.h"
+#include <QtCore/QString>
 #include <cstdlib>
 
 namespace Urho3D

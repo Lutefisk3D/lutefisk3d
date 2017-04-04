@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Scene/AnimationDefs.h"
-#include "../Resource/Resource.h"
+#include "Lutefisk3D/Scene/AnimationDefs.h"
+#include "Lutefisk3D/Resource/Resource.h"
 
 namespace Urho3D
 {

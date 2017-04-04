@@ -20,9 +20,9 @@
 // THE SOFTWARE.
 //
 
-#include "../Container/Str.h"
-#include "../Math/Frustum.h"
-#include "../Math/Polyhedron.h"
+#include "Lutefisk3D/Container/Str.h"
+#include "Lutefisk3D/Math/Frustum.h"
+#include "Lutefisk3D/Math/Polyhedron.h"
 
 namespace Urho3D
 {

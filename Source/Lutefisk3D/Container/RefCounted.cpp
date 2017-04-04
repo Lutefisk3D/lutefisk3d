@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Container/RefCounted.h"
+#include "Lutefisk3D/Container/RefCounted.h"
 
 #include <cassert>
 

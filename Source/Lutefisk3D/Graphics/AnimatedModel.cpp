@@ -26,21 +26,21 @@
 #include "AnimationState.h"
 #include "Batch.h"
 #include "Camera.h"
-#include "../Core/Context.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "DebugRenderer.h"
 #include "DrawableEvents.h"
 #include "Geometry.h"
 #include "Graphics.h"
 #include "IndexBuffer.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/IO/Log.h"
 #include "Material.h"
 #include "Octree.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/ResourceEvents.h"
-#include "../Scene/Scene.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/ResourceEvents.h"
+#include "Lutefisk3D/Scene/Scene.h"
 
-#include "../Graphics/VertexBuffer.h"
+#include "Lutefisk3D/Graphics/VertexBuffer.h"
 
 namespace Urho3D
 {

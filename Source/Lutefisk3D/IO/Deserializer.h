@@ -22,15 +22,32 @@
 
 #pragma once
 
-#include "../Core/Variant.h"
-#include "../Math/BoundingBox.h"
-#include "../Math/Rect.h"
-#include "../Math/Quaternion.h"
-#include "../Math/Color.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include <vector>
+
+class QStringList;
 
 namespace Urho3D
 {
-
+enum VariantType : uint8_t;
+class Variant;
+typedef HashMap<StringHash, Variant> VariantMap;
+struct URHO3D_API ResourceRefList;
+struct ResourceRef;
+class Color;
+class IntRect;
+class IntVector2;
+class IntVector3;
+class Quaternion;
+class Rect;
+class BoundingBox;
+class Matrix3;
+class Matrix3x4;
+class Matrix4;
+class Vector2;
+class Vector3;
+class Vector4;
 /// Abstract stream for reading.
 class URHO3D_API Deserializer
 {
@@ -41,7 +58,7 @@ public:
     Deserializer(unsigned size);
     /// Destruct.
     virtual ~Deserializer();
-    
+
     /// Read bytes from the stream. Return number of bytes actually read.
     virtual unsigned Read(void* dest, unsigned size) = 0;
     /// Set position from the beginning of the stream.
@@ -56,7 +73,7 @@ public:
     unsigned GetPosition() const { return position_; }
     /// Return size.
     unsigned GetSize() const { return size_; }
-    
+
     /// Read a 64-bit integer.
     long long ReadInt64();
     /// Read a 32-bit integer.
@@ -137,7 +154,7 @@ public:
     unsigned ReadNetID();
     /// Read a text line.
     QString ReadLine();
-    
+
 protected:
     /// Stream position.
     unsigned position_;

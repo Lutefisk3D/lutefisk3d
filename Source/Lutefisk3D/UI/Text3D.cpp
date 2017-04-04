@@ -24,15 +24,15 @@
 
 #include "Text.h"
 #include "Font.h"
-#include "../Graphics/Camera.h"
-#include "../Core/Context.h"
-#include "../Graphics/Geometry.h"
-#include "../IO/Log.h"
-#include "../Graphics/Material.h"
-#include "../Scene/Node.h"
-#include "../Resource/ResourceCache.h"
-#include "../Graphics/Technique.h"
-#include "../Graphics/VertexBuffer.h"
+#include "Lutefisk3D/Graphics/Camera.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/Geometry.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Graphics/Material.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Graphics/Technique.h"
+#include "Lutefisk3D/Graphics/VertexBuffer.h"
 
 namespace Urho3D
 {

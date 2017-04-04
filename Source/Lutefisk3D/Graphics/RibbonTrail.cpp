@@ -22,17 +22,17 @@
 
 #include "RibbonTrail.h"
 
-#include "../Core/Context.h"
-#include "../Graphics/VertexBuffer.h"
-#include "../Graphics/IndexBuffer.h"
-#include "../Graphics/Camera.h"
-#include "../Graphics/Material.h"
-#include "../Graphics/OctreeQuery.h"
-#include "../Graphics/Geometry.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
-#include "../Resource/ResourceCache.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/VertexBuffer.h"
+#include "Lutefisk3D/Graphics/IndexBuffer.h"
+#include "Lutefisk3D/Graphics/Camera.h"
+#include "Lutefisk3D/Graphics/Material.h"
+#include "Lutefisk3D/Graphics/OctreeQuery.h"
+#include "Lutefisk3D/Graphics/Geometry.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/IO/Log.h"
 
 namespace Urho3D
 {

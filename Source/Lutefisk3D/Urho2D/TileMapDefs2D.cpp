@@ -20,8 +20,8 @@
 // THE SOFTWARE.
 //
 
-#include "../Urho2D/TileMapDefs2D.h"
-#include "../Resource/XMLElement.h"
+#include "Lutefisk3D/Urho2D/TileMapDefs2D.h"
+#include "Lutefisk3D/Resource/XMLElement.h"
 
 
 

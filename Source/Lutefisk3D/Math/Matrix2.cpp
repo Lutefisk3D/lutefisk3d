@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Math/Matrix2.h"
+#include "Lutefisk3D/Math/Matrix2.h"
 
 #include <cstdio>
 #include <QtCore/QString>

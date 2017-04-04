@@ -23,7 +23,7 @@
 
 #include "CollisionEdge2D.h"
 
-#include "../Core/Context.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "PhysicsUtils2D.h"
 
 namespace Urho3D

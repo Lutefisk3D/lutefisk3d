@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
-#include "../IO/VectorBuffer.h"
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
 
 #include <bullet/LinearMath/btMotionState.h>
 #include <unordered_set>

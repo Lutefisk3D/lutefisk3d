@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../IO/VectorBuffer.h"
-#include "../Scene/Component.h"
-#include "../Graphics/AnimationState.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Graphics/AnimationState.h"
 
 namespace Urho3D
 {

@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Audio/SoundSource.h"
+#include "Lutefisk3D/Audio/SoundSource.h"
 
 namespace Urho3D
 {

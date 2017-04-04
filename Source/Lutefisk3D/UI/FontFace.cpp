@@ -20,12 +20,12 @@
 // THE SOFTWARE.
 //
 
-#include "../Core/Context.h"
-#include "../UI/Font.h"
-#include "../UI/FontFace.h"
-#include "../Resource/Image.h"
-#include "../IO/Log.h"
-#include "../Graphics/Texture2D.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/UI/Font.h"
+#include "Lutefisk3D/UI/FontFace.h"
+#include "Lutefisk3D/Resource/Image.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Graphics/Texture2D.h"
 
 namespace Urho3D
 {

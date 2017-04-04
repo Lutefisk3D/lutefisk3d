@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../UI/FontFace.h"
+#include "Lutefisk3D/UI/FontFace.h"
 
 namespace Urho3D
 {

@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Graphics/Drawable.h"
-#include "../Math/Frustum.h"
-#include "../Graphics/Skeleton.h"
+#include "Lutefisk3D/Graphics/Drawable.h"
+#include "Lutefisk3D/Math/Frustum.h"
+#include "Lutefisk3D/Graphics/Skeleton.h"
 
 #include <deque>
 

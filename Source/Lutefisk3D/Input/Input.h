@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "../Input/InputEvents.h"
-#include "../Core/Mutex.h"
-#include "../Core/Object.h"
+#include "Lutefisk3D/Input/InputEvents.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Core/Object.h"
 #include <QtCore/QSet>
 
-//#include "../UI/Cursor.h"
+//#include "Lutefisk3D/UI/Cursor.h"
 
 namespace Urho3D
 {

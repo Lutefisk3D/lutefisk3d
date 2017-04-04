@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Graphics/GraphicsDefs.h"
-#include "../UI/UIElement.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/UI/UIElement.h"
 
 namespace Urho3D
 {

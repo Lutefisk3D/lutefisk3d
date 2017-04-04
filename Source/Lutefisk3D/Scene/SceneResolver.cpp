@@ -19,12 +19,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-
+#include "Lutefisk3D/Container/Ptr.h"
 #include "SceneResolver.h"
+
 
 #include "Component.h"
 #include "Node.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/IO/Log.h"
+
 
 #include <QtCore/QSet>
 

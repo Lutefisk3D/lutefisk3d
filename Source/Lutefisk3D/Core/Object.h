@@ -21,13 +21,13 @@
 //
 
 #pragma once
-#include "../Core/Lutefisk3D.h"
-#include "../Container/RefCounted.h"
-#include "../Container/HashMap.h"
-#include "../Container/Ptr.h"
-#include "../Container/Str.h"
-#include "../Core/Variant.h"
-#include "../Math/StringHash.h"
+#include "Lutefisk3D/Core/Lutefisk3D.h"
+#include "Lutefisk3D/Container/RefCounted.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Container/Str.h"
+#include "Lutefisk3D/Core/Variant.h"
+#include "Lutefisk3D/Math/StringHash.h"
 
 #include <QtCore/QString>
 #include <cassert>
@@ -279,8 +279,6 @@ public:
 
     /// Invoke event handler function.
     virtual void Invoke(VariantMap& eventData) = 0;
-    /// Return a unique copy of the event handler.
-    virtual EventHandler* Clone() const = 0;
 
     /// Return event receiver.
     Object* GetReceiver() const { return receiver_; }
@@ -323,18 +321,12 @@ public:
         (receiver->*function_)(eventType_, eventData);
     }
 
-    /// Return a unique copy of the event handler.
-    virtual EventHandler* Clone() const override
-    {
-        return new EventHandlerImpl(static_cast<T*>(receiver_), function_, userData_);
-    }
-
 private:
     /// Class-specific pointer to handler function.
     HandlerFunctionPtr function_;
 };
 /// Template implementation of the event handler invoke helper (std::function instance).
-class EventHandler11Impl : public EventHandler
+class EventHandler11Impl final : public EventHandler
 {
 public:
     /// Construct with receiver and function pointers and userdata.
@@ -346,15 +338,9 @@ public:
     }
 
     /// Invoke event handler function.
-    virtual void Invoke(VariantMap& eventData)
+    void Invoke(VariantMap& eventData)  override
     {
         function_(eventType_, eventData);
-    }
-
-    /// Return a unique copy of the event handler.
-    virtual EventHandler* Clone() const
-    {
-        return new EventHandler11Impl(function_, userData_);
     }
 
 private:
@@ -380,5 +366,4 @@ struct URHO3D_API EventNameRegistrar
 #define URHO3D_HANDLER(className, function) (new Urho3D::EventHandlerImpl<className>(this, &className::function))
 /// Convenience macro to construct an EventHandler that points to a receiver object and its member function, and also defines a userdata pointer.
 #define URHO3D_HANDLER_USERDATA(className, function, userData) (new Urho3D::EventHandlerImpl<className>(this, &className::function, userData))
-
 }

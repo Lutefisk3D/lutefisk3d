@@ -22,13 +22,13 @@
 
 #include "Zone.h"
 
-#include "../Core/Context.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "DebugRenderer.h"
 #include "Octree.h"
 #include "TextureCube.h"
-#include "../Resource/ResourceCache.h"
-#include "../Scene/Node.h"
-#include "../Scene/Scene.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Scene/Scene.h"
 
 namespace Urho3D
 {

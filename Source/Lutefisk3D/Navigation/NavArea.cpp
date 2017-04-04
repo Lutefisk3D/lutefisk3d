@@ -20,12 +20,12 @@
 // THE SOFTWARE.
 //
 
-#include "../Scene/Component.h"
-#include "../Core/Context.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../IO/Log.h"
-#include "../Navigation/NavArea.h"
-#include "../Scene/Node.h"
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Navigation/NavArea.h"
+#include "Lutefisk3D/Scene/Node.h"
 
 namespace Urho3D
 {

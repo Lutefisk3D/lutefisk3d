@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Core/Attribute.h"
-#include "../Core/Object.h"
+#include "Lutefisk3D/Core/Attribute.h"
+#include "Lutefisk3D/Core/Object.h"
 
 #include <cstddef>
 

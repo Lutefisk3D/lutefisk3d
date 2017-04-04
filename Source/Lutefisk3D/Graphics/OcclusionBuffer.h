@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "../Core/Object.h"
-#include "../Core/Timer.h"
-#include "../Container/ArrayPtr.h"
-#include "../Graphics/GraphicsDefs.h"
-#include "../Math/Frustum.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Core/Timer.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/Math/Frustum.h"
 
 namespace Urho3D
 {

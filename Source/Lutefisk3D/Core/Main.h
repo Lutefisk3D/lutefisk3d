@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../Core/ProcessUtils.h"
+#include "Lutefisk3D/Core/ProcessUtils.h"
 
 #if defined(_WIN32) && !defined(URHO3D_WIN32_CONSOLE)
-//#include "../Core/MiniDump.h"
+//#include "Lutefisk3D/Core/MiniDump.h"
 #include <windows.h>
 #ifdef _MSC_VER
 #include <crtdbg.h>

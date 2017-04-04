@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../IO/VectorBuffer.h"
-#include "../Math/Matrix3x4.h"
-#include "../Scene/Animatable.h"
-
+#include "Lutefisk3D/IO/VectorBuffer.h"
+#include "Lutefisk3D/Math/Matrix3x4.h"
+#include "Lutefisk3D/Scene/Animatable.h"
+#include <QtCore/QStringList>
 namespace Urho3D
 {
 

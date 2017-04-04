@@ -20,18 +20,18 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/Model.h"
+#include "Lutefisk3D/Graphics/Model.h"
 
-#include "../Core/Context.h"
-#include "../IO/Deserializer.h"
-#include "../Graphics/Geometry.h"
-#include "../Graphics/IndexBuffer.h"
-#include "../IO/Log.h"
-#include "../Core/Profiler.h"
-#include "../Graphics/Graphics.h"
-#include "../IO/Serializer.h"
-#include "../Graphics/VertexBuffer.h"
-#include "../IO/File.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Deserializer.h"
+#include "Lutefisk3D/Graphics/Geometry.h"
+#include "Lutefisk3D/Graphics/IndexBuffer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/IO/Serializer.h"
+#include "Lutefisk3D/Graphics/VertexBuffer.h"
+#include "Lutefisk3D/IO/File.h"
 
 #include <cstring>
 #include <vector>

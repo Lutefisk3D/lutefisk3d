@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Resource/Image.h"
+#include "Lutefisk3D/Resource/Image.h"
 
 namespace Urho3D
 {

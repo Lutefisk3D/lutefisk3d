@@ -22,21 +22,18 @@
 
 #pragma once
 
-#include "../Math/Color.h"
-#include "../Container/HashMap.h"
-#include "../Math/Matrix3.h"
-#include "../Math/Matrix3x4.h"
-#include "../Container/Ptr.h"
-#include "../Math/Rect.h"
-#include "../Math/StringHash.h"
-#include "../Container/Str.h"
-#include "../Core/Variant.h"
+#include "Lutefisk3D/Math/Color.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Math/Rect.h"
+#include "Lutefisk3D/Math/Matrix3x4.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Container/Str.h"
 
 namespace Urho3D
 {
-
 /// Variant's supported types.
-enum VariantType
+enum VariantType : uint8_t
 {
     VAR_NONE = 0,
     VAR_INT,
@@ -68,7 +65,9 @@ enum VariantType
     MAX_VAR_TYPES
 };
 
-/// Union for the possible variant values. Also stores non-POD objects such as String and math objects (excluding Matrix) which must not exceed 16 bytes in size (or 32 bytes in a 64-bit build.) Objects exceeding the limit are allocated on the heap and pointed to by _ptr.
+/// Union for the possible variant values. Also stores non-POD objects such as String and math objects
+/// (excluding Matrix) which must not exceed 16 bytes in size (or 32 bytes in a 64-bit build.)
+/// Objects exceeding the limit are allocated on the heap and pointed to by _ptr.
 struct VariantValue
 {
     union

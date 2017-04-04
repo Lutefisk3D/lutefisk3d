@@ -20,12 +20,12 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/Geometry.h"
-#include "../Graphics/Graphics.h"
-#include "../Graphics/IndexBuffer.h"
-#include "../Graphics/VertexBuffer.h"
-#include "../IO/Log.h"
-#include "../Math/Ray.h"
+#include "Lutefisk3D/Graphics/Geometry.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/IndexBuffer.h"
+#include "Lutefisk3D/Graphics/VertexBuffer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Math/Ray.h"
 
 
 namespace Urho3D

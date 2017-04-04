@@ -22,14 +22,14 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../Math/MathDefs.h"
-#include "../Scene/Node.h"
-#include "../Container/Ptr.h"
-#include "../Core/Variant.h"
-#include "../Math/Vector3.h"
-#include "../Math/Spline.h"
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/Math/MathDefs.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Core/Variant.h"
+#include "Lutefisk3D/Math/Vector3.h"
+#include "Lutefisk3D/Math/Spline.h"
 #include <vector>
 
 namespace Urho3D

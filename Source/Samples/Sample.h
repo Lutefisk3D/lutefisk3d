@@ -24,6 +24,7 @@
 
 #include <Lutefisk3D/Engine/Application.h>
 #include <Lutefisk3D/Input/Input.h>
+#include <Lutefisk3D/Core/Context.h>
 #include <QString>
 
 namespace Urho3D
@@ -53,7 +54,7 @@ const float TOUCH_SENSITIVITY = 2.0f;
 class Sample : public Urho3D::Application
 {
     // Enable type information.
-    URHO3D_OBJECT(Sample,Urho3D::Application);
+    URHO3D_OBJECT(Sample,Urho3D::Application)
 
 public:
     /// Construct.
@@ -108,10 +109,6 @@ private:
     /// Handle touch begin event to initialize touch input on desktop platform.
     void HandleTouchBegin(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 
-    /// Screen joystick index for navigational controls (mobile platforms only).
-    unsigned screenJoystickIndex_;
-    /// Screen joystick index for settings (mobile platforms only).
-    unsigned screenJoystickSettingsIndex_;
     /// Pause flag.
     bool paused_;
 };

@@ -22,15 +22,15 @@
 
 #include "Constraint.h"
 
-#include "../Scene/ObjectAnimation.h"
-#include "../Core/Context.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/Scene/ObjectAnimation.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/IO/Log.h"
 #include "PhysicsUtils.h"
 #include "PhysicsWorld.h"
-#include "../Core/Profiler.h"
+#include "Lutefisk3D/Core/Profiler.h"
 #include "RigidBody.h"
-#include "../Scene/Scene.h"
+#include "Lutefisk3D/Scene/Scene.h"
 
 #include <bullet/BulletDynamics/ConstraintSolver/btConeTwistConstraint.h>
 #include <bullet/BulletDynamics/ConstraintSolver/btHingeConstraint.h>

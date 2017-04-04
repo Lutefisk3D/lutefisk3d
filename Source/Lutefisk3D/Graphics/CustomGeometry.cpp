@@ -20,21 +20,21 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/Batch.h"
-#include "../Graphics/Camera.h"
-#include "../Core/Context.h"
-#include "../Graphics/CustomGeometry.h"
-#include "../Graphics/Geometry.h"
-#include "../IO/Log.h"
-#include "../Graphics/Material.h"
-#include "../IO/MemoryBuffer.h"
-#include "../Scene/Node.h"
-#include "../Graphics/OcclusionBuffer.h"
-#include "../Graphics/OctreeQuery.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
-#include "../IO/VectorBuffer.h"
-#include "../Graphics/VertexBuffer.h"
+#include "Lutefisk3D/Graphics/Batch.h"
+#include "Lutefisk3D/Graphics/Camera.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/CustomGeometry.h"
+#include "Lutefisk3D/Graphics/Geometry.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Graphics/Material.h"
+#include "Lutefisk3D/IO/MemoryBuffer.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Graphics/OcclusionBuffer.h"
+#include "Lutefisk3D/Graphics/OctreeQuery.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
+#include "Lutefisk3D/Graphics/VertexBuffer.h"
 
 namespace Urho3D
 {

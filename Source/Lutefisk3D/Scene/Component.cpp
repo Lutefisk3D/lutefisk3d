@@ -21,17 +21,17 @@
 //
 
 #include "Component.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/Container/HashMap.h"
 #include "ReplicationState.h"
 #include "Scene.h"
 #include "SceneEvents.h"
 #ifdef LUTEFISK3D_PHYSICS
-#include "../Physics/PhysicsWorld.h"
+#include "Lutefisk3D/Physics/PhysicsWorld.h"
 #endif
 #ifdef LUTEFISK3D_URHO2D
-#include "../Urho2D/PhysicsWorld2D.h"
+#include "Lutefisk3D/Urho2D/PhysicsWorld2D.h"
 #endif
-#include "../Resource/JSONValue.h"
+#include "Lutefisk3D/Resource/JSONValue.h"
 namespace Urho3D
 {
 

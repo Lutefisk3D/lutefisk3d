@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../IO/File.h"
+#include "Lutefisk3D/IO/File.h"
 
 #include <SDL2/SDL_rwops.h>
 

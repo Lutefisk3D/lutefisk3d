@@ -22,14 +22,14 @@
 
 #pragma once
 
-#include "../Container/ArrayPtr.h"
-#include "../Math/Color.h"
-#include "../Graphics/GraphicsDefs.h"
-#include "../Resource/Image.h"
-#include "../Core/Mutex.h"
-#include "../Core/Object.h"
-#include "../Math/Plane.h"
-#include "../Math/Rect.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Math/Color.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/Resource/Image.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Math/Plane.h"
+#include "Lutefisk3D/Math/Rect.h"
 
 #include <utility>
 #include <functional>

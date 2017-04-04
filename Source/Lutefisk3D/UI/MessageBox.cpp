@@ -20,17 +20,17 @@
 // THE SOFTWARE.
 //
 
-#include "../UI/Button.h"
-#include "../Core/Context.h"
-#include "../Graphics/Graphics.h"
-#include "../IO/Log.h"
-#include "../UI/MessageBox.h"
-#include "../Resource/ResourceCache.h"
-#include "../UI/Text.h"
-#include "../UI/UI.h"
-#include "../UI/UIEvents.h"
-#include "../UI/Window.h"
-#include "../Resource/XMLFile.h"
+#include "Lutefisk3D/UI/Button.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/UI/MessageBox.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/UI/Text.h"
+#include "Lutefisk3D/UI/UI.h"
+#include "Lutefisk3D/UI/UIEvents.h"
+#include "Lutefisk3D/UI/Window.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 namespace Urho3D
 {

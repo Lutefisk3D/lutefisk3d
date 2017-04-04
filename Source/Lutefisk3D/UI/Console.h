@@ -21,7 +21,7 @@
 //
 
 #pragma once
-#include "../Core/Object.h"
+#include "Lutefisk3D/Core/Object.h"
 #include <QMap>
 #include <utility>
 

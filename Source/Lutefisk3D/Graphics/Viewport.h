@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "../Core/Object.h"
-#include "../Container/Ptr.h"
-#include "../Math/Ray.h"
-#include "../Math/Rect.h"
-#include "../Math/Vector2.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Math/Ray.h"
+#include "Lutefisk3D/Math/Rect.h"
+#include "Lutefisk3D/Math/Vector2.h"
 
 namespace Urho3D
 {

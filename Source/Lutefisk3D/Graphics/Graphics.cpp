@@ -48,10 +48,10 @@
 #include "TextureCube.h"
 #include "Zone.h"
 
-#include "../Core/StringUtils.h"
-#include "../Core/Profiler.h"
-#include "../IO/FileSystem.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/Core/StringUtils.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/Log.h"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>

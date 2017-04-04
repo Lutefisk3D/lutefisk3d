@@ -22,14 +22,14 @@
 
 #include "Cursor.h"
 
-#include "../Core/Context.h"
-#include "../Input/Input.h"
-#include "../Input/InputEvents.h"
-#include "../IO/Log.h"
-#include "../Container/Ptr.h"
-#include "../Resource/ResourceCache.h"
-#include "../Graphics/Texture2D.h"
-#include "../UI/UI.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Input/Input.h"
+#include "Lutefisk3D/Input/InputEvents.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Graphics/Texture2D.h"
+#include "Lutefisk3D/UI/UI.h"
 
 #include "SDL2/SDL_mouse.h"
 

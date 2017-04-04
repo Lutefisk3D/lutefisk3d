@@ -20,10 +20,10 @@
 // THE SOFTWARE.
 //
 
-#include "../IO/Log.h"
-#include "../Core/Profiler.h"
-#include "../Core/Thread.h"
-#include "../Resource/Resource.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Core/Thread.h"
+#include "Lutefisk3D/Resource/Resource.h"
 
 namespace Urho3D
 {

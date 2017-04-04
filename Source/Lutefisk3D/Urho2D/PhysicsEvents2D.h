@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "../Core/Object.h"
+#include "Lutefisk3D/Core/Object.h"
 
 // For prestep / poststep events, which are the same for 2D and 3D physics. The events themselves don't depend
 // on whether 3D physics support or Bullet has been compiled in.
-#include "../Physics/PhysicsEvents.h"
+#include "Lutefisk3D/Physics/PhysicsEvents.h"
 namespace Urho3D
 {
 

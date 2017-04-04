@@ -24,10 +24,10 @@
 #include "Scene.h"
 #include "SceneEvents.h"
 
-#include "../IO/Log.h"
+#include "Lutefisk3D/IO/Log.h"
 #if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
-#include "../Physics/PhysicsEvents.h"
-#include "../Physics/PhysicsWorld.h"
+#include "Lutefisk3D/Physics/PhysicsEvents.h"
+#include "Lutefisk3D/Physics/PhysicsWorld.h"
 #endif
 
 namespace Urho3D

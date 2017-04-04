@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Audio/BufferedSoundStream.h"
+#include "Lutefisk3D/Audio/BufferedSoundStream.h"
 
 #include <cstring>
 

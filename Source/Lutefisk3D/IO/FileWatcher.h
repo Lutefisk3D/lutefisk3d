@@ -22,20 +22,19 @@
 
 #pragma once
 
-#include "../Core/Mutex.h"
-#include "../Core/Object.h"
-#include "../Core/Thread.h"
-#include "../Core/Timer.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Core/Thread.h"
+#include "Lutefisk3D/Core/Timer.h"
 
 namespace Urho3D
 {
-
 class FileSystem;
 
 /// Watches a directory and its subdirectories for files being modified.
 class URHO3D_API FileWatcher : public Object, public Thread
 {
-    URHO3D_OBJECT(FileWatcher, Object);
+    URHO3D_OBJECT(FileWatcher, Object)
 
 public:
     /// Construct.

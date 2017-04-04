@@ -22,12 +22,8 @@
 
 #pragma once
 
-#include "../Math/Color.h"
-#include "../Math/Vector2.h"
-#include "../Math/Vector3.h"
-#include "../Math/Vector4.h"
-#include "../IO/Log.h"
-#include "../Core/Variant.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Variant.h"
 
 #include <cmath>
 

@@ -5,7 +5,9 @@ set(INCLUDES
     LogicComponent.h
     Node.h
     ObjectAnimation.h
+    ReplicationState.h
     Scene.h
+    SceneEvents.h
     SceneResolver.h
     Serializable.h
     SmoothedTransform.h

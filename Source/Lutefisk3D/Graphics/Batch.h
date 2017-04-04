@@ -22,13 +22,13 @@
 
 #pragma once
 
-#include "../Graphics/Drawable.h"
-#include "../Graphics/Material.h"
-#include "../Math/MathDefs.h"
-#include "../Math/Matrix3x4.h"
-#include "../Container/Ptr.h"
-#include "../Math/Rect.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/Graphics/Drawable.h"
+#include "Lutefisk3D/Graphics/Material.h"
+#include "Lutefisk3D/Math/MathDefs.h"
+#include "Lutefisk3D/Math/Matrix3x4.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Math/Rect.h"
+#include "Lutefisk3D/Container/HashMap.h"
 
 #include "Light.h"
 #include <functional>

@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "../Audio/AudioDefs.h"
-#include "../Container/ArrayPtr.h"
-#include "../Core/Mutex.h"
-#include "../Core/Object.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/Audio/AudioDefs.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/HashMap.h"
 namespace Urho3D
 {
 
@@ -38,7 +38,7 @@ class SoundSource;
 /// %Audio subsystem.
 class URHO3D_API Audio : public Object
 {
-    URHO3D_OBJECT(Audio,Object);
+    URHO3D_OBJECT(Audio,Object)
 
 public:
     /// Construct.

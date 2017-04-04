@@ -21,7 +21,7 @@
 //
 
 #include "ConstraintPulley2D.h"
-#include "../Core/Context.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "PhysicsUtils2D.h"
 #include "RigidBody2D.h"
 

@@ -22,9 +22,9 @@
 
 #include "Window.h"
 
-#include "../Core/Context.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Cursor.h"
-#include "../Input/InputEvents.h"
+#include "Lutefisk3D/Input/InputEvents.h"
 #include "UI.h"
 #include "UIEvents.h"
 

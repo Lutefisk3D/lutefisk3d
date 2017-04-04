@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Graphics/Drawable.h"
-#include "../Math/Frustum.h"
+#include "Lutefisk3D/Graphics/Drawable.h"
+#include "Lutefisk3D/Math/Frustum.h"
 
 #include <vector>
 

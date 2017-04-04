@@ -23,9 +23,9 @@
 #include "PListFile.h"
 
 #include "XMLFile.h"
-#include "../Core/Context.h"
-#include "../IO/Deserializer.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Deserializer.h"
+#include "Lutefisk3D/IO/Log.h"
 #include <stdio.h>
 
 namespace Urho3D

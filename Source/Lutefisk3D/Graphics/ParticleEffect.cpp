@@ -22,12 +22,13 @@
 
 #include "ParticleEffect.h"
 
-#include "../Core/Context.h"
-#include "../Core/StringUtils.h"
-#include "../IO/Log.h"
 #include "Material.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/XMLFile.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/StringUtils.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 namespace Urho3D
 {

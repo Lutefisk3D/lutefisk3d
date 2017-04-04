@@ -1,4 +1,6 @@
 set(INCLUDES
+    AbstractFile.h
+
     Log.h
     Deserializer.h
     Serializer.h

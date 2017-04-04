@@ -24,10 +24,10 @@
 
 #include "AnimatedModel.h"
 #include "Animation.h"
-#include "../IO/Deserializer.h"
-#include "../Graphics/DrawableEvents.h"
-#include "../IO/Log.h"
-#include "../IO/Serializer.h"
+#include "Lutefisk3D/IO/Deserializer.h"
+#include "Lutefisk3D/Graphics/DrawableEvents.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/Serializer.h"
 
 namespace Urho3D
 {

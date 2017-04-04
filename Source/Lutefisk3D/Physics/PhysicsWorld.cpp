@@ -24,18 +24,18 @@
 
 #include "CollisionShape.h"
 #include "Constraint.h"
-#include "../Core/Context.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../IO/Log.h"
-#include "../Graphics/Model.h"
-#include "../Core/Mutex.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Graphics/Model.h"
+#include "Lutefisk3D/Core/Mutex.h"
 #include "PhysicsEvents.h"
 #include "PhysicsUtils.h"
-#include "../Core/Profiler.h"
-#include "../Math/Ray.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Math/Ray.h"
 #include "RigidBody.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
 
 #include <bullet/BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <bullet/BulletCollision/BroadphaseCollision/btBroadphaseProxy.h>

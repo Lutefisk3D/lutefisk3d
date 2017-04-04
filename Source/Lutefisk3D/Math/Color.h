@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Math/Vector4.h"
+#include "Lutefisk3D/Math/Vector4.h"
 
 // Defined by Windows headers
 #undef TRANSPARENT
@@ -42,7 +42,7 @@ public:
         a_(1.0f)
     {
     }
-    
+
     /// Copy-construct from another color.
     Color(const Color& color) :
         r_(color.r_),
@@ -51,7 +51,7 @@ public:
         a_(color.a_)
     {
     }
-    
+
     /// Construct from another color and modify the alpha.
     Color(const Color& color, float a) :
         r_(color.r_),
@@ -60,7 +60,7 @@ public:
         a_(a)
     {
     }
-    
+
     /// Construct from RGB values and set alpha fully opaque.
     Color(float r, float g, float b) :
         r_(r),
@@ -69,7 +69,7 @@ public:
         a_(1.0f)
     {
     }
-    
+
     /// Construct from RGBA values.
     Color(float r, float g, float b, float a) :
         r_(r),
@@ -109,7 +109,7 @@ public:
     Color operator -() const { return Color(-r_, -g_, -b_, -a_); }
     /// Subtract a color.
     Color operator - (const Color& rhs) const { return Color(r_ - rhs.r_, g_ - rhs.g_, b_ - rhs.b_, a_ - rhs.a_); }
-    
+
     /// Add-assign a color.
     Color& operator += (const Color& rhs)
     {
@@ -119,7 +119,7 @@ public:
         a_ += rhs.a_;
         return *this;
     }
-    
+
     /// Return float data.
     const float* Data() const { return &r_; }
 
@@ -178,10 +178,10 @@ public:
     Color Abs() const { return Color(Urho3D::Abs(r_), Urho3D::Abs(g_), Urho3D::Abs(b_), Urho3D::Abs(a_)); }
     /// Test for equality with another color with epsilon.
     bool Equals(const Color& rhs) const { return Urho3D::Equals(r_, rhs.r_) && Urho3D::Equals(g_, rhs.g_) && Urho3D::Equals(b_, rhs.b_) && Urho3D::Equals(a_, rhs.a_); }
-    
+
     /// Return as string.
     QString ToString() const;
-    
+
     /// Red value.
     float r_;
     /// Green value.

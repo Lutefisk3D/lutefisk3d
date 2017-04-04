@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Math/BoundingBox.h"
-#include "../Math/Vector3.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Math/Vector3.h"
 #include <vector>
 
 class rcContext;

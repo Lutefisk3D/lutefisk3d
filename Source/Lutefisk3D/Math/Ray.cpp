@@ -20,11 +20,11 @@
 // THE SOFTWARE.
 //
 
-#include "../Math/BoundingBox.h"
-#include "../Math/Frustum.h"
-#include "../Math/Plane.h"
-#include "../Math/Ray.h"
-#include "../Math/Sphere.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Math/Frustum.h"
+#include "Lutefisk3D/Math/Plane.h"
+#include "Lutefisk3D/Math/Ray.h"
+#include "Lutefisk3D/Math/Sphere.h"
 #include <algorithm>
 
 namespace Urho3D

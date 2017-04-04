@@ -20,10 +20,10 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/DrawableEvents.h"
-#include "../Scene/Component.h"
-#include "../Scene/Node.h"
-#include "../Urho2D/SpriterInstance2D.h"
+#include "Lutefisk3D/Graphics/DrawableEvents.h"
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Urho2D/SpriterInstance2D.h"
 
 #include <cmath>
 

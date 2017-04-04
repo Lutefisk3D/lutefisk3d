@@ -21,11 +21,11 @@
 //
 
 #include "Light.h"
-#include "../Core/Context.h"
-#include "../Core/Profiler.h"
-#include "../Scene/Node.h"
-#include "../IO/Log.h"
-#include "../Resource/ResourceCache.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Camera.h"
 #include "DebugRenderer.h"
 #include "Graphics.h"

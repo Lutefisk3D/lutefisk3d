@@ -22,13 +22,13 @@
 
 #pragma once
 
-#include "../Math/BoundingBox.h"
-#include "../Scene/Component.h"
-#include "../Math/Sphere.h"
-#include "../Math/Vector3.h"
-#include "../IO/VectorBuffer.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Math/Sphere.h"
+#include "Lutefisk3D/Math/Vector3.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
 
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/Container/HashMap.h"
 
 #include <bullet/LinearMath/btIDebugDraw.h>
 #include <QtCore/QSet>

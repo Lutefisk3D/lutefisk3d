@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
+#include "Lutefisk3D/Scene/Component.h"
 
 namespace Urho3D
 {
@@ -38,15 +38,15 @@ public:
     static void RegisterObject(Context* context);
 
     /// Return type of the stored component.
-    virtual StringHash GetType() const { return typeHash_; }
+    virtual StringHash GetType() const override { return typeHash_; }
     /// Return type name of the stored component.
-    virtual const QString& GetTypeName() const { return typeName_; }
+    virtual const QString& GetTypeName() const  override { return typeName_; }
     /// Return attribute descriptions, or null if none defined.
-    virtual const std::vector<AttributeInfo>* GetAttributes() const { return &xmlAttributeInfos_; }
+    virtual const std::vector<AttributeInfo>* GetAttributes() const  override { return &xmlAttributeInfos_; }
     /// Load from binary data. Return true if successful.
-    virtual bool Load(Deserializer& source, bool setInstanceDefault = false);
+    virtual bool Load(Deserializer& source, bool setInstanceDefault = false)  override;
     /// Load from XML data. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false);
+    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
     /// Load from JSON data. Return true if successful.
     virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
     /// Save as binary data. Return true if successful.

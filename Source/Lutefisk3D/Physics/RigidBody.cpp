@@ -20,20 +20,20 @@
 // THE SOFTWARE.
 //
 
-#include "../Physics/CollisionShape.h"
-#include "../Physics/Constraint.h"
-#include "../Core/Context.h"
-#include "../IO/Log.h"
-#include "../IO/MemoryBuffer.h"
-#include "../Physics/PhysicsUtils.h"
-#include "../Physics/PhysicsWorld.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/ResourceEvents.h"
-#include "../Physics/RigidBody.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
-#include "../Scene/SmoothedTransform.h"
+#include "Lutefisk3D/Physics/CollisionShape.h"
+#include "Lutefisk3D/Physics/Constraint.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/MemoryBuffer.h"
+#include "Lutefisk3D/Physics/PhysicsUtils.h"
+#include "Lutefisk3D/Physics/PhysicsWorld.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/ResourceEvents.h"
+#include "Lutefisk3D/Physics/RigidBody.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
+#include "Lutefisk3D/Scene/SmoothedTransform.h"
 
 #include <bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <bullet/BulletDynamics/Dynamics/btRigidBody.h>

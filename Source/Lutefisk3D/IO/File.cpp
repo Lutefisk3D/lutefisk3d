@@ -26,8 +26,8 @@
 #include "Log.h"
 #include "MemoryBuffer.h"
 #include "PackageFile.h"
-#include "../Core/Profiler.h"
-#include "../Container/Str.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Container/Str.h"
 
 #include <QFile>
 #include <QDebug>

@@ -20,24 +20,24 @@
 // THE SOFTWARE.
 //
 
-#include "../Navigation/DynamicNavigationMesh.h"
+#include "Lutefisk3D/Navigation/DynamicNavigationMesh.h"
 
-#include "../Math/BoundingBox.h"
-#include "../Core/Context.h"
-#include "../Navigation/CrowdAgent.h"
-#include "../Navigation/DynamicNavigationMesh.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../IO/Log.h"
-#include "../IO/MemoryBuffer.h"
-#include "../Navigation/NavArea.h"
-#include "../Navigation/NavBuildData.h"
-#include "../Navigation/NavigationEvents.h"
-#include "../Scene/Node.h"
-#include "../Navigation/Obstacle.h"
-#include "../Navigation/OffMeshConnection.h"
-#include "../Core/Profiler.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Navigation/CrowdAgent.h"
+#include "Lutefisk3D/Navigation/DynamicNavigationMesh.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/MemoryBuffer.h"
+#include "Lutefisk3D/Navigation/NavArea.h"
+#include "Lutefisk3D/Navigation/NavBuildData.h"
+#include "Lutefisk3D/Navigation/NavigationEvents.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Navigation/Obstacle.h"
+#include "Lutefisk3D/Navigation/OffMeshConnection.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
 
 #include <LZ4/lz4.h>
 #include <cfloat>

@@ -22,13 +22,18 @@
 
 #pragma once
 
-#include "../Container/HashMap.h"
-#include "../Math/StringHash.h"
-#include "../Core/Variant.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include <vector>
+
+class QStringList;
 
 namespace Urho3D
 {
-
+typedef HashMap<StringHash, class Variant> VariantMap;
+struct URHO3D_API ResourceRefList;
+struct ResourceRef;
+class Variant;
 class Color;
 class IntRect;
 class IntVector2;
@@ -41,7 +46,6 @@ class Matrix4;
 class Vector2;
 class Vector3;
 class Vector4;
-
 /// Abstract stream for writing.
 class Serializer
 {

@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Container/Str.h"
-#include "../Core/Thread.h"
-#include "../Core/Timer.h"
+#include "Lutefisk3D/Container/Str.h"
+#include "Lutefisk3D/Core/Thread.h"
+#include "Lutefisk3D/Core/Timer.h"
 #include <limits>
 
 namespace Urho3D

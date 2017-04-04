@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Container/HashMap.h"
-#include "../Container/Ptr.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/Ptr.h"
 #include <vector>
 class QString;
 

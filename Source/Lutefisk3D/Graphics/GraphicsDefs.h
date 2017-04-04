@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Math/StringHash.h"
+#include "Lutefisk3D/Math/StringHash.h"
 
 namespace Urho3D
 {

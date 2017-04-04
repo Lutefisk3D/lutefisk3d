@@ -22,27 +22,26 @@
 
 #pragma once
 
-#include "../Core/Mutex.h"
-#include "../Core/Object.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Core/Object.h"
 #include <list>
-//#include "../Core/StringUtils.h"
 
 namespace Urho3D
 {
-
-/// Fictional message level to indicate a stored raw message.
-static const int LOG_RAW = -1;
-/// Debug message level. By default only shown in debug mode.
-static const int LOG_DEBUG = 0;
-/// Informative message level.
-static const int LOG_INFO = 1;
-/// Warning message level.
-static const int LOG_WARNING = 2;
-/// Error message level.
-static const int LOG_ERROR = 3;
-/// Disable all log messages.
-static const int LOG_NONE = 4;
-
+enum LogLevels : int32_t {
+    /// Fictional message level to indicate a stored raw message.
+    LOG_RAW = -1,
+    /// Debug message level. By default only shown in debug mode.
+    LOG_DEBUG = 0,
+    /// Informative message level.
+    LOG_INFO = 1,
+    /// Warning message level.
+    LOG_WARNING = 2,
+    /// Error message level.
+    LOG_ERROR = 3,
+    /// Disable all log messages.
+    LOG_NONE = 4,
+};
 class File;
 
 /// Stored log message from another thread.

@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
-#include "../Container/ArrayPtr.h"
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
 namespace Urho3D
 {
 

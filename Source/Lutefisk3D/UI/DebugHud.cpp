@@ -22,15 +22,15 @@
 
 #include "DebugHud.h"
 
-#include "../UI/Text.h"
-#include "../UI/UI.h"
-#include "../Graphics/Graphics.h"
-#include "../Graphics/Renderer.h"
-#include "../Resource/ResourceCache.h"
-#include "../IO/Log.h"
-#include "../Core/CoreEvents.h"
-#include "../Core/Profiler.h"
-#include "../Core/EventProfiler.h"
+#include "Lutefisk3D/UI/Text.h"
+#include "Lutefisk3D/UI/UI.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/Renderer.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/CoreEvents.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Core/EventProfiler.h"
 
 namespace Urho3D
 {

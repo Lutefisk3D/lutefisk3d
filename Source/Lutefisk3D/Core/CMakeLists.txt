@@ -35,6 +35,7 @@ add_library(Lutefisk3D_Core OBJECT ${SOURCE} ${INCLUDES})
 target_include_directories(Lutefisk3D_Core PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Core PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Core PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 if(UNIT_TESTING)
 add_lutefisk_test(AttributeTests)
 add_lutefisk_test(ContextTests)

@@ -23,12 +23,12 @@
 #include "ParticleEmitter.h"
 #include "ParticleEffect.h"
 #include "DrawableEvents.h"
-#include "../Core/Context.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/ResourceEvents.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/ResourceEvents.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
 
 
 

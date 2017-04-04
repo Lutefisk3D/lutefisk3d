@@ -23,13 +23,13 @@
 
 #include "Camera.h"
 #include "Graphics.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/IO/Log.h"
 #include "Renderer.h"
 #include "RenderPath.h"
-#include "../Resource/ResourceCache.h"
-#include "../Scene/Scene.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Scene/Scene.h"
 #include "View.h"
-#include "../Resource/XMLFile.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 
 

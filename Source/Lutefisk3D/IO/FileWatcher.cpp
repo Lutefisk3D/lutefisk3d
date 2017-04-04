@@ -24,7 +24,7 @@
 #include "File.h"
 #include "FileSystem.h"
 #include "Log.h"
-#include "../Core/Timer.h"
+#include "Lutefisk3D/Core/Timer.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -38,7 +38,7 @@ extern "C"
 #elif defined(__APPLE__) && !defined(IOS)
 extern "C"
 {
-#include "../IO/MacFileWatcher.h"
+#include "Lutefisk3D/IO/MacFileWatcher.h"
 }
 #endif
 

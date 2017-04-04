@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Resource/Resource.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Container/HashMap.h"
 
 #ifdef LUTEFISK3D_SPINE
 struct spAtlas;

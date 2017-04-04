@@ -21,12 +21,12 @@
 //
 #include "Image.h"
 
-#include "../Core/Context.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Decompress.h"
-#include "../IO/File.h"
-#include "../IO/FileSystem.h"
-#include "../IO/Log.h"
-#include "../Core/Profiler.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Profiler.h"
 
 #include <QBuffer>
 #include <cstdlib>

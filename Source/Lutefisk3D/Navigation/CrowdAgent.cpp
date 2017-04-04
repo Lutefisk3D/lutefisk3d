@@ -24,16 +24,16 @@
 
 #include "CrowdManager.h"
 #include "NavigationEvents.h"
-#include "../Scene/Component.h"
-#include "../Core/Context.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../IO/Log.h"
-#include "../IO/MemoryBuffer.h"
-#include "../Scene/Node.h"
-#include "../Core/Profiler.h"
-#include "../Scene/Scene.h"
-#include "../Scene/Serializable.h"
-#include "../Core/Variant.h"
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/MemoryBuffer.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/Serializable.h"
+#include "Lutefisk3D/Core/Variant.h"
 
 #include <Detour/DetourCommon.h>
 #include <DetourCrowd/DetourCrowd.h>

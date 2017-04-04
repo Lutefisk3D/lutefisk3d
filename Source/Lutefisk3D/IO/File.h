@@ -22,15 +22,10 @@
 
 #pragma once
 
-#include "../Container/ArrayPtr.h"
-#include "../IO/Deserializer.h"
-#include "../IO/Serializer.h"
-#include "../Core/Object.h"
-#include "../IO/AbstractFile.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/IO/AbstractFile.h"
 
-#ifdef __ANDROID__
-struct SDL_RWops;
-#endif
 namespace Urho3D
 {
 
@@ -47,7 +42,7 @@ class PackageFile;
 /// %File opened either through the filesystem or from within a package file.
 class URHO3D_API File : public Object, public AbstractFile
 {
-    URHO3D_OBJECT(File, Object);
+    URHO3D_OBJECT(File, Object)
 
 public:
     /// Construct.

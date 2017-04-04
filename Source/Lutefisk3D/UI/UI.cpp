@@ -21,36 +21,36 @@
 //
 
 #include "CheckBox.h"
-#include "../Core/Context.h"
-#include "../Core/CoreEvents.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/CoreEvents.h"
 #include "Cursor.h"
 #include "DropDownList.h"
 #include "FileSelector.h"
 #include "Font.h"
-#include "../Graphics/Graphics.h"
-#include "../Graphics/GraphicsEvents.h"
-#include "../Input/Input.h"
-#include "../Input/InputEvents.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/GraphicsEvents.h"
+#include "Lutefisk3D/Input/Input.h"
+#include "Lutefisk3D/Input/InputEvents.h"
 #include "LineEdit.h"
 #include "ListView.h"
-#include "../IO/Log.h"
-#include "../Math/Matrix3x4.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Math/Matrix3x4.h"
 #include "MessageBox.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
 #include "ScrollBar.h"
-#include "../Graphics/Shader.h"
-#include "../Graphics/ShaderVariation.h"
+#include "Lutefisk3D/Graphics/Shader.h"
+#include "Lutefisk3D/Graphics/ShaderVariation.h"
 #include "Slider.h"
 
 #include "Sprite.h"
 #include "Text.h"
 #include "Text3D.h"
-#include "../Graphics/Texture2D.h"
+#include "Lutefisk3D/Graphics/Texture2D.h"
 #include "ToolTip.h"
 #include "UI.h"
 #include "UIEvents.h"
-#include "../Graphics/VertexBuffer.h"
+#include "Lutefisk3D/Graphics/VertexBuffer.h"
 #include "Window.h"
 #include "View3D.h"
 
@@ -1207,7 +1207,7 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
 
                 dragElementsContain = dragElements_.contains(element);
             }
-            else if (element && dragElementsContain && newButton)
+            if (element && dragElementsContain && newButton)
             {
                 DragData* dragData = dragElements_[element];
                 dragData->sumPos += cursorPos;

@@ -21,12 +21,12 @@
 //
 
 #include "UIElement.h"
-#include "../Core/Context.h"
-#include "../Core/CoreEvents.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/CoreEvents.h"
 #include "Cursor.h"
-#include "../IO/Log.h"
-#include "../Scene/ObjectAnimation.h"
-#include "../Resource/ResourceCache.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Scene/ObjectAnimation.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
 #include "UI.h"
 #include "UIEvents.h"
 

@@ -22,16 +22,16 @@
 
 #include "Font.h"
 
-#include "../Core/Context.h"
-#include "../IO/Deserializer.h"
-#include "../IO/FileSystem.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Deserializer.h"
+#include "Lutefisk3D/IO/FileSystem.h"
 #include "FontFaceBitmap.h"
 #include "FontFaceFreeType.h"
-#include "../Graphics/Graphics.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/XMLElement.h"
-#include "../Resource/XMLFile.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/XMLElement.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 namespace Urho3D
 {

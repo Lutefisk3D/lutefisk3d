@@ -22,11 +22,11 @@
 
 #include "FileSelector.h"
 
-#include "../Core/Context.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "DropDownList.h"
-#include "../IO/File.h"
-#include "../IO/FileSystem.h"
-#include "../Input/InputEvents.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/Input/InputEvents.h"
 #include "LineEdit.h"
 #include "ListView.h"
 #include "Text.h"

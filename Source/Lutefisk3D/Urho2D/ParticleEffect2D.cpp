@@ -23,12 +23,14 @@
 #include "ParticleEffect2D.h"
 
 #include "Sprite2D.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/XMLFile.h"
-#include "../IO/FileSystem.h"
-#include "../IO/Log.h"
-#include "../Core/Context.h"
-#include "../Core/StringUtils.h"
+
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/StringUtils.h"
 
 
 
@@ -214,7 +216,7 @@ bool ParticleEffect2D::EndLoad()
 
         loadSpriteName_.clear();
     }
-    
+
     return true;
 }
 
@@ -287,7 +289,7 @@ bool ParticleEffect2D::Save(Serializer& dest) const
     WriteFloat(rootElem, "rotationEnd", rotationEnd_);
     WriteFloat(rootElem, "rotationEndVariance", rotationEndVariance_);
 
-	return xmlFile.Save(dest);
+    return xmlFile.Save(dest);
 }
 
 void ParticleEffect2D::SetSprite(Sprite2D* sprite)
@@ -507,7 +509,7 @@ SharedPtr<ParticleEffect2D> ParticleEffect2D::Clone(const QString& cloneName) co
     ret->rotationEndVariance_ = rotationEndVariance_;
     /// \todo Zero if source was created programmatically
     ret->SetMemoryUse(GetMemoryUse());
-    
+
     return ret;
 }
 
@@ -535,30 +537,30 @@ Vector2 ParticleEffect2D::ReadVector2(const XMLElement& element, const QString& 
 
 void ParticleEffect2D::WriteInt(XMLElement& element, const QString& name, int value) const
 {
-	XMLElement child = element.CreateChild(name);
-	child.SetInt("value", value);
+    XMLElement child = element.CreateChild(name);
+    child.SetInt("value", value);
 }
 
 void ParticleEffect2D::WriteFloat(XMLElement& element, const QString& name, float value) const
 {
-	XMLElement child = element.CreateChild(name);
-	child.SetFloat("value", value);
+    XMLElement child = element.CreateChild(name);
+    child.SetFloat("value", value);
 }
 
 void ParticleEffect2D::WriteColor(XMLElement& element, const QString& name, const Color& color) const
 {
-	XMLElement child = element.CreateChild(name);
-	child.SetFloat("red", color.r_);
-	child.SetFloat("green", color.g_);
-	child.SetFloat("blue", color.b_);
-	child.SetFloat("alpha", color.a_);
+    XMLElement child = element.CreateChild(name);
+    child.SetFloat("red", color.r_);
+    child.SetFloat("green", color.g_);
+    child.SetFloat("blue", color.b_);
+    child.SetFloat("alpha", color.a_);
 }
 
 void ParticleEffect2D::WriteVector2(XMLElement& element,const QString& name,const Vector2& value) const
 {
-	XMLElement child = element.CreateChild(name);
-	child.SetFloat("x", value.x_);
-	child.SetFloat("y", value.y_);
+    XMLElement child = element.CreateChild(name);
+    child.SetFloat("x", value.x_);
+    child.SetFloat("y", value.y_);
 }
 
 }

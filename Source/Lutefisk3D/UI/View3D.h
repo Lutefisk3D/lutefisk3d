@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../UI/Window.h"
+#include "Lutefisk3D/UI/Window.h"
 
 namespace gl {
 enum class GLenum : uint32_t;

@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../UI/BorderImage.h"
-#include "../Resource/Image.h"
-#include "../Graphics/Texture.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/UI/BorderImage.h"
+#include "Lutefisk3D/Resource/Image.h"
+#include "Lutefisk3D/Graphics/Texture.h"
+#include "Lutefisk3D/Container/HashMap.h"
 
 struct SDL_Cursor;
 namespace Urho3D

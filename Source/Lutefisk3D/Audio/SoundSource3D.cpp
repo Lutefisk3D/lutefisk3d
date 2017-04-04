@@ -24,9 +24,9 @@
 #include "Audio.h"
 #include "Sound.h"
 #include "SoundListener.h"
-#include "../Core/Context.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../Scene/Node.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/Scene/Node.h"
 
 namespace Urho3D
 {

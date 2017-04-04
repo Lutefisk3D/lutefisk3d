@@ -20,8 +20,8 @@
 // THE SOFTWARE.
 //
 
-#include "../Math/Vector4.h"
-#include "../Container/Str.h"
+#include "Lutefisk3D/Math/Vector4.h"
+#include "Lutefisk3D/Container/Str.h"
 
 #include <cstdio>
 

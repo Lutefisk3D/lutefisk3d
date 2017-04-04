@@ -23,12 +23,12 @@
 #include "Log.h"
 #include "File.h"
 #include "IOEvents.h"
-#include "../Core/Context.h"
-#include "../Core/CoreEvents.h"
-#include "../Core/Mutex.h"
-#include "../Core/ProcessUtils.h"
-#include "../Core/Thread.h"
-#include "../Core/Timer.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/CoreEvents.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Core/ProcessUtils.h"
+#include "Lutefisk3D/Core/Thread.h"
+#include "Lutefisk3D/Core/Timer.h"
 
 #include <cstdio>
 

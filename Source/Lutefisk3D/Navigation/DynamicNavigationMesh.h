@@ -21,8 +21,8 @@
 //
 
 #pragma once
-#include "../Core/Object.h"
-#include "../Navigation/NavigationMesh.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Navigation/NavigationMesh.h"
 
 class dtTileCache;
 struct dtTileCacheAlloc;

@@ -21,8 +21,8 @@
 //
 #pragma once
 
-#include "../Container/HashMap.h"
-#include "../Core/Variant.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Core/Variant.h"
 
 #include <QString>
 

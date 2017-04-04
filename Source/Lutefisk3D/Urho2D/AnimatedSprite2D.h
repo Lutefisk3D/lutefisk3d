@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Urho2D/StaticSprite2D.h"
+#include "Lutefisk3D/Urho2D/StaticSprite2D.h"
 
 #ifdef LUTEFISK3D_SPINE
 struct spAnimationState;

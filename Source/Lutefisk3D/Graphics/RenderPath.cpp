@@ -23,10 +23,10 @@
 #include "RenderPath.h"
 
 #include "Graphics.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/IO/Log.h"
 #include "Material.h"
-#include "../Core/StringUtils.h"
-#include "../Resource/XMLFile.h"
+#include "Lutefisk3D/Core/StringUtils.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 namespace Urho3D
 {

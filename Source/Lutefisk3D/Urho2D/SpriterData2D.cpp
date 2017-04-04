@@ -22,7 +22,7 @@
 
 #include "SpriterData2D.h"
 
-#include "../Math/MathDefs.h"
+#include "Lutefisk3D/Math/MathDefs.h"
 #include <PugiXml/pugixml.hpp>
 
 #include <cstring>

@@ -45,6 +45,7 @@
 #include <Lutefisk3D/Urho2D/Drawable2D.h>
 #include <Lutefisk3D/Engine/Engine.h>
 #include <Lutefisk3D/IO/FileSystem.h>
+#include <Lutefisk3D/IO/File.h>
 #include <Lutefisk3D/UI/Font.h>
 #include <Lutefisk3D/Graphics/Graphics.h>
 #include <Lutefisk3D/Input/Input.h>

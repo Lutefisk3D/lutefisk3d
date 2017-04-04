@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../Core/Attribute.h"
-#include "../Container/Ptr.h"
-#include "../Math/StringHash.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/Core/Attribute.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Container/HashMap.h"
 
 
 #include <QtCore/QSet>

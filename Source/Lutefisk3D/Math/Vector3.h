@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Math/Vector2.h"
+#include "Lutefisk3D/Math/Vector2.h"
 
 class QString;
 

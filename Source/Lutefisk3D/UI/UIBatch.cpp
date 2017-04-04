@@ -20,11 +20,11 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/Graphics.h"
-#include "../Math/Matrix3x4.h"
-#include "../Graphics/ShaderVariation.h"
-#include "../Graphics/Texture.h"
-#include "../UI/UIElement.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Math/Matrix3x4.h"
+#include "Lutefisk3D/Graphics/ShaderVariation.h"
+#include "Lutefisk3D/Graphics/Texture.h"
+#include "Lutefisk3D/UI/UIElement.h"
 
 namespace Urho3D
 {

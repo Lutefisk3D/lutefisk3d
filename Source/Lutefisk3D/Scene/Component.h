@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Scene/Animatable.h"
+#include "Lutefisk3D/Scene/Animatable.h"
 
 namespace Urho3D
 {
@@ -43,7 +43,7 @@ enum AutoRemoveMode
 /// Base class for components. Components can be created to scene nodes.
 class URHO3D_API Component : public Animatable
 {
-    URHO3D_OBJECT(Component,Animatable);
+    URHO3D_OBJECT(Component,Animatable)
 
     friend class Node;
     friend class Scene;

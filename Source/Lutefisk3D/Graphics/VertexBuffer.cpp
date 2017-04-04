@@ -22,9 +22,9 @@
 
 // This file contains VertexBuffer code common to all graphics APIs.
 
-#include "../Graphics/Graphics.h"
-#include "../Graphics/VertexBuffer.h"
-#include "../Math/MathDefs.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/VertexBuffer.h"
+#include "Lutefisk3D/Math/MathDefs.h"
 
 namespace Urho3D
 {

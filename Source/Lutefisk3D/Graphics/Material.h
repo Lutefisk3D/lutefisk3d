@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "../Graphics/GraphicsDefs.h"
-#include "../Graphics/Light.h"
-#include "../Resource/Resource.h"
-#include "../Scene/ValueAnimationInfo.h"
-#include "../Math/Vector4.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/Graphics/Light.h"
+#include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Scene/ValueAnimationInfo.h"
+#include "Lutefisk3D/Math/Vector4.h"
 
 #include <unordered_map>
 namespace std {

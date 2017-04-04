@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Graphics/Model.h"
-#include "../Graphics/Skeleton.h"
-#include "../Graphics/StaticModel.h"
+#include "Lutefisk3D/Graphics/Model.h"
+#include "Lutefisk3D/Graphics/Skeleton.h"
+#include "Lutefisk3D/Graphics/StaticModel.h"
 
 namespace Urho3D
 {

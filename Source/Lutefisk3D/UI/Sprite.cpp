@@ -21,9 +21,9 @@
 //
 
 #include "Sprite.h"
-#include "../Core/Context.h"
-#include "../Graphics/Texture2D.h"
-#include "../Resource/ResourceCache.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/Texture2D.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
 
 namespace Urho3D
 {

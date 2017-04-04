@@ -20,10 +20,10 @@
 // THE SOFTWARE.
 //
 
-#include "../Core/Mutex.h"
-#include "../Core/ProcessUtils.h"
-#include "../Math/MathDefs.h"
-#include "../IO/FileSystem.h" // used for minidump support functions
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Core/ProcessUtils.h"
+#include "Lutefisk3D/Math/MathDefs.h"
+#include "Lutefisk3D/IO/FileSystem.h" // used for minidump support functions
 #include <QtCore/QThread>
 #ifndef MINI_URHO
 #include <SDL2/SDL.h>

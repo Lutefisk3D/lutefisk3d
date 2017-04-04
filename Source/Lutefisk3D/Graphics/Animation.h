@@ -22,10 +22,12 @@
 
 #pragma once
 
-#include "../Container/Ptr.h"
-#include "../Math/Quaternion.h"
-#include "../Math/Vector3.h"
-#include "../Resource/Resource.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Math/Quaternion.h"
+#include "Lutefisk3D/Math/Vector3.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Resource/Resource.h"
 
 namespace Urho3D
 {
@@ -108,7 +110,7 @@ static const unsigned char CHANNEL_SCALE = 0x4;
 /// Skeletal animation resource.
 class URHO3D_API Animation : public Resource
 {
-    URHO3D_OBJECT(Animation,Resource);
+    URHO3D_OBJECT(Animation,Resource)
 
 public:
     /// Construct.
@@ -157,7 +159,7 @@ public:
     const HashMap<StringHash, AnimationTrack>& GetTracks() const { return tracks_; }
     /// Return number of animation tracks.
     unsigned GetNumTracks() const { return tracks_.size(); }
-    /// Return animation track by index. 
+    /// Return animation track by index.
     AnimationTrack *GetTrack(unsigned index);
     /// Return animation track by name.
     AnimationTrack* GetTrack(const QString& name);

@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../Container/Ptr.h"
-#include "../Graphics/RenderSurface.h"
-#include "../Graphics/Texture.h"
-#include "../Resource/Image.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Graphics/RenderSurface.h"
+#include "Lutefisk3D/Graphics/Texture.h"
+#include "Lutefisk3D/Resource/Image.h"
 
 namespace Urho3D
 {

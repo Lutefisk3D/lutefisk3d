@@ -22,8 +22,8 @@
 
 #include "Serializer.h"
 
-#include "../Math/BoundingBox.h"
-#include "../Core/Variant.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Core/Variant.h"
 
 namespace Urho3D
 {

@@ -20,13 +20,13 @@
 // THE SOFTWARE.
 //
 
-#include "../Urho2D/CollisionShape2D.h"
-#include "../Core/Context.h"
-#include "../IO/Log.h"
-#include "../Scene/Node.h"
-#include "../Urho2D/PhysicsUtils2D.h"
-#include "../Urho2D/RigidBody2D.h"
-#include "../Scene/Scene.h"
+#include "Lutefisk3D/Urho2D/CollisionShape2D.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Urho2D/PhysicsUtils2D.h"
+#include "Lutefisk3D/Urho2D/RigidBody2D.h"
+#include "Lutefisk3D/Scene/Scene.h"
 
 
 

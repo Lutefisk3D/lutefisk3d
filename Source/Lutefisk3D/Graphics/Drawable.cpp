@@ -29,10 +29,10 @@
 #include "Zone.h"
 #include "DebugRenderer.h"
 #include "VertexBuffer.h"
-#include "../Core/Context.h"
-#include "../IO/Log.h"
-#include "../IO/File.h"
-#include "../Scene/Scene.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/Scene/Scene.h"
 
 namespace Urho3D
 {

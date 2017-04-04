@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../UI/UIElement.h"
-#include "../UI/BorderImage.h"
+#include "Lutefisk3D/UI/UIElement.h"
+#include "Lutefisk3D/UI/BorderImage.h"
 namespace Urho3D
 {
 

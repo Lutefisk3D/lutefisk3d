@@ -24,9 +24,9 @@
 
 #include "PhysicsUtils2D.h"
 
-#include "../Core/Context.h"
-#include "../IO/MemoryBuffer.h"
-#include "../IO/VectorBuffer.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/MemoryBuffer.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
 
 
 

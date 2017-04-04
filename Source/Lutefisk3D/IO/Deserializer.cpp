@@ -22,6 +22,11 @@
 
 #include "Deserializer.h"
 
+#include "Lutefisk3D/Container/Str.h"
+#include "Lutefisk3D/Math/Rect.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Core/Variant.h"
+
 namespace Urho3D
 {
 
@@ -346,7 +351,7 @@ Variant Deserializer::ReadVariant(VariantType type)
 
     case VAR_VARIANTVECTOR:
         return Variant(ReadVariantVector());
-   
+
     case VAR_STRINGVECTOR:
         return Variant(ReadStringVector());
 

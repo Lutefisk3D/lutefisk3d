@@ -22,9 +22,9 @@
 
 #include "BorderImage.h"
 
-#include "../Core/Context.h"
-#include "../Resource/ResourceCache.h"
-#include "../Graphics/Texture2D.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Graphics/Texture2D.h"
 
 namespace Urho3D
 {

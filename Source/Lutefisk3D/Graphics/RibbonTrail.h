@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Graphics/Drawable.h"
+#include "Lutefisk3D/Graphics/Drawable.h"
 
 namespace Urho3D
 {

@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Math/Quaternion.h"
-#include "../Math/Vector3.h"
+#include "Lutefisk3D/Math/Quaternion.h"
+#include "Lutefisk3D/Math/Vector3.h"
 
 #include <bullet/LinearMath/btVector3.h>
 #include <bullet/LinearMath/btQuaternion.h>

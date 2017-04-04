@@ -23,13 +23,13 @@
 #include "Animatable.h"
 
 #include "ObjectAnimation.h"
-#include "../Core/Context.h"
-#include "../IO/Log.h"
-#include "../Resource/ResourceCache.h"
-#include "../Scene/SceneEvents.h"
-#include "../Scene/ValueAnimation.h"
-#include "../Resource/XMLElement.h"
-#include "../Resource/JSONValue.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
+#include "Lutefisk3D/Scene/ValueAnimation.h"
+#include "Lutefisk3D/Resource/XMLElement.h"
+#include "Lutefisk3D/Resource/JSONValue.h"
 
 namespace Urho3D
 {

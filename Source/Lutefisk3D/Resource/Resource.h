@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Core/Object.h"
-#include "../Core/Timer.h"
-#include "../Core/Variant.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Core/Timer.h"
+#include "Lutefisk3D/Core/Variant.h"
 namespace Urho3D
 {
 

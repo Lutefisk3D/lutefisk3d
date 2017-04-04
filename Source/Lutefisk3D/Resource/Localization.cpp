@@ -24,7 +24,7 @@
 #include "ResourceCache.h"
 #include "JSONFile.h"
 #include "ResourceEvents.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/IO/Log.h"
 
 namespace Urho3D
 {

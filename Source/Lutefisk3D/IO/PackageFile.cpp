@@ -20,9 +20,9 @@
 // THE SOFTWARE.
 //
 
-#include "../IO/File.h"
-#include "../IO/Log.h"
-#include "../IO/PackageFile.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/PackageFile.h"
 
 namespace Urho3D
 {

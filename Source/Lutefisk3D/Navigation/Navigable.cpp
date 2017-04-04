@@ -22,7 +22,7 @@
 
 #include "Navigable.h"
 
-#include "../Core/Context.h"
+#include "Lutefisk3D/Core/Context.h"
 
 namespace Urho3D
 {

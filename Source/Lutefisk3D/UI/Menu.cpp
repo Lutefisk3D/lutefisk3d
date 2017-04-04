@@ -24,10 +24,10 @@
 #include "UI.h"
 #include "UIEvents.h"
 #include "Window.h"
-#include "../Core/StringUtils.h"
-#include "../Core/Context.h"
-#include "../IO/Log.h"
-#include "../Input/InputEvents.h"
+#include "Lutefisk3D/Core/StringUtils.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Input/InputEvents.h"
 
 namespace Urho3D
 {

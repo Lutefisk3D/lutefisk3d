@@ -20,8 +20,8 @@
 // THE SOFTWARE.
 //
 
-#include "../Audio/OggVorbisSoundStream.h"
-#include "../Audio/Sound.h"
+#include "Lutefisk3D/Audio/OggVorbisSoundStream.h"
+#include "Lutefisk3D/Audio/Sound.h"
 
 #include <STB/stb_vorbis.h>
 

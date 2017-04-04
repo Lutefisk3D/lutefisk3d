@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Math/Vector3.h"
-#include "../Scene/Component.h"
+#include "Lutefisk3D/Math/Vector3.h"
+#include "Lutefisk3D/Scene/Component.h"
 
 class btTypedConstraint;
 

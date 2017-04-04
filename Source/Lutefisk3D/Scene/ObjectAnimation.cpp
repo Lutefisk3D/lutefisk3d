@@ -22,12 +22,12 @@
 
 #include "ObjectAnimation.h"
 
-#include "../Core/Context.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "SceneEvents.h"
 #include "ValueAnimation.h"
 #include "ValueAnimationInfo.h"
-#include "../Resource/XMLFile.h"
-#include "../Resource/JSONFile.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
+#include "Lutefisk3D/Resource/JSONFile.h"
 
 namespace Urho3D
 {

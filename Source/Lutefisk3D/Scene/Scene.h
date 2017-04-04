@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../Core/Mutex.h"
-#include "../Scene/Node.h"
-#include "../Scene/SceneResolver.h"
-#include "../Resource/XMLElement.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Scene/SceneResolver.h"
+#include "Lutefisk3D/Resource/XMLElement.h"
 #include <QtCore/QSet>
 
 namespace Urho3D

@@ -22,13 +22,14 @@
 
 #include "Sound.h"
 
-#include "../Core/Context.h"
-#include "../IO/FileSystem.h"
-#include "../IO/Log.h"
 #include "OggVorbisSoundStream.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/XMLFile.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 #include <cstring>
 #include <STB/stb_vorbis.h>

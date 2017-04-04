@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Math/AreaAllocator.h"
+#include "Lutefisk3D/Math/AreaAllocator.h"
 
 namespace Urho3D
 {

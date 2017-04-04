@@ -22,10 +22,12 @@
 
 #pragma once
 
-#include "../IO/File.h"
-#include "../Container/HashMap.h"
-#include "../Core/Mutex.h"
-#include "../Resource/Resource.h"
+#include "Lutefisk3D/Core/Lutefisk3D.h"
+#include "Lutefisk3D/Core/Object.h"        // for URHO3D_OBJECT
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/Ptr.h"      // for SharedPtr
+#include "Lutefisk3D/Math/StringHash.h"    // for StringHash
 
 #include <QtCore/QSet>
 
@@ -36,7 +38,8 @@ namespace Urho3D
 class BackgroundLoader;
 class FileWatcher;
 class PackageFile;
-
+class URHO3D_API Resource;
+class URHO3D_API File;
 /// Sets to priority so that a package or file is pushed to the end of the vector.
 static const unsigned PRIORITY_LAST = 0xffffffff;
 
@@ -128,7 +131,7 @@ public:
     void SetSearchPackagesFirst(bool value) { searchPackagesFirst_ = value; }
     /// Set how many milliseconds maximum per frame to spend on finishing background loaded resources.
     void SetFinishBackgroundResourcesMs(int ms) { finishBackgroundResourcesMs_ = Max(ms, 1); }
-   
+
     /// Add a resource router object. By default there is none, so the routing process is skipped.
     void AddResourceRouter(ResourceRouter* router, bool addAsFirst = false);
     /// Remove a resource router object.

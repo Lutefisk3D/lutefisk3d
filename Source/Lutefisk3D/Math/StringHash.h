@@ -23,7 +23,7 @@
 #pragma once
 
 #include <functional>
-#include "../Core/Lutefisk3D.h"
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 class QString;
 namespace Urho3D
 {

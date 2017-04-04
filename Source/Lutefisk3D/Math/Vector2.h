@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Math/MathDefs.h"
+#include "Lutefisk3D/Math/MathDefs.h"
 
 class QString;
 namespace Urho3D

@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 #include "Context.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/IO/Log.h"
 #include "Thread.h"
 #include <algorithm>
 

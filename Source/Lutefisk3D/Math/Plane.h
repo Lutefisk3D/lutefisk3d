@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Math/Matrix3x4.h"
+#include "Lutefisk3D/Math/Matrix3x4.h"
 
 namespace Urho3D
 {

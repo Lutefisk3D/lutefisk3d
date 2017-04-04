@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Container/Allocator.h"
-#include "../Container/Vector.h"
+#include "Lutefisk3D/Container/Allocator.h"
+#include "Lutefisk3D/Container/Vector.h"
 
 namespace Urho3D
 {

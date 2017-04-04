@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Math/Matrix3x4.h"
-#include "../UI/UIElement.h"
+#include "Lutefisk3D/Math/Matrix3x4.h"
+#include "Lutefisk3D/UI/UIElement.h"
 
 namespace Urho3D
 {

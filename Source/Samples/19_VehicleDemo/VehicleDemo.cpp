@@ -29,6 +29,7 @@
 #include <Lutefisk3D/Physics/Constraint.h>
 #include <Lutefisk3D/Core/CoreEvents.h>
 #include <Lutefisk3D/Engine/Engine.h>
+#include <Lutefisk3D/IO/File.h>
 #include <Lutefisk3D/IO/FileSystem.h>
 #include <Lutefisk3D/UI/Font.h>
 #include <Lutefisk3D/Input/Input.h>

@@ -27,12 +27,12 @@
 #include "Renderer.h"
 #include "RenderSurface.h"
 
-#include "../Core/Context.h"
-#include "../Core/Profiler.h"
-#include "../IO/FileSystem.h"
-#include "../IO/Log.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/XMLFile.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 namespace Urho3D
 {

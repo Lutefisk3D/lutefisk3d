@@ -28,12 +28,12 @@
 #include "SceneEvents.h"
 #include "SmoothedTransform.h"
 #include "UnknownComponent.h"
-#include "../Core/Context.h"
-#include "../Core/Profiler.h"
-#include "../IO/Log.h"
-#include "../IO/MemoryBuffer.h"
-#include "../Resource/XMLFile.h"
-#include "../Resource/JSONFile.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/MemoryBuffer.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
+#include "Lutefisk3D/Resource/JSONFile.h"
 
 namespace Urho3D
 {

@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../Math/BoundingBox.h"
-#include "../Math/Rect.h"
-#include "../Container/Ptr.h"
-#include "../Core/Variant.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Math/Rect.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Core/Variant.h"
 
 namespace pugi
 {

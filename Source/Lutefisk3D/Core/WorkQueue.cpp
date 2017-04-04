@@ -20,13 +20,13 @@
 // THE SOFTWARE.
 //
 
-#include "../Core/CoreEvents.h"
-#include "../IO/Log.h"
-#include "../Core/ProcessUtils.h"
-#include "../Core/Profiler.h"
-#include "../Core/Thread.h"
-#include "../Core/Timer.h"
-#include "../Core/WorkQueue.h"
+#include "Lutefisk3D/Core/CoreEvents.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/ProcessUtils.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Core/Thread.h"
+#include "Lutefisk3D/Core/Timer.h"
+#include "Lutefisk3D/Core/WorkQueue.h"
 
 namespace Urho3D
 {

@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../Container/ArrayPtr.h"
-#include "../Math/BoundingBox.h"
-#include "../Math/Matrix3x4.h"
-#include "../Scene/Component.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Math/Matrix3x4.h"
+#include "Lutefisk3D/Scene/Component.h"
 #include <QtCore/QSet>
 
 #ifdef DT_POLYREF64

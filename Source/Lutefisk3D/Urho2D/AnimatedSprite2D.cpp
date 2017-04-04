@@ -23,11 +23,11 @@
 #include "AnimatedSprite2D.h"
 
 #include "AnimationSet2D.h"
-#include "../Core/Context.h"
-#include "../IO/Log.h"
-#include "../Resource/ResourceCache.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
 #include "Sprite2D.h"
 #include "SpriterInstance2D.h"
 

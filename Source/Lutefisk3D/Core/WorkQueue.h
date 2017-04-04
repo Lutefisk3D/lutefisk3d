@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Core/Mutex.h"
-#include "../Core/Object.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Core/Object.h"
 #include <queue>
 #include <set>
 namespace Urho3D

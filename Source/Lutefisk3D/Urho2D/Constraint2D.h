@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
+#include "Lutefisk3D/Scene/Component.h"
 #include <Box2D/Box2D.h>
 
 namespace Urho3D
@@ -45,11 +45,11 @@ public:
     static void RegisterObject(Context* context);
 
     /// Handle attribute write access.
-    virtual void OnSetAttribute(const AttributeInfo& attr, const Variant& src);
+    virtual void OnSetAttribute(const AttributeInfo& attr, const Variant& src) override;
     /// Apply attribute changes that can not be applied immediately. Called after scene load or a network update.
-    virtual void ApplyAttributes();
+    virtual void ApplyAttributes() override;
     /// Handle enabled/disabled state change.
-    virtual void OnSetEnabled();
+    virtual void OnSetEnabled() override;
     /// Create joint.
     void CreateJoint();
     /// Release joint.

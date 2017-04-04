@@ -25,6 +25,7 @@
 #include <Lutefisk3D/UI/Button.h>
 #include <Lutefisk3D/Graphics/Camera.h>
 #include <Lutefisk3D/Core/CoreEvents.h>
+#include <Lutefisk3D/IO/File.h>
 #include <Lutefisk3D/UI/Cursor.h>
 #include <Lutefisk3D/Engine/Engine.h>
 #include <Lutefisk3D/Graphics/Graphics.h>

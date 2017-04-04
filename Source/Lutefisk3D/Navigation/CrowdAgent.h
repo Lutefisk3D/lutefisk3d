@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Navigation/CrowdManager.h"
-#include "../Scene/Component.h"
+#include "Lutefisk3D/Navigation/CrowdManager.h"
+#include "Lutefisk3D/Scene/Component.h"
 
 namespace Urho3D
 {

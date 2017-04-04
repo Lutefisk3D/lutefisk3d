@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
-#include "../Urho2D/TileMapDefs2D.h"
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Urho2D/TileMapDefs2D.h"
 
 #ifdef GetObject
 #undef GetObject

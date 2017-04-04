@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Scene/Component.h"
+#include "Lutefisk3D/Scene/Component.h"
 
 #ifdef DT_POLYREF64
 typedef uint64_t dtPolyRef;

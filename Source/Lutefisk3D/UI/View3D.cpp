@@ -24,14 +24,14 @@
 #include "View3D.h"
 #include "UI.h"
 #include "UIEvents.h"
-#include "../Core/Context.h"
-#include "../Graphics/Camera.h"
-#include "../Graphics/Graphics.h"
-#include "../Graphics/GraphicsEvents.h"
-#include "../Graphics/Octree.h"
-#include "../Graphics/Texture2D.h"
-#include "../Graphics/Zone.h"
-#include "../Scene/Scene.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/Camera.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/GraphicsEvents.h"
+#include "Lutefisk3D/Graphics/Octree.h"
+#include "Lutefisk3D/Graphics/Texture2D.h"
+#include "Lutefisk3D/Graphics/Zone.h"
+#include "Lutefisk3D/Scene/Scene.h"
 
 namespace Urho3D
 {

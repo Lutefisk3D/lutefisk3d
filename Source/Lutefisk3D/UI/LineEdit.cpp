@@ -22,8 +22,8 @@
 
 #include "LineEdit.h"
 
-#include "../Core/Context.h"
-#include "../Input/Input.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Input/Input.h"
 #include "Text.h"
 #include "UI.h"
 #include "UIEvents.h"

@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "../Container/HashMap.h"
-#include "../Container/RefCounted.h"
-#include "../Container/ArrayPtr.h"
-#include "../Graphics/GPUObject.h"
-#include "../Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/RefCounted.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Graphics/GPUObject.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include <QtCore/QString>
 namespace gl {
 enum class GLenum : uint32_t;

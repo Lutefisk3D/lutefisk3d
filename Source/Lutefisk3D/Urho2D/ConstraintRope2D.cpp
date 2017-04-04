@@ -20,10 +20,10 @@
 // THE SOFTWARE.
 //
 
-#include "../Urho2D/ConstraintRope2D.h"
-#include "../Core/Context.h"
-#include "../Urho2D/PhysicsUtils2D.h"
-#include "../Urho2D/RigidBody2D.h"
+#include "Lutefisk3D/Urho2D/ConstraintRope2D.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Urho2D/PhysicsUtils2D.h"
+#include "Lutefisk3D/Urho2D/RigidBody2D.h"
 
 
 

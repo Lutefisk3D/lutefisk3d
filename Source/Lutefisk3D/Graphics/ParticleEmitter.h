@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Graphics/BillboardSet.h"
+#include "Lutefisk3D/Graphics/BillboardSet.h"
 
 namespace Urho3D
 {

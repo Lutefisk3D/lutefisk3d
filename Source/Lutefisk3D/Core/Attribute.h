@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Container/Ptr.h"
-#include "../Core/Variant.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Core/Variant.h"
 
 namespace Urho3D
 {

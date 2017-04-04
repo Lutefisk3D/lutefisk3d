@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Graphics/GraphicsDefs.h"
-#include "../Graphics/Viewport.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/Graphics/Viewport.h"
 
 namespace gl {
 enum class GLenum : uint32_t;

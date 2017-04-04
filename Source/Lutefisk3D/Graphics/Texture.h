@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../Graphics/GPUObject.h"
-#include "../Graphics/GraphicsDefs.h"
-#include "../Math/Color.h"
-#include "../Resource/Resource.h"
+#include "Lutefisk3D/Graphics/GPUObject.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/Math/Color.h"
+#include "Lutefisk3D/Resource/Resource.h"
 
 namespace gl {
 enum class GLenum : uint32_t;

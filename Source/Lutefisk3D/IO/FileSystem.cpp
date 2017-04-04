@@ -20,15 +20,15 @@
 // THE SOFTWARE.
 //
 
-#include "../Container/ArrayPtr.h"
-#include "../Core/Context.h"
-#include "../Core/CoreEvents.h"
-#include "../Engine/EngineEvents.h"
-#include "../IO/File.h"
-#include "../IO/FileSystem.h"
-#include "../IO/IOEvents.h"
-#include "../IO/Log.h"
-#include "../Core/Thread.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/CoreEvents.h"
+#include "Lutefisk3D/Engine/EngineEvents.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/IOEvents.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Thread.h"
 
 //#include <SDL/SDL_filesystem.h>
 #include <QtCore/QProcess>

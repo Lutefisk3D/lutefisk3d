@@ -22,8 +22,8 @@
 
 #include "CheckBox.h"
 
-#include "../Core/Context.h"
-#include "../Input/InputEvents.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Input/InputEvents.h"
 #include "UIEvents.h"
 
 namespace Urho3D

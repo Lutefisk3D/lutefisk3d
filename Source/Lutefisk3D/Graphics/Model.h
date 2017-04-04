@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "../Container/ArrayPtr.h"
-#include "../Container/Ptr.h"
-#include "../Graphics/GraphicsDefs.h"
-#include "../Graphics/Skeleton.h"
-#include "../Math/BoundingBox.h"
-#include "../Resource/Resource.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/Graphics/Skeleton.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Resource/Resource.h"
 
 namespace Urho3D
 {

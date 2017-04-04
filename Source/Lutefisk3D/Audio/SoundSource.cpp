@@ -25,10 +25,10 @@
 #include "Sound.h"
 #include "SoundStream.h"
 #include "AudioEvents.h"
-#include "../Core/Context.h"
-#include "../Resource/ResourceCache.h"
-#include "../Scene/ReplicationState.h"
-#include "../Scene/Node.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Scene/ReplicationState.h"
+#include "Lutefisk3D/Scene/Node.h"
 #include <cstring>
 
 namespace Urho3D

@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Resource/Resource.h"
-#include "../Resource/JSONValue.h"
+#include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Resource/JSONValue.h"
 
 
 namespace Urho3D

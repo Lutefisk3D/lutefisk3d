@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/OctreeQuery.h"
+#include "Lutefisk3D/Graphics/OctreeQuery.h"
 
 
 

@@ -20,18 +20,18 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/AnimatedModel.h"
-#include "../Graphics/Camera.h"
-#include "../Core/Context.h"
-#include "../Core/CoreEvents.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../Graphics/Graphics.h"
-#include "../Graphics/Light.h"
-#include "../Math/Polyhedron.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
-#include "../Graphics/ShaderVariation.h"
-#include "../Graphics/VertexBuffer.h"
+#include "Lutefisk3D/Graphics/AnimatedModel.h"
+#include "Lutefisk3D/Graphics/Camera.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/CoreEvents.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/Light.h"
+#include "Lutefisk3D/Math/Polyhedron.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Graphics/ShaderVariation.h"
+#include "Lutefisk3D/Graphics/VertexBuffer.h"
 
 namespace Urho3D
 {

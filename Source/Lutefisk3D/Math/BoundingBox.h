@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Math/Rect.h"
-#include "../Math/Vector3.h"
-#include "../Core/Lutefisk3D.h"
+#include "Lutefisk3D/Math/Rect.h"
+#include "Lutefisk3D/Math/Vector3.h"
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 
 #ifdef LUTEFISK3D_SSE
 #include <xmmintrin.h>

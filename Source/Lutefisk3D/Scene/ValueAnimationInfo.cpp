@@ -23,8 +23,8 @@
 #include "ValueAnimationInfo.h"
 
 #include "ValueAnimation.h"
-#include "../IO/Log.h"
-#include "../Math/MathDefs.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Math/MathDefs.h"
 
 namespace Urho3D
 {

@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Container/ArrayPtr.h"
-#include "../Core/Mutex.h"
-#include "../Audio/SoundStream.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Audio/SoundStream.h"
 #include <deque>
 #include <utility>
 

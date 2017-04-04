@@ -26,15 +26,15 @@
 #include "PhysicsUtils2D.h"
 #include "RigidBody2D.h"
 
-#include "../Core/Context.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../Graphics/Graphics.h"
-#include "../IO/Log.h"
-#include "../Core/Profiler.h"
-#include "../Graphics/Renderer.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
-#include "../Graphics/Viewport.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Graphics/Renderer.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
+#include "Lutefisk3D/Graphics/Viewport.h"
 
 
 

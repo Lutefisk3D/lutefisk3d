@@ -22,7 +22,7 @@
 
 #include "Matrix3x4.h"
 
-#include "../Container/Str.h"
+#include "Lutefisk3D/Container/Str.h"
 
 #include <cstdio>
 namespace Urho3D

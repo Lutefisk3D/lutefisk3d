@@ -20,17 +20,17 @@
 // THE SOFTWARE.
 //
 
-#include "../Core/Context.h"
-#include "../Core/CoreEvents.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../Graphics/Graphics.h"
-#include "../IO/Log.h"
-#include "../Core/Profiler.h"
-#include "../Graphics/Octree.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
-#include "../Core/Timer.h"
-#include "../Core/WorkQueue.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/CoreEvents.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Graphics/Octree.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
+#include "Lutefisk3D/Core/Timer.h"
+#include "Lutefisk3D/Core/WorkQueue.h"
 
 
 #include <algorithm>

@@ -24,13 +24,13 @@
 #include "Font.h"
 #include "FontFace.h"
 
-#include "../Core/Context.h"
-#include "../IO/Log.h"
-#include "../Core/Profiler.h"
-#include "../Resource/ResourceCache.h"
-#include "../Resource/Localization.h"
-#include "../Resource/ResourceEvents.h"
-#include "../Graphics/Texture2D.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/Localization.h"
+#include "Lutefisk3D/Resource/ResourceEvents.h"
+#include "Lutefisk3D/Graphics/Texture2D.h"
 
 
 namespace Urho3D

@@ -22,12 +22,12 @@
 
 #include "UnknownComponent.h"
 
-#include "../Core/Context.h"
-#include "../IO/Deserializer.h"
-#include "../IO/Log.h"
-#include "../IO/Serializer.h"
-#include "../Resource/XMLElement.h"
-#include "../Resource/JSONValue.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Deserializer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/Serializer.h"
+#include "Lutefisk3D/Resource/XMLElement.h"
+#include "Lutefisk3D/Resource/JSONValue.h"
 
 namespace Urho3D
 {

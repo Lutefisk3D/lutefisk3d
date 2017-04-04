@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Math/Frustum.h"
+#include "Lutefisk3D/Math/Frustum.h"
 
 namespace Urho3D
 {

@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Math/Matrix3.h"
+#include "Lutefisk3D/Math/Matrix3.h"
 
 #ifdef LUTEFISK3D_SSE
 #include <emmintrin.h>
@@ -47,7 +47,7 @@ public:
         _mm_storeu_ps(&w_, _mm_set_ps(0.f, 0.f, 0.f, 1.f));
 #endif
     }
-    
+
     /// Copy-construct from another quaternion.
     Quaternion(const Quaternion& quat)
 #if defined(LUTEFISK3D_SSE) && (!defined(_MSC_VER) || _MSC_VER >= 1700) /* Visual Studio 2012 and newer. VS2010 has a bug with these, see https://github.com/urho3d/Urho3D/issues/1044 */
@@ -62,7 +62,7 @@ public:
     {
     }
 #endif
-    
+
     /// Construct from values.
     Quaternion(float w, float x, float y, float z)
 #ifndef LUTEFISK3D_SSE
@@ -76,7 +76,7 @@ public:
         _mm_storeu_ps(&w_, _mm_set_ps(z, y, x, w));
 #endif
     }
-    
+
     /// Construct from a float array.
     explicit Quaternion(const float* data)
 #ifndef LUTEFISK3D_SSE
@@ -90,7 +90,7 @@ public:
         _mm_storeu_ps(&w_, _mm_loadu_ps(data));
 #endif
     }
-    
+
     /// Construct from an angle (in degrees) and axis.
     Quaternion(float angle, const Vector3& axis)
     {
@@ -102,19 +102,19 @@ public:
     {
         FromAngleAxis(angle, Vector3::FORWARD);
     }
-    
+
     /// Construct from Euler angles (in degrees.)
     Quaternion(float x, float y, float z)
     {
         FromEulerAngles(x, y, z);
     }
-    
+
     /// Construct from the rotation difference between two direction vectors.
     Quaternion(const Vector3& start, const Vector3& end)
     {
         FromRotationTo(start, end);
     }
-    
+
     /// Construct from orthonormal axes.
     Quaternion(const Vector3& xAxis, const Vector3& yAxis, const Vector3& zAxis)
     {
@@ -132,7 +132,7 @@ public:
         _mm_storeu_ps(&w_, wxyz);
     }
 #endif
-    
+
     /// Assign from another quaternion.
     Quaternion& operator = (const Quaternion& rhs)
     {
@@ -146,7 +146,7 @@ public:
 #endif
         return *this;
     }
-    
+
     /// Add-assign a quaternion.
     Quaternion& operator += (const Quaternion& rhs)
     {
@@ -160,7 +160,7 @@ public:
 #endif
         return *this;
     }
-  
+
     /// Multiply-assign a scalar.
     Quaternion& operator *= (float rhs)
     {
@@ -174,7 +174,7 @@ public:
 #endif
         return *this;
     }
-    
+
     /// Test for equality with another quaternion without epsilon.
     bool operator ==(const Quaternion& rhs) const
     {
@@ -225,7 +225,7 @@ public:
         return Quaternion(w_ - rhs.w_, x_ - rhs.x_, y_ - rhs.y_, z_ - rhs.z_);
 #endif
     }
-    
+
     /// Multiply a quaternion.
     Quaternion operator * (const Quaternion& rhs) const
     {
@@ -250,7 +250,7 @@ public:
         );
 #endif
     }
-    
+
     /// Multiply a Vector3.
     Vector3 operator * (const Vector3& rhs) const
     {
@@ -278,11 +278,11 @@ public:
         Vector3 qVec(x_,y_,z_);
         Vector3 cross1(qVec.CrossProduct(rhs));
         Vector3 cross2(qVec.CrossProduct(cross1));
-        
+
         return rhs + 2.0f * (cross1 * w_ + cross2);
 #endif
     }
-    
+
     /// Define from an angle (in degrees) and axis.
     void FromAngleAxis(float angle, const Vector3& axis);
     /// Define from Euler angles (in degrees.)
@@ -321,7 +321,7 @@ public:
         }
 #endif
     }
-    
+
     /// Return normalized to unit length.
     Quaternion Normalized() const
     {
@@ -346,7 +346,7 @@ public:
             return *this;
 #endif
     }
-    
+
     /// Return inverse.
     Quaternion Inverse() const
     {
@@ -366,7 +366,7 @@ public:
             return IDENTITY;
 #endif
     }
-    
+
     /// Return squared length.
     float LengthSquared() const
     {
@@ -411,7 +411,7 @@ public:
         return Quaternion(w_, -x_, -y_, -z_);
 #endif
     }
-    
+
     /// Return Euler angles in degrees.
     Vector3 EulerAngles() const;
     /// Return yaw angle in degrees.
@@ -430,7 +430,7 @@ public:
     const float* Data() const { return &w_; }
     /// Return as string.
     QString ToString() const;
-    
+
     /// W coordinate.
     float w_;
     /// X coordinate.
@@ -439,7 +439,7 @@ public:
     float y_;
     /// Z coordinate.
     float z_;
-    
+
     /// Identity quaternion.
     static const Quaternion IDENTITY;
 };

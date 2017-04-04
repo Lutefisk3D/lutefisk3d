@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Scene/AnimationDefs.h"
-#include "../Container/RefCounted.h"
-#include "../Container/Ptr.h"
+#include "Lutefisk3D/Scene/AnimationDefs.h"
+#include "Lutefisk3D/Container/RefCounted.h"
+#include "Lutefisk3D/Container/Ptr.h"
 #include <vector>
 
 namespace Urho3D

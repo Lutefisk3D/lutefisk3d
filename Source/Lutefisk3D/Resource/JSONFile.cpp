@@ -23,13 +23,13 @@
 #include "JSONFile.h"
 
 #include "ResourceCache.h"
-#include "../Container/ArrayPtr.h"
-#include "../Core/Context.h"
-#include "../IO/Deserializer.h"
-#include "../IO/Log.h"
-#include "../IO/MemoryBuffer.h"
-#include "../Core/Profiler.h"
-#include "../IO/Serializer.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/Deserializer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/MemoryBuffer.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/IO/Serializer.h"
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/prettywriter.h>

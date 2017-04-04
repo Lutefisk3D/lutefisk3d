@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Graphics/Drawable.h"
-#include "../Core/Mutex.h"
-#include "../Graphics/OctreeQuery.h"
+#include "Lutefisk3D/Graphics/Drawable.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Graphics/OctreeQuery.h"
 #include <deque>
 
 namespace Urho3D

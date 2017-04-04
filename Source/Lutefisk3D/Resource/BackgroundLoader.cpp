@@ -24,11 +24,12 @@
 
 #include "ResourceCache.h"
 #include "ResourceEvents.h"
-#include "../Core/Context.h"
-#include "../IO/Log.h"
-#include "../Core/Profiler.h"
-#include "../Core/Timer.h"
-
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Core/Timer.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/Resource/Resource.h"
 namespace Urho3D
 {
 
@@ -298,3 +299,4 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
 }
 
 }
+

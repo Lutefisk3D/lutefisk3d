@@ -22,8 +22,7 @@
 
 #pragma once
 
-#include "../Container/Str.h"
-#include "../Resource/Resource.h"
+#include "Lutefisk3D/Resource/Resource.h"
 
 namespace Urho3D
 {
@@ -140,10 +139,11 @@ public:
     PListValue& operator [](const QString& key);
     const PListValue& operator [](const QString& key) const;
 };
+
 /// Property list (plist).
 class URHO3D_API PListFile : public Resource
 {
-    URHO3D_OBJECT(PListFile,Resource);
+    URHO3D_OBJECT(PListFile,Resource)
 
 public:
     /// Construct.

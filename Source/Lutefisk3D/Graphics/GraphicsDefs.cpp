@@ -20,9 +20,9 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/GraphicsDefs.h"
-#include "../Math/StringHash.h"
-#include "../Math/Vector3.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Math/Vector3.h"
 
 namespace Urho3D
 {

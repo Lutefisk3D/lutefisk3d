@@ -20,11 +20,11 @@
 // THE SOFTWARE.
 //
 
-#include "../Graphics/Batch.h"
-#include "../Graphics/Camera.h"
-#include "../Core/Context.h"
-#include "../Scene/Node.h"
-#include "../Graphics/Skybox.h"
+#include "Lutefisk3D/Graphics/Batch.h"
+#include "Lutefisk3D/Graphics/Camera.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Graphics/Skybox.h"
 
 
 

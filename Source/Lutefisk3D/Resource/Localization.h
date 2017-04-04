@@ -22,8 +22,10 @@
 
 #pragma once
 
-#include "../Core/Context.h"
-#include "../Resource/JSONValue.h"
+
+#include "Lutefisk3D/Core/Lutefisk3D.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Resource/JSONValue.h"
 
 namespace Urho3D
 {
@@ -31,7 +33,7 @@ namespace Urho3D
 /// %Localization subsystem. Stores all the strings in all languages.
 class URHO3D_API Localization : public Object
 {
-    URHO3D_OBJECT(Localization, Object);
+    URHO3D_OBJECT(Localization, Object)
 
 public:
     /// Construct.

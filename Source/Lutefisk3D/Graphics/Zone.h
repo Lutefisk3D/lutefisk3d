@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Graphics/Drawable.h"
-#include "../Graphics/Texture.h"
-#include "../Math/Color.h"
+#include "Lutefisk3D/Graphics/Drawable.h"
+#include "Lutefisk3D/Graphics/Texture.h"
+#include "Lutefisk3D/Math/Color.h"
 
 namespace Urho3D
 {

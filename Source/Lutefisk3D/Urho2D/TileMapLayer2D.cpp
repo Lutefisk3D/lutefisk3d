@@ -20,14 +20,14 @@
 // THE SOFTWARE.
 //
 
-#include "../Core/Context.h"
-#include "../Graphics/DebugRenderer.h"
-#include "../Scene/Node.h"
-#include "../Resource/ResourceCache.h"
-#include "../Urho2D/StaticSprite2D.h"
-#include "../Urho2D/TileMap2D.h"
-#include "../Urho2D/TileMapLayer2D.h"
-#include "../Urho2D/TmxFile2D.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/DebugRenderer.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Urho2D/StaticSprite2D.h"
+#include "Lutefisk3D/Urho2D/TileMap2D.h"
+#include "Lutefisk3D/Urho2D/TileMapLayer2D.h"
+#include "Lutefisk3D/Urho2D/TmxFile2D.h"
 
 
 

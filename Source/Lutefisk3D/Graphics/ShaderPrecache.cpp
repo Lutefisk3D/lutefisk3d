@@ -20,13 +20,13 @@
 // THE SOFTWARE.
 //
 
-#include "../IO/File.h"
-#include "../IO/FileSystem.h"
-#include "../Graphics/Graphics.h"
-#include "../Graphics/GraphicsImpl.h"
-#include "../IO/Log.h"
-#include "../Graphics/ShaderPrecache.h"
-#include "../Graphics/ShaderVariation.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/GraphicsImpl.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Graphics/ShaderPrecache.h"
+#include "Lutefisk3D/Graphics/ShaderVariation.h"
 
 
 

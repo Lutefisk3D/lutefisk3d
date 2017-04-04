@@ -35,9 +35,9 @@
 #include "VertexBuffer.h"
 #include "View.h"
 #include "Zone.h"
-#include "../Core/Profiler.h"
-#include "../Scene/Node.h"
-#include "../Scene/Scene.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Scene/Scene.h"
 
 
 namespace Urho3D

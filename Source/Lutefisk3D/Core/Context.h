@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include "../Core/Attribute.h"
-#include "../Container/HashMap.h"
-#include "../Core/Object.h"
+#include "Lutefisk3D/Core/Attribute.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Core/Object.h"
 #include <QtCore/QSet>
 #include <QtCore/QString>
 

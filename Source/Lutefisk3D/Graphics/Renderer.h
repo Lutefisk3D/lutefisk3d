@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "../Graphics/Batch.h"
-#include "../Math/Color.h"
-#include "../Graphics/Drawable.h"
-#include "../Core/Mutex.h"
-#include "../Graphics/Viewport.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/Graphics/Batch.h"
+#include "Lutefisk3D/Math/Color.h"
+#include "Lutefisk3D/Graphics/Drawable.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Graphics/Viewport.h"
+#include "Lutefisk3D/Container/HashMap.h"
 #include <QtCore/QSet>
 namespace Urho3D
 {

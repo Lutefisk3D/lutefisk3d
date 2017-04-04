@@ -21,14 +21,13 @@
 //
 
 #pragma once
-
-#include "../Container/HashMap.h"
-#include "../Container/Ptr.h"
+#include "Lutefisk3D/Core/Lutefisk3D.h"
+#include "Lutefisk3D/Container/HashMap.h"
 
 
 namespace Urho3D
 {
-
+template <class T> class WeakPtr;
 class Component;
 class Node;
 

@@ -21,10 +21,10 @@
 //
 #pragma once
 
-#include "../Math/AreaAllocator.h"
-#include "../Container/ArrayPtr.h"
-#include "../Container/Ptr.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/Math/AreaAllocator.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Container/HashMap.h"
 
 #include <vector>
 

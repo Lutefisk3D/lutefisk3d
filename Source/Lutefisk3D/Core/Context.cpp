@@ -23,8 +23,8 @@
 #include "Context.h"
 #include "Thread.h"
 #include "EventProfiler.h"
-#include "../IO/Log.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Container/HashMap.h"
 #ifndef MINI_URHO
 #include <SDL2/SDL.h>
 #endif

@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Core/Object.h"
-#include "../Core/Timer.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Core/Timer.h"
 
 #include <QMap>
 

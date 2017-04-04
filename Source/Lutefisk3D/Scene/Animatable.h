@@ -22,11 +22,10 @@
 
 #pragma once
 
-#include "../Scene/Serializable.h"
-#include "../Scene/ValueAnimationInfo.h"
-#include "../Scene/ObjectAnimation.h"
-#include "../Container/HashMap.h"
-#include "../Core/Variant.h"
+#include "Lutefisk3D/Scene/Serializable.h"
+#include "Lutefisk3D/Scene/ValueAnimationInfo.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Scene/ObjectAnimation.h"
 
 namespace Urho3D
 {
@@ -62,7 +61,7 @@ private:
 /// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an object animation to it.
 class URHO3D_API Animatable : public Serializable
 {
-    URHO3D_OBJECT(Animatable,Serializable);
+    URHO3D_OBJECT(Animatable,Serializable)
 
 public:
     /// Construct.

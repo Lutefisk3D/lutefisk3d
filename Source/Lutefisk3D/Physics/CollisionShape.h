@@ -22,23 +22,32 @@
 
 #pragma once
 
-#include "../Math/BoundingBox.h"
-#include "../Container/ArrayPtr.h"
-#include "../Scene/Component.h"
-#include "../Math/Quaternion.h"
+#include "Lutefisk3D/Scene/Component.h"         // for Component
+#include "Lutefisk3D/Core/Object.h"             // for VariantMap
+#include "Lutefisk3D/Core/Variant.h"            // for ResourceRef
+#include "Lutefisk3D/Core/Lutefisk3D.h"         // for URHO3D_API
+#include "Lutefisk3D/Container/RefCounted.h"    // for RefCounted
+#include "Lutefisk3D/Container/Ptr.h"           // for SharedPtr, Wea...
+#include "Lutefisk3D/Container/ArrayPtr.h"      // for SharedArrayPtr
+#include "Lutefisk3D/Math/StringHash.h"         // for StringHash
+#include "Lutefisk3D/Math/BoundingBox.h"        // for BoundingBox
 
+#include <memory>                       // for unique_ptr
+#include <vector>                       // for vector
 class btBvhTriangleMeshShape;
 class btCollisionShape;
 class btCompoundShape;
-class btTriangleMesh;
-
 struct btTriangleInfoMap;
 
 namespace Urho3D
 {
 
+class Context;
+class DebugRenderer;
+class Node;
+class Scene;
+struct AttributeInfo;
 class CustomGeometry;
-class Geometry;
 class Model;
 class PhysicsWorld;
 class RigidBody;
@@ -128,7 +137,7 @@ struct HeightfieldData : public CollisionGeometryData
 /// Physics collision shape component.
 class URHO3D_API CollisionShape : public Component
 {
-    URHO3D_OBJECT(CollisionShape,Component);
+    URHO3D_OBJECT(CollisionShape,Component)
 
 public:
     /// Construct.

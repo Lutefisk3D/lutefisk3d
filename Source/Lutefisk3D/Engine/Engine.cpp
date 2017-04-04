@@ -21,48 +21,48 @@
 //
 #include "Engine.h"
 #include "EngineDefs.h"
-
-#include "../Audio/Audio.h"
-#include "../UI/Console.h"
 #include "EngineEvents.h"
-#include "../Core/Context.h"
-#include "../Core/CoreEvents.h"
-#include "../UI/DebugHud.h"
-#include "../IO/FileSystem.h"
-#include "../Graphics/Graphics.h"
-#include "../Core/StringUtils.h"
+
+#include "Lutefisk3D/Audio/Audio.h"
+#include "Lutefisk3D/UI/Console.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/CoreEvents.h"
+#include "Lutefisk3D/UI/DebugHud.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Core/StringUtils.h"
 #ifdef LUTEFISK3D_PROFILING
-#include "../Core/EventProfiler.h"
+#include "Lutefisk3D/Core/EventProfiler.h"
 #endif
 #ifdef LUTEFISK3D_INPUT
-#include "../Input/Input.h"
-#include "../Input/InputEvents.h"
+#include "Lutefisk3D/Input/Input.h"
+#include "Lutefisk3D/Input/InputEvents.h"
 #endif
-#include "../IO/Log.h"
-#include "../IO/PackageFile.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/PackageFile.h"
 #ifdef LUTEFISK3D_NAVIGATION
-#include "../Navigation/NavigationMesh.h"
+#include "Lutefisk3D/Navigation/NavigationMesh.h"
 #endif
 #ifdef LUTEFISK3D_NETWORK
-#include "../Network/Network.h"
+#include "Lutefisk3D/Network/Network.h"
 #endif
 #ifdef LUTEFISK3D_PHYSICS
-#include "../Physics/PhysicsWorld.h"
+#include "Lutefisk3D/Physics/PhysicsWorld.h"
 #endif
-#include "../Core/ProcessUtils.h"
-#include "../Core/Profiler.h"
-#include "../Graphics/Renderer.h"
-#include "../Resource/ResourceCache.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
+#include "Lutefisk3D/Core/ProcessUtils.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Graphics/Renderer.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
 #ifdef LUTEFISK3D_UI
-#include "../UI/UI.h"
+#include "Lutefisk3D/UI/UI.h"
 #endif
 #ifdef LUTEFISK3D_2D
-#include "../Urho2D/Urho2D.h"
+#include "Lutefisk3D/Urho2D/Urho2D.h"
 #endif
-#include "../Core/WorkQueue.h"
-#include "../Resource/XMLFile.h"
+#include "Lutefisk3D/Core/WorkQueue.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 
 #if defined(_MSC_VER) && defined(_DEBUG)

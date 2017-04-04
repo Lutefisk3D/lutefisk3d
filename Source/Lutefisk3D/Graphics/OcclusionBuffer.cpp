@@ -20,11 +20,11 @@
 // THE SOFTWARE.
 //
 
-#include "../Core/WorkQueue.h"
-#include "../Core/Profiler.h"
-#include "../Graphics/Camera.h"
-#include "../IO/Log.h"
-#include "../Graphics/OcclusionBuffer.h"
+#include "Lutefisk3D/Core/WorkQueue.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Graphics/Camera.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Graphics/OcclusionBuffer.h"
 
 #include <cstring>
 

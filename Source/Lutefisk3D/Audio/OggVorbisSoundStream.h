@@ -21,8 +21,8 @@
 //
 
 #pragma once
-#include "../Container/ArrayPtr.h"
-#include "../Audio/SoundStream.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Audio/SoundStream.h"
 
 namespace Urho3D
 {

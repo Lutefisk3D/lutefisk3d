@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "../Math/BoundingBox.h"
-#include "../Math/Matrix3x4.h"
-#include "../Math/Plane.h"
-#include "../Math/Rect.h"
-#include "../Math/Sphere.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Math/Matrix3x4.h"
+#include "Lutefisk3D/Math/Plane.h"
+#include "Lutefisk3D/Math/Rect.h"
+#include "Lutefisk3D/Math/Sphere.h"
 
 namespace Urho3D
 {

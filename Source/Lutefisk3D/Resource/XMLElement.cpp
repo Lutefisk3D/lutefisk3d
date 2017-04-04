@@ -20,9 +20,9 @@
 // THE SOFTWARE.
 //
 
-#include "../Core/Context.h"
-#include "../Core/StringUtils.h"
-#include "../IO/Log.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/StringUtils.h"
+#include "Lutefisk3D/IO/Log.h"
 #include "XMLFile.h"
 
 #include <PugiXml/pugixml.hpp>

@@ -20,8 +20,8 @@
 // THE SOFTWARE.
 //
 
-#include "../Math/Color.h"
-#include "../Container/Str.h"
+#include "Lutefisk3D/Math/Color.h"
+#include "Lutefisk3D/Container/Str.h"
 
 #include <cstdio>
 #include <cassert>

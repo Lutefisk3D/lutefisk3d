@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "../Core/Object.h"
-#include "../Resource/XMLFile.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 #include <QtCore/QSet>
 #include <QtCore/QPair>
 namespace Urho3D

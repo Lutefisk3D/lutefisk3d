@@ -22,7 +22,7 @@
 
 #include "Tangent.h"
 
-#include "../Math/Vector4.h"
+#include "Lutefisk3D/Math/Vector4.h"
 
 #include <cstring>
 

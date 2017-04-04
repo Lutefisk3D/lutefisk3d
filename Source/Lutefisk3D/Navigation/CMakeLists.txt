@@ -5,6 +5,7 @@ set(INCLUDES
     NavArea.h
     NavBuildData.h
     Navigable.h
+    NavigationEvents.h
 
     Obstacle.h
     OffMeshConnection.h

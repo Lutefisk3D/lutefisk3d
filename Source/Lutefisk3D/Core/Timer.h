@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../Core/Object.h"
+#include "Lutefisk3D/Core/Object.h"
 
 namespace Urho3D
 {
@@ -78,7 +78,7 @@ private:
 /// %Time and frame counter subsystem.
 class URHO3D_API Time : public Object
 {
-    URHO3D_OBJECT(Time, Object);
+    URHO3D_OBJECT(Time, Object)
 
 public:
     /// Construct.

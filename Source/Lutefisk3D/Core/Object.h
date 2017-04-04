@@ -366,4 +366,7 @@ struct URHO3D_API EventNameRegistrar
 #define URHO3D_HANDLER(className, function) (new Urho3D::EventHandlerImpl<className>(this, &className::function))
 /// Convenience macro to construct an EventHandler that points to a receiver object and its member function, and also defines a userdata pointer.
 #define URHO3D_HANDLER_USERDATA(className, function, userData) (new Urho3D::EventHandlerImpl<className>(this, &className::function, userData))
+
+#define LUTEFISK_SUBSCRIBE_LAMBDA(sender,eventType,method)\
+    SubscribeToEvent(sender,eventType, ([this](StringHash , VariantMap& eventData) { this->method(eventType,eventData); }))
 }

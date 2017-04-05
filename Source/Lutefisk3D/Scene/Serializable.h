@@ -221,7 +221,8 @@ template<typename T> struct MixedAttributeTrait
 };
 
 /// Template implementation of the attribute accessor invoke helper class.
-template <typename T, typename U, typename Trait> class AttributeAccessorImpl : public AttributeAccessor
+template <typename T, typename U, typename Trait>
+class AttributeAccessorImpl : public AttributeAccessor
 {
 public:
     typedef typename Trait ::ReturnType (T::*GetFunctionPtr)() const;

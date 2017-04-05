@@ -30,6 +30,18 @@
 
 namespace Urho3D
 {
+/*!
+  \class Condition
+  \brief %Condition on which a thread can wait.
+*/
+/*!
+  \var void* Condition::mutex_
+  \brief System specific %mutex for the event, necessary for pthreads-based implementation.
+*/
+/*!
+  \var void* Condition::event_
+  \brief Operating system specific event.
+*/
 
 #ifdef _WIN32
 Condition::Condition() :
@@ -74,12 +86,13 @@ Condition::~Condition()
     event_ = nullptr;
     mutex_ = nullptr;
 }
-
+/// Set the condition. Will be automatically reset once a waiting thread wakes up.
 void Condition::Set()
 {
     pthread_cond_signal((pthread_cond_t*)event_);
 }
 
+/// Wait on the condition.
 void Condition::Wait()
 {
     pthread_cond_t* cond = (pthread_cond_t*)event_;

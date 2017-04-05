@@ -21,7 +21,7 @@
 //
 
 #pragma once
-
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 #include "Lutefisk3D/Scene/Component.h"
 
 #ifdef DT_POLYREF64
@@ -58,7 +58,7 @@ struct CrowdObstacleAvoidanceParams
 /// Crowd manager scene component. Should be added only to the root scene node.
 class URHO3D_API CrowdManager : public Component
 {
-    URHO3D_OBJECT(CrowdManager,Component);
+    URHO3D_OBJECT(CrowdManager,Component)
 
     friend class CrowdAgent;
 
@@ -70,10 +70,10 @@ public:
     /// Register object factory.
     static void RegisterObject(Context* context);
     /// Apply attribute changes that can not be applied immediately. Called after scene load or a network update.
-    virtual void ApplyAttributes();
+    virtual void ApplyAttributes() override;
 
     /// Draw the agents' pathing debug data.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest);
+    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
     /// Add debug geometry to the debug renderer.
     void DrawDebugGeometry(bool depthTest);
 

@@ -189,24 +189,15 @@ struct AttributeInfo
         std::swap(mode_,rhs.mode_);
         std::swap(ptr_,rhs.ptr_);
     }
-    /// Attribute type.
-    VariantType  type_;
-    /// Name.
-    QString name_;
-    /// Byte offset from start of object.
-    unsigned offset_;
-    /// Enum names.
-    const char** enumNames_;
-    /// Variant structure elements names.
-    const char** variantStructureElementNames_;
-    /// Helper object for accessor mode.
-    SharedPtr<AttributeAccessor> accessor_;
-    /// Default value for network replication.
-    Variant defaultValue_;
-    /// Attribute mode: whether to use for serialization, network replication, or both.
-    unsigned mode_;
-    /// Attribute data pointer if elsewhere than in the Serializable.
-    void* ptr_;
-};
 
+    VariantType                  type_;                         ///< Attribute type.
+    QString                      name_;                         ///< Name.
+    unsigned                     offset_;                       ///< Byte offset from start of object.
+    const char **                enumNames_;                    ///< Enum names.
+    const char **                variantStructureElementNames_; ///< Variant structure elements names.
+    SharedPtr<AttributeAccessor> accessor_;                     ///< Helper object for accessor mode.
+    Variant                      defaultValue_;                 ///< Default value for network replication.
+    unsigned mode_; ///< Attribute mode: whether to use for serialization, network replication, or both.
+    void *   ptr_;  ///< Attribute data pointer if elsewhere than in the Serializable.
+};
 }

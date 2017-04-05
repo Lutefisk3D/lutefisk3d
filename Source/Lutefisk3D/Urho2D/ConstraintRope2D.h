@@ -30,7 +30,7 @@ namespace Urho3D
 /// 2D rope constraint component.
 class URHO3D_API ConstraintRope2D : public Constraint2D
 {
-    URHO3D_OBJECT(ConstraintRope2D,Constraint2D);
+    URHO3D_OBJECT(ConstraintRope2D,Constraint2D)
 
 public:
     /// Construct.
@@ -56,7 +56,7 @@ public:
 
 private:
     /// Return joint def.
-    virtual b2JointDef* GetJointDef();
+    virtual b2JointDef* GetJointDef() override;
 
     /// Box2D joint def.
     b2RopeJointDef jointDef_;

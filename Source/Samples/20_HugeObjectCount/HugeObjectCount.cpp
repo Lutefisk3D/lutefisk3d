@@ -190,6 +190,7 @@ void HugeObjectCount::SetupViewport()
 void HugeObjectCount::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
+//    LUTEFISK_SUBSCRIBE_GLOBAL(E_UPDATE,HandleUpdate);
     SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(HugeObjectCount, HandleUpdate));
 }
 

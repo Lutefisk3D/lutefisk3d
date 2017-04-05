@@ -41,7 +41,7 @@
 #include <Lutefisk3D/UI/UI.h>
 #include <Lutefisk3D/Resource/XMLFile.h>
 #include <Lutefisk3D/IO/Log.h>
-#include <QString>
+#include <QtCore/QString>
 
 Sample::Sample(Urho3D::Context* context) :
     Application(context),

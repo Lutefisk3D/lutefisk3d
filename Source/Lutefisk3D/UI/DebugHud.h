@@ -25,7 +25,7 @@
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Core/Timer.h"
 
-#include <QMap>
+#include <QtCore/QMap>
 
 namespace Urho3D
 {

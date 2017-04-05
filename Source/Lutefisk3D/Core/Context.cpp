@@ -30,6 +30,175 @@
 #endif
 namespace Urho3D
 {
+/*!
+  \class Context
+  \brief Urho3D execution context. Provides access to subsystems, object factories and attributes, and event receivers.
+*/
+/*!
+  \fn SharedPtr<T> Context::CreateObject()
+  \brief Create an object by type. Return pointer to it or null if no factory found.
+*/
+/*!
+  \fn void Context::RegisterFactory(const char *category=nullptr)
+  \param category
+  \brief Template version of registering an object factory with optional category.
+*/
+/*!
+  \fn const VariantMap& Context::GetGlobalVars() const
+  \brief Return all global variables.
+*/
+/*!
+  \fn const HashMap<StringHash, SharedPtr<Object> >& Context::GetSubsystems() const
+  \brief Return all subsystems.
+*/
+/*!
+  \fn const HashMap<StringHash, SharedPtr<ObjectFactory> >& Context::GetObjectFactories() const
+  \brief Return all object factories.
+*/
+/*!
+  \fn const HashMap<QString, std::vector<StringHash> >& Context::GetObjectCategories() const
+  \brief Return all object categories.
+*/
+/*!
+  \fn void Context::RemoveSubsystem()
+  \brief Template version of removing a subsystem.
+*/
+/*!
+  \fn void Context::RegisterAttribute(const AttributeInfo& attr)
+  \brief Template version of registering an object attribute.
+*/
+/*!
+  \fn void Context::RemoveAttribute(const char* name)
+  \brief Template version of removing an object attribute.
+*/
+/*!
+  \fn void Context::CopyBaseAttributes()
+  \brief Template version of copying base class attributes to derived class.
+*/
+/*!
+  \fn void Context::UpdateAttributeDefaultValue(const char* name, const Variant& defaultValue)
+  \brief Template version of updating an object attribute's default value.
+*/
+/*!
+  \fn EventHandler* Context::GetEventHandler() const
+  \brief Return active event handler. Set by Object. Null outside event handling.
+*/
+/*!
+  \fn T* Context::GetSubsystem() const
+  \brief Template version of returning a subsystem.
+*/
+/*!
+  \fn AttributeInfo* Context::GetAttribute(const char* name)
+  \brief Template version of returning a specific attribute description.
+*/
+/*!
+  \fn const std::vector<AttributeInfo>* Context::GetAttributes(StringHash type) const
+  \brief Return attribute descriptions for an object type, or null if none defined.
+*/
+/*!
+  \fn const std::vector<AttributeInfo>* Context::GetNetworkAttributes(StringHash type) const
+  \brief Return network replication attribute descriptions for an object type, or null if none defined.
+*/
+/*!
+  \fn const HashMap<StringHash, std::vector<AttributeInfo> >& Context::GetAllAttributes() const
+  \brief Return all registered attributes.
+*/
+/*!
+  \fn EventReceiverGroup* Context::GetEventReceivers(Object* sender, StringHash eventType)
+  \brief Return event receivers for a sender and event type, or null if they do not exist.
+*/
+/*!
+  \fn EventReceiverGroup* Context::GetEventReceivers(StringHash eventType)
+  \brief Return event receivers for an event type, or null if they do not exist.
+*/
+/*!
+  \fn void Context::SetEventHandler(EventHandler* handler)
+  \brief Set current event handler. Called by Object.
+*/
+/*!
+  \fn void Context::SetEventHandler(EventHandler* handler)
+  \brief Set current event handler. Called by Object.
+*/
+
+/*!
+  \var HashMap<StringHash, SharedPtr<ObjectFactory> > Context::factories_
+  \brief Object factories.
+ */
+/*!
+  \var HashMap<StringHash, SharedPtr<Object> > Context::subsystems_
+  \brief Subsystems.
+ */
+/*!
+  \var HashMap<StringHash, std::vector<AttributeInfo> > Context::attributes_
+  \brief Attribute descriptions per object type.
+ */
+/*!
+  \var HashMap<StringHash, std::vector<AttributeInfo> > Context::networkAttributes_
+  \brief Network replication attribute descriptions per object type.
+ */
+/*!
+  \var HashMap<StringHash, SharedPtr<EventReceiverGroup> > Context::eventReceivers_
+  \brief Event receivers for non-specific events.
+ */
+/*!
+  \var HashMap<Object*, HashMap<StringHash, SharedPtr<EventReceiverGroup> > > Context::specificEventReceivers_
+  \brief Event receivers for specific senders' events.
+ */
+/*!
+  \var std::vector<Object*> Context::eventSenders_
+  \brief Event sender stack.
+ */
+/*!
+  \var std::vector<VariantMap*> Context::eventDataMaps_
+  \brief Event data stack.
+ */
+/*!
+  \var EventHandler* Context::eventHandler_
+  \brief Active event handler. Not stored in a stack for performance reasons; is needed only in esoteric cases.
+ */
+/*!
+  \var HashMap<QString, std::vector<StringHash> > Context::objectCategories_
+  \brief Object categories.
+ */
+/*!
+  \var VariantMap Context::globalVars_
+  \brief Variant map for global variables that can persist throughout application execution.
+ */
+
+/*!
+  \class EventReceiverGroup
+  \brief Tracking structure for event receivers.
+*/
+
+/*!
+  \fn void EventReceiverGroup::BeginSendEvent()
+  \brief Begin event send. When receivers are removed during send, group has to be cleaned up afterward.
+ */
+/*!
+  \fn void EventReceiverGroup::EndSendEvent()
+  \brief End event send. Clean up if necessary.
+ */
+/*!
+  \fn void EventReceiverGroup::Add(Object* object)
+  \brief Add receiver. Same receiver must not be double-added!
+ */
+/*!
+  \fn void EventReceiverGroup::Remove(Object* object)
+  \brief Remove receiver. Leave holes during send, which requires later cleanup.
+ */
+/*!
+  \var std::vector<Object*> EventReceiverGroup::receivers_
+  \brief Receivers. May contain holes during sending.
+ */
+/*!
+  \var unsigned EventReceiverGroup::inSend_
+  \brief "In send" recursion counter.
+ */
+/*!
+  \var bool EventReceiverGroup::dirty_
+  \brief Cleanup required flag.
+ */
+
 
 // Keeps track of how many times SDL was initialised so we know when to call SDL_Quit().
 static int sdlInitCounter = 0;
@@ -125,7 +294,7 @@ Context::~Context()
         delete elem;
     eventDataMaps_.clear();
 }
-
+/// Create an object by type hash. Return pointer to it or null if no factory found.
 SharedPtr<Object> Context::CreateObject(StringHash objectType)
 {
     HashMap<StringHash, SharedPtr<ObjectFactory> >::const_iterator i = factories_.find(objectType);
@@ -134,25 +303,18 @@ SharedPtr<Object> Context::CreateObject(StringHash objectType)
     else
         return SharedPtr<Object>();
 }
-
-void Context::RegisterFactory(ObjectFactory* factory)
-{
-    if (!factory)
-        return;
-
-    factories_[factory->GetType()] = factory;
-}
-
+/// Register a factory for an object type and specify the object category.
 void Context::RegisterFactory(ObjectFactory* factory, const char* category)
 {
     if (!factory)
         return;
 
-    RegisterFactory(factory);
+    factories_[factory->GetType()] = factory;
+
     if (category && category[0]!=0)
         objectCategories_[category].push_back(factory->GetType());
 }
-
+/// Register a subsystem.
 void Context::RegisterSubsystem(Object* object)
 {
     if (!object)
@@ -160,21 +322,21 @@ void Context::RegisterSubsystem(Object* object)
 
     subsystems_[object->GetType()] = object;
 }
-
+/// Remove a subsystem.
 void Context::RemoveSubsystem(StringHash objectType)
 {
     HashMap<StringHash, SharedPtr<Object> >::iterator i = subsystems_.find(objectType);
     if (i != subsystems_.end())
         subsystems_.erase(i);
 }
-
+/// Register object attribute.
 void Context::RegisterAttribute(StringHash objectType, const AttributeInfo& attr)
 {
     // None or pointer types can not be supported
     if (attr.type_ == VAR_NONE || attr.type_ == VAR_VOIDPTR || attr.type_ == VAR_PTR)
     {
         URHO3D_LOGWARNING("Attempt to register unsupported attribute type " + Variant::GetTypeName(attr.type_) + " to class " +
-            GetTypeName(objectType));
+                          GetTypeName(objectType));
         return;
     }
     attributes_[objectType].push_back(attr);
@@ -182,13 +344,14 @@ void Context::RegisterAttribute(StringHash objectType, const AttributeInfo& attr
     if (attr.mode_ & AM_NET)
         networkAttributes_[objectType].push_back(attr);
 }
-
+/// Remove object attribute.
 void Context::RemoveAttribute(StringHash objectType, const char* name)
 {
     RemoveNamedAttribute(attributes_, objectType, name);
     RemoveNamedAttribute(networkAttributes_, objectType, name);
 }
 
+/// Update object attribute's default value.
 void Context::UpdateAttributeDefaultValue(StringHash objectType, const char* name, const Variant& defaultValue)
 {
     AttributeInfo* info = GetAttribute(objectType, name);
@@ -196,6 +359,9 @@ void Context::UpdateAttributeDefaultValue(StringHash objectType, const char* nam
         info->defaultValue_ = defaultValue;
 }
 
+///
+/// \brief Used for optimization to avoid constant re-allocation of event data maps.
+/// \return preallocated map for event data
 VariantMap& Context::GetEventDataMap()
 {
     unsigned nestingLevel = eventSenders_.size();
@@ -206,7 +372,11 @@ VariantMap& Context::GetEventDataMap()
     ret.clear();
     return ret;
 }
-
+///
+/// \brief Initialises the specified SDL systems, if not already.
+/// \param sdlFlags
+/// \return true if successful.
+/// \note This call must be matched with ReleaseSDL() when SDL functions are no longer required, even if this call fails.
 bool Context::RequireSDL(unsigned int sdlFlags)
 {
 #ifndef MINI_URHO
@@ -238,7 +408,7 @@ bool Context::RequireSDL(unsigned int sdlFlags)
 
     return true;
 }
-
+/// Indicate that you are done with using SDL. Must be called after using RequireSDL().
 void Context::ReleaseSDL()
 {
 #ifndef MINI_URHO
@@ -256,6 +426,7 @@ void Context::ReleaseSDL()
 #endif
 }
 
+/// Copy base class attributes to derived class.
 void Context::CopyBaseAttributes(StringHash baseType, StringHash derivedType)
 {
     // Prevent endless loop if mistakenly copying attributes from same class as derived
@@ -276,7 +447,7 @@ void Context::CopyBaseAttributes(StringHash baseType, StringHash derivedType)
             networkAttributes_[derivedType].push_back(attr);
     }
 }
-
+/// Return subsystem by type.
 Object* Context::GetSubsystem(StringHash type) const
 {
     HashMap<StringHash, SharedPtr<Object> >::const_iterator i = subsystems_.find(type);
@@ -286,31 +457,32 @@ Object* Context::GetSubsystem(StringHash type) const
         return nullptr;
 }
 
+/// Return global variable based on key
 const Variant &Context::GetGlobalVar(StringHash key) const
 {
     auto i = globalVars_.find(key);
     return i != globalVars_.end() ? MAP_VALUE(i) : Variant::EMPTY;
 }
-
+/// Set global variable with the respective key and value
 void Context::SetGlobalVar(StringHash key, const Variant &value)
 {
     globalVars_[key] = value;
 }
-
+/// Return active event sender. Null outside event handling.
 Object* Context::GetEventSender() const
 {
     if (!eventSenders_.empty())
         return eventSenders_.back();
     return nullptr;
 }
-
+/// Return object type name from hash, or empty if unknown.
 const QString& Context::GetTypeName(StringHash objectType) const
 {
     // Search factories to find the hash-to-name mapping
     HashMap<StringHash, SharedPtr<ObjectFactory> >::const_iterator i = factories_.find(objectType);
     return i != factories_.end() ? MAP_VALUE(i)->GetTypeName() : s_dummy;
 }
-
+/// Return a specific attribute description for an object, or null if not found.
 AttributeInfo* Context::GetAttribute(StringHash objectType, const char* name)
 {
     auto i = attributes_.find(objectType);
@@ -327,7 +499,7 @@ AttributeInfo* Context::GetAttribute(StringHash objectType, const char* name)
 
     return nullptr;
 }
-
+/// Add event receiver.
 void Context::AddEventReceiver(Object* receiver, StringHash eventType)
 {
     SharedPtr<EventReceiverGroup>& group = eventReceivers_[eventType];
@@ -335,7 +507,7 @@ void Context::AddEventReceiver(Object* receiver, StringHash eventType)
         group = new EventReceiverGroup();
     group->Add(receiver);
 }
-
+/// Add event receiver for specific event.
 void Context::AddEventReceiver(Object* receiver, Object* sender, StringHash eventType)
 {
     SharedPtr<EventReceiverGroup>& group = specificEventReceivers_[sender][eventType];
@@ -343,7 +515,7 @@ void Context::AddEventReceiver(Object* receiver, Object* sender, StringHash even
         group = new EventReceiverGroup();
     group->Add(receiver);
 }
-
+/// Remove an event sender from all receivers. Called on its destruction.
 void Context::RemoveEventSender(Object* sender)
 {
     auto i = specificEventReceivers_.find(sender);
@@ -359,21 +531,21 @@ void Context::RemoveEventSender(Object* sender)
     }
     specificEventReceivers_.erase(i);
 }
-
+/// Remove event receiver from non-specific events.
 void Context::RemoveEventReceiver(Object* receiver, StringHash eventType)
 {
     EventReceiverGroup* group = GetEventReceivers(eventType);
     if (group)
         group->Remove(receiver);
 }
-
+/// Remove event receiver from specific events.
 void Context::RemoveEventReceiver(Object* receiver, Object* sender, StringHash eventType)
 {
     EventReceiverGroup* group = GetEventReceivers(sender, eventType);
     if (group)
         group->Remove(receiver);
 }
-
+/// Begin event send.
 void Context::BeginSendEvent(Object* sender, StringHash eventType)
 {
 #ifdef LUTEFISK3D_PROFILING
@@ -387,7 +559,7 @@ void Context::BeginSendEvent(Object* sender, StringHash eventType)
 
     eventSenders_.push_back(sender);
 }
-
+/// End event send. Clean up event receivers removed in the meanwhile.
 void Context::EndSendEvent()
 {
     eventSenders_.pop_back();

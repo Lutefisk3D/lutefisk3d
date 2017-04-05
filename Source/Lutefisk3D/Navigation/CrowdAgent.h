@@ -71,7 +71,7 @@ enum NavigationPushiness
 /// Crowd agent component, requires a CrowdManager component in the scene. When not set explicitly, agent's radius and height are defaulted to navigation mesh's agent radius and height, respectively.
 class URHO3D_API CrowdAgent : public Component
 {
-    URHO3D_OBJECT(CrowdAgent,Component);
+    URHO3D_OBJECT(CrowdAgent,Component)
     friend class CrowdManager;
     friend void CrowdAgentUpdateCallback(dtCrowdAgent* ag, float dt);
 
@@ -83,14 +83,14 @@ public:
     /// Register object factory.
     static void RegisterObject(Context* context);
     /// Apply attribute changes that can not be applied immediately. Called after scene load or a network update.
-    virtual void ApplyAttributes();
+    virtual void ApplyAttributes() override;
 
     /// Handle enabled/disabled state change.
-    virtual void OnSetEnabled();
+    virtual void OnSetEnabled() override;
     /// Draw debug geometry.
     void DrawDebugGeometry(bool);
     /// Draw debug feelers.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest);
+    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
     /// Submit a new target position request for this agent.
     void SetTargetPosition(const Vector3& position);
@@ -165,11 +165,11 @@ protected:
     /// Handle crowd agent being updated. It is called by CrowdManager::Update() via callback.
     virtual void OnCrowdUpdate(dtCrowdAgent* ag, float dt);
     /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node);
+    virtual void OnNodeSet(Node* node) override;
     /// Handle node being assigned.
-    virtual void OnSceneSet(Scene* scene);
+    virtual void OnSceneSet(Scene* scene) override;
     /// \todo Handle node transform being dirtied.
-    virtual void OnMarkedDirty(Node* node);
+    virtual void OnMarkedDirty(Node* node) override;
     /// Get internal Detour crowd agent.
     const dtCrowdAgent* GetDetourCrowdAgent() const;
 private:

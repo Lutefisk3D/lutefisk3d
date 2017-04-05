@@ -33,6 +33,7 @@
 //#include <SDL/SDL_filesystem.h>
 #include <QtCore/QProcess>
 #include <QtCore/QDir>
+#include <QtCore/QDirIterator>
 #include <QtCore/QDateTime>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QUrl>
@@ -40,29 +41,6 @@
 #include <cstdio>
 #include <cstring>
 #include <sys/stat.h>
-
-#ifdef _WIN32
-#ifndef _MSC_VER
-#define _WIN32_IE 0x501
-#endif
-#include <windows.h>
-#include <shellapi.h>
-#include <direct.h>
-#include <shlobj.h>
-#include <sys/types.h>
-#include <sys/utime.h>
-#else
-#include <dirent.h>
-#include <errno.h>
-#include <unistd.h>
-#include <utime.h>
-#include <sys/wait.h>
-#define MAX_PATH 256
-#endif
-
-#if defined(__APPLE__)
-#include <mach-o/dyld.h>
-#endif
 
 namespace Urho3D
 {
@@ -437,8 +415,18 @@ void FileSystem::ScanDir(QStringList& result, const QString& pathName, const QSt
 
     if (CheckAccess(pathName))
     {
+        QDir::Filters filters;
+        if(flags & SCAN_HIDDEN)
+            filters |= QDir::Hidden;
+        if(flags & SCAN_FILES)
+            filters |= QDir::Files;
+        if(flags & SCAN_DIRS)
+            filters |= QDir::Dirs;
+
         QString initialPath = AddTrailingSlash(pathName);
-        ScanDirInternal(result, initialPath, initialPath, filter, flags, recursive);
+        QDirIterator diriter(initialPath,QStringList {filter},filters,recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags);
+        while(diriter.hasNext())
+            result.push_back(diriter.next());
     }
 }
 
@@ -447,21 +435,6 @@ QString FileSystem::GetProgramDir() const
     // Return cached value if possible
     if (!programDir_.isEmpty())
         return programDir_;
-
-    #if   defined(__APPLE__)
-    char exeName[MAX_PATH];
-    memset(exeName, 0, MAX_PATH);
-    unsigned size = MAX_PATH;
-    _NSGetExecutablePath(exeName, &size);
-    programDir_ = GetPath(String(exeName));
-    #elif defined(__linux__)
-    char exeName[MAX_PATH];
-    memset(exeName, 0, MAX_PATH);
-    pid_t pid = getpid();
-    QString link = "/proc/" + QString::number(pid) + "/exe";
-    readlink(qPrintable(link), exeName, MAX_PATH);
-    programDir_ = GetPath(QString(exeName));
-    #endif
     if(QCoreApplication::instance()) // an QApplication has been allocated, use it
         programDir_ = QCoreApplication::applicationDirPath();
 
@@ -495,109 +468,6 @@ void FileSystem::RegisterPath(const QString& pathName)
         return;
 
     allowedPaths_.insert(AddTrailingSlash(pathName));
-}
-
-bool FileSystem::SetLastModifiedTime(const QString& fileName, unsigned newTime)
-{
-    if (fileName.isEmpty() || !CheckAccess(fileName))
-        return false;
-
-    #ifdef _WIN32
-    struct _stat oldTime;
-    struct _utimbuf newTimes;
-    if (_stat(qPrintable(fileName), &oldTime) != 0)
-        return false;
-    newTimes.actime = oldTime.st_atime;
-    newTimes.modtime = newTime;
-    return _utime(qPrintable(fileName), &newTimes) == 0;
-    #else
-    struct stat oldTime;
-    struct utimbuf newTimes;
-    if (stat(qPrintable(fileName), &oldTime) != 0)
-        return false;
-    newTimes.actime = oldTime.st_atime;
-    newTimes.modtime = newTime;
-    return utime(qPrintable(fileName), &newTimes) == 0;
-    #endif
-}
-
-void FileSystem::ScanDirInternal(QStringList& result, QString path, const QString& startPath,
-    const QString& filter, unsigned flags, bool recursive) const
-{
-    path = AddTrailingSlash(path);
-    QString deltaPath;
-    if (path.length() > startPath.length())
-        deltaPath = path.mid(startPath.length());
-
-    QString filterExtension = filter.mid(filter.indexOf('.'));
-    if (filterExtension.contains('*'))
-        filterExtension.clear();
-
-#ifdef _WIN32
-    WIN32_FIND_DATAW info;
-    std::wstring path_w(path.toStdWString());
-    HANDLE handle = FindFirstFileW((path_w + wchar_t('*')).c_str(), &info);
-    if (handle != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            QString fileName = QString::fromWCharArray(info.cFileName);
-            if (!fileName.isEmpty())
-            {
-                if (info.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN && !(flags & SCAN_HIDDEN))
-                    continue;
-                if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                {
-                    if (flags & SCAN_DIRS)
-                        result.push_back(deltaPath + fileName);
-                    if (recursive && fileName != "." && fileName != "..")
-                        ScanDirInternal(result, path + fileName, startPath, filter, flags, recursive);
-                }
-                else if (flags & SCAN_FILES)
-                {
-                    if (filterExtension.isEmpty() || fileName.endsWith(filterExtension))
-                        result.push_back(deltaPath + fileName);
-                }
-            }
-        }
-        while (FindNextFileW(handle, &info));
-
-        FindClose(handle);
-    }
-    #else
-    DIR *dir;
-    struct dirent *de;
-    struct stat st;
-    dir = opendir(qPrintable(GetNativePath(path)));
-    if (dir)
-    {
-        while ((de = readdir(dir)))
-        {
-            /// \todo Filename may be unnormalized Unicode on Mac OS X. Re-normalize as necessary
-            QString fileName(de->d_name);
-            bool normalEntry = fileName != "." && fileName != "..";
-            if (normalEntry && !(flags & SCAN_HIDDEN) && fileName.startsWith("."))
-                continue;
-            QString pathAndName = path + fileName;
-            if (!stat(qPrintable(pathAndName), &st))
-            {
-                if (st.st_mode & S_IFDIR)
-                {
-                    if (flags & SCAN_DIRS)
-                        result.push_back(deltaPath + fileName);
-                    if (recursive && normalEntry)
-                        ScanDirInternal(result, path + fileName, startPath, filter, flags, recursive);
-                }
-                else if (flags & SCAN_FILES)
-                {
-                    if (filterExtension.isEmpty() || fileName.endsWith(filterExtension))
-                        result.push_back(deltaPath + fileName);
-                }
-            }
-        }
-        closedir(dir);
-    }
-    #endif
 }
 
 void FileSystem::HandleBeginFrame(StringHash eventType, VariantMap& eventData)

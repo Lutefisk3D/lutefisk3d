@@ -25,6 +25,20 @@
 #include <algorithm>
 
 using namespace Urho3D;
+namespace {
+//RAII based Begin/End SendEvent guard
+class EventReceiverGroup_Guard {
+    EventReceiverGroup &m_guarded;
+public:
+    EventReceiverGroup_Guard(EventReceiverGroup & guarded) : m_guarded(guarded) {
+        m_guarded.BeginSendEvent();
+    }
+    ~EventReceiverGroup_Guard() {
+        m_guarded.EndSendEvent();
+    }
+};
+
+}
 
 TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo) :
     type_(typeName),
@@ -412,7 +426,7 @@ const QString& Object::GetCategory() const
 
     return s_dummy;
 }
-
+/// Find the first event handler with no specific sender.
 cilEventHandler Object::FindEventHandler(StringHash eventType) const
 {
     cilEventHandler handler = eventHandlers_.begin();
@@ -425,7 +439,7 @@ cilEventHandler Object::FindEventHandler(StringHash eventType) const
 
     return eventHandlers_.cend();
 }
-
+/// Find the first event handler with specific sender.
 Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender) const
 {
     cilEventHandler handler = eventHandlers_.cbegin();
@@ -439,7 +453,7 @@ Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender) const
 
     return eventHandlers_.cend();
 }
-
+/// Find the first event handler with specific sender and event type.
 Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous) const
 {
     cilEventHandler handler = eventHandlers_.cbegin();
@@ -457,7 +471,7 @@ Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender, StringH
 
     return eventHandlers_.end();
 }
-
+/// Remove event handlers related to a specific sender.
 void Object::RemoveEventSender(Object* sender)
 {
     ilEventHandler handler = eventHandlers_.begin();

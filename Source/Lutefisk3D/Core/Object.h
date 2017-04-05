@@ -184,13 +184,9 @@ protected:
     Context* context_;
 
 private:
-    /// Find the first event handler with no specific sender.
     cilEventHandler FindEventHandler(StringHash eventType) const;
-    /// Find the first event handler with specific sender.
     cilEventHandler FindSpecificEventHandler(Object* sender) const;
-    /// Find the first event handler with specific sender and event type.
     cilEventHandler FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous = 0) const;
-    /// Remove event handlers related to a specific sender.
     void RemoveEventSender(Object* sender);
     /// Populate event data map using variadic template. This handles the base case.
     template <typename T> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue)
@@ -369,4 +365,6 @@ struct URHO3D_API EventNameRegistrar
 
 #define LUTEFISK_SUBSCRIBE_LAMBDA(sender,eventType,method)\
     SubscribeToEvent(sender,eventType, ([this](StringHash , VariantMap& eventData) { this->method(eventType,eventData); }))
+#define LUTEFISK_SUBSCRIBE_GLOBAL(eventType,method)\
+    SubscribeToEvent(eventType, ([this](StringHash , VariantMap& eventData) { this->method(eventType,eventData); }))
 }

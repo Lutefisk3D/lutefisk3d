@@ -73,8 +73,6 @@ public:
     bool Delete(const QString& fileName);
     /// Register a path as allowed to access. If no paths are registered, all are allowed. Registering allowed paths is considered securing the Urho3D execution environment: running programs and opening files externally through the system will fail afterward.
     void RegisterPath(const QString& pathName);
-    /// Set a file's last modified time as seconds since 1.1.1970. Return true on success.
-    bool SetLastModifiedTime(const QString& fileName, unsigned newTime);
 
     /// Return the absolute current working directory.
     QString GetCurrentDir() const;
@@ -100,8 +98,6 @@ public:
     QString GetAppPreferencesDir(const QString& org, const QString& app) const;
 
 private:
-    /// Scan directory, called internally.
-    void ScanDirInternal(QStringList& result, QString path, const QString& startPath, const QString& filter, unsigned flags, bool recursive) const;
     /// Handle begin frame event to check for completed async executions.
     void HandleBeginFrame(StringHash eventType, VariantMap& eventData);
     /// Handle a console command event.

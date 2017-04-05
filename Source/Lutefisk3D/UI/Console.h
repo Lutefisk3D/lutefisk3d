@@ -22,7 +22,7 @@
 
 #pragma once
 #include "Lutefisk3D/Core/Object.h"
-#include <QMap>
+#include <QtCore/QMap>
 #include <utility>
 
 namespace Urho3D

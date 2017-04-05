@@ -94,7 +94,7 @@ struct DebugTriangle
 /// Debug geometry rendering component. Should be added only to the root scene node.
 class URHO3D_API DebugRenderer : public Component
 {
-    URHO3D_OBJECT(DebugRenderer,Component);
+    URHO3D_OBJECT(DebugRenderer,Component)
 
 public:
     /// Construct.
@@ -110,6 +110,10 @@ public:
     void SetView(Camera* camera);
     /// Add a line.
     void AddLine(const Vector3& start, const Vector3& end, const Color& color, bool depthTest = true);
+    /// Add a line.
+    void AddLine(const Vector2& start, const Vector2& end, const Color& color, bool depthTest = true) {
+        AddLine(Vector3(start),Vector3(end),color,depthTest);
+    }
     /// Add a line with color already converted to unsigned.
     void AddLine(const Vector3& start, const Vector3& end, unsigned color, bool depthTest = true);
     /// Add a solid triangle.

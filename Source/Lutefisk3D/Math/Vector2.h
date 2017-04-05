@@ -46,7 +46,7 @@ public:
     }
 
     /// Construct from an int array.
-    IntVector2(const int* data) :
+    explicit IntVector2(const int* data) :
         x_(data[0]),
         y_(data[1])
     {

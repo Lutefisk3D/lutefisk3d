@@ -25,7 +25,7 @@
 #include <Lutefisk3D/Engine/Application.h>
 #include <Lutefisk3D/Input/Input.h>
 #include <Lutefisk3D/Core/Context.h>
-#include <QString>
+#include <QtCore/QString>
 
 namespace Urho3D
 {

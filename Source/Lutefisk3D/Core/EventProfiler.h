@@ -27,18 +27,15 @@
 namespace Urho3D
 {
 
-/// Event profiling data for one block in the event profiling tree.
 class URHO3D_API EventProfilerBlock : public ProfilerBlock
 {
 public:
-    /// Construct with the specified parent block and event ID.
     EventProfilerBlock(EventProfilerBlock* parent, StringHash eventID) :
         ProfilerBlock(parent, qPrintable(EventNameRegistrar::GetEventName(eventID))),
         eventID_(eventID)
     {
     }
 
-    /// Return child block with the specified event ID.
     EventProfilerBlock* GetChild(StringHash eventID)
     {
         for (std::vector<ProfilerBlock*>::iterator i = children_.begin(); i != children_.end(); ++i)
@@ -53,15 +50,13 @@ public:
 
         return newBlock;
     }
-
-    /// Event ID.
     StringHash eventID_;
 };
 
 /// Hierarchical performance event profiler subsystem.
 class URHO3D_API EventProfiler : public Profiler
 {
-    URHO3D_OBJECT(EventProfiler, Profiler);
+    URHO3D_OBJECT(EventProfiler, Profiler)
 
 public:
     /// Construct.

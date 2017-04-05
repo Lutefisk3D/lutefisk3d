@@ -58,7 +58,7 @@ public:
     }
 
     /// Construct from a rect, with the Z dimension left zero.
-    BoundingBox(const Rect& rect) :
+    explicit BoundingBox(const Rect& rect) :
         min_(Vector3(rect.min_, 0.0f)),
         max_(Vector3(rect.max_, 0.0f))
     {
@@ -94,7 +94,7 @@ public:
     }
 
     /// Construct from a frustum.
-    BoundingBox(const Frustum& frustum) :
+    explicit BoundingBox(const Frustum& frustum) :
         min_(M_INFINITY, M_INFINITY, M_INFINITY),
         max_(-M_INFINITY, -M_INFINITY, -M_INFINITY)
     {
@@ -102,7 +102,7 @@ public:
     }
 
     /// Construct from a polyhedron.
-    BoundingBox(const Polyhedron& poly) :
+    explicit BoundingBox(const Polyhedron& poly) :
         min_(M_INFINITY, M_INFINITY, M_INFINITY),
         max_(-M_INFINITY, -M_INFINITY, -M_INFINITY)
     {
@@ -110,7 +110,7 @@ public:
     }
 
     /// Construct from a sphere.
-    BoundingBox(const Sphere& sphere) :
+    explicit BoundingBox(const Sphere& sphere) :
         min_(M_INFINITY, M_INFINITY, M_INFINITY),
         max_(-M_INFINITY, -M_INFINITY, -M_INFINITY)
     {

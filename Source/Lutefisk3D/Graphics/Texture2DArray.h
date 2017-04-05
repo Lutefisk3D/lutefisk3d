@@ -75,7 +75,7 @@ public:
 
 protected:
     /// Create the GPU texture.
-    virtual bool Create();
+    virtual bool Create() override;
 
 private:
     /// Handle render surface update event.

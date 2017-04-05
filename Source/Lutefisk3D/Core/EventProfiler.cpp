@@ -25,6 +25,22 @@
 
 namespace Urho3D
 {
+/*!
+ \class  EventProfiler
+ \brief Event profiling data for one block in the event profiling tree.
+*/
+/*!
+ \fn EventProfilerBlock(EventProfilerBlock* parent, StringHash eventID)
+ \brief Construct with the specified parent block and event ID
+*/
+/*!
+ \fn EventProfilerBlock* EventProfilerBlock::GetChild(StringHash eventID)
+ \brief Return child block with the specified event ID.
+*/
+/*!
+ \var StringHash EventProfilerBlock::eventID_
+ \brief Event ID.
+*/
 
 bool EventProfiler::active = false;
 

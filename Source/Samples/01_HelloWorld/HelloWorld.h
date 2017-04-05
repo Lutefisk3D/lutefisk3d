@@ -31,7 +31,7 @@
 ///     - Subscribing to and handling of update events
 class HelloWorld : public Sample
 {
-    URHO3D_OBJECT(HelloWorld,Sample);
+    URHO3D_OBJECT(HelloWorld,Sample)
 
 public:
     /// Construct.

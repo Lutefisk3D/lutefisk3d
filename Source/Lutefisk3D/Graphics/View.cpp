@@ -377,19 +377,19 @@ bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
         }
     }
     // Set default passes
-    alphaPassQueueIdx_ = -1;
-    gBufferPassIndex_ = M_MAX_UNSIGNED;
-    basePassIndex_ = Technique::GetPassIndex("base");
-    alphaPassIndex_ = Technique::GetPassIndex("alpha");
-    lightPassIndex_ = Technique::GetPassIndex("light");
-    litBasePassIndex_ = Technique::GetPassIndex("litbase");
-    litAlphaPassIndex_ = Technique::GetPassIndex("litalpha");
+    alphaPassQueueIdx_  = -1;
+    gBufferPassIndex_   = M_MAX_UNSIGNED;
+    basePassIndex_      = Technique::GetPassIndex("base");
+    alphaPassIndex_     = Technique::GetPassIndex("alpha");
+    lightPassIndex_     = Technique::GetPassIndex("light");
+    litBasePassIndex_   = Technique::GetPassIndex("litbase");
+    litAlphaPassIndex_  = Technique::GetPassIndex("litalpha");
 
-    deferred_ = false;
-    deferredAmbient_ = false;
-    useLitBase_ = false;
-    hasScenePasses_ = false;
-    noStencil_ = false;
+    deferred_           = false;
+    deferredAmbient_    = false;
+    useLitBase_         = false;
+    hasScenePasses_     = false;
+    noStencil_          = false;
     lightVolumeCommand_ = nullptr;
 
     scenePasses_.clear();
@@ -534,10 +534,10 @@ void View::Update(const FrameInfo& frame)
     if (sourceView_ != nullptr)
         return;
 
-    frame_.camera_ = cullCamera_;
-    frame_.timeStep_ = frame.timeStep_;
+    frame_.camera_      = cullCamera_;
+    frame_.timeStep_    = frame.timeStep_;
     frame_.frameNumber_ = frame.frameNumber_;
-    frame_.viewSize_ = viewSize_;
+    frame_.viewSize_    = viewSize_;
 
     using namespace BeginViewUpdate;
 
@@ -663,21 +663,6 @@ void View::Render()
         BlitFramebuffer(currentRenderTarget_->GetParentTexture(), renderTarget_, !usedResolve_);
 
     SendViewEvent(E_ENDVIEWRENDER);
-}
-
-Graphics* View::GetGraphics() const
-{
-    return graphics_;
-}
-
-Renderer* View::GetRenderer() const
-{
-    return renderer_;
-}
-
-View* View::GetSourceView() const
-{
-    return sourceView_;
 }
 
 void View::SetGlobalShaderParameters()

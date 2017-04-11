@@ -136,9 +136,9 @@ class URHO3D_API View : public Object
     void Render();
 
     /// Return graphics subsystem.
-    Graphics* GetGraphics() const;
+    Graphics* GetGraphics() const { return graphics_; }
     /// Return renderer subsystem.
-    Renderer* GetRenderer() const;
+    Renderer* GetRenderer() const { return renderer_; }
     /// Return scene.
     Scene* GetScene() const { return scene_; }
     /// Return octree.
@@ -168,12 +168,11 @@ class URHO3D_API View : public Object
     const std::vector<LightBatchQueue>& GetLightQueues() const { return lightQueues_; }
     /// Return the last used software occlusion buffer.
     OcclusionBuffer* GetOcclusionBuffer() const { return occlusionBuffer_; }
-
     /// Return number of occluders that were actually rendered. Occluders may be rejected if running out of triangles or if behind other occluders.
     unsigned GetNumActiveOccluders() const { return activeOccluders_; }
 
     /// Return the source view that was already prepared. Used when viewports specify the same culling camera.
-    View* GetSourceView() const;
+    View* GetSourceView() const { return sourceView_; }
     /// Set global (per-frame) shader parameters. Called by Batch and internally by View.
     void SetGlobalShaderParameters();
     /// Set camera-specific shader parameters. Called by Batch and internally by View.

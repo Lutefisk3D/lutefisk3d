@@ -44,7 +44,7 @@ static const int MIN_MIXRATE = 11025;
 static const int MAX_MIXRATE = 48000;
 static const StringHash SOUND_MASTER_HASH("Master");
 
-static void SDLAudioCallback(void *userdata, Uint8 *stream, int len);
+void SDLAudioCallback(void *userdata, Uint8 *stream, int len);
 
 Audio::Audio(Context* context) :
     Object(context),
@@ -68,6 +68,7 @@ Audio::~Audio()
     context_->ReleaseSDL();
 }
 
+/// Initialize sound output with specified buffer length and output mode.
 bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpolation)
 {
     Release();
@@ -119,6 +120,7 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
     return Play();
 }
 
+/// Run update on sound sources. Not required for continued playback, but frees unused sound sources & sounds and updates 3D positions.
 void Audio::Update(float timeStep)
 {
     if (!playing_)
@@ -127,7 +129,7 @@ void Audio::Update(float timeStep)
         SDL_PauseAudioDevice(deviceID_, 1);
     UpdateInternal(timeStep);
 }
-
+/// Restart sound output.
 bool Audio::Play()
 {
     if (playing_)
@@ -148,6 +150,7 @@ bool Audio::Play()
     return true;
 }
 
+/// Suspend sound output.
 void Audio::Stop()
 {
     playing_ = false;
@@ -155,6 +158,7 @@ void Audio::Stop()
         SDL_PauseAudioDevice(deviceID_, 1);
 }
 
+/// Set master gain on a specific sound type such as sound effects, music or voice.
 void Audio::SetMasterGain(const QString& type, float gain)
 {
     masterGain_[type] = Clamp(gain, 0.0f, 1.0f);
@@ -162,11 +166,13 @@ void Audio::SetMasterGain(const QString& type, float gain)
     for (SoundSource* src : soundSources_)
         src->UpdateMasterGain();
 }
+/// Pause playback of specific sound type. This allows to suspend e.g. sound effects or voice when the game is paused. By default all sound types are unpaused.
 void Audio::PauseSoundType(const QString& type)
 {
     pausedSoundTypes_.insert(type);
 }
 
+/// Resume playback of specific sound type.
 void Audio::ResumeSoundType(const QString& type)
 {
     MutexLock lock(audioMutex_);
@@ -176,6 +182,7 @@ void Audio::ResumeSoundType(const QString& type)
     UpdateInternal(0.0f);
 }
 
+/// Resume playback of all sound types.
 void Audio::ResumeAll()
 {
     MutexLock lock(audioMutex_);
@@ -183,11 +190,13 @@ void Audio::ResumeAll()
     UpdateInternal(0.0f);
 }
 
+/// Set active sound listener for 3D sounds.
 void Audio::SetListener(SoundListener* listener)
 {
     listener_ = listener;
 }
 
+/// Stop any sound source playing a certain sound clip.
 void Audio::StopSound(Sound* soundClip)
 {
     for (SoundSource * elem : soundSources_)
@@ -196,7 +205,7 @@ void Audio::StopSound(Sound* soundClip)
             elem->Stop();
     }
 }
-
+/// Return master gain for a specific sound source type. Unknown sound types will return full gain (1).
 float Audio::GetMasterGain(const QString& type) const
 {
     // By definition previously unknown types return full volume
@@ -207,16 +216,18 @@ float Audio::GetMasterGain(const QString& type) const
     return MAP_VALUE(findIt).GetFloat();
 }
 
+/// Return whether specific sound type has been paused.
 bool Audio::IsSoundTypePaused(const QString& type) const
 {
     return pausedSoundTypes_.contains(type);
 }
-
+/// Return active sound listener.
 SoundListener* Audio::GetListener() const
 {
     return listener_;
 }
 
+/// Add a sound source to keep track of. Called by SoundSource.
 void Audio::AddSoundSource(SoundSource* channel)
 {
     MutexLock lock(audioMutex_);
@@ -226,6 +237,7 @@ void Audio::AddSoundSource(SoundSource* channel)
 
 }
 
+/// Remove a sound source. Called by SoundSource.
 void Audio::RemoveSoundSource(SoundSource* channel)
 {
     std::vector<SoundSource*>::iterator i = std::find(soundSources_.begin(),soundSources_.end(),channel);
@@ -236,6 +248,7 @@ void Audio::RemoveSoundSource(SoundSource* channel)
     }
 }
 
+/// Return sound type specific gain multiplied by master gain.
 float Audio::GetSoundSourceMasterGain(StringHash typeHash) const
 {
     HashMap<StringHash, Variant>::const_iterator masterIt = masterGain_.find(SOUND_MASTER_HASH);
@@ -260,7 +273,7 @@ void SDLAudioCallback(void *userdata, Uint8* stream, int len)
         audio->MixOutput(stream, len / audio->GetSampleSize() / Audio::SAMPLE_SIZE_MUL);
     }
 }
-
+/// Mix sound sources into the buffer.
 void Audio::MixOutput(void *dest, unsigned samples)
 {
     if (!playing_ || !clipBuffer_)
@@ -303,6 +316,7 @@ void Audio::MixOutput(void *dest, unsigned samples)
     }
 }
 
+/// Handle render update event.
 void Audio::HandleRenderUpdate(StringHash eventType, VariantMap& eventData)
 {
     using namespace RenderUpdate;
@@ -310,6 +324,7 @@ void Audio::HandleRenderUpdate(StringHash eventType, VariantMap& eventData)
     Update(eventData[P_TIMESTEP].GetFloat());
 }
 
+/// Stop sound output and release the sound buffer.
 void Audio::Release()
 {
     Stop();
@@ -321,6 +336,7 @@ void Audio::Release()
         clipBuffer_.Reset();
     }
 }
+/// Actually update sound sources with the specific timestep. Called internally.
 void Audio::UpdateInternal(float timeStep)
 {
     URHO3D_PROFILE(UpdateAudio);

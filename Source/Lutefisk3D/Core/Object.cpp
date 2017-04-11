@@ -25,19 +25,16 @@
 #include <algorithm>
 
 using namespace Urho3D;
-namespace {
-//RAII based Begin/End SendEvent guard
-class EventReceiverGroup_Guard {
+namespace
+{
+// RAII based Begin/End SendEvent guard
+class EventReceiverGroup_Guard
+{
     EventReceiverGroup &m_guarded;
 public:
-    EventReceiverGroup_Guard(EventReceiverGroup & guarded) : m_guarded(guarded) {
-        m_guarded.BeginSendEvent();
-    }
-    ~EventReceiverGroup_Guard() {
-        m_guarded.EndSendEvent();
-    }
+    EventReceiverGroup_Guard(EventReceiverGroup &guarded) : m_guarded(guarded) { m_guarded.BeginSendEvent(); }
+    ~EventReceiverGroup_Guard() { m_guarded.EndSendEvent(); }
 };
-
 }
 
 TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo) :

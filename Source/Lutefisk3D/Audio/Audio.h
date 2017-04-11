@@ -39,32 +39,22 @@ class SoundSource;
 class URHO3D_API Audio : public Object
 {
     URHO3D_OBJECT(Audio,Object)
-
+    friend void SDLAudioCallback(void *userdata, uint8_t* stream, int len);
 public:
     /// Construct.
     Audio(Context* context);
     /// Destruct. Terminate the audio thread and free the audio buffer.
     virtual ~Audio();
 
-    /// Initialize sound output with specified buffer length and output mode.
     bool SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpolation = true);
-    /// Run update on sound sources. Not required for continued playback, but frees unused sound sources & sounds and updates 3D positions.
     void Update(float timeStep);
-    /// Restart sound output.
     bool Play();
-    /// Suspend sound output.
     void Stop();
-    /// Set master gain on a specific sound type such as sound effects, music or voice.
     void SetMasterGain(const QString& type, float gain);
-    /// Pause playback of specific sound type. This allows to suspend e.g. sound effects or voice when the game is paused. By default all sound types are unpaused.
     void PauseSoundType(const QString& type);
-    /// Resume playback of specific sound type.
     void ResumeSoundType(const QString& type);
-    /// Resume playback of all sound types.
     void ResumeAll();
-    /// Set active sound listener for 3D sounds.
     void SetListener(SoundListener* listener);
-    /// Stop any sound source playing a certain sound clip.
     void StopSound(Sound* sound);
 
     /// Return byte size of one sample.
@@ -79,65 +69,39 @@ public:
     bool IsPlaying() const { return playing_; }
     /// Return whether an audio stream has been reserved.
     bool IsInitialized() const { return deviceID_ != 0; }
-    /// Return master gain for a specific sound source type. Unknown sound types will return full gain (1).
     float GetMasterGain(const QString& type) const;
-    /// Return whether specific sound type has been paused.
     bool IsSoundTypePaused(const QString& type) const;
-    /// Return active sound listener.
     SoundListener* GetListener() const;
     /// Return all sound sources.
     const std::vector<SoundSource*>& GetSoundSources() const { return soundSources_; }
-
     /// Return whether the specified master gain has been defined.
     bool HasMasterGain(const QString& type) const { return masterGain_.contains(type); }
-
-    /// Add a sound source to keep track of. Called by SoundSource.
     void AddSoundSource(SoundSource* soundSource);
-    /// Remove a sound source. Called by SoundSource.
     void RemoveSoundSource(SoundSource* soundSource);
     /// Return audio thread mutex.
     Mutex& GetMutex() { return audioMutex_; }
-    /// Return sound type specific gain multiplied by master gain.
     float GetSoundSourceMasterGain(StringHash typeHash) const;
-
-    /// Mix sound sources into the buffer.
-    void MixOutput(void *dest, unsigned samples);
-
     /// Final multiplier for for audio byte conversion
     static const int SAMPLE_SIZE_MUL = 1;
 private:
-    /// Handle render update event.
+    void MixOutput(void *dest, unsigned samples);
     void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
-    /// Stop sound output and release the sound buffer.
     void Release();
-    /// Actually update sound sources with the specific timestep. Called internally.
     void UpdateInternal(float timeStep);
-    /// Clipping buffer for mixing.
-    SharedArrayPtr<int> clipBuffer_;
-    /// Audio thread mutex.
-    Mutex audioMutex_;
-    /// SDL audio device ID.
-    unsigned deviceID_;
-    /// Sample size.
-    unsigned sampleSize_;
-    /// Clip buffer size in samples.
-    unsigned fragmentSize_;
-    /// Mixing rate.
-    int mixRate_;
-    /// Mixing interpolation flag.
-    bool interpolation_;
-    /// Stereo flag.
-    bool stereo_;
-    /// Playing flag.
-    bool playing_;
-    /// Master gain by sound source type.
-    HashMap<StringHash, Variant> masterGain_;
-    /// Paused sound types.
-    HashSet<StringHash> pausedSoundTypes_;
-    /// Sound sources.
-    std::vector<SoundSource*> soundSources_; //TODO: consider std::set ?
-    /// Sound listener.
-    WeakPtr<SoundListener> listener_;
+
+    SharedArrayPtr<int> clipBuffer_; ///< Clipping buffer for mixing.
+    Mutex audioMutex_;  ///< Audio thread mutex.
+    unsigned deviceID_; ///< SDL audio device ID.
+    unsigned sampleSize_; ///< Sample size.
+    unsigned fragmentSize_; ///< Clip buffer size in samples.
+    int mixRate_;       ///< Mixing rate.
+    bool interpolation_;///< Mixing interpolation flag.
+    bool stereo_;       ///< Stereo flag.
+    bool playing_;      ///< Playing flag.
+    HashMap<StringHash, Variant> masterGain_;///< Master gain by sound source type.
+    HashSet<StringHash> pausedSoundTypes_;///< Paused sound types.
+    std::vector<SoundSource*> soundSources_; ///< Sound sources. TODO: consider std::set ?
+    WeakPtr<SoundListener> listener_; ///< Sound listener.
 };
 
 /// Register Audio library objects.

@@ -206,52 +206,53 @@ void SoundSource3D::CalculateAttenuation()
         return;
 
     float interval = farDistance_ - nearDistance_;
-    if (node_)
+    if (nullptr==node_)
     {
-        SoundListener* listener = audio_->GetListener();
+        attenuation_ = 0.0f;
+        return;
+    }
 
-        // Listener must either be sceneless or in the same scene, else attenuate sound to silence
-        if (listener && listener->IsEnabledEffective() && (!listener->GetScene() || listener->GetScene() == GetScene()))
-        {
-            Node* listenerNode = listener->GetNode();
-            Vector3 relativePos(listenerNode->GetWorldRotation().Inverse() * (node_->GetWorldPosition() - listenerNode->GetWorldPosition()));
-            float distance = relativePos.Length();
+    SoundListener* listener = audio_->GetListener();
 
-            // Distance attenuation
-            if (interval > 0.0f)
-                attenuation_ = powf(1.0f - Clamp(distance - nearDistance_, 0.0f, interval) / interval, rolloffFactor_);
-            else
-                attenuation_ = distance <= nearDistance_ ? 1.0f : 0.0f;
+    // Listener must either be sceneless or in the same scene, else attenuate sound to silence
+    if (listener && listener->IsEnabledEffective() && (!listener->GetScene() || listener->GetScene() == GetScene()))
+    {
+        Node* listenerNode = listener->GetNode();
+        Vector3 relativePos(listenerNode->GetWorldRotation().Inverse() * (node_->GetWorldPosition() - listenerNode->GetWorldPosition()));
+        float distance = relativePos.Length();
 
-            // Panning
-            panning_ = relativePos.Normalized().x_;
-
-            // Angle attenuation
-            if (innerAngle_ < DEFAULT_ANGLE && outerAngle_ > 0.0f)
-            {
-                Vector3 listenerRelativePos(node_->GetWorldRotation().Inverse() * (listenerNode->GetWorldPosition() -
-                    node_->GetWorldPosition()));
-                float listenerDot = Vector3::FORWARD.DotProduct(listenerRelativePos.Normalized());
-                float listenerAngle = acosf(listenerDot) * M_RADTODEG * 2.0f;
-                float angleInterval = std::max(outerAngle_ - innerAngle_, 0.0f);
-                float angleAttenuation = 1.0f;
-
-                if (angleInterval > 0.0f)
-                {
-                    if (listenerAngle > innerAngle_)
-                    {
-                        angleAttenuation = powf(1.0f - Clamp(listenerAngle - innerAngle_, 0.0f, angleInterval) / angleInterval,
-                            rolloffFactor_);
-                    }
-                }
-                else
-                    angleAttenuation = listenerAngle <= innerAngle_ ? 1.0f : 0.0f;
-
-                attenuation_ *= angleAttenuation;
-            }
-        }
+        // Distance attenuation
+        if (interval > 0.0f)
+            attenuation_ = powf(1.0f - Clamp(distance - nearDistance_, 0.0f, interval) / interval, rolloffFactor_);
         else
-            attenuation_ = 0.0f;
+            attenuation_ = distance <= nearDistance_ ? 1.0f : 0.0f;
+
+        // Panning
+        panning_ = relativePos.Normalized().x_;
+
+        // Angle attenuation
+        if (innerAngle_ < DEFAULT_ANGLE && outerAngle_ > 0.0f)
+        {
+            Vector3 listenerRelativePos(node_->GetWorldRotation().Inverse() * (listenerNode->GetWorldPosition() -
+                node_->GetWorldPosition()));
+            float listenerDot = Vector3::FORWARD.DotProduct(listenerRelativePos.Normalized());
+            float listenerAngle = acosf(listenerDot) * M_RADTODEG * 2.0f;
+            float angleInterval = std::max(outerAngle_ - innerAngle_, 0.0f);
+            float angleAttenuation = 1.0f;
+
+            if (angleInterval > 0.0f)
+            {
+                if (listenerAngle > innerAngle_)
+                {
+                    angleAttenuation = powf(1.0f - Clamp(listenerAngle - innerAngle_, 0.0f, angleInterval) / angleInterval,
+                        rolloffFactor_);
+                }
+            }
+            else
+                angleAttenuation = listenerAngle <= innerAngle_ ? 1.0f : 0.0f;
+
+            attenuation_ *= angleAttenuation;
+        }
     }
     else
         attenuation_ = 0.0f;

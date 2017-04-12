@@ -97,14 +97,6 @@ void Component::MarkNetworkUpdate()
     }
 }
 
-void Component::GetDependencyNodes(std::vector<Node*>& dest)
-{
-}
-
-void Component::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
-{
-}
-
 void Component::SetEnabled(bool enable)
 {
     if (enable != enabled_)

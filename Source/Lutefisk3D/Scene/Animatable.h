@@ -39,18 +39,14 @@ class ObjectAnimation;
 class AttributeAnimationInfo : public ValueAnimationInfo
 {
 public:
-    /// Construct.
     AttributeAnimationInfo(Animatable* animatable, const AttributeInfo& attributeInfo, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed);
-    /// Copy construct.
     AttributeAnimationInfo(const AttributeAnimationInfo& other) = default;
-    /// Destruct.
     ~AttributeAnimationInfo() = default;
 
     /// Return attribute information.
     const AttributeInfo& GetAttributeInfo() const { return attributeInfo_; }
 
 protected:
-    /// Apply new animation value to the target object. Called by Update().
     virtual void ApplyValue(const Variant& newValue) override;
 
 private:

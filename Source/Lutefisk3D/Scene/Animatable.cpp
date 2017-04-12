@@ -42,6 +42,7 @@ AttributeAnimationInfo::AttributeAnimationInfo(Animatable* target, const Attribu
 {
 }
 
+/// Apply new animation value to the target object. Called by Update().
 void AttributeAnimationInfo::ApplyValue(const Variant& newValue)
 {
     Animatable* animatable = static_cast<Animatable*>(target_.Get());

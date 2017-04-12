@@ -65,9 +65,9 @@ public:
     /// Mark for attribute check on the next network update.
     virtual void MarkNetworkUpdate() override;
     /// Return the depended on nodes to order network updates.
-    virtual void GetDependencyNodes(std::vector<Node*>& dest);
+    virtual void GetDependencyNodes(std::vector<Node*>& /*dest*/) {}
     /// Visualize the component as debug geometry.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest);
+    virtual void DrawDebugGeometry(DebugRenderer* /*debug*/, bool /*depthTest*/) {}
 
     /// Set enabled/disabled state.
     void SetEnabled(bool enable);

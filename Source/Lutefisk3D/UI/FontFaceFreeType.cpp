@@ -93,8 +93,10 @@ bool FontFaceFreeType::Load(const unsigned char* fontData, unsigned fontDataSize
     Context* context = font_->GetContext();
     // Create & initialize FreeType library if it does not exist yet
     FreeTypeLibrary* freeType = font_->GetSubsystem<FreeTypeLibrary>();
-    if (!freeType)
-        context->RegisterSubsystem(freeType = new FreeTypeLibrary(context));
+    if (!freeType) {
+        freeType = new FreeTypeLibrary(context);
+        context->RegisterSubsystem("FreeTypeLibrary",freeType);
+    }
     // Ensure the FreeType library is kept alive as long as TTF font resources exist
     freeType_ = freeType;
 

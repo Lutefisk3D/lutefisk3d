@@ -105,28 +105,28 @@ Engine::Engine(Context* context) :
     audioPaused_(false)
 {
     // Register self as a subsystem
-    context_->RegisterSubsystem(this);
+    context_->RegisterSubsystem(StringHash("Engine"),this);
 
     // Create subsystems which do not depend on engine initialization or startup parameters
-    context_->RegisterSubsystem(new Time(context_));
-    context_->RegisterSubsystem(new WorkQueue(context_));
+    context_->RegisterSubsystem(StringHash("Time"),new Time(context_));
+    context_->RegisterSubsystem(StringHash("WorkQueue"),new WorkQueue(context_));
 #ifdef LUTEFISK3D_PROFILING
-    context_->RegisterSubsystem(new Profiler(context_));
+    context_->RegisterSubsystem(StringHash("Profiler"),new Profiler(context_));
 #endif
-    context_->RegisterSubsystem(new FileSystem(context_));
+    context_->RegisterSubsystem(StringHash("FileSystem"),new FileSystem(context_));
 #ifdef LUTEFISK3D_LOGGING
-    context_->RegisterSubsystem(new Log(context_));
+    context_->RegisterSubsystem(StringHash("Log"),new Log(context_));
 #endif
-    context_->RegisterSubsystem(new ResourceCache(context_));
+    context_->RegisterSubsystem(StringHash("ResourceCache"),new ResourceCache(context_));
 #ifdef LUTEFISK3D_NETWORK
-    context_->RegisterSubsystem(new Network(context_));
+    context_->RegisterSubsystem(StringHash("Network"),new Network(context_));
 #endif
 #ifdef LUTEFISK3D_INPUT
-    context_->RegisterSubsystem(new Input(context_));
+    context_->RegisterSubsystem(StringHash("Input"),new Input(context_));
 #endif
-    context_->RegisterSubsystem(new Audio(context_));
+    context_->RegisterSubsystem(StringHash("Audio"),new Audio(context_));
 #ifdef LUTEFISK3D_UI
-    context_->RegisterSubsystem(new UI(context_));
+    context_->RegisterSubsystem(StringHash("UI"),new UI(context_));
 #endif
 
     // Register object factories for libraries which are not automatically registered along with subsystem creation
@@ -160,8 +160,8 @@ bool Engine::Initialize(const VariantMap& parameters)
     // Register the rest of the subsystems
     if (!headless_)
     {
-        context_->RegisterSubsystem(new Graphics(context_));
-        context_->RegisterSubsystem(new Renderer(context_));
+        context_->RegisterSubsystem(StringHash("Graphics"),new Graphics(context_));
+        context_->RegisterSubsystem(StringHash("Renderer"),new Renderer(context_));
     }
     else
     {
@@ -285,7 +285,7 @@ bool Engine::Initialize(const VariantMap& parameters)
 #ifdef LUTEFISK3D_PROFILING
     if (GetParameter(parameters, EP_EVENT_PROFILER, true).GetBool())
     {
-        context_->RegisterSubsystem(new EventProfiler(context_));
+        context_->RegisterSubsystem(StringHash("EventProfiler"),new EventProfiler(context_));
         EventProfiler::SetActive(true);
     }
 #endif
@@ -507,7 +507,7 @@ Console* Engine::CreateConsole()
     if (!console)
     {
         console = new Console(context_);
-        context_->RegisterSubsystem(console);
+        context_->RegisterSubsystem(StringHash("Console"),console);
     }
 
     return console;
@@ -523,7 +523,7 @@ DebugHud* Engine::CreateDebugHud()
     if (!debugHud)
     {
         debugHud = new DebugHud(context_);
-        context_->RegisterSubsystem(debugHud);
+        context_->RegisterSubsystem(StringHash("DebugHud"),debugHud);
     }
 
     return debugHud;

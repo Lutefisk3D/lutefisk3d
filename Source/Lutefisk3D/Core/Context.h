@@ -57,7 +57,7 @@ public:
     template <class T> inline SharedPtr<T> CreateObject() { return StaticCast<T>(CreateObject(T::GetTypeStatic())); }
     SharedPtr<Object> CreateObject(StringHash objectType);
     void RegisterFactory(ObjectFactory* factory, const char* category=nullptr);
-    void RegisterSubsystem(Object* subsystem);
+    void RegisterSubsystem(StringHash typeHash, Object* subsystem);
     void RemoveSubsystem(StringHash objectType);
     void RegisterAttribute(StringHash objectType, const AttributeInfo& attr);
     void RemoveAttribute(StringHash objectType, const char* name);

@@ -315,17 +315,17 @@ void Context::RegisterFactory(ObjectFactory* factory, const char* category)
         objectCategories_[category].push_back(factory->GetType());
 }
 /// Register a subsystem.
-void Context::RegisterSubsystem(Object* object)
+void Context::RegisterSubsystem(StringHash typeHash,Object* object)
 {
     if (!object)
         return;
 
-    subsystems_[object->GetType()] = object;
+    subsystems_[typeHash] = object;
 }
 /// Remove a subsystem.
 void Context::RemoveSubsystem(StringHash objectType)
 {
-    HashMap<StringHash, SharedPtr<Object> >::iterator i = subsystems_.find(objectType);
+    auto i = subsystems_.find(objectType);
     if (i != subsystems_.end())
         subsystems_.erase(i);
 }

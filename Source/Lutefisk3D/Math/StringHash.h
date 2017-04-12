@@ -33,26 +33,22 @@ class URHO3D_API StringHash
 {
 public:
     /// Construct with zero value.
-    StringHash() :
-        value_(0)
+    constexpr StringHash() : value_(0)
     {
     }
 
     /// Copy-construct from another hash.
-    StringHash(const StringHash& rhs) :
-        value_(rhs.value_)
+    constexpr StringHash(const StringHash& rhs) : value_(rhs.value_)
     {
     }
 
     /// Copy-construct from another hash.
-    StringHash(StringHash&& rhs) :
-        value_(rhs.value_)
+    StringHash(StringHash&& rhs) : value_(rhs.value_)
     {
         rhs.value_=0;
     }
     /// Construct with an initial value.
-    explicit StringHash(unsigned value) :
-        value_(value)
+    explicit StringHash(unsigned value) : value_(value)
     {
     }
 

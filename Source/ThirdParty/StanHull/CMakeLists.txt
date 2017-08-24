@@ -29,7 +29,3 @@ set(INCLUDES
 
 add_library(StanHull OBJECT ${SOURCE_FILES} ${INCLUDES})
 install (FILES ${INCLUDES} DESTINATION include/ThirdParty/StanHull)
-
-######################### Add component to the project's list
-list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:StanHull>)
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)

@@ -76,12 +76,9 @@ set (SOURCE_FILES
 set (INCLUDE_DIRS include)
 
 include_directories(include)
-add_library(FreeType OBJECT ${SOURCE_FILES})
+add_library(FreeType STATIC ${SOURCE_FILES})
+set_property(TARGET FreeType PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Install headers for building the Urho3D library
 install(DIRECTORY include/freetype DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/freetype)
 install(FILES include/ft2build.h DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/freetype)
-
-######################### Add component to the project's list
-list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:FreeType>)
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)

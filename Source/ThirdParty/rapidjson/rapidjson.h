@@ -30,8 +30,8 @@ typedef unsigned __int64 uint64_t;
 
 //! Endianness of the machine.
 /*!	GCC provided macro for detecting endianness of the target machine. But other
-	compilers may not have this. User can define RAPIDJSON_ENDIAN to either
-	RAPIDJSON_LITTLEENDIAN or RAPIDJSON_BIGENDIAN.
+    compilers may not have this. User can define RAPIDJSON_ENDIAN to either
+    RAPIDJSON_LITTLEENDIAN or RAPIDJSON_BIGENDIAN.
 */
 #ifndef RAPIDJSON_ENDIAN
 #ifdef __BYTE_ORDER__
@@ -51,8 +51,8 @@ typedef unsigned __int64 uint64_t;
 
 //! Data alignment of the machine.
 /*!
-	Some machine requires strict data alignment.
-	Currently the default uses 4 bytes alignment. User can customize this.
+    Some machine requires strict data alignment.
+    Currently the default uses 4 bytes alignment. User can customize this.
 */
 #ifndef RAPIDJSON_ALIGN
 #define RAPIDJSON_ALIGN(x) ((x + 3) & ~3)
@@ -88,7 +88,7 @@ typedef unsigned SizeType;
 
 //! Assertion.
 /*! By default, rapidjson uses C assert() for assertion.
-	User can override it by defining RAPIDJSON_ASSERT(x) macro.
+    User can override it by defining RAPIDJSON_ASSERT(x) macro.
 */
 #ifndef RAPIDJSON_ASSERT
 #include <cassert>
@@ -110,15 +110,14 @@ template<int x> struct StaticAssertTest {};
 #define RAPIDJSON_DO_JOIN(X, Y) RAPIDJSON_DO_JOIN2(X, Y)
 #define RAPIDJSON_DO_JOIN2(X, Y) X##Y
 
-#define RAPIDJSON_STATIC_ASSERT(x) typedef ::rapidjson::StaticAssertTest<\
-	sizeof(::rapidjson::STATIC_ASSERTION_FAILURE<bool(x) >)>\
-	RAPIDJSON_JOIN(StaticAssertTypedef, __LINE__)
+#define RAPIDJSON_STATIC_ASSERT(x) \
+    static_assert(x,"RAPIDJSON_STATIC_ASSERT")
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers
 
-#define RAPIDJSON_MULTILINEMACRO_BEGIN do {  
+#define RAPIDJSON_MULTILINEMACRO_BEGIN do {
 #define RAPIDJSON_MULTILINEMACRO_END \
 } while((void)0, 0)
 
@@ -134,40 +133,40 @@ namespace rapidjson {
 //  Stream
 
 /*! \class rapidjson::Stream
-	\brief Concept for reading and writing characters.
+    \brief Concept for reading and writing characters.
 
-	For read-only stream, no need to implement PutBegin(), Put(), Flush() and PutEnd().
+    For read-only stream, no need to implement PutBegin(), Put(), Flush() and PutEnd().
 
-	For write-only stream, only need to implement Put() and Flush().
+    For write-only stream, only need to implement Put() and Flush().
 
 \code
 concept Stream {
-	typename Ch;	//!< Character type of the stream.
+    typename Ch;	//!< Character type of the stream.
 
-	//! Read the current character from stream without moving the read cursor.
-	Ch Peek() const;
+    //! Read the current character from stream without moving the read cursor.
+    Ch Peek() const;
 
-	//! Read the current character from stream and moving the read cursor to next character.
-	Ch Take();
+    //! Read the current character from stream and moving the read cursor to next character.
+    Ch Take();
 
-	//! Get the current read cursor.
-	//! \return Number of characters read from start.
-	size_t Tell();
+    //! Get the current read cursor.
+    //! \return Number of characters read from start.
+    size_t Tell();
 
-	//! Begin writing operation at the current read pointer.
-	//! \return The begin writer pointer.
-	Ch* PutBegin();
+    //! Begin writing operation at the current read pointer.
+    //! \return The begin writer pointer.
+    Ch* PutBegin();
 
-	//! Write a character.
-	void Put(Ch c);
+    //! Write a character.
+    void Put(Ch c);
 
-	//! Flush the buffer.
-	void Flush();
+    //! Flush the buffer.
+    void Flush();
 
-	//! End the writing operation.
-	//! \param begin The begin write pointer returned by PutBegin().
-	//! \return Number of characters written.
-	size_t PutEnd(Ch* begin);
+    //! End the writing operation.
+    //! \param begin The begin write pointer returned by PutBegin().
+    //! \return Number of characters written.
+    size_t PutEnd(Ch* begin);
 }
 \endcode
 */
@@ -175,8 +174,8 @@ concept Stream {
 //! Put N copies of a character to a stream.
 template<typename Stream, typename Ch>
 inline void PutN(Stream& stream, Ch c, size_t n) {
-	for (size_t i = 0; i < n; i++)
-		stream.Put(c);
+    for (size_t i = 0; i < n; i++)
+        stream.Put(c);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -187,21 +186,21 @@ inline void PutN(Stream& stream, Ch c, size_t n) {
 */
 template <typename Encoding>
 struct GenericStringStream {
-	typedef typename Encoding::Ch Ch;
+    typedef typename Encoding::Ch Ch;
 
-	GenericStringStream(const Ch *src) : src_(src), head_(src) {}
+    GenericStringStream(const Ch *src) : src_(src), head_(src) {}
 
-	Ch Peek() const { return *src_; }
-	Ch Take() { return *src_++; }
-	size_t Tell() const { return src_ - head_; }
+    Ch Peek() const { return *src_; }
+    Ch Take() { return *src_++; }
+    size_t Tell() const { return src_ - head_; }
 
-	Ch* PutBegin() { RAPIDJSON_ASSERT(false); return 0; }
-	void Put(Ch) { RAPIDJSON_ASSERT(false); }
-	void Flush() { RAPIDJSON_ASSERT(false); }
-	size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false); return 0; }
+    Ch* PutBegin() { RAPIDJSON_ASSERT(false); return 0; }
+    void Put(Ch) { RAPIDJSON_ASSERT(false); }
+    void Flush() { RAPIDJSON_ASSERT(false); }
+    size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false); return 0; }
 
-	const Ch* src_;		//!< Current read position.
-	const Ch* head_;	//!< Original head of the string.
+    const Ch* src_;		//!< Current read position.
+    const Ch* head_;	//!< Original head of the string.
 };
 
 typedef GenericStringStream<UTF8<> > StringStream;
@@ -211,28 +210,28 @@ typedef GenericStringStream<UTF8<> > StringStream;
 
 //! A read-write string stream.
 /*! This string stream is particularly designed for in-situ parsing.
-	\implements Stream
+    \implements Stream
 */
 template <typename Encoding>
 struct GenericInsituStringStream {
-	typedef typename Encoding::Ch Ch;
+    typedef typename Encoding::Ch Ch;
 
-	GenericInsituStringStream(Ch *src) : src_(src), dst_(0), head_(src) {}
+    GenericInsituStringStream(Ch *src) : src_(src), dst_(0), head_(src) {}
 
-	// Read
-	Ch Peek() { return *src_; }
-	Ch Take() { return *src_++; }
-	size_t Tell() { return src_ - head_; }
+    // Read
+    Ch Peek() { return *src_; }
+    Ch Take() { return *src_++; }
+    size_t Tell() { return src_ - head_; }
 
-	// Write
-	Ch* PutBegin() { return dst_ = src_; }
-	void Put(Ch c) { RAPIDJSON_ASSERT(dst_ != 0); *dst_++ = c; }
-	void Flush() {}
-	size_t PutEnd(Ch* begin) { return dst_ - begin; }
+    // Write
+    Ch* PutBegin() { return dst_ = src_; }
+    void Put(Ch c) { RAPIDJSON_ASSERT(dst_ != 0); *dst_++ = c; }
+    void Flush() {}
+    size_t PutEnd(Ch* begin) { return dst_ - begin; }
 
-	Ch* src_;
-	Ch* dst_;
-	Ch* head_;
+    Ch* src_;
+    Ch* dst_;
+    Ch* head_;
 };
 
 typedef GenericInsituStringStream<UTF8<> > InsituStringStream;
@@ -242,13 +241,13 @@ typedef GenericInsituStringStream<UTF8<> > InsituStringStream;
 
 //! Type of JSON value
 enum Type {
-	kNullType = 0,		//!< null
-	kFalseType = 1,		//!< false
-	kTrueType = 2,		//!< true
-	kObjectType = 3,	//!< object
-	kArrayType = 4,		//!< array 
-	kStringType = 5,	//!< string
-	kNumberType = 6,	//!< number
+    kNullType = 0,		//!< null
+    kFalseType = 1,		//!< false
+    kTrueType = 2,		//!< true
+    kObjectType = 3,	//!< object
+    kArrayType = 4,		//!< array
+    kStringType = 5,	//!< string
+    kNumberType = 6,	//!< number
 };
 
 } // namespace rapidjson

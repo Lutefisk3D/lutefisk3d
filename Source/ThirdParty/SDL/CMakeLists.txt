@@ -1449,10 +1449,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_CFLAGS}")
 
 # Always build SDLmain
 add_library(SDL2main STATIC ${SDLMAIN_SOURCES})
+set_property(TARGET SDL2main PROPERTY POSITION_INDEPENDENT_CODE ON)
 set(_INSTALL_LIBS "SDL2main")
 
 if(SDL_SHARED)
   add_library(SDL2 SHARED ${SOURCE_FILES})
+  set_property(TARGET SDL2 PROPERTY POSITION_INDEPENDENT_CODE ON)
   if(UNIX)
     set_target_properties(SDL2 PROPERTIES
       VERSION ${LT_VERSION}
@@ -1477,6 +1479,7 @@ endif()
 if(SDL_STATIC)
   set (BUILD_SHARED_LIBS FALSE)
   add_library(SDL2-static STATIC ${SOURCE_FILES})
+  set_property(TARGET SDL2-static PROPERTY POSITION_INDEPENDENT_CODE ON)
   set_target_properties(SDL2-static PROPERTIES OUTPUT_NAME "SDL2")
   if(MSVC)
     set_target_properties(SDL2-static PROPERTIES LINK_FLAGS_RELEASE "/NODEFAULTLIB")

@@ -31,7 +31,7 @@ set(INCLUDES
 
 add_library(LZ4 OBJECT ${SOURCE_FILES} ${INCLUDES})
 install (FILES ${INCLUDES} DESTINATION include/ThirdParty/LZ4)
-
+set_property(TARGET LZ4 PROPERTY POSITION_INDEPENDENT_CODE ON)
 ######################### Add component to the project's list
 list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:LZ4>)
 SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)

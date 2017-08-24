@@ -35,9 +35,9 @@ static const unsigned SMOOTH_POSITION = 1;
 static const unsigned SMOOTH_ROTATION = 2;
 
 /// Transform smoothing component for network updates.
-class URHO3D_API SmoothedTransform : public Component
+class URHO3D_API SmoothedTransform : public Component, public SmoothedTransformSignals
 {
-    URHO3D_OBJECT(SmoothedTransform,Component);
+    URHO3D_OBJECT(SmoothedTransform,Component)
 
 public:
     /// Construct.
@@ -74,9 +74,6 @@ protected:
     virtual void OnNodeSet(Node* node) override;
 
 private:
-    /// Handle smoothing update event.
-    void HandleUpdateSmoothing(StringHash eventType, VariantMap& eventData);
-
     /// Target position.
     Vector3 targetPosition_;
     /// Target rotation.

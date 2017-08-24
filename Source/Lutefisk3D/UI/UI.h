@@ -22,9 +22,11 @@
 
 #pragma once
 
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/RefCounted.h"
+#include "Lutefisk3D/Container/Ptr.h"
 #include "Lutefisk3D/UI/Cursor.h"
 #include "Lutefisk3D/UI/UIBatch.h"
+#include "jlsignal/SignalBase.h"
 
 namespace Urho3D
 {
@@ -40,10 +42,8 @@ class XMLElement;
 class XMLFile;
 
 /// %UI subsystem. Manages the graphical user interface.
-class URHO3D_API UI : public Object
+class URHO3D_API UI : public RefCounted, public jl::SignalObserver
 {
-    URHO3D_OBJECT(UI,Object);
-
 public:
     /// Construct.
     UI(Context* context);
@@ -59,7 +59,7 @@ public:
     bool SetModalElement(UIElement* modalElement, bool enable);
     /// Clear the UI (excluding the cursor.)
     void Clear();
-    /// Update the UI logic. Called by HandlePostUpdate().
+    /// Update the UI logic. Called during signal handling.
     void Update(float timeStep);
     /// Update the UI for rendering. Called by HandleRenderUpdate().
     void RenderUpdate();
@@ -207,38 +207,32 @@ private:
     void ProcessClickEnd(const IntVector2& cursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle mouse or touch move.
     void ProcessMove(const IntVector2& cursorPos, const IntVector2& cursorDeltaPos, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
-    /// Send a UI element drag or hover begin event.
-    void SendDragOrHoverEvent(StringHash eventType, UIElement* element, const IntVector2& screenPos, const IntVector2& deltaPos, UI::DragData* dragData);
-    /// Send a UI click or double click event.
-    void SendClickEvent(StringHash eventType, UIElement* beginElement, UIElement* endElement, const IntVector2& pos, int button, int buttons, int qualifiers);
     /// Handle screen mode event.
-    void HandleScreenMode(StringHash eventType, VariantMap& eventData);
+    void HandleScreenMode(int, int, bool, bool, bool, bool, int, int);
     /// Handle mouse button down event.
-    void HandleMouseButtonDown(StringHash eventType, VariantMap& eventData);
+    void HandleMouseButtonDown(int button, unsigned buttons, int quals);
     /// Handle mouse button up event.
-    void HandleMouseButtonUp(StringHash eventType, VariantMap& eventData);
+    void HandleMouseButtonUp(int Button, unsigned Buttons, int Qualifiers);
     /// Handle mouse move event.
-    void HandleMouseMove(StringHash eventType, VariantMap& eventData);
+    void HandleMouseMove(int x, int y, int DX, int DY, unsigned, int quals);
     /// Handle mouse wheel event.
-    void HandleMouseWheel(StringHash eventType, VariantMap& eventData);
+    void HandleMouseWheel(int Wheel, unsigned Buttons, int Qualifiers);
     /// Handle touch begin event.
-    void HandleTouchBegin(StringHash eventType, VariantMap& eventData);
+    void HandleTouchBegin(unsigned touchID, int x, int y, float pressure);
     /// Handle touch end event.
-    void HandleTouchEnd(StringHash eventType, VariantMap& eventData);
+    void HandleTouchEnd(unsigned touchID, int x, int y);
     /// Handle touch move event.
-    void HandleTouchMove(StringHash eventType, VariantMap& eventData);
+    void HandleTouchMove(unsigned touchID, int x, int y, int dX, int dY, float Pressure);
     /// Handle keypress event.
-    void HandleKeyDown(StringHash eventType, VariantMap& eventData);
+    void HandleKeyDown(int key, int, unsigned buttons, int qualifiers, bool);
     /// Handle text input event.
-    void HandleTextInput(StringHash eventType, VariantMap& eventData);
+    void HandleTextInput(const QString &txt);
     /// Handle frame begin event.
-    void HandleBeginFrame(StringHash eventType, VariantMap& eventData);
-    /// Handle logic post-update event.
-    void HandlePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleBeginFrame(unsigned, float);
     /// Handle render update event.
-    void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleRenderUpdate(float);
     /// Handle a file being drag-dropped into the application window.
-    void HandleDropFile(StringHash eventType, VariantMap& eventData);
+    void HandleDropFile(const QString &name);
     /// Remove drag data and return next iterator.
     HashMap<WeakPtr<UIElement>, DragData*>::iterator DragElementErase(HashMap<WeakPtr<UIElement>, DragData*>::iterator dragElement);
     /// Handle clean up on a drag cancel.
@@ -250,6 +244,7 @@ private:
     /// Return effective size of the root element, according to UI scale and resolution / custom size.
     IntVector2 GetEffectiveRootElementSize(bool applyScale = true) const;
 
+    Context *m_context;
     /// Graphics subsystem.
     WeakPtr<Graphics> graphics_;
     /// UI root element.
@@ -336,3 +331,4 @@ private:
 void URHO3D_API RegisterUILibrary(Context* context);
 
 }
+

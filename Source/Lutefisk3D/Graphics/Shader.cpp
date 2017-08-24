@@ -71,7 +71,7 @@ Shader::Shader(Context* context) :
 
 Shader::~Shader()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
     if(cache)
         cache->ResetDependencies(this);
 }
@@ -83,7 +83,7 @@ void Shader::RegisterObject(Context* context)
 
 bool Shader::BeginLoad(Deserializer& source)
 {
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = context_->m_Graphics.get();
     if (!graphics)
         return false;
 
@@ -157,13 +157,13 @@ ShaderVariation* Shader::GetVariation(ShaderType type, const char* defines)
 
 bool Shader::ProcessSource(QString& code, Deserializer& source)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
 
     // If the source if a non-packaged file, store the timestamp
     File* file = dynamic_cast<File*>(&source);
     if (file && !file->IsPackaged())
     {
-        FileSystem* fileSystem = GetSubsystem<FileSystem>();
+        FileSystem* fileSystem = context_->m_FileSystem.get();
         QString fullName = cache->GetResourceFileName(file->GetName());
         unsigned fileTimeStamp = fileSystem->GetLastModifiedTime(fullName);
         if (fileTimeStamp > timeStamp_)

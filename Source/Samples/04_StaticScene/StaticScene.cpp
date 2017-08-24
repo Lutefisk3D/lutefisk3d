@@ -42,7 +42,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(StaticScene)
 
 StaticScene::StaticScene(Context* context) :
-    Sample(context)
+    Sample("StaticScene",context)
 {
 }
 
@@ -69,9 +69,9 @@ void StaticScene::Start()
 
 void StaticScene::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create the Octree component to the scene. This is required before adding any drawable components, or else nothing will
     // show up. The default octree volume will be from (-1000, -1000, -1000) to (1000, 1000, 1000) in world coordinates; it
@@ -125,8 +125,8 @@ void StaticScene::CreateScene()
 
 void StaticScene::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -141,22 +141,22 @@ void StaticScene::CreateInstructions()
 
 void StaticScene::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen. We need to define the scene and the camera
     // at minimum. Additionally we could configure the viewport screen size and the rendering path (eg. forward / deferred) to
     // use, but now we just use full screen and default render path configured in the engine command line options
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void StaticScene::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -187,16 +187,12 @@ void StaticScene::MoveCamera(float timeStep)
 void StaticScene::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(StaticScene, HandleUpdate));
+    g_coreSignals.update.Connect(this,&StaticScene::HandleUpdate);
 }
 
-void StaticScene::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void StaticScene::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
     // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }

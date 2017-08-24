@@ -46,7 +46,7 @@ set(SOURCE
 )
 
 
-add_library(Lutefisk3D_Math OBJECT ${SOURCE} ${INCLUDES})
+add_library(Lutefisk3D_Math STATIC ${SOURCE} ${INCLUDES})
 target_include_directories(Lutefisk3D_Math PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Math PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Math PROPERTY POSITION_INDEPENDENT_CODE ON)

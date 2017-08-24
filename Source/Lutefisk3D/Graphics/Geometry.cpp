@@ -32,15 +32,14 @@ namespace Urho3D
 {
 
 Geometry::Geometry(Context* context) :
-    Object(context),
     primitiveType_(TRIANGLE_LIST),
     indexStart_(0),
     indexCount_(0),
     vertexStart_(0),
     vertexCount_(0),
+    lodDistance_(0.0f),
     rawVertexSize_(0),
-    rawIndexSize_(0),
-    lodDistance_(0.0f)
+    rawIndexSize_(0)
 {
     SetNumVertexBuffers(1);
 }
@@ -69,7 +68,6 @@ bool Geometry::SetVertexBuffer(unsigned index, VertexBuffer* buffer)
         URHO3D_LOGERROR("Stream index out of bounds");
         return false;
     }
-
     vertexBuffers_[index] = buffer;
 
     return true;

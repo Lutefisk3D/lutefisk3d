@@ -255,21 +255,24 @@ void CrowdManager::SetMaxAgentRadius(float maxAgentRadius)
 
 void CrowdManager::SetNavigationMesh(NavigationMesh* navMesh)
 {
-    UnsubscribeFromEvent(E_COMPONENTADDED);
-    UnsubscribeFromEvent(E_NAVIGATION_MESH_REBUILT);
-    UnsubscribeFromEvent(E_COMPONENTREMOVED);
+    Scene* scene = GetScene();
+    if(scene) {
+        scene->componentAdded.Disconnect(this,&CrowdManager::HandleComponentAdded);
+        scene->componentRemoved.Disconnect(this,&CrowdManager::HandleNavMeshRemoved);
+    }
+    if(navigationMesh_)
+        navigationMesh_->navigationMeshRebuilt.Disconnect(this,&CrowdManager::HandleNavMeshRebuilt);
 
     if (navMesh != navigationMesh_)     // It is possible to reset navmesh pointer back to 0
     {
-        Scene* scene = GetScene();
 
         navigationMesh_ = navMesh;
         navigationMeshId_ = navMesh ? navMesh->GetID() : 0;
 
         if (navMesh)
         {
-            SubscribeToEvent(navMesh, E_NAVIGATION_MESH_REBUILT, URHO3D_HANDLER(CrowdManager, HandleNavMeshChanged));
-            SubscribeToEvent(scene, E_COMPONENTREMOVED, URHO3D_HANDLER(CrowdManager, HandleNavMeshChanged));
+            navMesh->navigationMeshRebuilt.Connect(this,&CrowdManager::HandleNavMeshRebuilt);
+            scene->componentRemoved.Connect(this,&CrowdManager::HandleNavMeshRemoved);
         }
 
         CreateCrowd();
@@ -646,8 +649,7 @@ void CrowdManager::OnSceneSet(Scene* scene)
             URHO3D_LOGERROR("CrowdManager is a scene component and should only be attached to the scene node");
             return;
         }
-
-        SubscribeToEvent(scene, E_SCENESUBSYSTEMUPDATE, URHO3D_HANDLER(CrowdManager, HandleSceneSubsystemUpdate));
+        scene->sceneSubsystemUpdate.Connect(this,&CrowdManager::HandleSceneSubsystemUpdate);
 
         // Attempt to auto discover a NavigationMesh component (or its derivative) under the scene node
         if (navigationMeshId_ == 0)
@@ -658,16 +660,17 @@ void CrowdManager::OnSceneSet(Scene* scene)
             else
             {
                 // If not found, attempt to find in a delayed manner
-                SubscribeToEvent(scene, E_COMPONENTADDED, URHO3D_HANDLER(CrowdManager, HandleComponentAdded));
+                scene->componentAdded.Connect(this,&CrowdManager::HandleComponentAdded);
             }
         }
     }
     else
     {
-        UnsubscribeFromEvent(E_SCENESUBSYSTEMUPDATE);
-        UnsubscribeFromEvent(E_NAVIGATION_MESH_REBUILT);
-        UnsubscribeFromEvent(E_COMPONENTADDED);
-        UnsubscribeFromEvent(E_COMPONENTREMOVED);
+        scene->sceneSubsystemUpdate.Disconnect(this,&CrowdManager::HandleSceneSubsystemUpdate);
+        if(navigationMesh_)
+            navigationMesh_->navigationMeshRebuilt.Disconnect(this,&CrowdManager::HandleNavMeshRebuilt);
+        scene->componentAdded.Disconnect(this,&CrowdManager::HandleComponentAdded);
+        scene->componentRemoved.Disconnect(this,&CrowdManager::HandleNavMeshRemoved);
 
         navigationMesh_ = 0;
     }
@@ -690,43 +693,33 @@ const dtQueryFilter* CrowdManager::GetDetourQueryFilter(unsigned queryFilterType
     return crowd_ ? crowd_->getFilter(queryFilterType) : 0;
 }
 
-void CrowdManager::HandleSceneSubsystemUpdate(StringHash eventType, VariantMap& eventData)
+void CrowdManager::HandleSceneSubsystemUpdate(Scene *,float ts)
 {
     // Perform update tick as long as the crowd is initialized and the associated navmesh has not been removed
     if (crowd_ && navigationMesh_)
     {
-        using namespace SceneSubsystemUpdate;
-
         if (IsEnabledEffective())
-            Update(eventData[P_TIMESTEP].GetFloat());
+            Update(ts);
     }
 }
-
-void CrowdManager::HandleNavMeshChanged(StringHash eventType, VariantMap& eventData)
+void CrowdManager::HandleNavMeshRemoved(Scene *,Node *,Component *component)
 {
-    NavigationMesh* navMesh;
-    if (eventType == E_NAVIGATION_MESH_REBUILT)
-    {
-        navMesh = static_cast<NavigationMesh*>(eventData[NavigationMeshRebuilt::P_MESH].GetPtr());
-        // Reset internal pointer so that the same navmesh can be reassigned and the crowd creation be reattempted
-        if (navMesh == navigationMesh_)
-            navigationMesh_.Reset();
-    }
-    else
-    {
-        // eventType == E_COMPONENTREMOVED
-        navMesh = static_cast<NavigationMesh*>(eventData[ComponentRemoved::P_COMPONENT].GetPtr());
-        // Only interested in navmesh component being used to initialized the crowd
-        if (navMesh != navigationMesh_)
-            return;
-        // Since this is a component removed event, reset our own navmesh pointer
-        navMesh = 0;
-    }
-
+    NavigationMesh* navMesh = static_cast<NavigationMesh*>(component);
+    // Only interested in navmesh component being used to initialized the crowd
+    if (navMesh != navigationMesh_)
+        return;
+    // Since this is a component removed event, reset our own navmesh pointer
+    SetNavigationMesh(nullptr);
+}
+void CrowdManager::HandleNavMeshRebuilt(Node *,NavigationMesh *navMesh)
+{
+    // Reset internal pointer so that the same navmesh can be reassigned and the crowd creation be reattempted
+    if (navMesh == navigationMesh_)
+        navigationMesh_.Reset();
     SetNavigationMesh(navMesh);
 }
 
-void CrowdManager::HandleComponentAdded(StringHash eventType, VariantMap& eventData)
+void CrowdManager::HandleComponentAdded(Scene *,Node *,Component *)
 {
     Scene* scene = GetScene();
     if (scene)

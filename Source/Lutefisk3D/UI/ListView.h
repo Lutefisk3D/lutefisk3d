@@ -166,15 +166,18 @@ protected:
 
 private:
     /// Handle global UI mouseclick to check for selection change.
-    void HandleUIMouseClick(StringHash eventType, VariantMap& eventData);
+    void HandleUIMouseClick(UIElement *element, int button, unsigned buttons, int qualifiers);
     /// Handle global UI mouse doubleclick.
-    void HandleUIMouseDoubleClick(StringHash eventType, VariantMap& eventData);
+    void HandleUIMouseDoubleClick(UIElement *element, int, int, int button, unsigned buttons, int qualifiers);
     /// Handle global focus change to check whether an invisible item was focused.
-    void HandleItemFocusChanged(StringHash eventType, VariantMap& eventData);
+    void HandleItemFocusChanged(UIElement *element, UIElement *);
     /// Handle focus changed.
-    void HandleFocusChanged(StringHash eventType, VariantMap& eventData);
+    void HandleFocusGained(UIElement *, bool);
+    void HandleFocusLost(UIElement *el);
     /// Update subscription to UI click events
     void UpdateUIClickSubscription();
+    void handleMouseClick(UIElement *, int, int, int button, unsigned buttons, int qualifier);
+    void handleMouseClickEnd(UIElement *e, UIElement *, int, int, int button, unsigned buttons, int qualifier);
 };
 
 }

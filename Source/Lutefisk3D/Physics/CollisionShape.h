@@ -251,7 +251,7 @@ private:
     /// Update terrain collision shape from the terrain component.
     void HandleTerrainCreated(StringHash eventType, VariantMap& eventData);
     /// Update trimesh or convex shape after a model has reloaded itself.
-    void HandleModelReloadFinished(StringHash eventType, VariantMap& eventData);
+    void HandleModelReloadFinished();
 
     /// Physics world.
     WeakPtr<PhysicsWorld> physicsWorld_;

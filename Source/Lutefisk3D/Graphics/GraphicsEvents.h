@@ -23,125 +23,71 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
-
+#include "jlsignal/Signal.h"
 namespace Urho3D
 {
+class View;
+class Texture;
+class RenderSurface;
+class Scene;
+class Camera;
+struct GraphicsSignals {
+    /// New screen mode set.
+    /// int Width,int Height,bool Fullscreen,bool Borderless,bool Resizable,bool HighDPI,int Monitor,int RefreshRate
+    jl::Signal<int,int,bool,bool,bool,bool,int,int> newScreenMode;
+    /// Window position changed.
+    /// X,Y
+    jl::Signal<int,int> windowPos;
+    /// Request for queuing rendersurfaces either in manual or always-update mode.
+    jl::Signal<> renderSurfaceUpdate;
+    /// Frame rendering started.
+    jl::Signal<> beginRendering;
+    /// Frame rendering ended.
+    jl::Signal<> endRendering;
+    /// Update of a view started.
+    jl::Signal<View *,Texture *,RenderSurface *,Scene *,Camera *> beginViewUpdate;
+    /// Update of a view ended.
+    jl::Signal<View *,Texture *,RenderSurface *,Scene *,Camera *> endViewUpdate;
+    /// Update of a view started.
+    jl::Signal<View *,Texture *,RenderSurface *,Scene *,Camera *> beginViewRender;
+    /// A view has allocated its screen buffers for rendering. They can be accessed now with View::FindNamedTexture().
+    jl::Signal<View *,Texture *,RenderSurface *,Scene *,Camera *> viewBuffersReady;
+    /// A view has set global shader parameters for a new combination of vertex/pixel shaders. Custom global parameters can now be set.
+    jl::Signal<View *,Texture *,RenderSurface *,Scene *,Camera *> viewGlobalShaderParameters;
+    /// Render of a view ended. Its screen buffers are still accessible if needed.
+    jl::Signal<View *,Texture *,RenderSurface *,Scene *,Camera *> endViewRender;
 
-/// New screen mode set.
-URHO3D_EVENT(E_SCREENMODE, ScreenMode)
-{
-    URHO3D_PARAM(P_WIDTH, Width);                  // int
-    URHO3D_PARAM(P_HEIGHT, Height);                // int
-    URHO3D_PARAM(P_FULLSCREEN, Fullscreen);        // bool
-    URHO3D_PARAM(P_BORDERLESS, Borderless);        // bool
-    URHO3D_PARAM(P_RESIZABLE, Resizable);          // bool
-    URHO3D_PARAM(P_HIGHDPI, HighDPI);              // bool
-    URHO3D_PARAM(P_MONITOR, Monitor);              // int
-    URHO3D_PARAM(P_REFRESHRATE, RefreshRate);      // int
-}
+    /// Render of all views is finished for the frame.
+    jl::Signal<> endAllViewsRender;
+    /// A render path event has occurred.
+    /// Name
+    jl::Signal<const QString &> renderPathEvent;
+    /// Graphics context has been lost. Some or all (depending on the API) GPU objects have lost their contents.
+    jl::Signal<> deviceLost;
+    /// Graphics context has been recreated after being lost. GPU objects in the "data lost" state can be restored now.
+    jl::Signal<> deviceReset;
 
-/// Window position changed.
-URHO3D_EVENT(E_WINDOWPOS, WindowPos)
-{
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-}
+    void init(jl::ScopedAllocator *allocator)
+    {
+        newScreenMode.SetAllocator(allocator);
+        windowPos.SetAllocator(allocator);
+        renderSurfaceUpdate.SetAllocator(allocator);
+        beginRendering.SetAllocator(allocator);
+        endRendering.SetAllocator(allocator);
+        beginViewUpdate.SetAllocator(allocator);
+        endViewUpdate.SetAllocator(allocator);
+        beginViewRender.SetAllocator(allocator);
+        viewBuffersReady.SetAllocator(allocator);
+        viewGlobalShaderParameters.SetAllocator(allocator);
+        endViewRender.SetAllocator(allocator);
 
-
-/// Request for queuing rendersurfaces either in manual or always-update mode.
-URHO3D_EVENT(E_RENDERSURFACEUPDATE, RenderSurfaceUpdate)
-{
-}
-
-/// Frame rendering started.
-URHO3D_EVENT(E_BEGINRENDERING, BeginRendering)
-{
-}
-
-/// Frame rendering ended.
-URHO3D_EVENT(E_ENDRENDERING, EndRendering)
-{
-}
-
-/// Update of a view started.
-URHO3D_EVENT(E_BEGINVIEWUPDATE, BeginViewUpdate)
-{
-    URHO3D_PARAM(P_VIEW, View);                    // View pointer
-    URHO3D_PARAM(P_TEXTURE, Texture);              // Texture pointer
-    URHO3D_PARAM(P_SURFACE, Surface);              // RenderSurface pointer
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_CAMERA, Camera);                // Camera pointer
-}
-
-/// Update of a view ended.
-URHO3D_EVENT(E_ENDVIEWUPDATE, EndViewUpdate)
-{
-    URHO3D_PARAM(P_VIEW, View);                    // View pointer
-    URHO3D_PARAM(P_TEXTURE, Texture);              // Texture pointer
-    URHO3D_PARAM(P_SURFACE, Surface);              // RenderSurface pointer
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_CAMERA, Camera);                // Camera pointer
-}
-
-/// Render of a view started.
-URHO3D_EVENT(E_BEGINVIEWRENDER, BeginViewRender)
-{
-    URHO3D_PARAM(P_VIEW, View);                    // View pointer
-    URHO3D_PARAM(P_TEXTURE, Texture);              // Texture pointer
-    URHO3D_PARAM(P_SURFACE, Surface);              // RenderSurface pointer
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_CAMERA, Camera);                // Camera pointer
-}
-
-/// A view has allocated its screen buffers for rendering. They can be accessed now with View::FindNamedTexture().
-URHO3D_EVENT(E_VIEWBUFFERSREADY, ViewBuffersReady)
-{
-    URHO3D_PARAM(P_VIEW, View);                    // View pointer
-    URHO3D_PARAM(P_TEXTURE, Texture);              // Texture pointer
-    URHO3D_PARAM(P_SURFACE, Surface);              // RenderSurface pointer
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_CAMERA, Camera);                // Camera pointer
-}
-
-/// A view has set global shader parameters for a new combination of vertex/pixel shaders. Custom global parameters can now be set.
-URHO3D_EVENT(E_VIEWGLOBALSHADERPARAMETERS, ViewGlobalShaderParameters)
-{
-    URHO3D_PARAM(P_VIEW, View);                    // View pointer
-    URHO3D_PARAM(P_TEXTURE, Texture);              // Texture pointer
-    URHO3D_PARAM(P_SURFACE, Surface);              // RenderSurface pointer
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_CAMERA, Camera);                // Camera pointer
-}
-
-/// Render of a view ended. Its screen buffers are still accessible if needed.
-URHO3D_EVENT(E_ENDVIEWRENDER, EndViewRender)
-{
-    URHO3D_PARAM(P_VIEW, View);                    // View pointer
-    URHO3D_PARAM(P_TEXTURE, Texture);              // Texture pointer
-    URHO3D_PARAM(P_SURFACE, Surface);              // RenderSurface pointer
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_CAMERA, Camera);                // Camera pointer
-}
-
-/// Render of all views is finished for the frame.
-URHO3D_EVENT(E_ENDALLVIEWSRENDER, EndAllViewsRender)
-{
-}
-
-/// A render path event has occurred.
-URHO3D_EVENT(E_RENDERPATHEVENT, RenderPathEvent)
-{
-    URHO3D_PARAM(P_NAME, Name);                    // String
-}
-/// Graphics context has been lost. Some or all (depending on the API) GPU objects have lost their contents.
-URHO3D_EVENT(E_DEVICELOST, DeviceLost)
-{
-}
-
-/// Graphics context has been recreated after being lost. GPU objects in the "data lost" state can be restored now.
-URHO3D_EVENT(E_DEVICERESET, DeviceReset)
-{
-}
+        endAllViewsRender.SetAllocator(allocator);
+        renderPathEvent.SetAllocator(allocator);
+        deviceLost.SetAllocator(allocator);
+        deviceReset.SetAllocator(allocator);
+    }
+};
+extern GraphicsSignals g_graphicsSignals;
 
 
 }

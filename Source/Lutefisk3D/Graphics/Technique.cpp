@@ -39,7 +39,7 @@ namespace Urho3D
 
 extern const char* cullModeNames[];
 
-const char* blendModeNames[] =
+const char* blendModeNames[MAX_BLENDMODES+1] =
 {
     "replace",
     "add",
@@ -50,6 +50,7 @@ const char* blendModeNames[] =
     "invdestalpha",
     "subtract",
     "subtractalpha",
+    "zeroinvsrc",
     nullptr
 };
 

@@ -122,9 +122,9 @@ protected:
 
 private:
     /// Handle scene post-update event.
-    void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleScenePostUpdate(Scene *, float ts);
     /// Handle live reload of the particle effect.
-    void HandleEffectReloadFinished(StringHash eventType, VariantMap& eventData);
+    void HandleEffectReloadFinished();
 
     /// Particle effect.
     SharedPtr<ParticleEffect> effect_;

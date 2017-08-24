@@ -25,16 +25,14 @@
 #include "Lutefisk3D/Graphics/GPUObject.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Container/ArrayPtr.h"
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/RefCounted.h"
 
 namespace Urho3D
 {
-
+class Context;
 /// Hardware constant buffer.
-class URHO3D_API ConstantBuffer : public Object, public GPUObject
+class URHO3D_API ConstantBuffer : public RefCounted, public GPUObject
 {
-    URHO3D_OBJECT(ConstantBuffer,Object);
-
 public:
     /// Construct.
     ConstantBuffer(Context* context);

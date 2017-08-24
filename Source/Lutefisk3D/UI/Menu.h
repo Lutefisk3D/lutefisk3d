@@ -94,11 +94,15 @@ protected:
 
 private:
     /// Handle press and release for selection and toggling popup visibility.
-    void HandlePressedReleased(StringHash eventType, VariantMap& eventData);
+    void HandlePressedReleased(bool pressed);
+    void HandlePressed(UIElement *);
+    void HandleReleased(UIElement *);
     /// Handle global focus change to check for hiding the popup.
-    void HandleFocusChanged(StringHash eventType, VariantMap& eventData);
+    void HandleFocusChanged(UIElement *element, UIElement *clickedElement, bool wasClick);
+    void HandleMouseClick(UIElement *elem, int, int, int, unsigned, int);
+    void HandleFocusChange(UIElement *elem, UIElement *clickedElem);
     /// Handle keypress for checking accelerator.
-    void HandleKeyDown(StringHash eventType, VariantMap& eventData);
+    void HandleKeyDown(int key, int, unsigned, int qualifiers, bool repeat);
     /// Auto popup flag.
     bool autoPopup_;
 };

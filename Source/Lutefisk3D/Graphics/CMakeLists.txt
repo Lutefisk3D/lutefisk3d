@@ -123,14 +123,16 @@ set(OPENGL2_3_RENDERER
     OpenGL/OGLVertexBuffer.cpp
 )
 
-add_library(Lutefisk3D_Graphics OBJECT ${SOURCE} ${INCLUDES} ${OPENGL2_3_RENDERER})
-add_dependencies(Lutefisk3D_Graphics SDL2_LIB glbinding)
+add_library(Lutefisk3D_Graphics STATIC ${SOURCE} ${INCLUDES} ${OPENGL2_3_RENDERER})
+add_dependencies(Lutefisk3D_Graphics SDL2_LIB glbinding_LIB)
+set_property(TARGET Lutefisk3D_Graphics PROPERTY INTERFACE_LINK_LIBRARIES
+    SDL2_LIB glbinding_LIB
+    Lutefisk3D_Core
+    Lutefisk3D_Engine # for console support
+)
 target_include_directories(Lutefisk3D_Graphics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Graphics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Graphics PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-######################### Add component to the project's list
-list(APPEND Lutefisk3D_components $<TARGET_OBJECTS:Lutefisk3D_Graphics>)
-SET(Lutefisk3D_components ${Lutefisk3D_components} PARENT_SCOPE)
 if(UNIT_TESTING)
 endif()

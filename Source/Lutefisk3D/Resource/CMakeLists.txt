@@ -8,6 +8,7 @@ set(INCLUDES
     XMLElement.h
     XMLFile.h
     Localization.h
+    ResourceEvents.h
 )
 set(SOURCE
     BackgroundLoader.cpp
@@ -21,11 +22,16 @@ set(SOURCE
     PListFile.cpp
     XMLFile.cpp
         XMLElement.cpp
+    ResourceEvents.cpp
 )
 
 
-add_library(Lutefisk3D_Resource OBJECT ${SOURCE} ${INCLUDES})
+add_library(Lutefisk3D_Resource STATIC ${SOURCE} ${INCLUDES} $<TARGET_OBJECTS:PugiXml>)
 add_dependencies(Lutefisk3D_Resource PugiXml rapidjson SDL2_LIB)
+set_property(TARGET Lutefisk3D_Resource PROPERTY INTERFACE_LINK_LIBRARIES
+    SDL2_LIB
+    Lutefisk3D_IO # for FileWatcher
+)
 
 target_include_directories(Lutefisk3D_Resource PRIVATE
     $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>

@@ -23,26 +23,21 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
-
+#include "jlsignal/Signal.h"
 namespace Urho3D
 {
+class NavigationMesh;
+class Node;
+class Vector3;
+struct NavigationMeshSignals {
+    /// Complete rebuild of navigation mesh.
+    jl::Signal<Node *,NavigationMesh *> navigationMeshRebuilt;
+    /// Partial bounding box rebuild of navigation mesh.
+    jl::Signal<Node *,NavigationMesh *,Vector3,Vector3> navigationAreaRebuilt; // Node,Mesh,BoundsMin,BoundsMax
+};
+struct CrowdManagerSignals {
 
-/// Complete rebuild of navigation mesh.
-URHO3D_EVENT(E_NAVIGATION_MESH_REBUILT, NavigationMeshRebuilt)
-{
-    URHO3D_PARAM(P_NODE, Node); // Node pointer
-    URHO3D_PARAM(P_MESH, Mesh); // NavigationMesh pointer
-}
-
-/// Partial bounding box rebuild of navigation mesh.
-URHO3D_EVENT(E_NAVIGATION_AREA_REBUILT, NavigationAreaRebuilt)
-{
-    URHO3D_PARAM(P_NODE, Node); // Node pointer
-    URHO3D_PARAM(P_MESH, Mesh); // NavigationMesh pointer
-    URHO3D_PARAM(P_BOUNDSMIN, BoundsMin); // Vector3
-    URHO3D_PARAM(P_BOUNDSMAX, BoundsMax); // Vector3
-}
-
+};
 /// Crowd agent formation.
 URHO3D_EVENT(E_CROWD_AGENT_FORMATION, CrowdAgentFormation)
 {

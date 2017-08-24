@@ -360,7 +360,7 @@ Billboard* BillboardSet::GetBillboard(unsigned index)
 
 void BillboardSet::SetMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     SetMaterial(cache->GetResource<Material>(value.name_));
 }
 

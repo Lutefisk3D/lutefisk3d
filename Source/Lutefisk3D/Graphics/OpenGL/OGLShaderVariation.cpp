@@ -20,13 +20,13 @@
 // THE SOFTWARE.
 //
 
-#include "../../Graphics/ShaderVariation.h"
+#include "../ShaderVariation.h"
 
-#include "../../Graphics/Graphics.h"
-#include "../../Graphics/GraphicsImpl.h"
-#include "../../IO/Log.h"
-#include "../../Graphics/Shader.h"
-#include "../../Graphics/ShaderProgram.h"
+#include "../Graphics.h"
+#include "../GraphicsImpl.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "../Shader.h"
+#include "../ShaderProgram.h"
 #include <QString>
 #include <QDebug>
 using namespace gl;

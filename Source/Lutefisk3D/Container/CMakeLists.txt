@@ -9,7 +9,6 @@ RefCounted.h
 SmallOrig.h
 SmallVector.h
 Str.h
-Swap.h
 
 sherwood_map.hpp
 )
@@ -20,7 +19,7 @@ set(SOURCE
     sherwood_map.cpp
 )
 
-add_library(Lutefisk3D_Containers OBJECT ${SOURCE} ${INCLUDES})
+add_library(Lutefisk3D_Containers STATIC ${SOURCE} ${INCLUDES})
 
 target_include_directories(Lutefisk3D_Containers PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Containers PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)

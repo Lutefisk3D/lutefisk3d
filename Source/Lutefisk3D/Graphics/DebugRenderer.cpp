@@ -49,7 +49,7 @@ DebugRenderer::DebugRenderer(Context* context) :
 {
     vertexBuffer_ = new VertexBuffer(context_);
 
-    SubscribeToEvent(E_ENDFRAME, URHO3D_HANDLER(DebugRenderer, HandleEndFrame));
+    g_coreSignals.endFrame.Connect(this,&DebugRenderer::HandleEndFrame);
 }
 
 DebugRenderer::~DebugRenderer()
@@ -436,7 +436,7 @@ void DebugRenderer::Render()
     if (!HasContent())
         return;
 
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = context_->m_Graphics.get();
     // Engine does not render when window is closed or device is lost
     assert(graphics && graphics->IsInitialized() && !graphics->IsDeviceLost());
 
@@ -592,7 +592,7 @@ bool DebugRenderer::HasContent() const
 {
     return !(lines_.empty() && noDepthLines_.empty() && triangles_.empty() && noDepthTriangles_.empty());
 }
-void DebugRenderer::HandleEndFrame(StringHash eventType, VariantMap& eventData)
+void DebugRenderer::HandleEndFrame()
 {
     // When the amount of debug geometry is reduced, release memory
     unsigned linesSize = lines_.size();

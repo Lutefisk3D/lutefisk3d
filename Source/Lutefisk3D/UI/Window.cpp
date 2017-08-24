@@ -269,7 +269,7 @@ void Window::SetResizeBorder(const IntRect& rect)
 
 void Window::SetModal(bool modal)
 {
-    UI* ui = GetSubsystem<UI>();
+    UI* ui = context_->m_UISystem.get();
     // Can be null at exit time; no-op in that case
     if (!ui)
         return;
@@ -277,13 +277,7 @@ void Window::SetModal(bool modal)
     if (ui->SetModalElement(this, modal))
     {
         modal_ = modal;
-
-        using namespace ModalChanged;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_ELEMENT] = this;
-        eventData[P_MODAL] = modal;
-        SendEvent(E_MODALCHANGED, eventData);
+        modalChanged.Emit(this,modal);
     }
 }
 

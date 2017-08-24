@@ -91,8 +91,9 @@ void LogicComponent::OnSceneSet(Scene* scene)
         UpdateEventSubscription();
     else
     {
-        UnsubscribeFromEvent(E_SCENEUPDATE);
-        UnsubscribeFromEvent(E_SCENEPOSTUPDATE);
+        assert(GetScene());
+        g_sceneSignals.sceneUpdate.Disconnect(this,&LogicComponent::HandleSceneUpdate);
+        GetScene()->scenePostUpdate.Disconnect(this,&LogicComponent::HandleScenePostUpdate);
 #if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
         UnsubscribeFromEvent(E_PHYSICSPRESTEP);
         UnsubscribeFromEvent(E_PHYSICSPOSTSTEP);
@@ -112,24 +113,24 @@ void LogicComponent::UpdateEventSubscription()
     bool needUpdate = enabled && (((updateEventMask_ & USE_UPDATE) != 0) || !delayedStartCalled_);
     if (needUpdate && ((currentEventMask_ & USE_UPDATE) == 0))
     {
-        SubscribeToEvent(scene, E_SCENEUPDATE, URHO3D_HANDLER(LogicComponent, HandleSceneUpdate));
+        g_sceneSignals.sceneUpdate.Connect(this,&LogicComponent::HandleSceneUpdate);
         currentEventMask_ |= USE_UPDATE;
     }
     else if (!needUpdate && ((currentEventMask_ & USE_UPDATE) != 0))
     {
-        UnsubscribeFromEvent(scene, E_SCENEUPDATE);
+        g_sceneSignals.sceneUpdate.Disconnect(this,&LogicComponent::HandleSceneUpdate);
         currentEventMask_ &= ~USE_UPDATE;
     }
 
     bool needPostUpdate = enabled && ((updateEventMask_ & USE_POSTUPDATE) != 0);
     if (needPostUpdate && ((currentEventMask_ & USE_POSTUPDATE) == 0))
     {
-        SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(LogicComponent, HandleScenePostUpdate));
+        GetScene()->scenePostUpdate.Connect(this,&LogicComponent::HandleScenePostUpdate);
         currentEventMask_ |= USE_POSTUPDATE;
     }
     else if (!needPostUpdate && ((currentEventMask_ & USE_POSTUPDATE) != 0))
     {
-        UnsubscribeFromEvent(scene, E_SCENEPOSTUPDATE);
+        GetScene()->scenePostUpdate.Disconnect(this,&LogicComponent::HandleScenePostUpdate);
         currentEventMask_ &= ~USE_POSTUPDATE;
     }
 
@@ -164,10 +165,9 @@ void LogicComponent::UpdateEventSubscription()
 #endif
 }
 
-void LogicComponent::HandleSceneUpdate(StringHash eventType, VariantMap& eventData)
+void LogicComponent::HandleSceneUpdate(Scene *s,float ts)
 {
-    using namespace SceneUpdate;
-
+    assert(s==GetScene());
     // Execute user-defined delayed start function before first update
     if (!delayedStartCalled_)
     {
@@ -177,22 +177,20 @@ void LogicComponent::HandleSceneUpdate(StringHash eventType, VariantMap& eventDa
         // If did not need actual update events, unsubscribe now
         if ((updateEventMask_ & USE_UPDATE) == 0)
         {
-            UnsubscribeFromEvent(GetScene(), E_SCENEUPDATE);
+            g_sceneSignals.sceneUpdate.Disconnect(this,&LogicComponent::HandleSceneUpdate);
             currentEventMask_ &= ~USE_UPDATE;
             return;
         }
     }
 
     // Then execute user-defined update function
-    Update(eventData[P_TIMESTEP].GetFloat());
+    Update(ts);
 }
 
-void LogicComponent::HandleScenePostUpdate(StringHash eventType, VariantMap& eventData)
+void LogicComponent::HandleScenePostUpdate(Scene *s,float ts)
 {
-    using namespace ScenePostUpdate;
-
     // Execute user-defined post-update function
-    PostUpdate(eventData[P_TIMESTEP].GetFloat());
+    PostUpdate(ts);
 }
 
 #if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)

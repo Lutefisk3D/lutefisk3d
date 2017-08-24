@@ -674,13 +674,7 @@ void Serializable::SetTemporary(bool enable)
     if (enable != temporary_)
     {
         temporary_ = enable;
-
-        using namespace TemporaryChanged;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_SERIALIZABLE] = this;
-
-        SendEvent(E_TEMPORARYCHANGED, eventData);
+        g_sceneSignals.temporaryChanged.Emit(this);
     }
 }
 
@@ -837,15 +831,9 @@ bool Serializable::ReadDeltaUpdate(Deserializer& source)
             }
             else
             {
-                using namespace InterceptNetworkUpdate;
-
-                VariantMap& eventData = GetEventDataMap();
-                eventData[P_SERIALIZABLE] = this;
-                eventData[P_TIMESTAMP] = (unsigned)timeStamp;
-                eventData[P_INDEX] = RemapAttributeIndex(GetAttributes(), attr, i);
-                eventData[P_NAME] = attr.name_;
-                eventData[P_VALUE] = source.ReadVariant(attr.type_);
-                SendEvent(E_INTERCEPTNETWORKUPDATE, eventData);
+                g_sceneSignals.interceptNetworkUpdate.Emit(this, timeStamp,
+                                                           RemapAttributeIndex(GetAttributes(), attr, i), attr.name_,
+                                                           source.ReadVariant(attr.type_));
             }
         }
     }
@@ -877,15 +865,10 @@ bool Serializable::ReadLatestDataUpdate(Deserializer& source)
             }
             else
             {
-                using namespace InterceptNetworkUpdate;
+                g_sceneSignals.interceptNetworkUpdate.Emit(this, timeStamp,
+                                                           RemapAttributeIndex(GetAttributes(), attr, i), attr.name_,
+                                                           source.ReadVariant(attr.type_));
 
-                VariantMap& eventData = GetEventDataMap();
-                eventData[P_SERIALIZABLE] = this;
-                eventData[P_TIMESTAMP] = (unsigned)timeStamp;
-                eventData[P_INDEX] = RemapAttributeIndex(GetAttributes(), attr, i);
-                eventData[P_NAME] = attr.name_;
-                eventData[P_VALUE] = source.ReadVariant(attr.type_);
-                SendEvent(E_INTERCEPTNETWORKUPDATE, eventData);
             }
         }
     }

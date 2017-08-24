@@ -29,7 +29,7 @@
 #include "Lutefisk3D/Physics/PhysicsWorld.h"
 #endif
 #ifdef LUTEFISK3D_URHO2D
-#include "Lutefisk3D/Urho2D/PhysicsWorld2D.h"
+#include "Lutefisk3D/2D/PhysicsWorld2D.h"
 #endif
 #include "Lutefisk3D/Resource/JSONValue.h"
 namespace Urho3D
@@ -109,14 +109,7 @@ void Component::SetEnabled(bool enable)
         Scene* scene = GetScene();
         if (scene != nullptr)
         {
-            using namespace ComponentEnabledChanged;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_SCENE] = scene;
-            eventData[P_NODE] = node_;
-            eventData[P_COMPONENT] = this;
-
-            scene->SendEvent(E_COMPONENTENABLEDCHANGED, eventData);
+            scene->componentEnabledChanged.Emit(scene,node_,this);
         }
     }
 }
@@ -201,13 +194,13 @@ void Component::CleanupConnection(Connection* connection)
 void Component::OnAttributeAnimationAdded()
 {
     if (attributeAnimationInfos_.size() == 1)
-        SubscribeToEvent(GetScene(), E_ATTRIBUTEANIMATIONUPDATE, URHO3D_HANDLER(Component, HandleAttributeAnimationUpdate));
+        GetScene()->attributeAnimationUpdate.Connect(this,&Component::HandleAttributeAnimationUpdate);
 }
 
 void Component::OnAttributeAnimationRemoved()
 {
     if (attributeAnimationInfos_.isEmpty())
-        UnsubscribeFromEvent(GetScene(), E_ATTRIBUTEANIMATIONUPDATE);
+        GetScene()->attributeAnimationUpdate.Disconnect(this,&Component::HandleAttributeAnimationUpdate);
 }
 
 void Component::OnNodeSet(Node* node)
@@ -255,11 +248,9 @@ void Component::GetComponents(std::vector<Component*>& dest, StringHash type) co
         dest.clear();
 }
 
-void Component::HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& eventData)
+void Component::HandleAttributeAnimationUpdate(Scene *,float ts)
 {
-    using namespace AttributeAnimationUpdate;
-
-    UpdateAttributeAnimations(eventData[P_TIMESTEP].GetFloat());
+    UpdateAttributeAnimations(ts);
 }
 Component* Component::GetFixedUpdateSource()
 {

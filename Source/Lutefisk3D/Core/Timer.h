@@ -22,11 +22,14 @@
 
 #pragma once
 
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Core/Lutefisk3D.h"
+#include "Lutefisk3D/Container/RefCounted.h"
+
+class QString;
 
 namespace Urho3D
 {
-
+class Context;
 /// Low-resolution operating system timer.
 class URHO3D_API Timer
 {
@@ -76,10 +79,8 @@ private:
 };
 
 /// %Time and frame counter subsystem.
-class URHO3D_API Time : public Object
+class URHO3D_API Time : public RefCounted
 {
-    URHO3D_OBJECT(Time, Object)
-
 public:
     /// Construct.
     Time(Context* context);
@@ -112,6 +113,7 @@ public:
     static void Sleep(unsigned mSec);
 
 private:
+    Context *m_context;
     /// Elapsed time since program start.
     Timer elapsedTime_;
     /// Frame number.

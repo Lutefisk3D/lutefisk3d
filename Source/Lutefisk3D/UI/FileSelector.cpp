@@ -106,32 +106,40 @@ FileSelector::FileSelector(Context* context) :
     QStringList defaultFilters;
     defaultFilters.push_back("*.*");
     SetFilters(defaultFilters, 0);
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
-    SetPath(fileSystem->GetCurrentDir());
+    SetPath(context_->m_FileSystem->GetCurrentDir());
 
     // Focus the fileselector's filelist initially when created, and bring to front
-    UI* ui = GetSubsystem<UI>();
+    UI* ui = context_->m_UISystem.get();
     ui->GetRoot()->AddChild(window_);
     ui->SetFocusElement(fileList_);
     window_->SetModal(true);
 
     SubscribeToEvent(filterList_, E_ITEMSELECTED, URHO3D_HANDLER(FileSelector, HandleFilterChanged));
-    SubscribeToEvent(pathEdit_, E_TEXTFINISHED, URHO3D_HANDLER(FileSelector, HandlePathChanged));
-    SubscribeToEvent(fileNameEdit_, E_TEXTFINISHED, URHO3D_HANDLER(FileSelector, HandleOKPressed));
+    pathEdit_->textFinished.Connect(this,&FileSelector::HandlePathChanged);
+    fileNameEdit_->textFinished.Connect(this,&FileSelector::HandleFileNameFinished);
     SubscribeToEvent(fileList_, E_ITEMSELECTED, URHO3D_HANDLER(FileSelector, HandleFileSelected));
     SubscribeToEvent(fileList_, E_ITEMDOUBLECLICKED, URHO3D_HANDLER(FileSelector, HandleFileDoubleClicked));
     SubscribeToEvent(fileList_, E_UNHANDLEDKEY, URHO3D_HANDLER(FileSelector, HandleFileListKey));
-    SubscribeToEvent(okButton_, E_RELEASED, URHO3D_HANDLER(FileSelector, HandleOKPressed));
-    SubscribeToEvent(cancelButton_, E_RELEASED, URHO3D_HANDLER(FileSelector, HandleCancelPressed));
-    SubscribeToEvent(closeButton_, E_RELEASED, URHO3D_HANDLER(FileSelector, HandleCancelPressed));
-    SubscribeToEvent(window_, E_MODALCHANGED, URHO3D_HANDLER(FileSelector, HandleCancelPressed));
+    okButton_->released.Connect(this,&FileSelector::HandleOKPressed);
+    cancelButton_->released.Connect(this,&FileSelector::HandleCancelPressed);
+    closeButton_->released.Connect(this,&FileSelector::HandleCancelPressed);
+    window_->modalChanged.Connect(this,&FileSelector::HandleModalChanged);
 }
 
 FileSelector::~FileSelector()
 {
     window_->Remove();
 }
-
+void FileSelector::HandleFileNameFinished(UIElement *,const QString &,float) {
+    assert(false);
+    HandleFileAccepted(false);
+}
+void FileSelector::HandleModalChanged(UIElement *e,bool modal)
+{
+    if (modal)
+        return;
+    HandleCancelPressed(e);
+}
 void FileSelector::RegisterObject(Context* context)
 {
     context->RegisterFactory<FileSelector>();
@@ -189,8 +197,7 @@ void FileSelector::SetButtonTexts(const QString& okText, const QString& cancelTe
 
 void FileSelector::SetPath(const QString& path)
 {
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
-    if (fileSystem->DirExists(path))
+    if (context_->m_FileSystem->DirExists(path))
     {
         path_ = AddTrailingSlash(path);
         SetLineEditText(pathEdit_, path_);
@@ -283,7 +290,7 @@ void FileSelector::SetLineEditText(LineEdit* edit, const QString& text)
 
 void FileSelector::RefreshFiles()
 {
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = context_->m_FileSystem.get();
 
     ignoreEvents_ = true;
 
@@ -388,7 +395,7 @@ void FileSelector::HandleFilterChanged(StringHash eventType, VariantMap& eventDa
         RefreshFiles();
 }
 
-void FileSelector::HandlePathChanged(StringHash eventType, VariantMap& eventData)
+void FileSelector::HandlePathChanged(UIElement *,const QString &,float)
 {
     if (ignoreEvents_)
         return;
@@ -435,8 +442,11 @@ void FileSelector::HandleFileListKey(StringHash eventType, VariantMap& eventData
             fileList_->SetSelection(0);
     }
 }
+void FileSelector::HandleOKPressed(UIElement *) {
+    HandleFileAccepted(true);
+}
 
-void FileSelector::HandleOKPressed(StringHash eventType, VariantMap& eventData)
+void FileSelector::HandleFileAccepted(bool byButton)
 {
     if (ignoreEvents_)
         return;
@@ -456,7 +466,7 @@ void FileSelector::HandleOKPressed(StringHash eventType, VariantMap& eventData)
             SendEvent(E_FILESELECTED, newEventData);
         }
     }
-    else if (eventType == E_RELEASED && !path_.isEmpty())
+    else if (byButton && !path_.isEmpty())
     {
         using namespace FileSelected;
 
@@ -468,12 +478,9 @@ void FileSelector::HandleOKPressed(StringHash eventType, VariantMap& eventData)
     }
 }
 
-void FileSelector::HandleCancelPressed(StringHash eventType, VariantMap& eventData)
+void FileSelector::HandleCancelPressed(UIElement *)
 {
     if (ignoreEvents_)
-        return;
-
-    if (eventType == E_MODALCHANGED && eventData[ModalChanged::P_MODAL].GetBool())
         return;
 
     using namespace FileSelected;

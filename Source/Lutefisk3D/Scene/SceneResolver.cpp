@@ -40,25 +40,25 @@ SceneResolver::SceneResolver()
 SceneResolver::~SceneResolver()
 {
 }
-
+/// Reset. Clear all remembered nodes and components.
 void SceneResolver::Reset()
 {
     nodes_.clear();
     components_.clear();
 }
-
+/// Remember a created node.
 void SceneResolver::AddNode(unsigned oldID, Node* node)
 {
     if (node != nullptr)
         nodes_[oldID] = node;
 }
-
+/// Remember a created component.
 void SceneResolver::AddComponent(unsigned oldID, Component* component)
 {
     if (component != nullptr)
         components_[oldID] = component;
 }
-
+/// Resolve component and node ID attributes and reset.
 void SceneResolver::Resolve()
 {
     // Nodes do not have component or node ID attributes, so only have to go through components

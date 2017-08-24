@@ -752,22 +752,22 @@ void PhysicsWorld::CleanupGeometryCache()
 void PhysicsWorld::OnSceneSet(Scene* scene)
 {
     // Subscribe to the scene subsystem update, which will trigger the physics simulation step
-    if (scene)
-    {
+    if (scene) {
         scene_ = GetScene();
-        SubscribeToEvent(scene_, E_SCENESUBSYSTEMUPDATE, URHO3D_HANDLER(PhysicsWorld, HandleSceneSubsystemUpdate));
+        scene->sceneSubsystemUpdate.Connect(this,&PhysicsWorld::HandleSceneSubsystemUpdate);
     }
-    else
-        UnsubscribeFromEvent(E_SCENESUBSYSTEMUPDATE);
+    else {
+        assert(scene_);
+        scene_->sceneSubsystemUpdate.Disconnect(this, &PhysicsWorld::HandleSceneSubsystemUpdate);
+    }
+
 }
 
-void PhysicsWorld::HandleSceneSubsystemUpdate(StringHash eventType, VariantMap& eventData)
+void PhysicsWorld::HandleSceneSubsystemUpdate(Scene *, float ts)
 {
     if (!updateEnabled_)
         return;
-
-    using namespace SceneSubsystemUpdate;
-    Update(eventData[P_TIMESTEP].GetFloat());
+    Update(ts);
 }
 
 void PhysicsWorld::PreStep(float timeStep)
@@ -782,7 +782,7 @@ void PhysicsWorld::PreStep(float timeStep)
 
     // Start profiling block for the actual simulation step
 #ifdef LUTEFISK3D_PROFILING
-    Profiler* profiler = GetSubsystem<Profiler>();
+    Profiler* profiler = context_->m_ProfilerSystem.get();
     if (profiler)
         profiler->BeginBlock("StepSimulation");
 #endif
@@ -791,7 +791,7 @@ void PhysicsWorld::PreStep(float timeStep)
 void PhysicsWorld::PostStep(float timeStep)
 {
 #ifdef LUTEFISK3D_PROFILING
-    Profiler* profiler = GetSubsystem<Profiler>();
+    Profiler* profiler = context_->m_ProfilerSystem.get();
     if (profiler)
         profiler->EndBlock();
 #endif

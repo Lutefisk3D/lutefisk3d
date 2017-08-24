@@ -206,13 +206,14 @@ private:
 
 template <class T> T* Object::GetSubsystem() const { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }
 
+
 /// Base class for object factories.
 class URHO3D_API ObjectFactory : public RefCounted
 {
 public:
     /// Construct.
-    ObjectFactory(Context* context) :
-        context_(context)
+    ObjectFactory(Context* context,const TypeInfo* ti=nullptr) :
+        context_(context),typeInfo_(ti)
     {
         assert(context_);
     }
@@ -242,9 +243,8 @@ template <class T> class ObjectFactoryImpl : public ObjectFactory
 public:
     /// Construct.
     ObjectFactoryImpl(Context* context) :
-        ObjectFactory(context)
+        ObjectFactory(context,T::GetTypeInfoStatic())
     {
-        typeInfo_ = T::GetTypeInfoStatic();
     }
 
     /// Create an object of the specific type.
@@ -344,16 +344,7 @@ private:
     std::function<void(StringHash, VariantMap&)> function_;
 };
 
-/// Register event names.
-struct URHO3D_API EventNameRegistrar
-{
-    /// Register an event name for hash reverse mapping.
-    static StringHash RegisterEventName(const char* eventName);
-    /// Return Event name or empty string if not found.
-    static const QString& GetEventName(StringHash eventID);
-    /// Return Event name map.
-    static HashMap<StringHash, QString>& GetEventNameMap();
-};
+
 /// Describe an event's hash ID and begin a namespace in which to define its parameters.
 #define URHO3D_EVENT(eventID, eventName) static const Urho3D::StringHash eventID(#eventName); namespace eventName
 /// Describe an event's parameter hash ID. Should be used inside an event namespace.
@@ -368,3 +359,4 @@ struct URHO3D_API EventNameRegistrar
 #define LUTEFISK_SUBSCRIBE_GLOBAL(eventType,method)\
     SubscribeToEvent(eventType, ([this](StringHash , VariantMap& eventData) { this->method(eventType,eventData); }))
 }
+#include "Lutefisk3D/Container/DataHandle.h"

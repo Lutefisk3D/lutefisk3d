@@ -202,7 +202,7 @@ private:
     /// Find the internal index and animation state of an animation.
     void FindAnimation(const QString& name, unsigned& index, AnimationState*& state) const;
     /// Handle scene post-update event.
-    void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleScenePostUpdate(Scene *, float ts);
 
     /// Animation control structures.
     std::vector<AnimationControl> animations_;

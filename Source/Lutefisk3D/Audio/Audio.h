@@ -27,6 +27,7 @@
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Container/HashMap.h"
+#include "jlsignal/SignalBase.h"
 namespace Urho3D
 {
 
@@ -36,7 +37,7 @@ class SoundListener;
 class SoundSource;
 
 /// %Audio subsystem.
-class URHO3D_API Audio : public Object
+class URHO3D_API Audio : public Object, public jl::SignalObserver
 {
     URHO3D_OBJECT(Audio,Object)
     friend void SDLAudioCallback(void *userdata, uint8_t* stream, int len);
@@ -85,7 +86,6 @@ public:
     static const int SAMPLE_SIZE_MUL = 1;
 private:
     void MixOutput(void *dest, unsigned samples);
-    void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
     void Release();
     void UpdateInternal(float timeStep);
 

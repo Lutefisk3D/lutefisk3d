@@ -46,17 +46,22 @@ Menu::Menu(Context* context) :
     autoPopup_(true)
 {
     focusMode_ = FM_NOTFOCUSABLE;
-
-    SubscribeToEvent(this, E_PRESSED, URHO3D_HANDLER(Menu, HandlePressedReleased));
-    SubscribeToEvent(this, E_RELEASED, URHO3D_HANDLER(Menu, HandlePressedReleased));
-    SubscribeToEvent(E_UIMOUSECLICK, URHO3D_HANDLER(Menu, HandleFocusChanged));
-    SubscribeToEvent(E_FOCUSCHANGED, URHO3D_HANDLER(Menu, HandleFocusChanged));
+    pressed.Connect(this,&Menu::HandlePressed);
+    released.Connect(this,&Menu::HandleReleased);
+    g_uiSignals.mouseClickUI.Connect(this,&Menu::HandleMouseClick);
+    g_uiSignals.focusChanged.Connect(this,&Menu::HandleFocusChange);
 }
 
 Menu::~Menu()
 {
     if (popup_ && showPopup_)
         ShowPopup(false);
+}
+void Menu::HandleMouseClick(UIElement *elem,int, int, int, unsigned, int) {
+    HandleFocusChanged(elem,nullptr,true);
+}
+void Menu::HandleFocusChange(UIElement *elem,UIElement *clickedElem) {
+    HandleFocusChanged(elem,clickedElem,false);
 }
 
 void Menu::RegisterObject(Context* context)
@@ -334,9 +339,9 @@ void Menu::SetAccelerator(int key, int qualifiers)
     acceleratorQualifiers_ = qualifiers;
 
     if (key)
-        SubscribeToEvent(E_KEYDOWN, URHO3D_HANDLER(Menu, HandleKeyDown));
+        g_inputSignals.keyDown.Connect(this,&Menu::HandleKeyDown);
     else
-        UnsubscribeFromEvent(E_KEYDOWN);
+        g_inputSignals.keyDown.Disconnect(this,&Menu::HandleKeyDown);
 }
 
 bool Menu::FilterPopupImplicitAttributes(XMLElement& dest) const
@@ -348,16 +353,22 @@ bool Menu::FilterPopupImplicitAttributes(XMLElement& dest) const
 
     return true;
 }
+void Menu::HandlePressed(UIElement *) {
+    HandlePressedReleased(true);
+}
+void Menu::HandleReleased(UIElement *) {
+    HandlePressedReleased(false);
+}
 
-void Menu::HandlePressedReleased(StringHash eventType, VariantMap& eventData)
+void Menu::HandlePressedReleased(bool pressed)
 {
     // If this menu shows a sublevel popup, react to button press. Else react to release
-    if (eventType == E_PRESSED)
+    if (pressed)
     {
         if (!popup_)
             return;
     }
-    if (eventType == E_RELEASED)
+    if (!pressed)
     {
         if (popup_)
             return;
@@ -379,18 +390,15 @@ void Menu::HandlePressedReleased(StringHash eventType, VariantMap& eventData)
     }
 }
 
-void Menu::HandleFocusChanged(StringHash eventType, VariantMap& eventData)
+void Menu::HandleFocusChanged(UIElement* element, UIElement* clickedElement,bool wasClick)
 {
     if (!showPopup_)
         return;
 
-    using namespace FocusChanged;
-
-    UIElement* element = static_cast<UIElement*>(eventData[P_ELEMENT].GetPtr());
     UIElement* root = GetRoot();
 
     // If another element was focused due to the menu button being clicked, do not hide the popup
-    if (eventType == E_FOCUSCHANGED && static_cast<UIElement*>(eventData[P_CLICKEDELEMENT].GetPtr()))
+    if (!wasClick && clickedElement)
         return;
 
     // If clicked emptiness or defocused, hide the popup
@@ -415,23 +423,21 @@ void Menu::HandleFocusChanged(StringHash eventType, VariantMap& eventData)
     ShowPopup(false);
 }
 
-void Menu::HandleKeyDown(StringHash eventType, VariantMap &eventData)
+void Menu::HandleKeyDown(int key, int, unsigned, int qualifiers, bool repeat)
 {
     if (!enabled_)
         return;
 
-    using namespace KeyDown;
-
     // Activate if accelerator key pressed
-    if (eventData[P_KEY].GetInt() == acceleratorKey_ &&
-        (acceleratorQualifiers_ == QUAL_ANY || eventData[P_QUALIFIERS].GetInt() == acceleratorQualifiers_) &&
-        eventData[P_REPEAT].GetBool() == false)
+    if (key == acceleratorKey_ &&
+        (acceleratorQualifiers_ == QUAL_ANY || qualifiers == acceleratorQualifiers_) &&
+        repeat == false)
     {
         // Ignore if UI has modal element
-        if (GetSubsystem<UI>()->HasModalElement())
+        if (context_->m_UISystem->HasModalElement())
             return;
-
-        HandlePressedReleased(eventType, eventData);
+        assert(false);
+        //HandlePressedReleased(eventType, eventData);
     }
 }
 

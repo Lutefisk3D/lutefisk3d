@@ -106,9 +106,9 @@ private:
 };
 
 /// Describes how to render 3D geometries.
-class URHO3D_API Material : public Resource
+class URHO3D_API Material : public Resource, public jl::SignalObserver
 {
-    URHO3D_OBJECT(Material,Resource);
+    URHO3D_OBJECT(Material,Resource)
 
 public:
     /// Construct.
@@ -261,7 +261,8 @@ private:
     /// Update whether should be subscribed to scene or global update events for shader parameter animation.
     void UpdateEventSubscription();
     /// Update shader parameter animations.
-    void HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleAttributeAnimationUpdate(Scene *, float timeStep);
+    void HandleAttributeGlobalAnimationUpdate(float timeStep);
 
     /// Techniques.
     std::vector<TechniqueEntry> techniques_;

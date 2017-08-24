@@ -146,11 +146,11 @@ private:
 };
 
 FileSystem::FileSystem(Context* context) :
-    Object(context),
+    m_context(context),
     nextAsyncExecID_(1),
     executeConsoleCommands_(false)
 {
-    SubscribeToEvent(E_BEGINFRAME, URHO3D_HANDLER(FileSystem, HandleBeginFrame));
+    g_coreSignals.beginFrame.Connect(this,&FileSystem::HandleBeginFrame);
 
     // Subscribe to console commands
     SetExecuteConsoleCommands(true);
@@ -211,15 +211,15 @@ void FileSystem::SetExecuteConsoleCommands(bool enable)
 
     executeConsoleCommands_ = enable;
     if (enable)
-        SubscribeToEvent(E_CONSOLECOMMAND, URHO3D_HANDLER(FileSystem, HandleConsoleCommand));
+        g_consoleSignals.consoleCommand.Connect(this,&FileSystem::HandleConsoleCommand);
     else
-        UnsubscribeFromEvent(E_CONSOLECOMMAND);
+        g_consoleSignals.consoleCommand.Disconnect(this,&FileSystem::HandleConsoleCommand);
 }
 
 int FileSystem::SystemCommand(const QString& commandLine, bool redirectStdOutToLog)
 {
     if (allowedPaths_.isEmpty())
-        return DoSystemCommand(commandLine, redirectStdOutToLog, context_);
+        return DoSystemCommand(commandLine, redirectStdOutToLog, m_context);
     else
     {
         URHO3D_LOGERROR("Executing an external command is not allowed");
@@ -305,10 +305,10 @@ bool FileSystem::Copy(const QString& srcFileName, const QString& destFileName)
         return false;
     }
 
-    SharedPtr<File> srcFile(new File(context_, srcFileName, FILE_READ));
+    SharedPtr<File> srcFile(new File(m_context, srcFileName, FILE_READ));
     if (!srcFile->IsOpen())
         return false;
-    SharedPtr<File> destFile(new File(context_, destFileName, FILE_WRITE));
+    SharedPtr<File> destFile(new File(m_context, destFileName, FILE_WRITE));
     if (!destFile->IsOpen())
         return false;
 
@@ -470,7 +470,7 @@ void FileSystem::RegisterPath(const QString& pathName)
     allowedPaths_.insert(AddTrailingSlash(pathName));
 }
 
-void FileSystem::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
+void FileSystem::HandleBeginFrame(unsigned /*frameNumber*/,float /*timeStep*/)
 {
     /// Go through the execution queue and post + remove completed requests
     for (std::list<AsyncExecRequest*>::iterator i = asyncExecQueue_.begin(); i != asyncExecQueue_.end();)
@@ -478,13 +478,7 @@ void FileSystem::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
         AsyncExecRequest* request = *i;
         if (request->IsCompleted())
         {
-            using namespace AsyncExecFinished;
-
-            VariantMap& newEventData = GetEventDataMap();
-            newEventData[P_REQUESTID] = request->GetRequestID();
-            newEventData[P_EXITCODE] = request->GetExitCode();
-            SendEvent(E_ASYNCEXECFINISHED, newEventData);
-
+            g_ioSignals.asyncExecFinished.Emit(request->GetRequestID(),request->GetExitCode());
             delete request;
             i = asyncExecQueue_.erase(i);
         }
@@ -493,19 +487,18 @@ void FileSystem::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
     }
 }
 
-void FileSystem::HandleConsoleCommand(StringHash eventType, VariantMap& eventData)
+void FileSystem::HandleConsoleCommand(const QString &cmd, const QString &id)
 {
-    using namespace ConsoleCommand;
-    if (eventData[P_ID].GetString() == GetTypeName())
-        SystemCommand(eventData[P_COMMAND].GetString(), true);
+    if (id == "FileSystem")
+        SystemCommand(cmd, true);
 }
 
 void SplitPath(const QString& fullPath, QString& pathName, QString& fileName, QString& extension, bool lowercaseExtension)
 {
     QString fullPathCopy = GetInternalPath(fullPath);
 
-    unsigned extPos = fullPathCopy.lastIndexOf('.');
-    unsigned pathPos = fullPathCopy.lastIndexOf('/');
+    int extPos = fullPathCopy.lastIndexOf('.');
+    int pathPos = fullPathCopy.lastIndexOf('/');
 
     if (extPos != -1 && (pathPos == -1 || extPos > pathPos))
     {

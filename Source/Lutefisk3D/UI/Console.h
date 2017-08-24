@@ -22,12 +22,13 @@
 
 #pragma once
 #include "Lutefisk3D/Core/Object.h"
+#include "jlsignal/SignalBase.h"
 #include <QtCore/QMap>
 #include <utility>
 
 namespace Urho3D
 {
-
+enum LogLevels : int32_t;
 class Button;
 class BorderImage;
 class DropDownList;
@@ -38,11 +39,14 @@ class ListView;
 class Text;
 class UIElement;
 class XMLFile;
-
+class IConsoleCommandHandler {
+    virtual const QString &name() const=0;
+    virtual void handleCommand() = 0;
+};
 /// %Console window with log history and command line prompt.
-class URHO3D_API Console : public Object
+class URHO3D_API Console : public Object, public jl::SignalObserver
 {
-    URHO3D_OBJECT(Console,Object);
+    URHO3D_OBJECT(Console,Object)
 
 public:
     /// Construct.
@@ -112,17 +116,17 @@ private:
     /// Handle text change in the line edit.
     void HandleTextChanged(StringHash eventType, VariantMap& eventData);
     /// Handle enter pressed on the line edit.
-    void HandleTextFinished(StringHash eventType, VariantMap& eventData);
+    void HandleTextFinished(UIElement *, const QString &, float);
     /// Handle unhandled key on the line edit for scrolling the history.
     void HandleLineEditKey(StringHash eventType, VariantMap& eventData);
     /// Handle close button being pressed.
-    void HandleCloseButtonPressed(StringHash eventType, VariantMap& eventData);
+    void HandleCloseButtonPressed(UIElement *);
     /// Handle UI root resize.
     void HandleRootElementResized(StringHash eventType, VariantMap& eventData);
     /// Handle a log message.
-    void HandleLogMessage(StringHash eventType, VariantMap& eventData);
+    void HandleLogMessage(LogLevels level, const QString &msg);
     /// Handle the application post-update.
-    void HandlePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandlePostUpdate(float ts);
 
     /// Auto visible on error flag.
     bool autoVisibleOnError_;

@@ -29,13 +29,14 @@
 #include "Lutefisk3D/Core/ProcessUtils.h"
 #include "Lutefisk3D/Core/Thread.h"
 #include "Lutefisk3D/Core/Timer.h"
+#include "Lutefisk3D/Core/StringUtils.h"
 
 #include <cstdio>
 
 namespace Urho3D
 {
 
-const char* logLevelPrefixes[] =
+static const char* logLevelPrefixes[] =
 {
     "DEBUG",
     "INFO",
@@ -47,8 +48,8 @@ const char* logLevelPrefixes[] =
 static Log* logInstance = nullptr;
 static bool threadErrorDisplayed = false;
 
-Log::Log(Context* context) :
-    Object(context),
+Log::Log(Context *ctx) :
+    m_context(ctx),
 #ifdef _DEBUG
     level_(LOG_DEBUG),
 #else
@@ -59,8 +60,7 @@ Log::Log(Context* context) :
     quiet_(false)
 {
     logInstance = this;
-
-    SubscribeToEvent(E_ENDFRAME, URHO3D_HANDLER(Log, HandleEndFrame));
+    g_coreSignals.endFrame.Connect(this,&Log::HandleEndFrame);
 }
 
 Log::~Log()
@@ -80,7 +80,7 @@ void Log::Open(const QString& fileName)
             Close();
     }
 
-    logFile_ = new File(context_);
+    logFile_ = new File(m_context);
     if (logFile_->Open(fileName, FILE_WRITE))
         Write(LOG_INFO, "Opened log file " + fileName);
     else
@@ -116,7 +116,7 @@ void Log::SetQuiet(bool quiet)
     quiet_ = quiet;
 }
 
-void Log::Write(int level, const QString& message)
+void Log::Write(LogLevels level, const QString& message)
 {
     // Special case for LOG_RAW level
     if (level == LOG_RAW)
@@ -165,14 +165,7 @@ void Log::Write(int level, const QString& message)
     }
 
     logInstance->inWrite_ = true;
-
-    using namespace LogMessage;
-
-    VariantMap& eventData = logInstance->GetEventDataMap();
-    eventData[P_MESSAGE] = formattedMessage;
-    eventData[P_LEVEL] = level;
-    logInstance->SendEvent(E_LOGMESSAGE, eventData);
-
+    g_LogSignals.logMessageSignal.Emit(level,formattedMessage);
     logInstance->inWrite_ = false;
 }
 
@@ -212,18 +205,11 @@ void Log::WriteRaw(const QString& message, bool error)
     }
 
     logInstance->inWrite_ = true;
-
-    using namespace LogMessage;
-
-    VariantMap& eventData = logInstance->GetEventDataMap();
-    eventData[P_MESSAGE] = message;
-    eventData[P_LEVEL] = error ? LOG_ERROR : LOG_INFO;
-    logInstance->SendEvent(E_LOGMESSAGE, eventData);
-
+    g_LogSignals.logMessageSignal.Emit(error ? LOG_ERROR : LOG_INFO,message);
     logInstance->inWrite_ = false;
 }
 
-void Log::HandleEndFrame(StringHash eventType, VariantMap& eventData)
+void Log::HandleEndFrame()
 {
     // If the MainThreadID is not valid, processing this loop can potentially be endless
     if (!Thread::IsMainThread())
@@ -250,6 +236,11 @@ void Log::HandleEndFrame(StringHash eventType, VariantMap& eventData)
 
         threadMessages_.pop_front();
     }
+}
+
+unsigned logLevelNameToIndex(const QString &name)
+{
+    return GetStringListIndex(name.toUpper(), logLevelPrefixes, M_MAX_UNSIGNED);
 }
 
 }

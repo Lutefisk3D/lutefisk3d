@@ -25,6 +25,7 @@
 #include "FileSystem.h"
 #include "Log.h"
 #include "Lutefisk3D/Core/Timer.h"
+#include "Lutefisk3D/Core/Context.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -34,8 +35,9 @@ extern "C"
 {
 // Need read/close for inotify
 #include "unistd.h"
+
 }
-#elif defined(__APPLE__) && !defined(IOS)
+#elif defined(__APPLE__)
 extern "C"
 {
 #include "Lutefisk3D/IO/MacFileWatcher.h"
@@ -44,13 +46,10 @@ extern "C"
 
 namespace Urho3D
 {
-#ifndef __APPLE__
-static const unsigned BUFFERSIZE = 4096;
-#endif
 
 FileWatcher::FileWatcher(Context* context) :
     Object(context),
-    fileSystem_(GetSubsystem<FileSystem>()),
+    fileSystem_(context->m_FileSystem.get()),
     delay_(1.0f),
     watchSubDirs_(false)
 {
@@ -84,7 +83,7 @@ bool FileWatcher::StartWatching(const QString& pathName, bool watchSubDirs)
     // Stop any previous watching
     StopWatching();
 
-#if defined(URHO3D_FILEWATCHER)
+#if defined(LUTEFISK3D_FILEWATCHER)
 #ifdef _WIN32
     QString nativePath = GetNativePath(RemoveTrailingSlash(pathName));
 
@@ -213,7 +212,7 @@ void FileWatcher::StopWatching()
         for (auto & elem : dirHandle_.keys())
             inotify_rm_watch(watchHandle_, elem);
         dirHandle_.clear();
-#elif defined(__APPLE__) && !defined(IOS)
+#elif defined(__APPLE__)
         CloseFileWatcher(watcher_);
 #endif
 #ifndef __APPLE__

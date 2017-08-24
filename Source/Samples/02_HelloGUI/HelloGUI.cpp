@@ -42,8 +42,8 @@
 URHO3D_DEFINE_APPLICATION_MAIN(HelloGUI)
 
 HelloGUI::HelloGUI(Context* context) :
-    Sample(context),
-    uiRoot_(GetSubsystem<UI>()->GetRoot()),
+    Sample("HelloGUI",context),
+    uiRoot_(context->m_UISystem->GetRoot()),
     dragBeginPosition_(IntVector2::ZERO)
 {
 }
@@ -54,10 +54,10 @@ void HelloGUI::Start()
     Sample::Start();
 
     // Enable OS cursor
-    GetSubsystem<Input>()->SetMouseVisible(true);
+    m_context->m_InputSystem->SetMouseVisible(true);
 
     // Load XML file containing default UI style sheet
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
     XMLFile* style = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
 
     // Set the loaded style as default style
@@ -76,16 +76,16 @@ void HelloGUI::Start()
 void HelloGUI::InitControls()
 {
     // Create a CheckBox
-    CheckBox* checkBox = new CheckBox(context_);
+    CheckBox* checkBox = new CheckBox(m_context);
     checkBox->SetName("CheckBox");
 
     // Create a Button
-    Button* button = new Button(context_);
+    Button* button = new Button(m_context);
     button->SetName("Button");
     button->SetMinHeight(24);
 
     // Create a LineEdit
-    LineEdit* lineEdit = new LineEdit(context_);
+    LineEdit* lineEdit = new LineEdit(m_context);
     lineEdit->SetName("LineEdit");
     lineEdit->SetMinHeight(24);
 
@@ -103,7 +103,7 @@ void HelloGUI::InitControls()
 void HelloGUI::InitWindow()
 {
     // Create the Window and add it to the UI's root node
-    window_ = new Window(context_);
+    window_ = new Window(m_context);
     uiRoot_->AddChild(window_);
 
     // Set Window size and layout settings
@@ -113,18 +113,18 @@ void HelloGUI::InitWindow()
     window_->SetName("Window");
 
     // Create Window 'titlebar' container
-    UIElement* titleBar = new UIElement(context_);
+    UIElement* titleBar = new UIElement(m_context);
     titleBar->SetMinSize(0, 24);
     titleBar->SetVerticalAlignment(VA_TOP);
     titleBar->SetLayoutMode(LM_HORIZONTAL);
 
     // Create the Window title Text
-    Text* windowTitle = new Text(context_);
+    Text* windowTitle = new Text(m_context);
     windowTitle->SetName("WindowTitle");
     windowTitle->SetText("Hello GUI!");
 
     // Create the Window's close button
-    Button* buttonClose = new Button(context_);
+    Button* buttonClose = new Button(m_context);
     buttonClose->SetName("CloseButton");
 
     // Add the controls to the title bar
@@ -140,19 +140,18 @@ void HelloGUI::InitWindow()
     buttonClose->SetStyle("CloseButton");
 
     // Subscribe to buttonClose release (following a 'press') events
-    SubscribeToEvent(buttonClose, E_RELEASED, URHO3D_HANDLER(HelloGUI, HandleClosePressed));
-
+    buttonClose->released.Connect(this,&HelloGUI::HandleClosePressed);
     // Subscribe also to all UI mouse clicks just to see where we have clicked
-    SubscribeToEvent(E_UIMOUSECLICK, URHO3D_HANDLER(HelloGUI, HandleControlClicked));
+    g_uiSignals.mouseClickUI.Connect(this,&HelloGUI::HandleControlClicked);
 }
 
 void HelloGUI::CreateDraggableFish()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    Graphics* graphics = GetSubsystem<Graphics>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    Graphics* graphics = m_context->m_Graphics.get();
 
     // Create a draggable Fish button
-    Button* draggableFish = new Button(context_);
+    Button* draggableFish = new Button(m_context);
     draggableFish->SetTexture(cache->GetResource<Texture2D>("Textures/UrhoDecal.dds")); // Set texture
     draggableFish->SetBlendMode(BLEND_ADD);
     draggableFish->SetSize(128, 128);
@@ -161,53 +160,49 @@ void HelloGUI::CreateDraggableFish()
     uiRoot_->AddChild(draggableFish);
 
     // Add a tooltip to Fish button
-    ToolTip* toolTip = new ToolTip(context_);
+    ToolTip* toolTip = new ToolTip(m_context);
     draggableFish->AddChild(toolTip);
     toolTip->SetPosition(IntVector2(draggableFish->GetWidth() + 5, draggableFish->GetWidth() / 2)); // slightly offset from close button
-    BorderImage* textHolder = new BorderImage(context_);
+    BorderImage* textHolder = new BorderImage(m_context);
     toolTip->AddChild(textHolder);
     textHolder->SetStyle("ToolTipBorderImage");
-    Text* toolTipText = new Text(context_);
+    Text* toolTipText = new Text(m_context);
     textHolder->AddChild(toolTipText);
     toolTipText->SetStyle("ToolTipText");
     toolTipText->SetText("Please drag me!");
 
     // Subscribe draggableFish to Drag Events (in order to make it draggable)
     // See "Event list" in documentation's Main Page for reference on available Events and their eventData
-    SubscribeToEvent(draggableFish, E_DRAGBEGIN, URHO3D_HANDLER(HelloGUI, HandleDragBegin));
-    SubscribeToEvent(draggableFish, E_DRAGMOVE, URHO3D_HANDLER(HelloGUI, HandleDragMove));
-    SubscribeToEvent(draggableFish, E_DRAGEND, URHO3D_HANDLER(HelloGUI, HandleDragEnd));
+    draggableFish->dragBegin.Connect(this,&HelloGUI::HandleDragBegin);
+    draggableFish->dragMove.Connect(this,&HelloGUI::HandleDragMove);
+    draggableFish->dragEnd.Connect(this,&HelloGUI::HandleDragEnd);
 }
 
-void HelloGUI::HandleDragBegin(StringHash eventType, VariantMap& eventData)
+void HelloGUI::HandleDragBegin(UIElement *,int,int,int elemX,int elemY,int,int)
 {
     // Get UIElement relative position where input (touch or click) occured (top-left = IntVector2(0,0))
-    dragBeginPosition_ = IntVector2(eventData["ElementX"].GetInt(), eventData["ElementY"].GetInt());
+    dragBeginPosition_ = IntVector2(elemX, elemY);
 }
 
-void HelloGUI::HandleDragMove(StringHash eventType, VariantMap& eventData)
+void HelloGUI::HandleDragMove(UIElement *draggedElement,int X,int Y,int,int,int elemX,int elemY,int,int)
 {
-    IntVector2 dragCurrentPosition = IntVector2(eventData["X"].GetInt(), eventData["Y"].GetInt());
-    UIElement* draggedElement = static_cast<UIElement*>(eventData["Element"].GetPtr());
+    IntVector2 dragCurrentPosition = IntVector2(X, Y);
     draggedElement->SetPosition(dragCurrentPosition - dragBeginPosition_);
 }
 
-void HelloGUI::HandleDragEnd(StringHash eventType, VariantMap& eventData) // For reference (not used here)
+void HelloGUI::HandleDragEnd(UIElement *,int,int,int,int,int,int) // For reference (not used here)
 {
 }
 
-void HelloGUI::HandleClosePressed(StringHash eventType, VariantMap& eventData)
+void HelloGUI::HandleClosePressed(UIElement *)
 {
     engine_->Exit();
 }
 
-void HelloGUI::HandleControlClicked(StringHash eventType, VariantMap& eventData)
+void HelloGUI::HandleControlClicked(UIElement *clicked,int, int, int, unsigned, int)
 {
     // Get the Text control acting as the Window's title
     Text* windowTitle = static_cast<Text*>(window_->GetChild("WindowTitle", true));
-
-    // Get control that was clicked
-    UIElement* clicked = static_cast<UIElement*>(eventData[UIMouseClick::P_ELEMENT].GetPtr());
 
     QString name = "...?";
     if (clicked)

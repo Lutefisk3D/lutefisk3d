@@ -223,7 +223,7 @@ void SoundSource3D::CalculateAttenuation()
 
         // Distance attenuation
         if (interval > 0.0f)
-            attenuation_ = powf(1.0f - Clamp(distance - nearDistance_, 0.0f, interval) / interval, rolloffFactor_);
+            attenuation_ = std::pow(1.0f - Clamp(distance - nearDistance_, 0.0f, interval) / interval, rolloffFactor_);
         else
             attenuation_ = distance <= nearDistance_ ? 1.0f : 0.0f;
 

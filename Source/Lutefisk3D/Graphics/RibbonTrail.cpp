@@ -163,16 +163,15 @@ void RibbonTrail::OnSetEnabled()
     if (scene)
     {
         if (IsEnabledEffective())
-            SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(RibbonTrail, HandleScenePostUpdate));
+            scene->scenePostUpdate.Connect(this,&RibbonTrail::HandleScenePostUpdate);
         else
-            UnsubscribeFromEvent(scene, E_SCENEPOSTUPDATE);
+            scene->scenePostUpdate.Disconnect(this,&RibbonTrail::HandleScenePostUpdate);
     }
 }
 
-void RibbonTrail::HandleScenePostUpdate(StringHash eventType, VariantMap& eventData)
+void RibbonTrail::HandleScenePostUpdate(Scene*,float ts)
 {
-    using namespace ScenePostUpdate;
-    lastTimeStep_ = eventData[P_TIMESTEP].GetFloat();
+    lastTimeStep_ = ts;
 
     // Update if frame has changed
     if (updateInvisible_ || viewFrameNumber_ != lastUpdateFrameNumber_)
@@ -416,9 +415,11 @@ void RibbonTrail::OnSceneSet(Scene* scene)
     Drawable::OnSceneSet(scene);
 
     if (scene && IsEnabledEffective())
-        SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(RibbonTrail, HandleScenePostUpdate));
-    else if (!scene)
-         UnsubscribeFromEvent(E_SCENEPOSTUPDATE);
+        scene->scenePostUpdate.Connect(this,&RibbonTrail::HandleScenePostUpdate);
+    else if (!scene) {
+        assert(GetScene());
+        GetScene()->scenePostUpdate.Disconnect(this,&RibbonTrail::HandleScenePostUpdate);
+    }
 }
 
 void RibbonTrail::OnWorldBoundingBoxUpdate()
@@ -853,7 +854,7 @@ void RibbonTrail::SetTrailType(TrailType type)
 
 void RibbonTrail::SetMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     SetMaterial(cache->GetResource<Material>(value.name_));
     Commit();
 }

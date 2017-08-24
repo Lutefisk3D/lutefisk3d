@@ -257,7 +257,7 @@ struct WrappingIterator : std::iterator<std::random_access_iterator_tag, void, p
 };
 inline size_t required_capacity(size_t size, float load_factor)
 {
-    return std::ceil(size / load_factor);
+    return size_t(std::ceil(size / load_factor));
 }
 template<typename It, typename Do, typename Undo>
 void exception_safe_for_each(It begin, It end, Do && do_func, Undo && undo_func)

@@ -22,13 +22,14 @@
 
 #pragma once
 
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/IO/AbstractFile.h"
+#include <QtCore/QString>
 
 namespace Urho3D
 {
-
+class Context;
 /// File open mode.
 enum FileMode
 {
@@ -40,10 +41,8 @@ enum FileMode
 class PackageFile;
 
 /// %File opened either through the filesystem or from within a package file.
-class URHO3D_API File : public Object, public AbstractFile
+class URHO3D_API File : public RefCounted, public AbstractFile
 {
-    URHO3D_OBJECT(File, Object)
-
 public:
     /// Construct.
     File(Context* context);
@@ -92,6 +91,7 @@ private:
     bool ReadInternal(void* dest, unsigned size);
     /// Seek in file internally using either C standard IO functions or SDL RWops for Android asset files.
     void SeekInternal(unsigned newPosition);
+    Context* context_;
     /// File name.
     QString fileName_;
     /// Open mode.

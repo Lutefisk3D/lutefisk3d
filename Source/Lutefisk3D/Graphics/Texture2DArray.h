@@ -79,7 +79,7 @@ protected:
 
 private:
     /// Handle render surface update event.
-    void HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleRenderSurfaceUpdate();
 
     /// Texture array layers number.
     unsigned layers_;

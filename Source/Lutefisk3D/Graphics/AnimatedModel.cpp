@@ -334,13 +334,13 @@ void AnimatedModel::SetModel(Model* model, bool createBones)
 
     // Unsubscribe from the reload event of previous model (if any), then subscribe to the new
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&AnimatedModel::HandleModelReloadFinished);
 
     model_ = model;
 
     if (model)
     {
-        SubscribeToEvent(model, E_RELOADFINISHED, URHO3D_HANDLER(AnimatedModel, HandleModelReloadFinished));
+        model->reloadFinished.Connect(this,&AnimatedModel::HandleModelReloadFinished);
 
         // Copy the subgeometry & LOD level structure
         SetNumGeometries(model->GetNumGeometries());
@@ -785,7 +785,7 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
 
 void AnimatedModel::SetModelAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     // When loading a scene, set model without creating the bone nodes (will be assigned later during post-load)
     SetModel(cache->GetResource<Model>(value.name_), !loading_);
 }
@@ -799,7 +799,7 @@ void AnimatedModel::SetBonesEnabledAttr(const VariantVector& value)
 
 void AnimatedModel::SetAnimationStatesAttr(const VariantVector& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     RemoveAllAnimationStates();
     unsigned index = 0;
     unsigned numStates = index < value.size() ? value[index++].GetUInt() : 0;
@@ -1327,8 +1327,7 @@ void AnimatedModel::UpdateSkinning()
 
 void AnimatedModel::UpdateMorphs()
 {
-    Graphics* graphics = GetSubsystem<Graphics>();
-    if (!graphics)
+    if (!context_->m_Graphics)
         return;
 
     if (morphs_.size())
@@ -1415,7 +1414,7 @@ void AnimatedModel::ApplyMorph(VertexBuffer* buffer, void* destVertexData, unsig
     }
 }
 
-void AnimatedModel::HandleModelReloadFinished(StringHash eventType, VariantMap& eventData)
+void AnimatedModel::HandleModelReloadFinished()
 {
     Model* currentModel = model_;
     model_.Reset(); // Set null to allow to be re-set

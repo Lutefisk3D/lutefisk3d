@@ -100,7 +100,7 @@ bool FontFaceFreeType::Load(const unsigned char* fontData, unsigned fontDataSize
     // Ensure the FreeType library is kept alive as long as TTF font resources exist
     freeType_ = freeType;
 
-    UI* ui = font_->GetSubsystem<UI>();
+    UI* ui = font_->GetContext()->m_UISystem.get();
     int maxTextureSize = ui->GetMaxFontTextureSize();
 
     FT_Face face;

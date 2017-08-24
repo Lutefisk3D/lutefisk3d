@@ -489,7 +489,7 @@ void CollisionShape::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 void CollisionShape::SetBox(const Vector3& size, const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
 
     shapeType_ = SHAPE_BOX;
     size_ = size;
@@ -506,7 +506,8 @@ void CollisionShape::SetBox(const Vector3& size, const Vector3& position, const 
 void CollisionShape::SetSphere(float diameter, const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_SPHERE;
     size_ = Vector3(diameter, diameter, diameter);
@@ -523,7 +524,8 @@ void CollisionShape::SetSphere(float diameter, const Vector3& position, const Qu
 void CollisionShape::SetStaticPlane(const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_STATICPLANE;
     position_ = position;
@@ -539,7 +541,8 @@ void CollisionShape::SetStaticPlane(const Vector3& position, const Quaternion& r
 void CollisionShape::SetCylinder(float diameter, float height, const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_CYLINDER;
     size_ = Vector3(diameter, height, diameter);
@@ -556,7 +559,8 @@ void CollisionShape::SetCylinder(float diameter, float height, const Vector3& po
 void CollisionShape::SetCapsule(float diameter, float height, const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_CAPSULE;
     size_ = Vector3(diameter, height, diameter);
@@ -573,7 +577,8 @@ void CollisionShape::SetCapsule(float diameter, float height, const Vector3& pos
 void CollisionShape::SetCone(float diameter, float height, const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_CONE;
     size_ = Vector3(diameter, height, diameter);
@@ -596,7 +601,8 @@ void CollisionShape::SetTriangleMesh(Model* model, unsigned lodLevel, const Vect
     }
 
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_TRIANGLEMESH;
     model_ = model;
@@ -625,7 +631,8 @@ void CollisionShape::SetCustomTriangleMesh(CustomGeometry* custom, const Vector3
     }
 
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_TRIANGLEMESH;
     model_.Reset();
@@ -649,7 +656,8 @@ void CollisionShape::SetConvexHull(Model* model, unsigned lodLevel, const Vector
     }
 
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_CONVEXHULL;
     model_ = model;
@@ -678,7 +686,8 @@ void CollisionShape::SetCustomConvexHull(CustomGeometry* custom, const Vector3& 
     }
 
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_CONVEXHULL;
     model_.Reset();
@@ -703,7 +712,8 @@ void CollisionShape::SetTerrain(unsigned lodLevel)
     }
 
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_TERRAIN;
     lodLevel_ = lodLevel;
@@ -784,7 +794,8 @@ void CollisionShape::SetModel(Model* model)
     if (model != model_)
     {
         if (model_)
-            UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+            model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
         model_ = model;
         if (shapeType_ >= SHAPE_TRIANGLEMESH)
@@ -864,8 +875,7 @@ void CollisionShape::NotifyRigidBody(bool updateMass)
 
 void CollisionShape::SetModelAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    model_ = cache->GetResource<Model>(value.name_);
+    model_ = context_->m_ResourceCache->GetResource<Model>(value.name_);
     recreateShape_ = true;
     MarkNetworkUpdate();
 }
@@ -1070,7 +1080,7 @@ void CollisionShape::UpdateShape()
                 TriangleMeshData* triMesh = static_cast<TriangleMeshData*>(geometry_.Get());
                 shape_.reset(new btScaledBvhTriangleMeshShape(triMesh->shape_.get(), ToBtVector3(newWorldScale * size_)));
                 // Watch for live reloads of the collision model to reload the geometry if necessary
-                SubscribeToEvent(model_, E_RELOADFINISHED, URHO3D_HANDLER(CollisionShape, HandleModelReloadFinished));
+                model_->reloadFinished.Connect(this,&CollisionShape::HandleModelReloadFinished);
             }
             break;
 
@@ -1109,7 +1119,7 @@ void CollisionShape::UpdateShape()
                 ConvexData* convex = static_cast<ConvexData*>(geometry_.Get());
                 shape_ .reset(new btConvexHullShape((btScalar*)convex->vertexData_.Get(), convex->vertexCount_, sizeof(Vector3)));
                 shape_->setLocalScaling(ToBtVector3(newWorldScale * size_));
-                SubscribeToEvent(model_, E_RELOADFINISHED, URHO3D_HANDLER(CollisionShape, HandleModelReloadFinished));
+                model_->reloadFinished.Connect(this,&CollisionShape::HandleModelReloadFinished);
             }
             break;
 
@@ -1166,7 +1176,7 @@ void CollisionShape::HandleTerrainCreated(StringHash eventType, VariantMap& even
     }
 }
 
-void CollisionShape::HandleModelReloadFinished(StringHash eventType, VariantMap& eventData)
+void CollisionShape::HandleModelReloadFinished()
 {
     if (physicsWorld_)
         physicsWorld_->RemoveCachedGeometry(model_);

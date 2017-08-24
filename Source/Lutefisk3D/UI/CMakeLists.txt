@@ -58,22 +58,28 @@ set(SOURCE
     UIBatch.cpp
     UI.cpp
     UIElement.cpp
+    UIEvents.cpp
     View3D.cpp
     Window.cpp
+
 )
 
 INCLUDE_DIRECTORIES(../../ThirdParty/FreeType/include)
 
-add_library(Lutefisk3D_UI OBJECT ${SOURCE} ${INCLUDES} ${UI_COMPONENTS})
+add_library(Lutefisk3D_UI STATIC ${SOURCE} ${INCLUDES} ${UI_COMPONENTS})
 add_dependencies(Lutefisk3D_UI FreeType)
 target_include_directories(Lutefisk3D_UI PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_UI PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_UI PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-add_dependencies(Lutefisk3D_UI FreeType)
-######################### Add component to the project's list
-list(APPEND Lutefisk3D_components $<TARGET_OBJECTS:Lutefisk3D_UI>)
-SET(Lutefisk3D_components ${Lutefisk3D_components} PARENT_SCOPE)
+set_property(TARGET Lutefisk3D_UI PROPERTY INTERFACE_LINK_LIBRARIES
+    FreeType
+    Lutefisk3D_Math
+    Lutefisk3D_Core
+    Lutefisk3D_Containers
+    Lutefisk3D_Math
+    Lutefisk3D_Resource
+    Lutefisk3D_Graphics
+)
 
 if(UNIT_TESTING)
 endif()

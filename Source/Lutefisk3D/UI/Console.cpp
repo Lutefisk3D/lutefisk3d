@@ -40,14 +40,11 @@
 #include "Lutefisk3D/UI/Text.h"
 #include "Lutefisk3D/UI/UI.h"
 #include "Lutefisk3D/UI/UIEvents.h"
-
-namespace Urho3D
-{
-
+namespace  {
 static const int DEFAULT_CONSOLE_ROWS = 16;
 static const int DEFAULT_HISTORY_SIZE = 16;
 
-const char* logStyles[] =
+static const char* logStyles[] =
 {
     "ConsoleDebugText",
     "ConsoleInfoText",
@@ -55,6 +52,10 @@ const char* logStyles[] =
     "ConsoleErrorText",
     "ConsoleText"
 };
+}
+namespace Urho3D
+{
+
 Console::Console(Context* context) :
     Object(context),
     autoVisibleOnError_(false),
@@ -64,11 +65,11 @@ Console::Console(Context* context) :
     historyOrAutoCompleteChange_(false),
     printing_(false)
 {
-    UI* ui = GetSubsystem<UI>();
-    UIElement* uiRoot = ui->GetRoot();
+    UI *uisys=context_->m_UISystem.get();
+    UIElement* uiRoot = uisys->GetRoot();
 
     // By default prevent the automatic showing of the screen keyboard
-    focusOnShow_ = !ui->GetUseScreenKeyboard();
+    focusOnShow_ = !uisys->GetUseScreenKeyboard();
 
     background_ = uiRoot->CreateChild<BorderImage>();
     background_->SetBringToBack(false);
@@ -99,12 +100,12 @@ Console::Console(Context* context) :
 
     SubscribeToEvent(interpreters_, E_ITEMSELECTED, URHO3D_HANDLER(Console, HandleInterpreterSelected));
     SubscribeToEvent(lineEdit_, E_TEXTCHANGED, URHO3D_HANDLER(Console, HandleTextChanged));
-    SubscribeToEvent(lineEdit_, E_TEXTFINISHED, URHO3D_HANDLER(Console, HandleTextFinished));
+    lineEdit_->textFinished.Connect(this,&Console::HandleTextFinished);
     SubscribeToEvent(lineEdit_, E_UNHANDLEDKEY, URHO3D_HANDLER(Console, HandleLineEditKey));
-    SubscribeToEvent(closeButton_, E_RELEASED, URHO3D_HANDLER(Console, HandleCloseButtonPressed));
+    closeButton_->released.Connect(this,&Console::HandleCloseButtonPressed);
     SubscribeToEvent(uiRoot, E_RESIZED, URHO3D_HANDLER(Console, HandleRootElementResized));
-    SubscribeToEvent(E_LOGMESSAGE, URHO3D_HANDLER(Console, HandleLogMessage));
-    SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(Console, HandlePostUpdate));
+    g_LogSignals.logMessageSignal.Connect(this,&Console::HandleLogMessage);
+    g_coreSignals.postUpdate.Connect(this,&Console::HandlePostUpdate);
 }
 
 Console::~Console()
@@ -136,8 +137,8 @@ void Console::SetDefaultStyle(XMLFile* style)
 
 void Console::SetVisible(bool enable)
 {
-    Input* input = GetSubsystem<Input>();
-    UI* ui = GetSubsystem<UI>();
+    Input* input = context_->m_InputSystem.get();
+    UI* ui = context_->m_UISystem.get();
     Cursor* cursor = ui->GetCursor();
 
     background_->SetVisible(enable);
@@ -263,7 +264,7 @@ void Console::RemoveAutoComplete(const QString& option)
 
 void Console::UpdateElements()
 {
-    int width = GetSubsystem<UI>()->GetRoot()->GetWidth();
+    int width = context_->m_UISystem->GetRoot()->GetWidth();
     const IntRect& border = background_->GetLayoutBorder();
     const IntRect& panelBorder = rowContainer_->GetScrollPanel()->GetClipBorder();
     rowContainer_->SetFixedWidth(width - border.left_ - border.right_);
@@ -301,46 +302,47 @@ const QString& Console::GetHistoryRow(unsigned index) const
 bool Console::PopulateInterpreter()
 {
     interpreters_->RemoveAllItems();
+    //BUG: this needs to be rewritten
+    return false;
+//    EventReceiverGroup * group = context_->GetEventReceivers(E_CONSOLECOMMAND);
+//    if (!group || group->receivers_.empty())
+//        return false;
 
-    EventReceiverGroup * group = context_->GetEventReceivers(E_CONSOLECOMMAND);
-    if (!group || group->receivers_.empty())
-        return false;
+//    QStringList names;
+//    for (unsigned i = 0; i < group->receivers_.size(); ++i)
+//    {
+//        Object* receiver = group->receivers_[i];
+//        if (receiver)
+//            names.push_back(receiver->GetTypeName());
+//    }
+//    std::sort(names.begin(), names.end());
 
-    QStringList names;
-    for (unsigned i = 0; i < group->receivers_.size(); ++i)
-    {
-        Object* receiver = group->receivers_[i];
-        if (receiver)
-            names.push_back(receiver->GetTypeName());
-    }
-    std::sort(names.begin(), names.end());
+//    unsigned selection = M_MAX_UNSIGNED;
+//    for (unsigned i = 0; i < names.size(); ++i)
+//    {
+//        const QString& name = names[i];
+//        if (name == commandInterpreter_)
+//            selection = i;
+//        Text* text = new Text(context_);
+//        text->SetStyle("ConsoleText");
+//        text->SetText(name);
+//        interpreters_->AddItem(text);
+//    }
 
-    unsigned selection = M_MAX_UNSIGNED;
-    for (unsigned i = 0; i < names.size(); ++i)
-    {
-        const QString& name = names[i];
-        if (name == commandInterpreter_)
-            selection = i;
-        Text* text = new Text(context_);
-        text->SetStyle("ConsoleText");
-        text->SetText(name);
-        interpreters_->AddItem(text);
-    }
+//    const IntRect& border = interpreters_->GetPopup()->GetLayoutBorder();
+//    interpreters_->SetMaxWidth(interpreters_->GetListView()->GetContentElement()->GetWidth() + border.left_ + border.right_);
+//    bool enabled = interpreters_->GetNumItems() > 1;
+//    interpreters_->SetEnabled(enabled);
+//    interpreters_->SetFocusMode(enabled ? FM_FOCUSABLE_DEFOCUSABLE : FM_NOTFOCUSABLE);
 
-    const IntRect& border = interpreters_->GetPopup()->GetLayoutBorder();
-    interpreters_->SetMaxWidth(interpreters_->GetListView()->GetContentElement()->GetWidth() + border.left_ + border.right_);
-    bool enabled = interpreters_->GetNumItems() > 1;
-    interpreters_->SetEnabled(enabled);
-    interpreters_->SetFocusMode(enabled ? FM_FOCUSABLE_DEFOCUSABLE : FM_NOTFOCUSABLE);
+//    if (selection == M_MAX_UNSIGNED)
+//    {
+//        selection = 0;
+//        commandInterpreter_ = names[selection];
+//    }
+//    interpreters_->SetSelection(selection);
 
-    if (selection == M_MAX_UNSIGNED)
-    {
-        selection = 0;
-        commandInterpreter_ = names[selection];
-    }
-    interpreters_->SetSelection(selection);
-
-    return true;
+//    return true;
 }
 
 void Console::HandleInterpreterSelected(StringHash eventType, VariantMap& eventData)
@@ -358,16 +360,14 @@ void Console::HandleTextChanged(StringHash eventType, VariantMap & eventData)
 
     historyOrAutoCompleteChange_ = false;
 }
-void Console::HandleTextFinished(StringHash eventType, VariantMap& eventData)
+void Console::HandleTextFinished(UIElement *,const QString &,float)
 {
-    using namespace TextFinished;
 
     QString line = lineEdit_->GetText();
     if (!line.isEmpty())
     {
         // Send the command as an event for script subsystem
-        using namespace ConsoleCommand;
-        SendEvent(E_CONSOLECOMMAND, P_COMMAND, line, P_ID, static_cast<Text*>(interpreters_->GetSelectedItem())->GetText());
+        g_consoleSignals.consoleCommand.Emit(line,static_cast<Text*>(interpreters_->GetSelectedItem())->GetText());
 
         // Make sure the line isn't the same as the last one
         if (history_.empty() || line != history_.back())
@@ -504,7 +504,7 @@ void Console::HandleLineEditKey(StringHash eventType, VariantMap& eventData)
     }
 }
 
-void Console::HandleCloseButtonPressed(StringHash eventType, VariantMap& eventData)
+void Console::HandleCloseButtonPressed(UIElement *)
 {
     SetVisible(false);
 }
@@ -514,17 +514,14 @@ void Console::HandleRootElementResized(StringHash eventType, VariantMap& eventDa
     UpdateElements();
 }
 
-void Console::HandleLogMessage(StringHash eventType, VariantMap& eventData)
+void Console::HandleLogMessage(LogLevels level,const QString &msg)
 {
     // If printing a log message causes more messages to be logged (error accessing font), disregard them
     if (printing_)
         return;
 
-    using namespace LogMessage;
-
-    int level = eventData[P_LEVEL].GetInt();
     // The message may be multi-line, so split to rows in that case
-    QStringList rows = eventData[P_MESSAGE].GetString().split('\n');
+    QStringList rows = msg.split('\n');
 
     for (QString & row : rows)
         pendingRows_.emplace_back(level, row);
@@ -533,12 +530,12 @@ void Console::HandleLogMessage(StringHash eventType, VariantMap& eventData)
         SetVisible(true);
 }
 
-void Console::HandlePostUpdate(StringHash eventType, VariantMap& eventData)
+void Console::HandlePostUpdate(float ts)
 {
     // Ensure UI-elements are not detached
     if (!background_->GetParent())
     {
-        UI* ui = GetSubsystem<UI>();
+        UI* ui = context_->m_UISystem.get();
         UIElement* uiRoot = ui->GetRoot();
         uiRoot->AddChild(background_);
         uiRoot->AddChild(closeButton_);

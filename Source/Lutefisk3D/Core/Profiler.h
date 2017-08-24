@@ -26,7 +26,7 @@
 #include "Lutefisk3D/Core/Thread.h"
 #include "Lutefisk3D/Core/Timer.h"
 #include <limits>
-
+#include <vector>
 namespace Urho3D
 {
 
@@ -170,10 +170,8 @@ public:
 };
 
 /// Hierarchical performance profiler subsystem.
-class URHO3D_API Profiler : public Object
+class URHO3D_API Profiler : public RefCounted
 {
-    URHO3D_OBJECT(Profiler, Object);
-
 public:
     /// Construct.
     Profiler(Context* context);
@@ -253,7 +251,8 @@ private:
 };
 
 #ifdef LUTEFISK3D_PROFILING
-#define URHO3D_PROFILE(name) Urho3D::AutoProfileBlock profile_ ## name (GetSubsystem<Urho3D::Profiler>(), #name)
+#define URHO3D_PROFILE(name) Urho3D::AutoProfileBlock profile_ ## name (context_->m_ProfilerSystem.get(), #name)
+#define URHO3D_PROFILE_CTX(ctx,name) Urho3D::AutoProfileBlock profile_ ## name (ctx->m_ProfilerSystem.get(), #name)
 #else
 #define URHO3D_PROFILE(name)
 #endif

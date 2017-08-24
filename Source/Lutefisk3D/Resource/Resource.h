@@ -25,6 +25,7 @@
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Core/Timer.h"
 #include "Lutefisk3D/Core/Variant.h"
+#include "Lutefisk3D/Resource/ResourceEvents.h"
 namespace Urho3D
 {
 
@@ -47,30 +48,22 @@ enum AsyncLoadState
 };
 
 /// Base class for resources.
-class URHO3D_API Resource : public Object
+class URHO3D_API Resource : public Object, public SingleResourceSignals
 {
-    URHO3D_OBJECT(Resource, Object);
+    URHO3D_OBJECT(Resource, Object)
 
 public:
     /// Construct.
     Resource(Context* context);
-
-    /// Load resource synchronously. Call both BeginLoad() & EndLoad() and return true if both succeeded.
     bool Load(Deserializer& source);
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
     virtual bool BeginLoad(Deserializer& source)=0;
-    /// Finish resource loading. Always called from the main thread. Return true if successful.
     virtual bool EndLoad();
-    /// Save resource. Return true if successful.
     virtual bool Save(Serializer& dest) const;
-
-    /// Set name.
     void SetName(const QString& name);
-    /// Set memory use in bytes, possibly approximate.
     void SetMemoryUse(unsigned size);
-    /// Reset last used timer.
     void ResetUseTimer();
-    /// Set the asynchronous loading state. Called by ResourceCache. Resources in the middle of asynchronous loading are not normally returned to user.
+
     void SetAsyncLoadState(AsyncLoadState newState);
 
     /// Return name.
@@ -85,16 +78,11 @@ public:
     AsyncLoadState GetAsyncLoadState() const { return asyncLoadState_; }
 
 private:
-    /// Name.
-    QString name_;
-    /// Name hash.
-    StringHash nameHash_;
-    /// Last used timer.
-    Timer useTimer_;
-    /// Memory use in bytes.
-    unsigned memoryUse_;
-    /// Asynchronous loading state.
-    AsyncLoadState asyncLoadState_;
+    QString        name_;           ///< Name.
+    StringHash     nameHash_;       ///< Name hash.
+    Timer          useTimer_;       ///< Last used timer.
+    unsigned       memoryUse_;      ///< Memory use in bytes.
+    AsyncLoadState asyncLoadState_; ///< Asynchronous loading state.
 };
 
 inline QString GetResourceName(Resource* resource)

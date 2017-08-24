@@ -26,6 +26,7 @@
 #include "Lutefisk3D/Math/BoundingBox.h"
 #include "Lutefisk3D/Math/Matrix3x4.h"
 #include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Navigation/NavigationEvents.h"
 #include <QtCore/QSet>
 
 #ifdef DT_POLYREF64
@@ -85,7 +86,7 @@ struct URHO3D_API NavigationPathPoint
 };
 
 /// Navigation mesh component. Collects the navigation geometry from child nodes with the Navigable component and responds to path queries.
-class URHO3D_API NavigationMesh : public Component
+class URHO3D_API NavigationMesh : public Component, public NavigationMeshSignals
 {
     URHO3D_OBJECT(NavigationMesh,Component);
     friend class CrowdManager;

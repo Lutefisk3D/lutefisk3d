@@ -277,8 +277,7 @@ const Matrix3x4 &Sprite::GetTransform() const
 
 void Sprite::SetTextureAttr(const ResourceRef &value)
 {
-    ResourceCache *cache = GetSubsystem<ResourceCache>();
-    SetTexture(cache->GetResource<Texture2D>(value.name_));
+    SetTexture(context_->m_ResourceCache->GetResource<Texture2D>(value.name_));
 }
 
 ResourceRef Sprite::GetTextureAttr() const

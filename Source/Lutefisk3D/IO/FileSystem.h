@@ -21,28 +21,31 @@
 //
 
 #pragma once
-
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 #include "Lutefisk3D/Container/HashMap.h"
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/Str.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include <jlsignal/SignalBase.h>
 
-
+#include <QtCore/QString>
+#include <list>
 namespace Urho3D
 {
-
+class Context;
 class AsyncExecRequest;
 
-/// Return files.
-static const unsigned SCAN_FILES = 0x1;
-/// Return directories.
-static const unsigned SCAN_DIRS = 0x2;
-/// Return also hidden files.
-static const unsigned SCAN_HIDDEN = 0x4;
-
-/// Subsystem for file and directory operations and access control.
-class URHO3D_API FileSystem : public Object
+enum ScanFlags : uint32_t
 {
-    URHO3D_OBJECT(FileSystem,Object);
-
+    /// Return files.
+    SCAN_FILES = 0x1,
+    /// Return directories.
+    SCAN_DIRS = 0x2,
+    /// Return also hidden files.
+    SCAN_HIDDEN = 0x4,
+};
+/// Subsystem for file and directory operations and access control.
+class URHO3D_API FileSystem : public jl::SignalObserver
+{
 public:
     /// Construct.
     FileSystem(Context* context);
@@ -99,10 +102,11 @@ public:
 
 private:
     /// Handle begin frame event to check for completed async executions.
-    void HandleBeginFrame(StringHash eventType, VariantMap& eventData);
+    void HandleBeginFrame(unsigned, float);
     /// Handle a console command event.
-    void HandleConsoleCommand(StringHash eventType, VariantMap& eventData);
+    void HandleConsoleCommand(const QString &cmd, const QString &id);
 
+    Context *m_context;
     /// Allowed directories.
     HashSet<QString> allowedPaths_;
     /// Cached program directory.

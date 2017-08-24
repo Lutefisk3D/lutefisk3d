@@ -23,19 +23,21 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Mutex.h"
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "jlsignal/Signal.h"
 #include <queue>
 #include <set>
+#include <list>
 namespace Urho3D
 {
-
-/// Work item completed event.
-URHO3D_EVENT(E_WORKITEMCOMPLETED, WorkItemCompleted)
-{
-    URHO3D_PARAM(P_ITEM, Item);                        // WorkItem ptr
-}
-
+class Context;
 class WorkerThread;
+
+struct WorkQueueSignals {
+    /// Work item completed event.
+    jl::Signal<struct WorkItem *> workItemCompleted; //WorkItem ptr
+};
+
 
 /// Work queue item.
 struct WorkItem : public RefCounted
@@ -90,10 +92,8 @@ struct comparePrioritySharedPtr {
     }
 };
 /// Work queue subsystem for multithreading.
-class WorkQueue : public Object
+class WorkQueue : public RefCounted,public jl::SignalObserver,public WorkQueueSignals
 {
-    URHO3D_OBJECT(WorkQueue, Object);
-
     friend class WorkerThread;
 
 public:
@@ -144,8 +144,9 @@ private:
     /// Return a work item to the pool.
     void ReturnToPool(SharedPtr<WorkItem>& item);
     /// Handle frame start event. Purge completed work from the main thread queue, and perform work if no threads at all.
-    void HandleBeginFrame(StringHash eventType, VariantMap& eventData);
+    void HandleBeginFrame(unsigned, float);
 
+    Context *m_context;
     /// Worker threads.
     std::vector<SharedPtr<WorkerThread> > threads_;
     /// Work item pool for reuse to cut down on allocation. The bool is a flag for item pooling and whether it is available or not.

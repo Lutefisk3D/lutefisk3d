@@ -154,7 +154,8 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source);
+    bool BeginLoad(Deserializer& source) override;
+    bool Save(Serializer& dest) const override;
 
     /// Return root.
     const PListValueMap& GetRoot() const { return root_; }

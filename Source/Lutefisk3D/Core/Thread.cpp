@@ -58,7 +58,7 @@ Thread::~Thread()
 {
     Stop();
 }
-
+/// Start running the thread. Return true if successful, or false if already running or if can not create the thread.
 bool Thread::Run()
 {
     // Check if already running
@@ -77,7 +77,7 @@ bool Thread::Run()
 #endif
     return handle_ != nullptr;
 }
-
+/// Set the running flag to false and wait for the thread to finish.
 void Thread::Stop()
 {
     // Check if already stopped
@@ -96,7 +96,7 @@ void Thread::Stop()
 #endif
     handle_ = nullptr;
 }
-
+/// Set thread priority. The thread must have been started first.
 void Thread::SetPriority(int priority)
 {
 #ifdef _WIN32
@@ -109,12 +109,12 @@ void Thread::SetPriority(int priority)
         pthread_setschedprio(*thread, priority);
 #endif
 }
-
+/// Set the current thread as the main thread.
 void Thread::SetMainThread()
 {
     mainThreadID = GetCurrentThreadID();
 }
-
+/// Return the current thread's ID.
 ThreadID Thread::GetCurrentThreadID()
 {
 #ifdef _WIN32
@@ -123,7 +123,7 @@ ThreadID Thread::GetCurrentThreadID()
     return pthread_self();
 #endif
 }
-
+/// Return whether is executing in the main thread.
 bool Thread::IsMainThread()
 {
     return GetCurrentThreadID() == mainThreadID;

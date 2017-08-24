@@ -157,7 +157,7 @@ class URHO3D_API Octree : public Component, public Octant
 {
     friend void RaycastDrawablesWork(const WorkItem* item, unsigned threadIndex);
 
-    URHO3D_OBJECT(Octree,Component);
+    URHO3D_OBJECT(Octree,Component)
 
 public:
     /// Construct.
@@ -199,7 +199,7 @@ public:
 
 private:
     /// Handle render update in case of headless execution.
-    void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleRenderUpdate(float ts);
 
     /// Drawable objects that require update.
     std::vector<Drawable*> drawableUpdates_;

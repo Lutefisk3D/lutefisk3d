@@ -22,16 +22,20 @@
 
 #pragma once
 
-#include "Lutefisk3D/Core/Object.h"
+#include <jlsignal/Signal.h>
+
+class QString;
 
 namespace Urho3D
 {
-
-/// A command has been entered on the console.
-URHO3D_EVENT(E_CONSOLECOMMAND, ConsoleCommand)
+struct ConsoleSignals
 {
-    URHO3D_PARAM(P_COMMAND, Command);              // String
-    URHO3D_PARAM(P_ID, Id);                        // String
-}
+    /// A command has been entered on the console.
+    jl::Signal<const QString &,const QString &> consoleCommand; // QString command, QString Id
+    void init(jl::ScopedAllocator *alloc) {
+        consoleCommand.SetAllocator(alloc);
+    }
+};
+extern ConsoleSignals g_consoleSignals;
 
 }

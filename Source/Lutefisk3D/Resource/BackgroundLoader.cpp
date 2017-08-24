@@ -126,11 +126,7 @@ bool BackgroundLoader::QueueResource(StringHash type, const QString& name, bool 
 
         if (sendEventOnFailure && Thread::IsMainThread())
         {
-            using namespace UnknownResourceType;
-
-            VariantMap& eventData = owner_->GetEventDataMap();
-            eventData[P_RESOURCETYPE] = type;
-            owner_->SendEvent(E_UNKNOWNRESOURCETYPE, eventData);
+            g_resourceSignals.unknownResourceType.Emit(type);
         }
 
         backgroundLoadQueue_.remove(key);
@@ -259,7 +255,7 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
 #ifdef LUTEFISK3D_PROFILING
         QString profileBlockName("Finish" + resource->GetTypeName());
 
-        Profiler* profiler = owner_->GetSubsystem<Profiler>();
+        Profiler* profiler = owner_->GetContext()->m_ProfilerSystem.get();
         if (profiler)
             profiler->BeginBlock(qPrintable(profileBlockName));
 #endif
@@ -275,23 +271,11 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
 
     if (!success && item.sendEventOnFailure_)
     {
-        using namespace LoadFailed;
-
-        VariantMap& eventData = owner_->GetEventDataMap();
-        eventData[P_RESOURCENAME] = resource->GetName();
-        owner_->SendEvent(E_LOADFAILED, eventData);
+        g_resourceSignals.loadFailed.Emit(resource->GetName());
     }
 
     // Send event, either success or failure
-    {
-        using namespace ResourceBackgroundLoaded;
-
-        VariantMap& eventData = owner_->GetEventDataMap();
-        eventData[P_RESOURCENAME] = resource->GetName();
-        eventData[P_SUCCESS] = success;
-        eventData[P_RESOURCE] = resource;
-        owner_->SendEvent(E_RESOURCEBACKGROUNDLOADED, eventData);
-    }
+    g_resourceSignals.resourceBackgroundLoaded.Emit(resource->GetName(),success,resource);
 
     // Store to the cache; use same mechanism as for manual resources
     if (success || owner_->GetReturnFailedResources())

@@ -43,7 +43,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(HugeObjectCount)
 
 HugeObjectCount::HugeObjectCount(Context* context) :
-    Sample(context),
+    Sample("HugeObjectCount",context),
     animate_(false),
     useGroups_(false)
 {
@@ -69,10 +69,10 @@ void HugeObjectCount::Start()
 
 void HugeObjectCount::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
     if (!scene_)
-        scene_ = new Scene(context_);
+        scene_ = new Scene(m_context);
     else
     {
         scene_->Clear();
@@ -149,7 +149,7 @@ void HugeObjectCount::CreateScene()
     // Create the camera. Create it outside the scene so that we can clear the whole scene without affecting it
     if (!cameraNode_)
     {
-        cameraNode_ = new Node(context_);
+        cameraNode_ = new Node(m_context);
         cameraNode_->SetPosition(Vector3(0.0f, 10.0f, -100.0f));
         Camera* camera = cameraNode_->CreateComponent<Camera>();
         camera->SetFarClip(300.0f);
@@ -158,8 +158,8 @@ void HugeObjectCount::CreateScene()
 
 void HugeObjectCount::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -180,10 +180,10 @@ void HugeObjectCount::CreateInstructions()
 
 void HugeObjectCount::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
@@ -191,16 +191,16 @@ void HugeObjectCount::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
 //    LUTEFISK_SUBSCRIBE_GLOBAL(E_UPDATE,HandleUpdate);
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(HugeObjectCount, HandleUpdate));
+    g_coreSignals.update.Connect(this,&HugeObjectCount::HandleUpdate);
 }
 
 void HugeObjectCount::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -229,7 +229,7 @@ void HugeObjectCount::MoveCamera(float timeStep)
 
 void HugeObjectCount::AnimateObjects(float timeStep)
 {
-    URHO3D_PROFILE(AnimateObjects);
+    URHO3D_PROFILE_CTX(m_context,AnimateObjects);
 
     const float ROTATE_SPEED = 15.0f;
     // Rotate about the Z axis (roll)
@@ -239,15 +239,11 @@ void HugeObjectCount::AnimateObjects(float timeStep)
         boxNodes_[i]->Rotate(rotateQuat);
 }
 
-void HugeObjectCount::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void HugeObjectCount::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
     // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Toggle animation with space
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
     if (input->GetKeyPress(KEY_SPACE))
         animate_ = !animate_;
 

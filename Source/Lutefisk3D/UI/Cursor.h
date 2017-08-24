@@ -128,7 +128,7 @@ public:
 
 protected:
     /// Handle operating system mouse cursor visibility change event.
-    void HandleMouseVisibleChanged(StringHash eventType, VariantMap& eventData);
+    void HandleMouseVisibleChanged(bool visible);
 
     /// Current shape definition.
     QString shape_;

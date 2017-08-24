@@ -50,7 +50,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(Decals)
 
 Decals::Decals(Context* context) :
-    Sample(context),
+    Sample("Decals",context),
     drawDebug_(false)
 {
 }
@@ -75,9 +75,9 @@ void Decals::Start()
 
 void Decals::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
     // Also create a DebugRenderer component so that we can draw debug geometry
@@ -152,17 +152,17 @@ void Decals::CreateScene()
 
 void Decals::CreateUI()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Create a Cursor UI element because we want to be able to hide and show it at will. When hidden, the mouse cursor will
     // control the camera, and when visible, it will point the raycast target
     XMLFile* style = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
-    SharedPtr<Cursor> cursor(new Cursor(context_));
+    SharedPtr<Cursor> cursor(new Cursor(m_context));
     cursor->SetStyleAuto(style);
     ui->SetCursor(cursor);
     // Set starting position of the cursor at the rendering window center
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     cursor->SetPosition(graphics->GetWidth() / 2, graphics->GetHeight() / 2);
 
     // Construct new Text object, set string to display and font to use
@@ -185,28 +185,28 @@ void Decals::CreateUI()
 
 void Decals::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer =  m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void Decals::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Decals, HandleUpdate));
+    g_coreSignals.update.Connect(this,&Decals::HandleUpdate);
 
     // Subscribe HandlePostRenderUpdate() function for processing the post-render update event, during which we request
     // debug geometry
-    SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(Decals, HandlePostRenderUpdate));
+    g_coreSignals.postRenderUpdate.Connect(this,&Decals::HandlePostRenderUpdate);
 }
 
 void Decals::MoveCamera(float timeStep)
 {
     // Right mouse button controls mouse cursor visibility: hide when pressed
-    UI* ui = GetSubsystem<UI>();
-    Input* input = GetSubsystem<Input>();
+    UI* ui = m_context->m_UISystem.get();
+    Input* input = m_context->m_InputSystem.get();
     ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MOUSEB_RIGHT));
 
     // Do not move if the UI has a focused element (the console)
@@ -262,7 +262,7 @@ void Decals::PaintDecal()
         DecalSet* decal = targetNode->GetComponent<DecalSet>();
         if (!decal)
         {
-            ResourceCache* cache = GetSubsystem<ResourceCache>();
+            ResourceCache* cache = m_context->m_ResourceCache.get();
 
             decal = targetNode->CreateComponent<DecalSet>();
             decal->SetMaterial(cache->GetResource<Material>("Materials/UrhoDecal.xml"));
@@ -280,13 +280,13 @@ bool Decals::Raycast(float maxDistance, Vector3& hitPos, Drawable*& hitDrawable)
 {
     hitDrawable = nullptr;
 
-    UI* ui = GetSubsystem<UI>();
+    UI* ui = m_context->m_UISystem.get();
     IntVector2 pos = ui->GetCursorPosition();
     // Check the cursor is visible and there is no UI element in front of the cursor
     if (!ui->GetCursor()->IsVisible() || ui->GetElementAt(pos, true))
         return false;
 
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     Camera* camera = cameraNode_->GetComponent<Camera>();
     Ray cameraRay = camera->GetScreenRay((float)pos.x_ / graphics->GetWidth(), (float)pos.y_ / graphics->GetHeight());
     // Pick only geometry objects, not eg. zones or lights, only get the first (closest) hit
@@ -305,20 +305,15 @@ bool Decals::Raycast(float maxDistance, Vector3& hitPos, Drawable*& hitDrawable)
     return false;
 }
 
-void Decals::HandleUpdate(StringHash eventType, VariantMap& eventData)
-{
-    using namespace Update;
-
     // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
-    // Move the camera, scale movement with time step
+void Decals::HandleUpdate(float timeStep)
+{
     MoveCamera(timeStep);
 }
 
-void Decals::HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData)
+void Decals::HandlePostRenderUpdate(float ts)
 {
     // If draw debug mode is enabled, draw viewport debug geometry. Disable depth test so that we can see the effect of occlusion
     if (drawDebug_)
-        GetSubsystem<Renderer>()->DrawDebugGeometry(false);
+        m_context->m_Renderer->DrawDebugGeometry(false);
 }

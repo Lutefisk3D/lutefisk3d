@@ -35,25 +35,16 @@ class Node;
 class URHO3D_API SceneResolver
 {
 public:
-    /// Construct.
     SceneResolver();
-    /// Destruct.
     ~SceneResolver();
 
-    /// Reset. Clear all remembered nodes and components.
     void Reset();
-    /// Remember a created node.
-    void AddNode(unsigned oldID, Node* node);
-    /// Remember a created component.
-    void AddComponent(unsigned oldID, Component* component);
-    /// Resolve component and node ID attributes and reset.
+    void AddNode(unsigned oldID, Node *node);
+    void AddComponent(unsigned oldID, Component *component);
     void Resolve();
 
 private:
-    /// Nodes.
-    HashMap<unsigned, WeakPtr<Node> > nodes_;
-    /// Components.
-    HashMap<unsigned, WeakPtr<Component> > components_;
+    HashMap<unsigned, WeakPtr<Node>>      nodes_;      ///< Nodes.
+    HashMap<unsigned, WeakPtr<Component>> components_; ///< Components.
 };
-
 }

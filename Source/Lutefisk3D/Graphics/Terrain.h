@@ -209,7 +209,7 @@ private:
     /// Set heightmap image and optionally recreate the geometry immediately. Return true if successful.
     bool SetHeightMapInternal(Image* image, bool recreateNow);
     /// Handle heightmap image reload finished.
-    void HandleHeightMapReloadFinished(StringHash eventType, VariantMap& eventData);
+    void HandleHeightMapReloadFinished();
     /// Handle neighbor terrain geometry being created. Update the edge patch neighbors as necessary.
     void HandleNeighborTerrainCreated(StringHash eventType, VariantMap& eventData);
     /// Update edge patch neighbors when neighbor terrain(s) change or are recreated.

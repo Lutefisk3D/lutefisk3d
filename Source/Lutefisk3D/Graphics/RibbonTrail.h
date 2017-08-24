@@ -178,7 +178,7 @@ protected:
 
 private:
     /// Handle scene post-update event.
-    void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleScenePostUpdate(Scene *, float ts);
 
     /// Resize RibbonTrail vertex and index buffers.
     void UpdateBufferSize();

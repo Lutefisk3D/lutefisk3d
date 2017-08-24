@@ -21,6 +21,7 @@
 //
 
 #include "Lutefisk3D/Core/WorkQueue.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Graphics/Camera.h"
 #include "Lutefisk3D/IO/Log.h"
@@ -86,7 +87,7 @@ bool OcclusionBuffer::SetSize(int width, int height, bool threaded)
     height_ = height;
 
     // Build work buffers for threading
-    unsigned numThreadBuffers = threaded ? GetSubsystem<WorkQueue>()->GetNumThreads() + 1 : 1;
+    unsigned numThreadBuffers = threaded ? context_->m_WorkQueueSystem->GetNumThreads() + 1 : 1;
     buffers_.resize(numThreadBuffers);
     for (unsigned i = 0; i < numThreadBuffers; ++i)
     {
@@ -215,7 +216,7 @@ void OcclusionBuffer::DrawTriangles()
     else if (buffers_.size() > 1)
     {
         // Threaded
-        WorkQueue* queue = GetSubsystem<WorkQueue>();
+        WorkQueue* queue = context_->m_WorkQueueSystem.get();
 
         for (OcclusionBatch &b : batches_)
         {
@@ -240,7 +241,7 @@ void OcclusionBuffer::BuildDepthHierarchy()
 {
     if (buffers_.empty() || !depthHierarchyDirty_)
         return;
-    URHO3D_PROFILE(BuildDepthHierarchy);
+    URHO3D_PROFILE_CTX(context_,BuildDepthHierarchy);
 
     // Build the first mip level from the pixel-level data
     int width = (width_ + 1) / 2;
@@ -990,7 +991,7 @@ void OcclusionBuffer::DrawTriangle2D(const Vector3* vertices, bool clockwise, un
 
 void OcclusionBuffer::MergeBuffers()
 {
-    URHO3D_PROFILE(MergeBuffers);
+    URHO3D_PROFILE_CTX(context_,MergeBuffers);
 
     for (unsigned i = 1; i < buffers_.size(); ++i)
     {

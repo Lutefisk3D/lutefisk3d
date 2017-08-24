@@ -118,7 +118,7 @@ protected:
     /// Set scene node. Called by Node when creating the component.
     void SetNode(Node* node);
     /// Handle scene attribute animation update event.
-    void HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleAttributeAnimationUpdate(Scene *, float ts);
     /// Return a component from the scene root that sends out fixed update events (either PhysicsWorld or PhysicsWorld2D). Return null if neither exists.
     Component* GetFixedUpdateSource();
     /// Perform autoremove. Called by subclasses. Caller should keep a weak pointer to itself to check whether was actually removed, and return immediately without further member operations in that case.
@@ -136,5 +136,4 @@ protected:
 
 template <class T> T* Component::GetComponent() const { return static_cast<T*>(GetComponent(T::GetTypeStatic())); }
 template <class T> void Component::GetComponents(std::vector<T*>& dest) const { GetComponents(reinterpret_cast<std::vector<Component*>&>(dest), T::GetTypeStatic()); }
-
 }

@@ -36,7 +36,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(HelloWorld)
 
 HelloWorld::HelloWorld(Context* context) :
-    Sample(context)
+    Sample("HelloWorld",context)
 {
 }
 
@@ -58,10 +58,10 @@ void HelloWorld::Start()
 
 void HelloWorld::CreateText()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
     // Construct new Text object
-    SharedPtr<Text> helloText(new Text(context_));
+    SharedPtr<Text> helloText(new Text(m_context));
 
     // Set String to display
     helloText->SetText("Hello World from Urho3D!");
@@ -75,16 +75,16 @@ void HelloWorld::CreateText()
     helloText->SetVerticalAlignment(VA_CENTER);
 
     // Add Text instance to the UI root element
-    GetSubsystem<UI>()->GetRoot()->AddChild(helloText);
+    m_context->m_UISystem->GetRoot()->AddChild(helloText);
 }
 
 void HelloWorld::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(HelloWorld, HandleUpdate));
+    g_coreSignals.update.Connect(this,&HelloWorld::HandleUpdate);
 }
 
-void HelloWorld::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void HelloWorld::HandleUpdate(float step)
 {
     // Do nothing for now, could be extended to eg. animate the display
 }

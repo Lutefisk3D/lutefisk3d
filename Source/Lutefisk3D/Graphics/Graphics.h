@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Container/DataHandle.h"
 #include "Lutefisk3D/Math/Color.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Resource/Image.h"
@@ -33,7 +34,7 @@
 
 #include <utility>
 #include <functional>
-
+#include <array>
 
 namespace gl {
 enum class GLenum : uint32_t;
@@ -63,7 +64,7 @@ class VertexBuffer;
 class VertexDeclaration;
 
 struct ShaderParameter;
-
+using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 /// CPU-side scratch buffer for vertex data updates.
 struct ScratchBuffer
 {
@@ -82,10 +83,8 @@ struct ScratchBuffer
 };
 
 /// %Graphics subsystem. Manages the application window, rendering state and GPU resources.
-class URHO3D_API Graphics : public Object
+class URHO3D_API Graphics : public RefCounted
 {
-    URHO3D_OBJECT(Graphics,Object)
-
 public:
     /// Construct.
     Graphics(Context* context_);
@@ -314,16 +313,10 @@ public:
     bool GetLightPrepassSupport() const { return lightPrepassSupport_; }
     /// Return whether deferred rendering is supported.
     bool GetDeferredSupport() const { return deferredSupport_; }
-    /// Return whether anisotropic texture filtering is supported.
-    bool GetAnisotropySupport() const { return anisotropySupport_; }
     /// Return whether shadow map depth compare is done in hardware.
     bool GetHardwareShadowSupport() const { return hardwareShadowSupport_; }
     /// Return whether a readable hardware depth format is available.
     bool GetReadableDepthSupport() const { return (unsigned)GetReadableDepthFormat() != 0; }
-    /// Return whether sRGB conversion on texture sampling is supported.
-    bool GetSRGBSupport() const { return sRGBSupport_; }
-    /// Return whether sRGB conversion on rendertarget writing is supported.
-    bool GetSRGBWriteSupport() const { return sRGBWriteSupport_; }
     /// Return supported fullscreen resolutions (third component is refreshRate). Will be empty if listing the resolutions is not supported on the platform (e.g. Web).
     std::vector<IntVector3> GetResolutions(int monitor) const;
     /// Return supported multisampling levels.
@@ -445,6 +438,7 @@ public:
     void SetVBO(unsigned object);
     /// Bind a UBO, avoiding redundant operation. Used only on OpenGL.
     void SetUBO(unsigned object);
+    Context *GetContext() const { return m_context; }
 
     /// Return the API-specific alpha texture format.
     static gl::GLenum GetAlphaFormat();
@@ -542,6 +536,7 @@ private:
     /// Release/clear GPU objects and optionally close the window. Used only on OpenGL.
     void Release(bool clearGPUObjects, bool closeWindow);
 
+    Context *m_context;
     /// Mutex for accessing the GPU objects vector from several threads.
     Mutex gpuObjectMutex_;
     /// Implementation.
@@ -586,22 +581,10 @@ private:
     bool lightPrepassSupport_;
     /// Deferred rendering support flag.
     bool deferredSupport_;
-    /// Anisotropic filtering support flag.
-    bool anisotropySupport_;
-    /// DXT format support flag.
-    bool dxtTextureSupport_;
-    /// ETC1 format support flag.
-    bool etcTextureSupport_;
-    /// PVRTC formats support flag.
-    bool pvrtcTextureSupport_;
     /// Hardware shadow map depth compare support flag.
     bool hardwareShadowSupport_;
     /// Instancing support flag.
     bool instancingSupport_;
-    /// sRGB conversion on read support flag.
-    bool sRGBSupport_;
-    /// sRGB conversion on write support flag.
-    bool sRGBWriteSupport_;
     /// Number of primitives this frame.
     unsigned numPrimitives_;
     /// Number of batches this frame.
@@ -619,7 +602,7 @@ private:
     /// Shadow map 24-bit depth texture format.
     gl::GLenum hiresShadowMapFormat_;
     /// Vertex buffers in use.
-    VertexBuffer* vertexBuffers_[MAX_VERTEX_STREAMS];
+    std::array<VertexBuffer*,MAX_VERTEX_STREAMS> vertexBuffers_;
     /// Index buffer in use.
     IndexBuffer* indexBuffer_;
     /// Current vertex declaration hash.

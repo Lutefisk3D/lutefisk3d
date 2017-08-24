@@ -44,7 +44,7 @@
 
 
 // Number of static sprites to draw
-static const unsigned NUM_SPRITES = 200;
+static const unsigned NUM_SPRITES = 3200;
 static const StringHash VAR_MOVESPEED("MoveSpeed");
 static const StringHash VAR_ROTATESPEED("RotateSpeed");
 
@@ -95,7 +95,7 @@ void Urho2DSprite::CreateScene()
     if (!sprite)
         return;
 
-    float halfWidth = graphics->GetWidth() * 0.5f * PIXEL_SIZE;
+    float halfWidth  = graphics->GetWidth() * 0.5f * PIXEL_SIZE;
     float halfHeight = graphics->GetHeight() * 0.5f * PIXEL_SIZE;
 
     for (unsigned i = 0; i < NUM_SPRITES; ++i)

@@ -66,7 +66,7 @@ void ToolTip::Update(float /*timeStep*/)
 
     if (target_->IsHovering() && target_->IsVisibleEffective())
     {
-        float effectiveDelay = delay_ > 0.0f ? delay_ : GetSubsystem<UI>()->GetDefaultToolTipDelay();
+        float effectiveDelay = delay_ > 0.0f ? delay_ : context_->m_UISystem->GetDefaultToolTipDelay();
 
         if (!parentHovered_)
         {

@@ -242,13 +242,13 @@ void StaticModel::SetModel(Model* model)
     }
     // Unsubscribe from the reload event of previous model (if any), then subscribe to the new
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&StaticModel::HandleModelReloadFinished);
 
     model_ = model;
 
     if (model)
     {
-        SubscribeToEvent(model, E_RELOADFINISHED, URHO3D_HANDLER(StaticModel, HandleModelReloadFinished));
+        model->reloadFinished.Connect(this,&StaticModel::HandleModelReloadFinished);
 
         // Copy the subgeometry & LOD level structure
         SetNumGeometries(model->GetNumGeometries());
@@ -307,7 +307,7 @@ void StaticModel::ApplyMaterialList(const QString& fileName)
     if (useFileName.trimmed().isEmpty() && model_)
         useFileName = ReplaceExtension(model_->GetName(), ".txt");
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
     SharedPtr<File> file = cache->GetFile(useFileName, false);
     if (!file)
         return;
@@ -374,13 +374,13 @@ void StaticModel::SetNumGeometries(unsigned num)
 
 void StaticModel::SetModelAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
     SetModel(cache->GetResource<Model>(value.name_));
 }
 
 void StaticModel::SetMaterialsAttr(const ResourceRefList& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
     for (unsigned i = 0; i < value.names_.size(); ++i)
         SetMaterial(i, cache->GetResource<Material>(value.names_[i]));
 }
@@ -445,7 +445,7 @@ void StaticModel::CalculateLodLevels()
     }
 }
 
-void StaticModel::HandleModelReloadFinished(StringHash eventType, VariantMap& eventData)
+void StaticModel::HandleModelReloadFinished()
 {
     Model* currentModel = model_;
     model_.Reset(); // Set null to allow to be re-set

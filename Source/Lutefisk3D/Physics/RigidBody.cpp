@@ -959,8 +959,8 @@ void RigidBody::AddBodyToWorld()
         smoothedTransform_ = GetComponent<SmoothedTransform>();
         if (smoothedTransform_)
         {
-            SubscribeToEvent(smoothedTransform_, E_TARGETPOSITION, URHO3D_HANDLER(RigidBody, HandleTargetPosition));
-            SubscribeToEvent(smoothedTransform_, E_TARGETROTATION, URHO3D_HANDLER(RigidBody, HandleTargetRotation));
+            smoothedTransform_->targetPositionChanged.Connect(this,&RigidBody::HandleTargetPosition);
+            smoothedTransform_->targetRotationChanged.Connect(this,&RigidBody::HandleTargetRotation);
         }
 
         // Check if CollisionShapes already exist in the node and add them to the compound shape.
@@ -1021,14 +1021,14 @@ void RigidBody::RemoveBodyFromWorld()
     }
 }
 
-void RigidBody::HandleTargetPosition(StringHash eventType, VariantMap& eventData)
+void RigidBody::HandleTargetPosition()
 {
     // Copy the smoothing target position to the rigid body
     if (!physicsWorld_ || !physicsWorld_->IsApplyingTransforms())
         SetPosition(static_cast<SmoothedTransform*>(GetEventSender())->GetTargetWorldPosition());
 }
 
-void RigidBody::HandleTargetRotation(StringHash eventType, VariantMap& eventData)
+void RigidBody::HandleTargetRotation()
 {
     // Copy the smoothing target rotation to the rigid body
     if (!physicsWorld_ || !physicsWorld_->IsApplyingTransforms())

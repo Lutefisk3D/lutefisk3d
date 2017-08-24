@@ -35,7 +35,7 @@ class XMLFile;
 /// 2D texture resource.
 class URHO3D_API Texture2D : public Texture
 {
-    URHO3D_OBJECT(Texture2D,Texture);
+    URHO3D_OBJECT(Texture2D,Texture)
 
 public:
     /// Construct.
@@ -79,7 +79,7 @@ protected:
 
 private:
     /// Handle render surface update event.
-    void HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleRenderSurfaceUpdate();
 
     /// Render surface.
     SharedPtr<RenderSurface> renderSurface_;

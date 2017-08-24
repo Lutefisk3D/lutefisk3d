@@ -26,26 +26,26 @@
 #include "../BillboardSet.h"
 #include "../Camera.h"
 #include "../ConstantBuffer.h"
-#include "../../Core/Context.h"
-#include "../../Core/StringUtils.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/StringUtils.h"
 #include "../CustomGeometry.h"
 #include "../DebugRenderer.h"
 #include "../DecalSet.h"
-#include "../../IO/File.h"
+#include "Lutefisk3D/IO/File.h"
 #include "../Graphics.h"
 #include "../GraphicsEvents.h"
 #include "../GraphicsImpl.h"
 #include "../IndexBuffer.h"
-#include "../../IO/Log.h"
+#include "Lutefisk3D/IO/Log.h"
 #include "../Material.h"
-#include "../../Core/Mutex.h"
+#include "Lutefisk3D/Core/Mutex.h"
 #include "../Octree.h"
 #include "../ParticleEffect.h"
 #include "../ParticleEmitter.h"
-#include "../../Core/ProcessUtils.h"
-#include "../../Core/Profiler.h"
+#include "Lutefisk3D/Core/ProcessUtils.h"
+#include "Lutefisk3D/Core/Profiler.h"
 #include "../RenderSurface.h"
-#include "../../Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
 #include "../RibbonTrail.h"
 #include "../Shader.h"
 #include "../ShaderPrecache.h"
@@ -96,34 +96,20 @@ static const GLenum glCmpFunc[] =
     GL_GREATER,
     GL_GEQUAL
 };
-
-static const GLenum glSrcBlend[] =
-{
-    GL_ONE,
-    GL_ONE,
-    GL_DST_COLOR,
-    GL_SRC_ALPHA,
-    GL_SRC_ALPHA,
-    GL_ONE,
-    GL_ONE_MINUS_DST_ALPHA,
-    GL_ONE,
-    GL_SRC_ALPHA
+static const std::pair<GLenum,GLenum> glTranslatedBlend[MAX_BLENDMODES] = {
+    {GL_ONE,GL_ZERO},
+    {GL_ONE,GL_ONE},
+    {GL_DST_COLOR,GL_ZERO},
+    {GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA},
+    {GL_SRC_ALPHA,GL_ONE},
+    {GL_ONE,GL_ONE_MINUS_SRC_ALPHA},
+    {GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA},
+    {GL_ONE,GL_ONE}, // subtract
+    {GL_SRC_ALPHA,GL_ONE}, // subtract
+    {GL_ZERO,GL_ONE_MINUS_SRC_COLOR},
 };
 
-static const GLenum glDestBlend[] =
-{
-    GL_ZERO,
-    GL_ONE,
-    GL_ZERO,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_ONE,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_DST_ALPHA,
-    GL_ONE,
-    GL_ONE
-};
-
-static const GLenum glBlendOp[] =
+static const GLenum glBlendOp[MAX_BLENDMODES] =
 {
     GL_FUNC_ADD,
     GL_FUNC_ADD,
@@ -133,7 +119,8 @@ static const GLenum glBlendOp[] =
     GL_FUNC_ADD,
     GL_FUNC_ADD,
     GL_FUNC_REVERSE_SUBTRACT,
-    GL_FUNC_REVERSE_SUBTRACT
+    GL_FUNC_REVERSE_SUBTRACT,
+    GL_FUNC_ADD,
 };
 
 static const GLenum glFillMode[] =
@@ -163,26 +150,9 @@ static const GLenum glElementTypes[] =
     GL_UNSIGNED_BYTE
 };
 
-static const unsigned glElementComponents[] =
-{
-    1,
-    1,
-    2,
-    3,
-    4,
-    4,
-    4
-};
-
+static const unsigned glElementComponents[] = {1, 1, 2, 3, 4, 4, 4};
 
 static QString extensions;
-
-bool CheckExtension(const QString& name)
-{
-    if (extensions.isEmpty())
-        extensions = (const char*)glGetString(GL_EXTENSIONS);
-    return extensions.contains(name);
-}
 
 static void GetGLPrimitiveType(unsigned elementCount, PrimitiveType type, unsigned& primitiveCount, GLenum& glPrimitiveType)
 {
@@ -222,7 +192,7 @@ static void GetGLPrimitiveType(unsigned elementCount, PrimitiveType type, unsign
 const Vector2 Graphics::pixelUVOffset(0.0f, 0.0f);
 
 Graphics::Graphics(Context* context_) :
-    Object(context_),
+    m_context(context_),
     impl_(new GraphicsImpl()),
     window_(nullptr),
     externalWindow_(nullptr),
@@ -237,16 +207,10 @@ Graphics::Graphics(Context* context_) :
     vsync_(false),
     tripleBuffer_(false),
     sRGB_(false),
-    instancingSupport_(false),
     lightPrepassSupport_(false),
     deferredSupport_(false),
-    anisotropySupport_(false),
-    dxtTextureSupport_(false),
-    etcTextureSupport_(false),
-    pvrtcTextureSupport_(false),
     hardwareShadowSupport_(false),
-    sRGBSupport_(false),
-    sRGBWriteSupport_(false),
+    instancingSupport_(false),
     numPrimitives_(0),
     numBatches_(0),
     maxScratchBufferRequest_(0),
@@ -278,12 +242,12 @@ Graphics::~Graphics()
     impl_ = nullptr;
 
     // Shut down SDL now. Graphics should be the last SDL-using subsystem to be destroyed
-    context_->ReleaseSDL();
+    m_context->ReleaseSDL();
 }
 
 bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, bool resizable, bool highDPI, bool vsync, bool tripleBuffer, int multiSample, int monitor, int refreshRate)
 {
-    URHO3D_PROFILE(SetScreenMode);
+    URHO3D_PROFILE_CTX(m_context,SetScreenMode);
 
     bool maximize = false;
     // Make sure monitor index is not bigger than the currently detected monitors
@@ -496,19 +460,8 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     URHO3D_LOGINFO(msg);
 #endif
 
-    using namespace ScreenMode;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_WIDTH] = width_;
-    eventData[P_HEIGHT] = height_;
-    eventData[P_FULLSCREEN] = fullscreen_;
-    eventData[P_BORDERLESS] = borderless_;
-    eventData[P_RESIZABLE] = resizable_;
-    eventData[P_HIGHDPI] = highDPI_;
-    eventData[P_MONITOR] = monitor_;
-    eventData[P_REFRESHRATE] = refreshRate_;
-    SendEvent(E_SCREENMODE, eventData);
-
+    g_graphicsSignals.newScreenMode.Emit(width_,height_,fullscreen_,borderless_,resizable_,highDPI_,
+                                         monitor_,refreshRate_);
     return true;
 }
 
@@ -519,8 +472,6 @@ bool Graphics::SetMode(int width, int height)
 
 void Graphics::SetSRGB(bool enable)
 {
-    enable &= sRGBWriteSupport_;
-
     if (enable != sRGB_)
     {
         sRGB_ = enable;
@@ -552,7 +503,7 @@ void Graphics::Close()
 
 bool Graphics::TakeScreenShot(Image& destImage)
 {
-    URHO3D_PROFILE(TakeScreenShot);
+    URHO3D_PROFILE_CTX(m_context,TakeScreenShot);
     if (!IsInitialized())
         return false;
 
@@ -605,7 +556,7 @@ bool Graphics::BeginFrame()
     numPrimitives_ = 0;
     numBatches_ = 0;
 
-    SendEvent(E_BEGINRENDERING);
+    g_graphicsSignals.beginRendering.Emit();
 
     return true;
 }
@@ -615,9 +566,9 @@ void Graphics::EndFrame()
     if (!IsInitialized())
         return;
 
-    URHO3D_PROFILE(Present);
+    URHO3D_PROFILE_CTX(m_context,Present);
 
-    SendEvent(E_ENDRENDERING);
+    g_graphicsSignals.endRendering.Emit();
 
     SDL_GL_SwapWindow(window_);
 
@@ -678,7 +629,7 @@ bool Graphics::ResolveToTexture(Texture2D* destination, const IntRect& viewport)
     if (!destination || !destination->GetRenderSurface())
         return false;
 
-    URHO3D_PROFILE(ResolveToTexture);
+    URHO3D_PROFILE_CTX(m_context,ResolveToTexture);
 
     IntRect vpCopy = viewport;
     if (vpCopy.right_ <= vpCopy.left_)
@@ -709,7 +660,7 @@ bool Graphics::ResolveToTexture(Texture2D* texture)
     if (!surface || !surface->GetRenderBuffer())
         return false;
 
-    URHO3D_PROFILE(ResolveToTexture);
+    URHO3D_PROFILE_CTX(m_context,ResolveToTexture);
 
     texture->SetResolveDirty(false);
     surface->SetResolveDirty(false);
@@ -739,7 +690,7 @@ bool Graphics::ResolveToTexture(TextureCube* texture)
     if (!texture)
         return false;
 
-    URHO3D_PROFILE(ResolveToTexture);
+    URHO3D_PROFILE_CTX(m_context,ResolveToTexture);
 
     texture->SetResolveDirty(false);
 
@@ -900,7 +851,7 @@ bool Graphics::SetVertexBuffers(const std::vector<VertexBuffer*>& buffers, unsig
     return true;
 }
 
-bool Graphics::SetVertexBuffers(const std::vector<SharedPtr<VertexBuffer> >& buffers, unsigned instanceOffset)
+bool Graphics::SetVertexBuffers(const std::vector<SharedPtr<VertexBuffer>> & buffers, unsigned instanceOffset)
 {
     return SetVertexBuffers(reinterpret_cast<const std::vector<VertexBuffer*>&>(buffers), instanceOffset);
 }
@@ -926,7 +877,7 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
     {
         if (vs->GetCompilerOutput().isEmpty())
         {
-            URHO3D_PROFILE(CompileVertexShader);
+            URHO3D_PROFILE_CTX(m_context,CompileVertexShader);
 
             bool success = vs->Create();
             if (success)
@@ -945,7 +896,7 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
     {
         if (ps->GetCompilerOutput().isEmpty())
         {
-            URHO3D_PROFILE(CompilePixelShader);
+            URHO3D_PROFILE_CTX(m_context,CompilePixelShader);
 
             bool success = ps->Create();
             if (success)
@@ -992,7 +943,7 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
         else
         {
             // Link a new combination
-            URHO3D_PROFILE(LinkShaders);
+            URHO3D_PROFILE_CTX(m_context,LinkShaders);
 
             SharedPtr<ShaderProgram> newProgram(new ShaderProgram(this, vs, ps));
             if (newProgram->Link())
@@ -1585,7 +1536,7 @@ void Graphics::SetDepthStencil(RenderSurface* depthStencil)
                 depthStencil = MAP_VALUE(i)->GetRenderSurface();
             else
             {
-                SharedPtr<Texture2D> newDepthTexture(new Texture2D(context_));
+                SharedPtr<Texture2D> newDepthTexture(new Texture2D(m_context));
                 newDepthTexture->SetSize(width, height, GetDepthStencilFormat(), TEXTURE_DEPTHSTENCIL);
                 impl_->depthTextures_[searchKey] = newDepthTexture;
                 depthStencil = newDepthTexture->GetRenderSurface();
@@ -1643,7 +1594,7 @@ void Graphics::SetBlendMode(BlendMode mode, bool alphaToCoverage)
         else
         {
             glEnable(GL_BLEND);
-            glBlendFunc(glSrcBlend[mode], glDestBlend[mode]);
+            glBlendFunc(glTranslatedBlend[mode].first, glTranslatedBlend[mode].second);
             glBlendEquation(glBlendOp[mode]);
         }
 
@@ -1929,13 +1880,13 @@ GLenum Graphics::GetFormat(CompressedFormat format) const
         return GL_RGBA;
 
     case CF_DXT1:
-        return dxtTextureSupport_ ? GL_COMPRESSED_RGBA_S3TC_DXT1_EXT : GL_NONE;
+        return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 
     case CF_DXT3:
-        return dxtTextureSupport_ ? GL_COMPRESSED_RGBA_S3TC_DXT3_EXT : GL_NONE;
+        return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 
     case CF_DXT5:
-        return dxtTextureSupport_ ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_NONE;
+        return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 
     default:
         return GL_NONE;
@@ -1956,7 +1907,7 @@ ShaderVariation* Graphics::GetShader(ShaderType type, const char* name, const ch
 {
     if (lastShaderName_ != name || !lastShader_)
     {
-        ResourceCache* cache = GetSubsystem<ResourceCache>();
+        ResourceCache* cache = m_context->m_ResourceCache.get();
 
         QString fullShaderName = shaderPath_ + name + shaderExtension_;
         // Try to reduce repeated error log prints because of missing shaders
@@ -2052,15 +2003,9 @@ void Graphics::OnWindowResized()
 
     URHO3D_LOGDEBUG(QString("Window was resized to %1x%2").arg(width_).arg(height_));
 
-    using namespace ScreenMode;
+    g_graphicsSignals.newScreenMode.Emit(width_,height_,fullscreen_,borderless_,resizable_,highDPI_,
+                                         monitor_,refreshRate_);
 
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_WIDTH] = width_;
-    eventData[P_HEIGHT] = height_;
-    eventData[P_FULLSCREEN] = fullscreen_;
-    eventData[P_RESIZABLE] = resizable_;
-    eventData[P_BORDERLESS] = borderless_;
-    SendEvent(E_SCREENMODE, eventData);
 }
 
 void Graphics::OnWindowMoved()
@@ -2079,12 +2024,7 @@ void Graphics::OnWindowMoved()
 
     URHO3D_LOGDEBUG(QString("Window was moved to %1,%2").arg(position_.x_).arg(position_.y_));
 
-    using namespace WindowPos;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_X] = position_.x_;
-    eventData[P_Y] = position_.y_;
-    SendEvent(E_WINDOWPOS, eventData);
+    g_graphicsSignals.windowPos.Emit(position_.x_,position_.y_);
 }
 
 void Graphics::CleanupRenderSurface(RenderSurface* surface)
@@ -2158,7 +2098,7 @@ ConstantBuffer* Graphics::GetOrCreateConstantBuffer(ShaderType /*type*/, unsigne
     if (i != impl_->allConstantBuffers_.end())
         return MAP_VALUE(i).Get();
 
-    auto iter=impl_->allConstantBuffers_.emplace(key, SharedPtr<ConstantBuffer>(new ConstantBuffer(context_))).first->second;
+    auto iter=impl_->allConstantBuffers_.emplace(key, SharedPtr<ConstantBuffer>(new ConstantBuffer(m_context))).first->second;
     iter->SetSize(size);
     return iter.Get();
 }
@@ -2190,8 +2130,7 @@ void Graphics::Release(bool clearGPUObjects, bool closeWindow)
             // In this case clear shader programs last so that they do not attempt to delete their OpenGL program
             // from a context that may no longer exist
             impl_->shaderPrograms_.clear();
-
-            SendEvent(E_DEVICELOST);
+            g_graphicsSignals.deviceLost.Emit();
         }
     }
 
@@ -2243,9 +2182,6 @@ void Graphics::Restore()
             return;
         }
 
-        // Clear cached extensions string from the previous context
-        extensions.clear();
-
         // Initialize OpenGL extensions library (desktop only)
 
         glbinding::Binding::initialize();
@@ -2282,8 +2218,7 @@ void Graphics::Restore()
         for (GPUObject * elem : gpuObjects_)
             elem->OnDeviceReset();
     }
-
-    SendEvent(E_DEVICERESET);
+    g_graphicsSignals.deviceReset.Emit();
 }
 
 void Graphics::MarkFBODirty()
@@ -2443,10 +2378,6 @@ void Graphics::CheckFeatureSupport()
     int numSupportedRTs = 1;
     // Work around GLEW failure to check extensions properly from a GL3 context
     instancingSupport_ = glDrawElementsInstanced != 0 && glVertexAttribDivisor != 0;
-    dxtTextureSupport_ = true;
-    anisotropySupport_ = true;
-    sRGBSupport_ = true;
-    sRGBWriteSupport_ = true;
 
     glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &numSupportedRTs);
 
@@ -2456,7 +2387,7 @@ void Graphics::CheckFeatureSupport()
     if (numSupportedRTs >= 4)
         deferredSupport_ = true;
 
-#if defined(__APPLE__) && !defined(IOS)
+#if defined(__APPLE__)
     // On OS X check for an Intel driver and use shadow map RGBA dummy color textures, because mixing
     // depth-only FBO rendering and backbuffer rendering will bug, resulting in a black screen in full
     // screen mode, and incomplete shadow maps in windowed mode
@@ -2501,19 +2432,15 @@ void Graphics::PrepareDraw()
             }
 
             // Disable/enable sRGB write
-            if (sRGBWriteSupport_)
+            bool sRGBWrite = sRGB_;
+            if (sRGBWrite != impl_->sRGBWrite_)
             {
-                bool sRGBWrite = sRGB_;
-                if (sRGBWrite != impl_->sRGBWrite_)
-                {
-                    if (sRGBWrite)
-                        glEnable(GL_FRAMEBUFFER_SRGB_EXT);
-                    else
-                        glDisable(GL_FRAMEBUFFER_SRGB_EXT);
-                    impl_->sRGBWrite_ = sRGBWrite;
-                }
+                if (sRGBWrite)
+                    glEnable(GL_FRAMEBUFFER_SRGB_EXT);
+                else
+                    glDisable(GL_FRAMEBUFFER_SRGB_EXT);
+                impl_->sRGBWrite_ = sRGBWrite;
             }
-
             return;
         }
 
@@ -2665,17 +2592,14 @@ void Graphics::PrepareDraw()
         }
 
         // Disable/enable sRGB write
-        if (sRGBWriteSupport_)
+        bool sRGBWrite = renderTargets_[0] ? renderTargets_[0]->GetParentTexture()->GetSRGB() : sRGB_;
+        if (sRGBWrite != impl_->sRGBWrite_)
         {
-            bool sRGBWrite = renderTargets_[0] ? renderTargets_[0]->GetParentTexture()->GetSRGB() : sRGB_;
-            if (sRGBWrite != impl_->sRGBWrite_)
-            {
-                if (sRGBWrite)
-                    glEnable(GL_FRAMEBUFFER_SRGB_EXT);
-                else
-                    glDisable(GL_FRAMEBUFFER_SRGB_EXT);
-                impl_->sRGBWrite_ = sRGBWrite;
-            }
+            if (sRGBWrite)
+                glEnable(GL_FRAMEBUFFER_SRGB_EXT);
+            else
+                glDisable(GL_FRAMEBUFFER_SRGB_EXT);
+            impl_->sRGBWrite_ = sRGBWrite;
         }
     }
 

@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "../../Container/HashMap.h"
-#include "../../Container/RefCounted.h"
-#include "../../Graphics/GPUObject.h"
-#include "../../Graphics/GraphicsDefs.h"
-#include "../ShaderVariation.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/RefCounted.h"
+#include "Lutefisk3D/Graphics/GPUObject.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
+#include "Lutefisk3D/Graphics/ShaderVariation.h"
 
 #include <QtCore/QString>
 

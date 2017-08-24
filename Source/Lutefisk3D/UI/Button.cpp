@@ -74,12 +74,7 @@ void Button::Update(float timeStep)
         if (repeatTimer_ <= 0.0f)
         {
             repeatTimer_ += 1.0f / repeatRate_;
-
-            using namespace Pressed;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_ELEMENT] = this;
-            SendEvent(E_PRESSED, eventData);
+            pressed.Emit(this);
         }
     }
 }
@@ -102,12 +97,7 @@ void Button::OnClickBegin(const IntVector2& position, const IntVector2& screenPo
         SetPressed(true);
         repeatTimer_ = repeatDelay_;
         hovering_ = true;
-
-        using namespace Pressed;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_ELEMENT] = this;
-        SendEvent(E_PRESSED, eventData);
+        pressed.Emit(this);
     }
 }
 
@@ -119,9 +109,7 @@ void Button::OnClickEnd(const IntVector2& position, const IntVector2& screenPosi
         // If mouse was released on top of the element, consider it hovering on this frame yet (see issue #1453)
         if (IsInside(screenPosition, true))
             hovering_ = true;
-        using namespace Released;
-
-        SendEvent(E_RELEASED, P_ELEMENT,this);
+        released.Emit(this);
     }
 }
 

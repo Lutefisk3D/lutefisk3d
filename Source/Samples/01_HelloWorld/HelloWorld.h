@@ -31,8 +31,6 @@
 ///     - Subscribing to and handling of update events
 class HelloWorld : public Sample
 {
-    URHO3D_OBJECT(HelloWorld,Sample)
-
 public:
     /// Construct.
     HelloWorld(Context* context);
@@ -40,21 +38,11 @@ public:
     /// Setup after engine initialization and before running the main loop.
     virtual void Start() override;
 
-protected:
-    /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
-    virtual QString GetScreenJoystickPatchString() const override { return
-        "<patch>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Hat0']]\">"
-        "        <attribute name=\"Is Visible\" value=\"false\" />"
-        "    </add>"
-        "</patch>";
-    }
-
 private:
     /// Construct a new Text instance, containing the 'Hello World' String, and add it to the UI root element.
     void CreateText();
     /// Subscribe to application-wide logic update events.
     void SubscribeToEvents();
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float step);
 };

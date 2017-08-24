@@ -22,20 +22,24 @@
 
 #pragma once
 
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Graphics/GPUObject.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
-
 namespace Urho3D
 {
-
+class Context;
 /// Hardware index buffer.
-class URHO3D_API IndexBuffer : public Object, public GPUObject
+class URHO3D_API IndexBuffer : public RefCounted,public GPUObject
 {
-    URHO3D_OBJECT(IndexBuffer,Object)
+    /// Prevent copy construction.
+    IndexBuffer(const IndexBuffer& rhs)=delete;
+    /// Prevent assignment.
+    IndexBuffer& operator = (const IndexBuffer& rhs)=delete;
 
 public:
+    IndexBuffer(IndexBuffer&& rhs)=default;
+    IndexBuffer& operator = (IndexBuffer&& rhs) = default;
     /// Construct. Optionally force headless (no GPU-side buffer) operation.
     IndexBuffer(Context* context, bool forceHeadless = false);
     /// Destruct.
@@ -109,5 +113,24 @@ private:
     /// Discard lock flag. Used by OpenGL only.
     bool discardLock_;
 };
+/*
+struct IndexBufferManager : public HandleManager<IndexBuffer> {
+    Handle build(Context *ctx,bool shadowed,int count,const unsigned short *data) {
+        Handle ibh = add(ctx,"");
+        IndexBuffer &ibuf(get(ibh));
+        ibuf.SetShadowed(shadowed);
+        ibuf.SetSize(count, false);
+        ibuf.SetData(data);
+        return ibh;
+    }
+    void uploadData(Handle ibh,unsigned count,bool largeIndices,const unsigned char *data) {
+        IndexBuffer &ibuf(get(ibh));
+        ibuf.SetShadowed(true);
+        ibuf.SetSize(count, largeIndices);
+        ibuf.SetData(data);
 
+    }
+};*/
+//using IndexBufferHandle = IndexBufferManager::Handle;
+//extern IndexBufferManager g_indexBufferManager;
 }

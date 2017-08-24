@@ -65,6 +65,7 @@ Text::Text(Context* context) :
     selectionLength_(0),
     selectionColor_(Color::TRANSPARENT),
     hoverColor_(Color::TRANSPARENT),
+    strokeThickness_(0),
     textEffect_(TE_NONE),
     effectColor_(Color::BLACK),
     effectDepthBias_(0.0f),
@@ -258,8 +259,7 @@ void Text::OnIndentSet()
 
 bool Text::SetFont(const QString& fontName, int size)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    return SetFont(cache->GetResource<Font>(fontName), size);
+    return SetFont(context_->m_ResourceCache->GetResource<Font>(fontName), size);
 }
 
 bool Text::SetFont(Font* font, int size)
@@ -352,13 +352,13 @@ void Text::SetAutoLocalizable(bool enable)
             stringId_ = text_;
             Localization* l10n = GetSubsystem<Localization>();
             text_ = l10n->Get(stringId_);
-            SubscribeToEvent(E_CHANGELANGUAGE, URHO3D_HANDLER(Text, HandleChangeLanguage));
+            g_resourceSignals.changeLanguage.Connect(this,&Text::HandleChangeLanguage);
         }
         else
         {
             text_ = stringId_;
             stringId_ = "";
-            UnsubscribeFromEvent(E_CHANGELANGUAGE);
+            g_resourceSignals.changeLanguage.Disconnect(this,&Text::HandleChangeLanguage);
         }
         DecodeToUnicode();
         ValidateSelection();
@@ -366,7 +366,7 @@ void Text::SetAutoLocalizable(bool enable)
     }
 }
 
-void Text::HandleChangeLanguage(StringHash eventType, VariantMap& eventData)
+void Text::HandleChangeLanguage()
 {
     Localization* l10n = GetSubsystem<Localization>();
     text_ = l10n->Get(stringId_);
@@ -459,8 +459,7 @@ IntVector2 Text::GetCharSize(unsigned index)
 
 void Text::SetFontAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    font_ = cache->GetResource<Font>(value.name_);
+    font_ = context_->m_ResourceCache->GetResource<Font>(value.name_);
 }
 
 ResourceRef Text::GetFontAttr() const

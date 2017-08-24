@@ -160,7 +160,7 @@ bool Animation::BeginLoad(Deserializer& source)
     }
 
     // Optionally read triggers from an XML file
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     QString xmlName = ReplaceExtension(GetName(), ".xml");
 
     SharedPtr<XMLFile> file(cache->GetTempResource<XMLFile>(xmlName, false));

@@ -63,9 +63,8 @@ ScrollBar::ScrollBar(Context* context) :
 
     // For backward compatibility
     SetColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
-
-    SubscribeToEvent(backButton_, E_PRESSED, URHO3D_HANDLER(ScrollBar, HandleBackButtonPressed));
-    SubscribeToEvent(forwardButton_, E_PRESSED, URHO3D_HANDLER(ScrollBar, HandleForwardButtonPressed));
+    backButton_->pressed.Connect(this,&ScrollBar::HandleBackButtonPressed);
+    forwardButton_->pressed.Connect(this,&ScrollBar::HandleForwardButtonPressed);
     SubscribeToEvent(slider_, E_SLIDERCHANGED, URHO3D_HANDLER(ScrollBar, HandleSliderChanged));
     SubscribeToEvent(slider_, E_SLIDERPAGED, URHO3D_HANDLER(ScrollBar, HandleSliderPaged));
 
@@ -271,13 +270,13 @@ bool ScrollBar::FilterButtonImplicitAttributes(XMLElement& dest, const QString& 
     return true;
 }
 
-void ScrollBar::HandleBackButtonPressed(StringHash eventType, VariantMap& eventData)
+void ScrollBar::HandleBackButtonPressed(UIElement *)
 {
     if (editable_)
         StepBack();
 }
 
-void ScrollBar::HandleForwardButtonPressed(StringHash eventType, VariantMap& eventData)
+void ScrollBar::HandleForwardButtonPressed(UIElement *)
 {
     if (editable_)
         StepForward();

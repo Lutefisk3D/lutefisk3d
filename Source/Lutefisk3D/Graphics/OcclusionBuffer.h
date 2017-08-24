@@ -88,14 +88,14 @@ static const float OCCLUSION_Z_SCALE = 16777216.0f;
 /// Software renderer for occlusion.
 class URHO3D_API OcclusionBuffer : public Object
 {
-    URHO3D_OBJECT(OcclusionBuffer,Object);
-    
+    URHO3D_OBJECT(OcclusionBuffer,Object)
+
 public:
     /// Construct.
     OcclusionBuffer(Context* context);
     /// Destruct.
     virtual ~OcclusionBuffer();
-    
+
     /// Set occlusion buffer size and whether to reserve multiple buffers for threading optimization.
     bool SetSize(int width, int height, bool threaded);
     /// Set camera view to render from.
@@ -119,7 +119,7 @@ public:
     void BuildDepthHierarchy();
     /// Reset last used timer.
     void ResetUseTimer();
-    
+
     /// Return highest level depth values.
     int* GetBuffer() const { return buffers_.size() ? buffers_[0].data_ : (int*)0; }
     /// Return view transform matrix.
@@ -144,7 +144,7 @@ public:
     unsigned GetUseTimer();
     /// Draw a batch. Called internally.
     void DrawBatch(const OcclusionBatch& batch, unsigned threadIndex);
-    
+
 private:
     /// Apply modelview transform to vertex.
     inline Vector4 ModelTransform(const Matrix4& transform, const Vector3& vertex) const;
@@ -166,7 +166,7 @@ private:
     void ClearBuffer(unsigned threadIndex);
     /// Merge thread work buffers into the first buffer.
     void MergeBuffers();
-    
+
     /// Highest-level buffer data per thread.
     std::vector<OcclusionBufferData> buffers_;
     /// Reduced size depth buffers.

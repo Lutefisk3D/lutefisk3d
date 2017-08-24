@@ -20,5 +20,4 @@
 # THE SOFTWARE.
 #
 
-add_executable(02_HelloGUI HelloGUI.cpp HelloGUI.h ${COMMON_SAMPLE_H_FILES})
-target_link_libraries(02_HelloGUI Lutefisk3D)
+add_sample(02_HelloGUI HelloGUI)

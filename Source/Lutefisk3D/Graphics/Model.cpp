@@ -134,7 +134,7 @@ bool Model::BeginLoad(Deserializer& source)
         if (async)
         {
             desc.data_ = new unsigned char[desc.dataSize_];
-            source.Read(desc.data_.Get(), desc.dataSize_);      
+            source.Read(desc.data_.Get(), desc.dataSize_);
         }
         else
         {
@@ -161,7 +161,6 @@ bool Model::BeginLoad(Deserializer& source)
         unsigned indexSize = source.ReadUInt();
 
         SharedPtr<IndexBuffer> buffer(new IndexBuffer(context_));
-
         // Prepare index buffer data to be uploaded during EndLoad()
         if (async)
         {
@@ -316,7 +315,7 @@ bool Model::EndLoad()
     for (unsigned i = 0; i < vertexBuffers_.size(); ++i)
     {
         VertexBuffer* buffer = vertexBuffers_[i];
-        VertexBufferDesc& desc = loadVBData_[i];
+        VertexBufferDesc & desc   = loadVBData_[i];
         if (desc.data_)
         {
             buffer->SetShadowed(true);
@@ -329,7 +328,7 @@ bool Model::EndLoad()
     for (unsigned i = 0; i < indexBuffers_.size(); ++i)
     {
         IndexBuffer* buffer = indexBuffers_[i];
-        IndexBufferDesc& desc = loadIBData_[i];
+        IndexBufferDesc & desc   = loadIBData_[i];
         if (desc.data_)
         {
             buffer->SetShadowed(true);

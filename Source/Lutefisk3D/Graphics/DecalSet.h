@@ -201,7 +201,7 @@ private:
     /// Subscribe/unsubscribe from scene post-update as necessary.
     void UpdateEventSubscription(bool checkAllDecals);
     /// Handle scene post-update event.
-    void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleScenePostUpdate(Scene *, float ts);
 
     /// Geometry.
     SharedPtr<Geometry> geometry_;

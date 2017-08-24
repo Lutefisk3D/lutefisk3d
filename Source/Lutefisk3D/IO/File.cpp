@@ -27,6 +27,7 @@
 #include "MemoryBuffer.h"
 #include "PackageFile.h"
 #include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Container/Str.h"
 
 #include <QFile>
@@ -47,7 +48,7 @@ QFile::OpenMode openMode[] = {
 static const unsigned SKIP_BUFFER_SIZE = 1024;
 
 File::File(Context* context) :
-    Object(context),
+    context_(context),
     mode_(FILE_READ),
     handle_(nullptr),
     readBufferOffset_(0),
@@ -61,7 +62,7 @@ File::File(Context* context) :
 }
 
 File::File(Context* context, const QString& fileName, FileMode mode) :
-    Object(context),
+    context_(context),
     mode_(FILE_READ),
     handle_(nullptr),
     readBufferOffset_(0),
@@ -76,7 +77,7 @@ File::File(Context* context, const QString& fileName, FileMode mode) :
 }
 
 File::File(Context* context, PackageFile* package, const QString& fileName) :
-    Object(context),
+    context_(context),
     mode_(FILE_READ),
     handle_(nullptr),
     readBufferOffset_(0),
@@ -99,7 +100,7 @@ bool File::Open(const QString& fileName, FileMode mode)
 {
     Close();
 
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = context_->m_FileSystem.get();
     if (fileSystem && !fileSystem->CheckAccess(GetPath(fileName)))
     {
         URHO3D_LOGERROR(QString("Access denied to %1").arg(fileName));
@@ -368,7 +369,7 @@ unsigned File::GetChecksum()
     if (!handle_ || mode_ == FILE_WRITE)
         return 0;
 
-    URHO3D_PROFILE(CalculateFileChecksum);
+    URHO3D_PROFILE_CTX(context_,CalculateFileChecksum);
 
     unsigned oldPos = position_;
     checksum_ = 0;

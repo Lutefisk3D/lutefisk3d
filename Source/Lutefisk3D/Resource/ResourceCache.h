@@ -23,18 +23,17 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Lutefisk3D.h"
-#include "Lutefisk3D/Core/Object.h"        // for URHO3D_OBJECT
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Container/Ptr.h"      // for SharedPtr
 #include "Lutefisk3D/Math/StringHash.h"    // for StringHash
-
+#include <jlsignal/SignalBase.h>
 #include <QtCore/QSet>
-
+#include <deque>
 
 namespace Urho3D
 {
-
+class Context;
 class BackgroundLoader;
 class FileWatcher;
 class PackageFile;
@@ -46,19 +45,9 @@ static const unsigned PRIORITY_LAST = 0xffffffff;
 /// Container of resources with specific type.
 struct ResourceGroup
 {
-    /// Construct with defaults.
-    ResourceGroup() :
-        memoryBudget_(0),
-        memoryUse_(0)
-    {
-    }
-
-    /// Memory budget.
-    uint64_t memoryBudget_;
-    /// Current memory use.
-    uint64_t memoryUse_;
-    /// Resources.
-    HashMap<StringHash, SharedPtr<Resource> > resources_;
+    uint64_t memoryBudget_ = 0;                          ///< Memory budget.
+    uint64_t memoryUse_    = 0;                          ///< Current memory use.
+    HashMap<StringHash, SharedPtr<Resource>> resources_; ///< Resources.
 };
 
 /// Resource request types.
@@ -69,87 +58,61 @@ enum ResourceRequest
 };
 
 /// Optional resource request processor. Can deny requests, re-route resource file names, or perform other processing per request.
-class URHO3D_API ResourceRouter : public Object
+class URHO3D_API ResourceRouter : public RefCounted
 {
 public:
     /// Construct.
     ResourceRouter(Context* context) :
-        Object(context)
+        m_context(context)
     {
     }
 
     /// Process the resource request and optionally modify the resource name string. Empty name string means the resource is not found or not allowed.
     virtual void Route(QString& name, ResourceRequest requestType) = 0;
+protected:
+    Context *m_context;
 };
 
 /// %Resource cache subsystem. Loads resources on demand and stores them for later access.
-class URHO3D_API ResourceCache : public Object
+class URHO3D_API ResourceCache : public jl::SignalObserver
 {
-    URHO3D_OBJECT(ResourceCache, Object);
-
 public:
     /// Construct.
     ResourceCache(Context* context);
     /// Destruct. Free all resources.
     virtual ~ResourceCache();
 
-    /// Add a resource load directory. Optional priority parameter which will control search order.
     bool AddResourceDir(const QString& pathName, unsigned priority = PRIORITY_LAST);
-    /// Add a package file for loading resources from. Optional priority parameter which will control search order.
     bool AddPackageFile(PackageFile* package, unsigned priority = PRIORITY_LAST);
-    /// Add a package file for loading resources from by name. Optional priority parameter which will control search order.
     bool AddPackageFile(const QString& fileName, unsigned priority = PRIORITY_LAST);
-    /// Add a manually created resource. Must be uniquely named.
     bool AddManualResource(Resource* resource);
-    /// Remove a resource load directory.
+
     void RemoveResourceDir(const QString& pathName);
-    /// Remove a package file. Optionally release the resources loaded from it.
     void RemovePackageFile(PackageFile* package, bool releaseResources = true, bool forceRelease = false);
-    /// Remove a package file by name. Optionally release the resources loaded from it.
     void RemovePackageFile(const QString& fileName, bool releaseResources = true, bool forceRelease = false);
-    /// Release a resource by name.
     void ReleaseResource(StringHash type, const QString& name, bool force = false);
-    /// Release all resources of a specific type.
     void ReleaseResources(StringHash type, bool force = false);
-    /// Release resources of a specific type and partial name.
     void ReleaseResources(StringHash type, const QString& partialName, bool force = false);
-    /// Release resources of all types by partial name.
     void ReleaseResources(const QString& partialName, bool force = false);
-    /// Release all resources. When called with the force flag false, releases all currently unused resources.
     void ReleaseAllResources(bool force = false);
-    /// Reload a resource. Return true on success. The resource will not be removed from the cache in case of failure.
     bool ReloadResource(Resource* resource);
-    /// Reload a resource based on filename. Causes also reload of dependent resources if necessary.
     void ReloadResourceWithDependencies(const QString &fileName);
-    /// Set memory budget for a specific resource type, default 0 is unlimited.
     void SetMemoryBudget(StringHash type, uint64_t budget);
-    /// Enable or disable automatic reloading of resources as files are modified. Default false.
     void SetAutoReloadResources(bool enable);
     /// Enable or disable returning resources that failed to load. Default false. This may be useful in editing to not lose resource ref attributes.
     void SetReturnFailedResources(bool enable) { returnFailedResources_ = enable; }
     /// Define whether when getting resources should check package files or directories first. True for packages, false for directories.
     void SetSearchPackagesFirst(bool value) { searchPackagesFirst_ = value; }
     /// Set how many milliseconds maximum per frame to spend on finishing background loaded resources.
-    void SetFinishBackgroundResourcesMs(int ms) { finishBackgroundResourcesMs_ = Max(ms, 1); }
-
-    /// Add a resource router object. By default there is none, so the routing process is skipped.
+    void SetFinishBackgroundResourcesMs(int ms) { finishBackgroundResourcesMs_ = std::max(ms, 1); }
     void AddResourceRouter(ResourceRouter* router, bool addAsFirst = false);
-    /// Remove a resource router object.
     void RemoveResourceRouter(ResourceRouter* router);
-
-    /// Open and return a file from the resource load paths or from inside a package file. If not found, use a fallback search with absolute path. Return null if fails. Can be called from outside the main thread.
     SharedPtr<File> GetFile(const QString& name, bool sendEventOnFailure = true);
-    /// Return a resource by type and name. Load if not loaded yet. Return null if not found or if fails, unless SetReturnFailedResources(true) has been called. Can be called only from the main thread.
     Resource* GetResource(StringHash type, const QString& name, bool sendEventOnFailure = true);
-    /// Load a resource without storing it in the resource cache. Return null if not found or if fails. Can be called from outside the main thread if the resource itself is safe to load completely (it does not possess for example GPU data.)
     SharedPtr<Resource> GetTempResource(StringHash type, const QString& name, bool sendEventOnFailure = true);
-    /// Background load a resource. An event will be sent when complete. Return true if successfully stored to the load queue, false if eg. already exists. Can be called from outside the main thread.
     bool BackgroundLoadResource(StringHash type, const QString& name, bool sendEventOnFailure = true, Resource* caller = nullptr);
-    /// Return number of pending background-loaded resources.
     unsigned GetNumBackgroundLoadResources() const;
-    /// Return all loaded resources of a specific type.
     void GetResources(std::vector<Resource*>& result, StringHash type) const;
-    /// Return an already loaded resource of specific type & name, or null if not found. Will not load if does not exist.
     Resource* GetExistingResource(StringHash type, const QString& name);
     /// Return all loaded resources.
     const HashMap<StringHash, ResourceGroup>& GetAllResources() const { return resourceGroups_; }
@@ -169,15 +132,10 @@ public:
     template <class T> bool BackgroundLoadResource(const QString& name, bool sendEventOnFailure = true, Resource* caller = nullptr);
     /// Template version of returning loaded resources of a specific type.
     template <class T> void GetResources(std::vector<T*>& result) const;
-    /// Return whether a file exists by name.
     bool Exists(const QString& name) const;
-    /// Return memory budget for a resource type.
     uint64_t GetMemoryBudget(StringHash type) const;
-    /// Return total memory use for a resource type.
     uint64_t GetMemoryUse(StringHash type) const;
-    /// Return total memory use for all resources.
     uint64_t GetTotalMemoryUse() const;
-    /// Return full absolute file name of resource if possible, or empty if not found.
     QString GetResourceFileName(const QString& name) const;
     /// Return whether automatic resource reloading is enabled.
     bool GetAutoReloadResources() const { return autoReloadResources_; }
@@ -203,22 +161,17 @@ public:
 
     /// Returns a formatted string containing the memory actively used.
     QString PrintMemoryUsage() const;
+    Context *GetContext() const { return m_context; }
 private:
-    /// Find a resource.
     const SharedPtr<Resource>& FindResource(StringHash type, StringHash nameHash);
-    /// Find a resource by name only. Searches all type groups.
     const SharedPtr<Resource>& FindResource(StringHash nameHash);
-    /// Release resources loaded from a package file.
     void ReleasePackageResources(PackageFile* package, bool force = false);
-    /// Update a resource group. Recalculate memory use and release resources if over memory budget.
     void UpdateResourceGroup(StringHash type);
-    /// Handle begin frame event. Automatic resource reloads and the finalization of background loaded resources are processed here.
-    void HandleBeginFrame(StringHash eventType, VariantMap& eventData);
-    /// Search FileSystem for file.
+    void HandleBeginFrame(unsigned FrameNumber, float timeStep);
     File* SearchResourceDirs(const QString& nameIn);
-    /// Search resource packages for file.
     File* SearchPackages(const QString& nameIn);
 
+    Context *m_context;
     /// Mutex for thread-safe access to the resource directories, resource packages and resource dependencies.
     mutable Mutex resourceMutex_;
     /// Resources by type.
@@ -235,14 +188,11 @@ private:
     SharedPtr<BackgroundLoader> backgroundLoader_;
     /// Resource routers.
     std::deque<SharedPtr<ResourceRouter> > resourceRouters_;
-    /// Automatic resource reloading flag.
-    bool autoReloadResources_;
-    /// Return failed resources flag.
-    bool returnFailedResources_;
-    /// Search priority flag.
-    bool searchPackagesFirst_;
-    /// Resource routing flag to prevent endless recursion.
-    mutable bool isRouting_;
+
+    bool autoReloadResources_; ///< Automatic resource reloading flag.
+    bool returnFailedResources_; ///< Return failed resources flag.
+    bool searchPackagesFirst_; ///< Search priority flag.
+    mutable bool isRouting_; ///< Resource routing flag to prevent endless recursion.
     /// How many milliseconds maximum per frame to spend on finishing background loaded resources.
     int finishBackgroundResourcesMs_;
 };

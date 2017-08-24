@@ -70,9 +70,8 @@ Scene::Scene(Context* context) :
     // Assign an ID to self so that nodes can refer to this node as a parent
     SetID(GetFreeNodeID(REPLICATED));
     NodeAdded(this);
-
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Scene, HandleUpdate));
-    SubscribeToEvent(E_RESOURCEBACKGROUNDLOADED, URHO3D_HANDLER(Scene, HandleResourceBackgroundLoaded));
+    g_coreSignals.update.Connect(this,&Scene::HandleUpdate);
+    g_resourceSignals.resourceBackgroundLoaded.Connect(this,&Scene::HandleResourceBackgroundLoaded);
 }
 
 Scene::~Scene()
@@ -108,7 +107,7 @@ void Scene::RegisterObject(Context* context)
 
 bool Scene::Load(Deserializer& source, bool setInstanceDefault)
 {
-    URHO3D_PROFILE(LoadScene);
+    URHO3D_PROFILE_CTX(context_,LoadScene);
 
     StopAsyncLoading();
 
@@ -135,7 +134,7 @@ bool Scene::Load(Deserializer& source, bool setInstanceDefault)
 
 bool Scene::Save(Serializer& dest) const
 {
-    URHO3D_PROFILE(SaveScene);
+    URHO3D_PROFILE_CTX(context_,SaveScene);
 
     // Write ID first
     if (!dest.WriteFileID("USCN"))
@@ -159,7 +158,7 @@ bool Scene::Save(Serializer& dest) const
 
 bool Scene::LoadXML(const XMLElement& source, bool setInstanceDefault)
 {
-    URHO3D_PROFILE(LoadSceneXML);
+    URHO3D_PROFILE_CTX(context_,LoadSceneXML);
 
     StopAsyncLoading();
 
@@ -765,20 +764,14 @@ void Scene::Update(float timeStep)
 
     timeStep *= timeScale_;
 
-    using namespace SceneUpdate;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_SCENE] = this;
-    eventData[P_TIMESTEP] = timeStep;
-
     // Update variable timestep logic
-    SendEvent(E_SCENEUPDATE, eventData);
+    g_sceneSignals.sceneUpdate.Emit(this,timeStep);
 
     // Update scene attribute animation.
-    SendEvent(E_ATTRIBUTEANIMATIONUPDATE, eventData);
+    attributeAnimationUpdate.Emit(this,timeStep);
 
     // Update scene subsystems. If a physics world is present, it will be updated, triggering fixed timestep logic updates
-    SendEvent(E_SCENESUBSYSTEMUPDATE, eventData);
+    sceneSubsystemUpdate.Emit(this,timeStep);
 
     // Update transform smoothing
     {
@@ -787,15 +780,11 @@ void Scene::Update(float timeStep)
         float constant = 1.0f - Clamp(powf(2.0f, -timeStep * smoothingConstant_), 0.0f, 1.0f);
         float squaredSnapThreshold = snapThreshold_ * snapThreshold_;
 
-        using namespace UpdateSmoothing;
-
-        smoothingData_[P_CONSTANT] = constant;
-        smoothingData_[P_SQUAREDSNAPTHRESHOLD] = squaredSnapThreshold;
-        SendEvent(E_UPDATESMOOTHING, smoothingData_);
+        updateSmoothing.Emit(constant,squaredSnapThreshold);
     }
 
     // Post-update variable timestep logic
-    SendEvent(E_SCENEPOSTUPDATE, eventData);
+    scenePostUpdate.Emit(this,timeStep);
 
     // Note: using a float for elapsed time accumulation is inherently inaccurate. The purpose of this value is
     // primarily to update material animation effects, as it is available to shaders. It can be reset by calling
@@ -806,7 +795,7 @@ void Scene::Update(float timeStep)
 void Scene::BeginThreadedUpdate()
 {
     // Check the work queue subsystem whether it actually has created worker threads. If not, do not enter threaded mode.
-    if (GetSubsystem<WorkQueue>()->GetNumThreads() != 0u)
+    if (context_->m_WorkQueueSystem->GetNumThreads() != 0u)
         threadedUpdate_ = true;
 }
 
@@ -1159,22 +1148,17 @@ void Scene::MarkReplicationDirty(Node* node)
     }
 }
 
-void Scene::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void Scene::HandleUpdate(float ts)
 {
     if (!updateEnabled_)
         return;
-
-    using namespace Update;
-    Update(eventData[P_TIMESTEP].GetFloat());
+    Update(ts);
 }
 
-void Scene::HandleResourceBackgroundLoaded(StringHash eventType, VariantMap& eventData)
+void Scene::HandleResourceBackgroundLoaded(const QString &,bool,Resource *resource)
 {
-    using namespace ResourceBackgroundLoaded;
-
     if (asyncLoading_)
     {
-        Resource* resource = static_cast<Resource*>(eventData[P_RESOURCE].GetPtr());
         if (asyncProgress_.resources_.contains(resource->GetNameHash()))
         {
             asyncProgress_.resources_.remove(resource->GetNameHash());
@@ -1235,17 +1219,8 @@ void Scene::UpdateAsyncLoading()
         if (asyncLoadTimer.GetUSecS() >= asyncLoadingMs_ * 1000)
             break;
     }
-
-    using namespace AsyncLoadProgress;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_SCENE] = this;
-    eventData[P_PROGRESS] = GetAsyncProgress();
-    eventData[P_LOADEDNODES] = asyncProgress_.loadedNodes_;
-    eventData[P_TOTALNODES] = asyncProgress_.totalNodes_;
-    eventData[P_LOADEDRESOURCES]  = asyncProgress_.loadedResources_;
-    eventData[P_TOTALRESOURCES] = asyncProgress_.totalResources_;
-    SendEvent(E_ASYNCLOADPROGRESS, eventData);
+    asyncLoadProgress.Emit(this, GetAsyncProgress(), asyncProgress_.loadedNodes_, asyncProgress_.totalNodes_,
+                           asyncProgress_.loadedResources_, asyncProgress_.totalResources_);
 }
 
 void Scene::FinishAsyncLoading()
@@ -1258,12 +1233,7 @@ void Scene::FinishAsyncLoading()
     }
 
     StopAsyncLoading();
-
-    using namespace AsyncLoadFinished;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_SCENE] = this;
-    SendEvent(E_ASYNCLOADFINISHED, eventData);
+    asyncLoadFinished.Emit(this);
 }
 
 void Scene::FinishLoading(Deserializer* source)
@@ -1287,7 +1257,7 @@ void Scene::FinishSaving(Serializer* dest) const
 
 void Scene::PreloadResources(File* file, bool isSceneFile)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
 
     // Read node ID (not needed)
     /*unsigned nodeID = */file->ReadUInt();
@@ -1359,7 +1329,7 @@ void Scene::PreloadResources(File* file, bool isSceneFile)
 
 void Scene::PreloadResourcesXML(const XMLElement& element)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
 
     // Node or Scene attributes do not include any resources; therefore skip to the components
     XMLElement compElem = element.GetChild("component");
@@ -1437,7 +1407,7 @@ void Scene::PreloadResourcesXML(const XMLElement& element)
 void Scene::PreloadResourcesJSON(const JSONValue& value)
 {
     // If not threaded, can not background load resources, so rather load synchronously later when needed
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
 
     // Node or Scene attributes do not include any resources; therefore skip to the components
     JSONArray componentArray = value.Get("components").GetArray();

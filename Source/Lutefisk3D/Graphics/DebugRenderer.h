@@ -166,7 +166,7 @@ public:
 
 private:
     /// Handle end of frame. Clear debug geometry.
-    void HandleEndFrame(StringHash eventType, VariantMap& eventData);
+    void HandleEndFrame();
 
     /// Lines rendered with depth test.
     std::vector<DebugLine> lines_;

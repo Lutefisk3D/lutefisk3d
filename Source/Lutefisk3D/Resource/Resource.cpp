@@ -21,6 +21,7 @@
 //
 
 #include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Core/Thread.h"
 #include "Lutefisk3D/Resource/Resource.h"
@@ -34,7 +35,7 @@ Resource::Resource(Context* context) :
     asyncLoadState_(ASYNC_DONE)
 {
 }
-
+/// Load resource synchronously. Call both BeginLoad() & EndLoad() and return true if both succeeded.
 bool Resource::Load(Deserializer& source)
 {
     // Because BeginLoad() / EndLoad() can be called from worker threads, where profiling would be a no-op,
@@ -42,7 +43,7 @@ bool Resource::Load(Deserializer& source)
 #ifdef LUTEFISK3D_PROFILING
     QString profileBlockName("Load" + GetTypeName());
 
-    Profiler* profiler = GetSubsystem<Profiler>();
+    Profiler* profiler = context_->m_ProfilerSystem.get();
     if (profiler)
         profiler->BeginBlock(qPrintable(profileBlockName));
 #endif
@@ -63,35 +64,35 @@ bool Resource::Load(Deserializer& source)
 
     return success;
 }
-
+/// Finish resource loading. Always called from the main thread. Return true if successful.
 bool Resource::EndLoad()
 {
     // If no GPU upload step is necessary, no override is necessary
     return true;
 }
-
+/// Save resource. Return true if successful.
 bool Resource::Save(Serializer& dest) const
 {
-    URHO3D_LOGERROR("Save not supported for " + GetTypeName());
+    URHO3D_LOGERROR("Save not supported" + GetTypeName());
     return false;
 }
-
+/// Set name.
 void Resource::SetName(const QString& name)
 {
     name_ = name;
     nameHash_ = name;
 }
-
+/// Set memory use in bytes, possibly approximate.
 void Resource::SetMemoryUse(unsigned size)
 {
     memoryUse_ = size;
 }
-
+/// Reset last used timer.
 void Resource::ResetUseTimer()
 {
     useTimer_.Reset();
 }
-
+/// Set the asynchronous loading state. Called by ResourceCache. Resources in the middle of asynchronous loading are not normally returned to user.
 void Resource::SetAsyncLoadState(AsyncLoadState newState)
 {
     asyncLoadState_ = newState;

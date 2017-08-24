@@ -193,7 +193,7 @@ private:
     /// Apply a vertex morph.
     void ApplyMorph(VertexBuffer* buffer, void* destVertexData, unsigned morphRangeStart, const VertexBufferMorph& morph, float weight);
     /// Handle model reload finished.
-    void HandleModelReloadFinished(StringHash eventType, VariantMap& eventData);
+    void HandleModelReloadFinished();
 
     /// Skeleton.
     Skeleton skeleton_;

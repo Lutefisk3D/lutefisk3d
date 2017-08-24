@@ -72,7 +72,7 @@ struct GlyphLocation
 /// %Text %UI element.
 class Text : public UIElement
 {
-    URHO3D_OBJECT(Text,UIElement);
+    URHO3D_OBJECT(Text,UIElement)
 
     friend class Text3D;
 
@@ -261,7 +261,7 @@ protected:
     /// Localization string id storage. Used when autoLocalizable flag is set.
     QString stringId_;
     /// Handle change Language.
-    void HandleChangeLanguage(StringHash eventType, VariantMap& eventData);
+    void HandleChangeLanguage();
     /// UTF8 to Unicode.
     void DecodeToUnicode();
 };

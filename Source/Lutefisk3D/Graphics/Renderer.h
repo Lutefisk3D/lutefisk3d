@@ -28,6 +28,8 @@
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Graphics/Viewport.h"
 #include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/DataHandle.h"
+#include "jlsignal/SignalBase.h"
 #include <QtCore/QSet>
 namespace Urho3D
 {
@@ -52,6 +54,7 @@ class TextureCube;
 class View;
 class Zone;
 struct BatchQueue;
+using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 
 static const int SHADOW_MIN_PIXELS = 64;
 static const int INSTANCING_BUFFER_DEFAULT_SIZE = 1024;
@@ -169,12 +172,10 @@ enum DeferredLightPSVariation
 };
 
 /// High-level rendering subsystem. Manages drawing of 3D views.
-class URHO3D_API Renderer : public Object
+class URHO3D_API Renderer : public RefCounted, public jl::SignalObserver
 {
-    URHO3D_OBJECT(Renderer,Object);
-
 public:
-    typedef void(Object::*ShadowMapFilter)(View* view, Texture2D* shadowMap,float blurScale);
+    typedef void(RefCounted::*ShadowMapFilter)(View* view, Texture2D* shadowMap,float blurScale);
     /// Construct.
     Renderer(Context* context);
     /// Destruct.
@@ -215,7 +216,7 @@ public:
     /// Set VSM shadow map multisampling level. Default 1 (no multisampling.)
     void SetVSMMultiSample(int multiSample);
     /// Set post processing filter to the shadow map
-    void SetShadowMapFilter(Object* instance, ShadowMapFilter functionPtr);
+    void SetShadowMapFilter(RefCounted* instance, ShadowMapFilter functionPtr);
     /// Set reuse of shadow maps. Default is true. If disabled, also transparent geometry can be shadowed.
     void SetReuseShadowMaps(bool enable);
     /// Set maximum number of shadow maps created for one resolution. Only has effect if reuse of shadow maps is disabled.
@@ -425,14 +426,15 @@ private:
     /// Find variations for shadow shaders
     QString GetShadowVariations() const;
     /// Handle screen mode event.
-    void HandleScreenMode(StringHash eventType, VariantMap& eventData);
+    void HandleScreenMode(int, int, bool, bool, bool, bool, int, int);
     /// Handle render update event.
-    void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleRenderUpdate(float ts);
     /// Blur the shadow map.
     void BlurShadowMap(View* view, Texture2D* shadowMap, float blurScale);
 
+    Context *m_context;
     /// Graphics subsystem.
-    WeakPtr<Graphics> graphics_;
+    Graphics *graphics_; // non-owning pointer
     /// Default renderpath.
     SharedPtr<RenderPath> defaultRenderPath_;
     /// Default non-textured material technique.
@@ -468,7 +470,7 @@ private:
     /// Shadow map allocations by resolution.
     HashMap<int, std::vector<Light*> > shadowMapAllocations_;
     /// Instance of shadow map filter
-    Object* shadowMapFilterInstance_;
+    RefCounted* shadowMapFilterInstance_;
     /// Function pointer of shadow map filter
     ShadowMapFilter shadowMapFilter_;
     /// Screen buffers by resolution and format.

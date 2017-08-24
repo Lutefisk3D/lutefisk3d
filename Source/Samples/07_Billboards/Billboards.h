@@ -39,29 +39,12 @@ class Scene;
 ///     - Examining rendering performance with a somewhat large object and light count
 class Billboards : public Sample
 {
-    URHO3D_OBJECT(Billboards,Sample);
-
 public:
     /// Construct.
     Billboards(Context* context);
 
     /// Setup after engine initialization and before running the main loop.
     virtual void Start() override;
-
-protected:
-    /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
-    virtual QString GetScreenJoystickPatchString() const override { return
-        "<patch>"
-        "    <remove sel=\"/element/element[./attribute[@name='Name' and @value='Button1']]/attribute[@name='Is Visible']\" />"
-        "    <replace sel=\"/element/element[./attribute[@name='Name' and @value='Button1']]/element[./attribute[@name='Name' and @value='Label']]/attribute[@name='Text']/@value\">Debug</replace>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Button1']]\">"
-        "        <element type=\"Text\">"
-        "            <attribute name=\"Name\" value=\"KeyBinding\" />"
-        "            <attribute name=\"Text\" value=\"SPACE\" />"
-        "        </element>"
-        "    </add>"
-        "</patch>";
-    }
 
 private:
     /// Construct the scene content.
@@ -77,10 +60,10 @@ private:
     /// Animate the scene.
     void AnimateScene(float timeStep);
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Handle the post-render update event.
-    void HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData);
-    
+    void HandlePostRenderUpdate(float ts);
+
     /// Flag for drawing debug geometry.
     bool drawDebug_;
 };

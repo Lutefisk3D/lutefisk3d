@@ -370,13 +370,7 @@ bool DynamicNavigationMesh::Build()
         URHO3D_LOGDEBUG(QString("Built navigation mesh with %1 tiles").arg(numTiles));
 
         // Send a notification event to concerned parties that we've been fully rebuilt
-        {
-            using namespace NavigationMeshRebuilt;
-            VariantMap& buildEventParams = GetContext()->GetEventDataMap();
-            buildEventParams[P_NODE] = node_;
-            buildEventParams[P_MESH] = this;
-            SendEvent(E_NAVIGATION_MESH_REBUILT, buildEventParams);
-        }
+        navigationMeshRebuilt.Emit(node_,this);
 
         // Scan for obstacles to insert into us
         std::vector<Node*> obstacles;
@@ -735,7 +729,7 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
         return 0;
     }
 
-    unsigned numTriangles = build.indices_.size() / 3;
+    size_t numTriangles = build.indices_.size() / 3;
     SharedArrayPtr<unsigned char> triAreas(new unsigned char[numTriangles]);
     memset(triAreas.Get(), 0, numTriangles);
 
@@ -840,15 +834,7 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
     }
 
     // Send a notification of the rebuild of this tile to anyone interested
-    {
-        using namespace NavigationAreaRebuilt;
-        VariantMap& eventData = GetContext()->GetEventDataMap();
-        eventData[P_NODE] = GetNode();
-        eventData[P_MESH] = this;
-        eventData[P_BOUNDSMIN] = Variant(tileBoundingBox.min_);
-        eventData[P_BOUNDSMAX] = Variant(tileBoundingBox.max_);
-        SendEvent(E_NAVIGATION_AREA_REBUILT, eventData);
-    }
+    navigationAreaRebuilt.Emit(node_,this,tileBoundingBox.min_,tileBoundingBox.max_);
 
     return retCt;
 }
@@ -888,9 +874,11 @@ void DynamicNavigationMesh::OnSceneSet(Scene* scene)
 {
     // Subscribe to the scene subsystem update, which will trigger the tile cache to update the nav mesh
     if (scene)
-        SubscribeToEvent(scene, E_SCENESUBSYSTEMUPDATE, URHO3D_HANDLER(DynamicNavigationMesh, HandleSceneSubsystemUpdate));
-    else
-        UnsubscribeFromEvent(E_SCENESUBSYSTEMUPDATE);
+        scene->sceneSubsystemUpdate.Connect(this,&DynamicNavigationMesh::HandleSceneSubsystemUpdate);
+    else {
+        assert(GetScene());
+        GetScene()->sceneSubsystemUpdate.Disconnect(this, &DynamicNavigationMesh::HandleSceneSubsystemUpdate);
+    }
 }
 
 void DynamicNavigationMesh::AddObstacle(Obstacle* obstacle, bool silent)
@@ -968,12 +956,10 @@ void DynamicNavigationMesh::RemoveObstacle(Obstacle* obstacle, bool silent)
     }
 }
 
-void DynamicNavigationMesh::HandleSceneSubsystemUpdate(StringHash eventType, VariantMap& eventData)
+void DynamicNavigationMesh::HandleSceneSubsystemUpdate(Scene *,float ts)
 {
-    using namespace SceneSubsystemUpdate;
-
     if (tileCache_ && navMesh_ && IsEnabledEffective())
-        tileCache_->update(eventData[P_TIMESTEP].GetFloat(), navMesh_);
+        tileCache_->update(ts, navMesh_);
 }
 
 }

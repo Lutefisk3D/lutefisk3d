@@ -56,7 +56,7 @@ void Texture2DArray::RegisterObject(Context* context)
 
 bool Texture2DArray::BeginLoad(Deserializer& source)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
 
     // In headless mode, do not actually load the texture, just return success
     if (!graphics_)
@@ -168,9 +168,9 @@ bool Texture2DArray::SetSize(unsigned layers, int width, int height, gl::GLenum 
     }
 
     if (usage == TEXTURE_RENDERTARGET)
-        SubscribeToEvent(E_RENDERSURFACEUPDATE, URHO3D_HANDLER(Texture2DArray, HandleRenderSurfaceUpdate));
+        g_graphicsSignals.renderSurfaceUpdate.Connect(this,&Texture2DArray::HandleRenderSurfaceUpdate);
     else
-        UnsubscribeFromEvent(E_RENDERSURFACEUPDATE);
+        g_graphicsSignals.renderSurfaceUpdate.Disconnect(this,&Texture2DArray::HandleRenderSurfaceUpdate);
 
     width_ = width;
     height_ = height;
@@ -185,13 +185,12 @@ bool Texture2DArray::SetSize(unsigned layers, int width, int height, gl::GLenum 
     return Create();
 }
 
-void Texture2DArray::HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData)
+void Texture2DArray::HandleRenderSurfaceUpdate()
 {
     if (renderSurface_ && (renderSurface_->GetUpdateMode() == SURFACE_UPDATEALWAYS || renderSurface_->IsUpdateQueued()))
     {
-        Renderer* renderer = GetSubsystem<Renderer>();
-        if (renderer)
-            renderer->QueueRenderSurface(renderSurface_);
+        if (context_->m_Renderer)
+            context_->m_Renderer->QueueRenderSurface(renderSurface_);
         renderSurface_->ResetUpdateQueued();
     }
 }

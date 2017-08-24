@@ -24,13 +24,13 @@
 
 #include "Graphics.h"
 #include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Core/Context.h"
 
 namespace Urho3D
 {
 
 ConstantBuffer::ConstantBuffer(Context* context) :
-    Object(context),
-    GPUObject(GetSubsystem<Graphics>())
+    GPUObject(context->m_Graphics.get())
 {
 }
 

@@ -82,7 +82,7 @@ bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, 
     unsigned pages = commonElem.GetUInt("pages");
     textures_.reserve(pages);
 
-    ResourceCache* resourceCache = font_->GetSubsystem<ResourceCache>();
+    ResourceCache* resourceCache = font_->GetContext()->m_ResourceCache.get();
     QString fontPath = GetPath(font_->GetName());
     unsigned totalTextureSize = 0;
 
@@ -185,7 +185,7 @@ bool FontFaceBitmap::Load(FontFace* fontFace, bool usedGlyphs)
     rowHeight_ = fontFace->rowHeight_;
 
     int numPages = 1;
-    int maxTextureSize = font_->GetSubsystem<UI>()->GetMaxFontTextureSize();
+    int maxTextureSize = font_->GetContext()->m_UISystem->GetMaxFontTextureSize();
     AreaAllocator allocator(FONT_TEXTURE_MIN_SIZE, FONT_TEXTURE_MIN_SIZE, maxTextureSize, maxTextureSize);
 
     for (auto i = fontFace->glyphMapping_.begin(), fin=fontFace->glyphMapping_.end(); i!=fin; ++i)

@@ -87,7 +87,7 @@ protected:
     /// Subscribe to events when assigned to a scene.
     virtual void OnSceneSet(Scene* scene) override;
     /// Trigger the tile cache to make updates to the nav mesh if necessary.
-    void HandleSceneSubsystemUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleSceneSubsystemUpdate(Scene *, float ts);
 
     /// Used by Obstacle class to add itself to the tile cache, if 'silent' an event will not be raised.
     void AddObstacle(Obstacle* obstacle, bool silent = false);

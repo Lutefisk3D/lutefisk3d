@@ -406,13 +406,7 @@ bool NavigationMesh::Build()
 
         URHO3D_LOGDEBUG(QString("Built navigation mesh with %1 tiles").arg(numTiles));
         // Send a notification event to concerned parties that we've been fully rebuilt
-        {
-            using namespace NavigationMeshRebuilt;
-            VariantMap& buildEventParams = GetContext()->GetEventDataMap();
-            buildEventParams[P_NODE] = node_;
-            buildEventParams[P_MESH] = this;
-            SendEvent(E_NAVIGATION_MESH_REBUILT, buildEventParams);
-        }
+        navigationMeshRebuilt.Emit(node_,this);
         return true;
     }
 }
@@ -877,7 +871,7 @@ void NavigationMesh::CollectGeometries(std::vector<NavigationGeometryInfo>& geom
             info.component_ = area;
             info.boundingBox_ = area->GetWorldBoundingBox();
             geometryList.push_back(info);
-            areas_.emplace_back(WeakPtr<NavArea>(area));   
+            areas_.emplace_back(WeakPtr<NavArea>(area));
          }
     }
 }
@@ -1351,15 +1345,7 @@ bool NavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geometryList
     }
 
     // Send a notification of the rebuild of this tile to anyone interested
-    {
-        using namespace NavigationAreaRebuilt;
-        VariantMap& eventData = GetContext()->GetEventDataMap();
-        eventData[P_NODE] = GetNode();
-        eventData[P_MESH] = this;
-        eventData[P_BOUNDSMIN] = Variant(tileBoundingBox.min_);
-        eventData[P_BOUNDSMAX] = Variant(tileBoundingBox.max_);
-        SendEvent(E_NAVIGATION_AREA_REBUILT, eventData);
-    }
+    navigationAreaRebuilt.Emit(node_,this,tileBoundingBox.min_,tileBoundingBox.max_);
     return true;
 }
 

@@ -23,22 +23,24 @@
 #pragma once
 
 #include "Lutefisk3D/Container/ArrayPtr.h"
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
-
+#include "Lutefisk3D/Container/DataHandle.h"
+#include <vector>
 namespace Urho3D
 {
-
+class Vector2;
 class IndexBuffer;
 class Ray;
 class Graphics;
 class VertexBuffer;
-
+class Context;
+using IndexBufferHandle = DataHandle<IndexBuffer,20,20>;
+using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 /// Defines one or more vertex buffers, an index buffer and a draw range.
-class URHO3D_API Geometry : public Object
+class URHO3D_API Geometry : public RefCounted
 {
-    URHO3D_OBJECT(Geometry,Object);
-
 public:
     /// Construct with one empty vertex buffer.
     Geometry(Context* context);
@@ -90,7 +92,6 @@ public:
     unsigned short GetBufferHash() const;
     /// Return raw vertex and index data for CPU operations, or null pointers if not available. Will return data of the first vertex buffer if override data not set.
     void GetRawData(const unsigned char*& vertexData, unsigned& vertexSize, const unsigned char*& indexData, unsigned& indexSize, const std::vector<VertexElement>*& elements) const;
-    /// Return raw vertex and index data for CPU operations, or null pointers if not available. Will return data of the first vertex buffer if override data not set.
     void GetRawDataShared(SharedArrayPtr<unsigned char>& vertexData, unsigned& vertexSize, SharedArrayPtr<unsigned char>& indexData, unsigned& indexSize, const std::vector<VertexElement>*& elements) const;
     /// Return ray hit distance or infinity if no hit. Requires raw data to be set. Optionally return hit normal and hit uv coordinates at intersect point.
     float GetHitDistance(const Ray& ray, Vector3* outNormal = nullptr,Vector2* outUV = nullptr) const;

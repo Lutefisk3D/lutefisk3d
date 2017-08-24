@@ -174,11 +174,12 @@ protected:
 
 private:
     /// Handle the scene subsystem update event.
-    void HandleSceneSubsystemUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleSceneSubsystemUpdate(Scene *, float ts);
     /// Handle navigation mesh changed event. It can be navmesh being rebuilt or being removed from its node.
-    void HandleNavMeshChanged(StringHash eventType, VariantMap& eventData);
+    void HandleNavMeshRebuilt(Node *,NavigationMesh *navMesh);
     /// Handle component added in the scene to check for late addition of the navmesh.
-    void HandleComponentAdded(StringHash eventType, VariantMap& eventData);
+    void HandleComponentAdded(Scene *, Node *, Component *);
+    void HandleNavMeshRemoved(Scene *, Node *, Component *component);
 
     /// Internal Detour crowd object.
     dtCrowd* crowd_;

@@ -269,7 +269,7 @@ protected:
 
 private:
     /// Handle the scene subsystem update event, step simulation here.
-    void HandleSceneSubsystemUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleSceneSubsystemUpdate(Scene *, float ts);
     /// Trigger update before each physics simulation step.
     void PreStep(float timeStep);
     /// Trigger update after each physics simulation step.

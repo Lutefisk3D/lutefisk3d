@@ -20,9 +20,11 @@
 // THE SOFTWARE.
 //
 
+#include "Timer.h"
+
+#include "Context.h"
 #include "CoreEvents.h"
 #include "Profiler.h"
-#include "Timer.h"
 #include "Variant.h"
 
 #include <ctime>
@@ -42,7 +44,7 @@ bool HiresTimer::supported(false);
 long long HiresTimer::frequency(1000);
 
 Time::Time(Context* context) :
-    Object(context),
+    m_context(context),
     frameNumber_(0),
     timeStep_(0.0f),
     timerPeriod_(0)
@@ -101,33 +103,25 @@ void Time::BeginFrame(float timeStep)
 
     timeStep_ = timeStep;
 
-    Profiler* profiler = GetSubsystem<Profiler>();
+    Profiler* profiler = m_context->m_ProfilerSystem.get();
     if (profiler)
         profiler->BeginFrame();
 
     {
-        URHO3D_PROFILE(BeginFrame);
-
+        URHO3D_PROFILE_CTX(m_context,BeginFrame);
         // Frame begin event
-        using namespace BeginFrame;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_FRAMENUMBER] = frameNumber_;
-        eventData[P_TIMESTEP] = timeStep_;
-        SendEvent(E_BEGINFRAME, eventData);
+        g_coreSignals.beginFrame.Emit(frameNumber_,timeStep_);
     }
 }
 
 void Time::EndFrame()
 {
     {
-        URHO3D_PROFILE(EndFrame);
-
-        // Frame end event
-        SendEvent(E_ENDFRAME);
+        URHO3D_PROFILE_CTX(m_context,EndFrame);
+        g_coreSignals.endFrame.Emit();
     }
 
-    Profiler* profiler = GetSubsystem<Profiler>();
+    Profiler* profiler = m_context->m_ProfilerSystem.get();
     if (profiler)
         profiler->EndFrame();
 }

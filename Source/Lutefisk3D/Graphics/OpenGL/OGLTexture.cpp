@@ -53,9 +53,6 @@ static GLenum GetWrapMode(TextureAddressMode mode)
 
 void Texture::SetSRGB(bool enable)
 {
-    if (graphics_)
-        enable &= graphics_->GetSRGBSupport();
-
     if (enable != sRGB_)
     {
         sRGB_ = enable;
@@ -130,12 +127,9 @@ void Texture::UpdateParameters()
     }
 
     // Anisotropy
-    if (graphics_->GetAnisotropySupport())
-    {
-        unsigned maxAnisotropy = anisotropy_ ? anisotropy_ : graphics_->GetDefaultTextureAnisotropy();
-        glTexParameterf(target_, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-            (filterMode == FILTER_ANISOTROPIC || filterMode == FILTER_NEAREST_ANISOTROPIC) ? (float)maxAnisotropy : 1.0f);
-    }
+    unsigned maxAnisotropy = anisotropy_ ? anisotropy_ : graphics_->GetDefaultTextureAnisotropy();
+    glTexParameterf(target_, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+        (filterMode == FILTER_ANISOTROPIC || filterMode == FILTER_NEAREST_ANISOTROPIC) ? (float)maxAnisotropy : 1.0f);
 
     // Shadow compare
     if (shadowCompare_)
@@ -244,7 +238,7 @@ gl::GLenum Texture::GetDataType(GLenum format)
 
 gl::GLenum Texture::GetSRGBFormat(gl::GLenum format)
 {
-    if (!graphics_ || !graphics_->GetSRGBSupport())
+    if (!graphics_)
         return format;
 
     switch (format)

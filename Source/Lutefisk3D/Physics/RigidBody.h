@@ -246,9 +246,9 @@ private:
     /// Remove the rigid body from the physics world.
     void RemoveBodyFromWorld();
     /// Handle SmoothedTransform target position update.
-    void HandleTargetPosition(StringHash eventType, VariantMap& eventData);
+    void HandleTargetPosition();
     /// Handle SmoothedTransform target rotation update.
-    void HandleTargetRotation(StringHash eventType, VariantMap& eventData);
+    void HandleTargetRotation();
 
     /// Bullet rigid body.
     std::unique_ptr<btRigidBody> body_;

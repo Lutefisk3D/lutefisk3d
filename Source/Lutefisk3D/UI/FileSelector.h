@@ -23,7 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
-
+#include "jlsignal/SignalBase.h"
 namespace Urho3D
 {
 
@@ -48,9 +48,9 @@ struct FileSelectorEntry
 };
 
 /// %File selector dialog.
-class URHO3D_API FileSelector : public Object
+class URHO3D_API FileSelector : public Object, public jl::SignalObserver
 {
-    URHO3D_OBJECT(FileSelector,Object);
+    URHO3D_OBJECT(FileSelector,Object)
 
 public:
     /// Construct.
@@ -117,10 +117,13 @@ private:
     void RefreshFiles();
     /// Enter a directory or confirm a file. Return true if a directory entered.
     bool EnterFile();
+    void HandleFileNameFinished(UIElement *, const QString &, float);
+    void HandleFileAccepted(bool byButton);
+    void HandleModalChanged(UIElement *e, bool modal);
     /// Handle filter changed.
     void HandleFilterChanged(StringHash eventType, VariantMap& eventData);
     /// Handle path edited.
-    void HandlePathChanged(StringHash eventType, VariantMap& eventData);
+    void HandlePathChanged(UIElement *, const QString &, float);
     /// Handle file selected from the list.
     void HandleFileSelected(StringHash eventType, VariantMap& eventData);
     /// Handle file doubleclicked from the list (enter directory / OK the file selection.)
@@ -128,9 +131,9 @@ private:
     /// Handle file list key pressed.
     void HandleFileListKey(StringHash eventType, VariantMap& eventData);
     /// Handle OK button pressed.
-    void HandleOKPressed(StringHash eventType, VariantMap& eventData);
+    void HandleOKPressed(UIElement *);
     /// Handle cancel button pressed.
-    void HandleCancelPressed(StringHash eventType, VariantMap& eventData);
+    void HandleCancelPressed(UIElement *);
 
     /// Fileselector window.
     SharedPtr<Window> window_;

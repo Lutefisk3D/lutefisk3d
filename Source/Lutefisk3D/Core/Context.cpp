@@ -25,6 +25,15 @@
 #include "EventProfiler.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/Input/Input.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/Renderer.h"
+#include "Lutefisk3D/Core/WorkQueue.h"
+#ifndef LUTEFISK3D_UILESS
+#include "Lutefisk3D/UI/UI.h"
+#endif
 #ifndef MINI_URHO
 #include <SDL2/SDL.h>
 #endif
@@ -280,12 +289,14 @@ Context::~Context()
 {
     // Remove subsystems that use SDL in reverse order of construction, so that Graphics can shut down SDL last
     /// \todo Context should not need to know about subsystems
+    m_ResourceCache.release();
     RemoveSubsystem("Audio");
-    RemoveSubsystem("UI");
-    RemoveSubsystem("Input");
-    RemoveSubsystem("Renderer");
-    RemoveSubsystem("Graphics");
-
+#ifndef LUTEFISK3D_UILESS
+    m_UISystem.release();
+#endif
+    m_InputSystem.release();
+    m_Renderer.release();
+    m_Graphics.reset();
     subsystems_.clear();
     factories_.clear();
 
@@ -551,9 +562,8 @@ void Context::BeginSendEvent(Object* sender, StringHash eventType)
 #ifdef LUTEFISK3D_PROFILING
     if (EventProfiler::IsActive())
     {
-        EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
-        if (eventProfiler)
-            eventProfiler->BeginBlock(eventType);
+        if (m_EventProfilerSystem)
+            m_EventProfilerSystem->BeginBlock(eventType);
     }
 #endif
 
@@ -567,9 +577,8 @@ void Context::EndSendEvent()
 #ifdef LUTEFISK3D_PROFILING
     if (EventProfiler::IsActive())
     {
-        EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
-        if (eventProfiler)
-            eventProfiler->EndBlock();
+        if (m_EventProfilerSystem)
+            m_EventProfilerSystem->EndBlock();
     }
 #endif
 }

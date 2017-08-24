@@ -58,7 +58,7 @@ void TextureCube::OnDeviceReset()
     if (!object_ || dataPending_)
     {
         // If has a resource file, reload through the resource cache. Otherwise just recreate.
-        ResourceCache* cache = GetSubsystem<ResourceCache>();
+        ResourceCache* cache = context_->m_ResourceCache.get();
         if (cache->Exists(GetName()))
             dataLost_ = !cache->ReloadResource(this);
 
@@ -104,7 +104,7 @@ void TextureCube::Release()
 
 bool TextureCube::SetData(CubeMapFace face, unsigned level, int x, int y, int width, int height, const void* data)
 {
-    URHO3D_PROFILE(SetTextureData);
+    URHO3D_PROFILE_CTX(context_,SetTextureData);
 
     if (!object_ || !graphics_)
     {
@@ -194,7 +194,7 @@ bool TextureCube::SetData(CubeMapFace face, Image *image, bool useAlpha)
     unsigned memoryUse = 0;
 
     int quality = QUALITY_HIGH;
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = context_->m_Renderer.get();
     if (renderer)
         quality = renderer->GetTextureQuality();
 
@@ -396,7 +396,7 @@ bool TextureCube::GetData(CubeMapFace face, unsigned level, void* dest) const
         URHO3D_LOGERROR("Can not get data from multisampled texture without autoresolve");
         return false;
     }
-    
+
     if (resolveDirty_)
         graphics_->ResolveToTexture(const_cast<TextureCube*>(this));
 

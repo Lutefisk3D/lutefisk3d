@@ -106,7 +106,7 @@ struct URHO3D_API SourceBatch
 /// Base class for visible components.
 class URHO3D_API Drawable : public Component
 {
-    URHO3D_OBJECT(Drawable,Component);
+    URHO3D_OBJECT(Drawable,Component)
 
     friend class Octant;
     friend class Octree;
@@ -125,18 +125,17 @@ public:
     /// Process octree raycast. May be called from a worker thread.
     virtual void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results);
     /// Update before octree reinsertion. Is called from a worker thread
-    virtual void Update(const FrameInfo& frame) { }
+    virtual void Update(const FrameInfo& /*frame*/) { }
     /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
     virtual void UpdateBatches(const FrameInfo& frame);
     /// Prepare geometry for rendering.
-    virtual void UpdateGeometry(const FrameInfo& frame) {}
+    virtual void UpdateGeometry(const FrameInfo& /*frame*/) {}
     /// Return whether a geometry update is necessary, and if it can happen in a worker thread.
     virtual UpdateGeometryType GetUpdateGeometryType() { return UPDATE_NONE; }
     /// Return the geometry for a specific LOD level.
     virtual Geometry* GetLodGeometry(unsigned batchIndex, unsigned level);
     /// Return number of occlusion geometry triangles.
     virtual unsigned GetNumOccluderTriangles() { return 0; }
-    /// Draw to occlusion buffer. Return true if did not run out of triangles.
     virtual bool DrawOcclusion(OcclusionBuffer* buffer);
     /// Visualize the component as debug geometry.
     virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;

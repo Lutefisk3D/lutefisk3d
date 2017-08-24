@@ -22,6 +22,7 @@
 
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Core/WorkQueue.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Graphics/Camera.h"
 #include "Lutefisk3D/Graphics/DebugRenderer.h"
 #include "Lutefisk3D/Graphics/Geometry.h"
@@ -294,9 +295,9 @@ void SortShadowQueueWork(const WorkItem *item, unsigned threadIndex)
 
 StringHash ParseTextureTypeXml(ResourceCache* cache, QString filename);
 View::View(Context *context)
-    : Object(context),
-      graphics_(GetSubsystem<Graphics>()),
-      renderer_(GetSubsystem<Renderer>()),
+    : context_(context),
+      graphics_(context->m_Graphics.get()),
+      renderer_(context->m_Renderer.get()),
       scene_(nullptr),
       octree_(nullptr),
       camera_(nullptr),
@@ -309,7 +310,7 @@ View::View(Context *context)
       substituteRenderTarget_(nullptr)
 {
     // Create octree query and scene results vector for each thread
-    unsigned numThreads = GetSubsystem<WorkQueue>()->GetNumThreads() + 1; // Worker threads + main thread
+    unsigned numThreads = context->m_WorkQueueSystem->GetNumThreads() + 1; // Worker threads + main thread
     tempDrawables_.resize(numThreads);
     sceneResults_.resize(numThreads);
     frame_.camera_ = nullptr;
@@ -539,9 +540,7 @@ void View::Update(const FrameInfo& frame)
     frame_.frameNumber_ = frame.frameNumber_;
     frame_.viewSize_    = viewSize_;
 
-    using namespace BeginViewUpdate;
-
-    SendViewEvent(E_BEGINVIEWUPDATE);
+    SendViewEvent(g_graphicsSignals.beginViewUpdate);
 
     int maxSortedInstances = renderer_->GetMaxSortedInstances();
 
@@ -558,7 +557,7 @@ void View::Update(const FrameInfo& frame)
 
     if (hasScenePasses_ && ((cullCamera_ == nullptr) || (octree_ == nullptr)))
     {
-        SendViewEvent(E_ENDVIEWUPDATE);
+        SendViewEvent(g_graphicsSignals.endViewUpdate);
         return;
     }
 
@@ -570,15 +569,15 @@ void View::Update(const FrameInfo& frame)
     GetBatches();
     renderer_->StorePreparedView(this, cullCamera_);
 
-    SendViewEvent(E_ENDVIEWUPDATE);
+    SendViewEvent(g_graphicsSignals.endViewUpdate);
 }
 
 void View::Render()
 {
-    SendViewEvent(E_BEGINVIEWRENDER);
+    SendViewEvent(g_graphicsSignals.beginViewRender);
     if (hasScenePasses_ && ((octree_ == nullptr) || (camera_ == nullptr)))
     {
-        SendViewEvent(E_ENDVIEWRENDER);
+        SendViewEvent(g_graphicsSignals.endViewRender);
         return;
     }
 
@@ -586,7 +585,7 @@ void View::Render()
 
     // Allocate screen buffers as necessary
     AllocateScreenBuffers();
-    SendViewEvent(E_VIEWBUFFERSREADY);
+    SendViewEvent(g_graphicsSignals.viewBuffersReady);
 
     // Forget parameter sources from the previous view
     graphics_->ClearParameterSources();
@@ -662,7 +661,7 @@ void View::Render()
     if (currentRenderTarget_ != renderTarget_)
         BlitFramebuffer(currentRenderTarget_->GetParentTexture(), renderTarget_, !usedResolve_);
 
-    SendViewEvent(E_ENDVIEWRENDER);
+    SendViewEvent(g_graphicsSignals.endViewRender);
 }
 
 void View::SetGlobalShaderParameters()
@@ -676,7 +675,7 @@ void View::SetGlobalShaderParameters()
         graphics_->SetShaderParameter(VSP_ELAPSEDTIME, elapsedTime);
         graphics_->SetShaderParameter(PSP_ELAPSEDTIME, elapsedTime);
     }
-    SendViewEvent(E_VIEWGLOBALSHADERPARAMETERS);
+    SendViewEvent(g_graphicsSignals.viewGlobalShaderParameters);
 }
 
 void View::SetCameraShaderParameters(const Camera &camera)
@@ -747,7 +746,7 @@ void View::GetDrawables()
 
     URHO3D_PROFILE(GetDrawables);
 
-    WorkQueue* queue = GetSubsystem<WorkQueue>();
+    WorkQueue* queue = context_->m_WorkQueueSystem.get();
     std::vector<Drawable*>& tempDrawables(tempDrawables_[0]);
 
     // Get zones and occluders first
@@ -932,7 +931,7 @@ void View::ProcessLights()
     // Process lit geometries and shadow casters for each light
     URHO3D_PROFILE(ProcessLights);
 
-    WorkQueue* queue = GetSubsystem<WorkQueue>();
+    WorkQueue* queue = context_->m_WorkQueueSystem.get();
     lightQueryResults_.resize(lights_.size());
 
     for (unsigned i = 0; i < lightQueryResults_.size(); ++i)
@@ -1225,7 +1224,7 @@ void View::UpdateGeometries()
     }
     URHO3D_PROFILE(SortAndUpdateGeometry);
 
-    WorkQueue* queue = GetSubsystem<WorkQueue>();
+    WorkQueue* queue = context_->m_WorkQueueSystem.get();
 
     // Sort batches
     {
@@ -1631,17 +1630,13 @@ void View::ExecuteRenderPathCommands()
                 assert(false);
 #ifdef LUTEFISK3D_UI
                 SetRenderTargets(command);
-                GetSubsystem<UI>()->Render(false);
+                context_->m_UISystem->Render(false);
 #endif
             }
                 break;
             case CMD_SENDEVENT:
                 {
-                    using namespace RenderPathEvent;
-
-                    VariantMap& eventData = GetEventDataMap();
-                    eventData[P_NAME] = command.eventName_;
-                    renderer_->SendEvent(E_RENDERPATHEVENT, eventData);
+                    g_graphicsSignals.renderPathEvent.Emit(command.eventName_);
                 }
                 break;
             default:
@@ -3017,21 +3012,13 @@ RenderSurface* View::GetRenderSurfaceFromTexture(Texture* texture, CubeMapFace f
         return nullptr;
 }
 
-void View::SendViewEvent(StringHash eventType)
+void View::SendViewEvent(jl::Signal<View *, Texture *, RenderSurface *, Scene *, Camera *> &eventType)
 {
-    using namespace BeginViewRender;
-
-    VariantMap& eventData = GetEventDataMap();
-
-    eventData[P_VIEW] = this;
-    eventData[P_SURFACE] = renderTarget_;
-    eventData[P_TEXTURE] = (renderTarget_ != nullptr ? renderTarget_->GetParentTexture() : nullptr);
-    eventData[P_SCENE] = scene_;
-    eventData[P_CAMERA] = cullCamera_;
-
-    renderer_->SendEvent(eventType, eventData);
+    //    renderer_->SendEvent(eventType, eventData);
+    eventType.Emit(this, (renderTarget_ != nullptr ? renderTarget_->GetParentTexture() : nullptr),renderTarget_,
+                   scene_, cullCamera_);
 }
-Texture* View::FindNamedTexture(const QString& name, bool isRenderTarget, bool isVolumeMap)
+Texture *View::FindNamedTexture(const QString &name, bool isRenderTarget, bool isVolumeMap)
 {
     // Check rendertargets first
     StringHash nameHash(name);
@@ -3039,7 +3026,7 @@ Texture* View::FindNamedTexture(const QString& name, bool isRenderTarget, bool i
         return renderTargets_[nameHash];
 
     // Then the resource system
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
 
     // Check existing resources first. This does not load resources, so we can afford to guess the resource type wrong
     // without having to rely on the file extension

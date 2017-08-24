@@ -78,7 +78,7 @@ protected:
 
 private:
     /// Handle render surface update event.
-    void HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleRenderSurfaceUpdate();
 
     /// Render surfaces.
     SharedPtr<RenderSurface> renderSurfaces_[MAX_CUBEMAP_FACES];

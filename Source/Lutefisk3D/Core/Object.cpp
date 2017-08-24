@@ -486,22 +486,3 @@ void Object::RemoveEventSender(Object* sender)
         }
     }
 }
-
-Urho3D::StringHash EventNameRegistrar::RegisterEventName(const char* eventName)
-{
-    StringHash id(eventName);
-    GetEventNameMap()[id] = eventName;
-    return id;
-}
-
-const QString& EventNameRegistrar::GetEventName(StringHash eventID)
-{
-    auto it = GetEventNameMap().find(eventID);
-    return  it != GetEventNameMap().end() ? MAP_VALUE(it) : s_dummy;
-}
-
-HashMap<StringHash, QString>& EventNameRegistrar::GetEventNameMap()
-{
-    static HashMap<StringHash, QString> eventNames_;
-    return eventNames_;
-}

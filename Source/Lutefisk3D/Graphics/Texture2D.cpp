@@ -80,9 +80,8 @@ bool Texture2D::BeginLoad(Deserializer& source)
         loadImage_->PrecalculateLevels();
 
     // Load the optional parameters file
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
     QString xmlName = ReplaceExtension(GetName(), ".xml");
-    loadParameters_ = cache->GetTempResource<XMLFile>(xmlName, false);
+    loadParameters_ = context_->m_ResourceCache->GetTempResource<XMLFile>(xmlName, false);
 
     return true;
 }
@@ -141,9 +140,9 @@ bool Texture2D::SetSize(int width, int height, gl::GLenum format, TextureUsage u
     }
 
     if (usage == TEXTURE_RENDERTARGET)
-        SubscribeToEvent(E_RENDERSURFACEUPDATE, URHO3D_HANDLER(Texture2D, HandleRenderSurfaceUpdate));
+        g_graphicsSignals.renderSurfaceUpdate.Connect(this,&Texture2D::HandleRenderSurfaceUpdate);
     else
-        UnsubscribeFromEvent(E_RENDERSURFACEUPDATE);
+        g_graphicsSignals.renderSurfaceUpdate.Disconnect(this,&Texture2D::HandleRenderSurfaceUpdate);
 
     width_ = width;
     height_ = height;
@@ -174,13 +173,12 @@ SharedPtr<Image> Texture2D::GetImage() const
     return SharedPtr<Image>(rawImage);
 }
 
-void Texture2D::HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData)
+void Texture2D::HandleRenderSurfaceUpdate()
 {
     if (renderSurface_ && (renderSurface_->GetUpdateMode() == SURFACE_UPDATEALWAYS || renderSurface_->IsUpdateQueued()))
     {
-        Renderer* renderer = GetSubsystem<Renderer>();
-        if (renderer)
-            renderer->QueueRenderSurface(renderSurface_);
+        if (context_->m_Renderer)
+            context_->m_Renderer->QueueRenderSurface(renderSurface_);
         renderSurface_->ResetUpdateQueued();
     }
 }

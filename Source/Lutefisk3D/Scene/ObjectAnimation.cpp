@@ -44,12 +44,12 @@ ObjectAnimation::ObjectAnimation(Context* context) :
     Resource(context)
 {
 }
-
+/// Register object factory.
 void ObjectAnimation::RegisterObject(Context* context)
 {
     context->RegisterFactory<ObjectAnimation>();
 }
-
+/// Load resource from stream. May be called from a worker thread. Return true if successful.
 bool ObjectAnimation::BeginLoad(Deserializer& source)
 {
     XMLFile xmlFile(context_);
@@ -58,7 +58,7 @@ bool ObjectAnimation::BeginLoad(Deserializer& source)
 
     return LoadXML(xmlFile.GetRoot());
 }
-
+/// Save resource. Return true if successful.
 bool ObjectAnimation::Save(Serializer& dest) const
 {
     XMLFile xmlFile(context_);
@@ -69,7 +69,7 @@ bool ObjectAnimation::Save(Serializer& dest) const
 
     return xmlFile.Save(dest);
 }
-
+/// Load from XML data. Return true if successful.
 bool ObjectAnimation::LoadXML(const XMLElement& source)
 {
     attributeAnimationInfos_.clear();
@@ -103,7 +103,7 @@ bool ObjectAnimation::LoadXML(const XMLElement& source)
 
     return true;
 }
-
+/// Save as XML data. Return true if successful.
 bool ObjectAnimation::SaveXML(XMLElement& dest) const
 {
 
@@ -122,7 +122,7 @@ bool ObjectAnimation::SaveXML(XMLElement& dest) const
 
     return true;
 }
-
+/// Load from JSON data. Return true if successful.
 bool ObjectAnimation::LoadJSON(const JSONValue& source)
 {
     attributeAnimationInfos_.clear();
@@ -160,7 +160,7 @@ bool ObjectAnimation::LoadJSON(const JSONValue& source)
 
     return true;
 }
-
+/// Save as JSON data. Return true if successful.
 bool ObjectAnimation::SaveJSON(JSONValue& dest) const
 {
     JSONValue attributeAnimationsValue;
@@ -183,7 +183,7 @@ bool ObjectAnimation::SaveJSON(JSONValue& dest) const
     dest.Set("attributeanimations", attributeAnimationsValue);
     return true;
 }
-
+/// Add attribute animation, attribute name can in following format: "attribute" or "#0/#1/attribute" or ""#0/#1/@component#1/attribute.
 void ObjectAnimation::AddAttributeAnimation(const QString& name, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed)
 {
     if (attributeAnimation == nullptr)
@@ -191,21 +191,20 @@ void ObjectAnimation::AddAttributeAnimation(const QString& name, ValueAnimation*
 
     attributeAnimation->SetOwner(this);
     attributeAnimationInfos_[name] = new ValueAnimationInfo(attributeAnimation, wrapMode, speed);
-
-    SendAttributeAnimationAddedEvent(name);
+    attributeAnimationAdded.Emit(this,name);
 }
-
+/// Remove attribute animation, attribute name can in following format: "attribute" or "#0/#1/attribute" or ""#0/#1/@component#1/attribute.
 void ObjectAnimation::RemoveAttributeAnimation(const QString& name)
 {
     HashMap<QString, SharedPtr<ValueAnimationInfo> >::iterator i = attributeAnimationInfos_.find(name);
     if (i != attributeAnimationInfos_.end())
     {
-        SendAttributeAnimationRemovedEvent(name);
+        attributeAnimationRemoved.Emit(this,name);
         MAP_VALUE(i)->GetAnimation()->SetOwner(nullptr);
         attributeAnimationInfos_.erase(i);
     }
 }
-
+/// Remove attribute animation.
 void ObjectAnimation::RemoveAttributeAnimation(ValueAnimation* attributeAnimation)
 {
     if (attributeAnimation == nullptr)
@@ -215,56 +214,38 @@ void ObjectAnimation::RemoveAttributeAnimation(ValueAnimation* attributeAnimatio
     {
         if (MAP_VALUE(i)->GetAnimation() == attributeAnimation)
         {
-            SendAttributeAnimationRemovedEvent(MAP_KEY(i));
+            attributeAnimationRemoved.Emit(this,MAP_KEY(i));
             attributeAnimation->SetOwner(nullptr);
             attributeAnimationInfos_.erase(i);
             return;
         }
     }
 }
-
+/// Return attribute animation by name.
 ValueAnimation* ObjectAnimation::GetAttributeAnimation(const QString& name) const
 {
     ValueAnimationInfo* info = GetAttributeAnimationInfo(name);
     return info != nullptr ? info->GetAnimation() : nullptr;
 }
-
+/// Return attribute animation wrap mode by name.
 WrapMode ObjectAnimation::GetAttributeAnimationWrapMode(const QString& name) const
 {
     ValueAnimationInfo* info = GetAttributeAnimationInfo(name);
     return info != nullptr ? info->GetWrapMode() : WM_LOOP;
 }
-
+/// Return attribute animation speed by name.
 float ObjectAnimation::GetAttributeAnimationSpeed(const QString& name) const
 {
     ValueAnimationInfo* info = GetAttributeAnimationInfo(name);
     return info != nullptr ? info->GetSpeed() : 1.0f;
 }
-
+/// Return attribute animation info by name.
 ValueAnimationInfo* ObjectAnimation::GetAttributeAnimationInfo(const QString& name) const
 {
     auto i = attributeAnimationInfos_.find(name);
     if (i != attributeAnimationInfos_.end())
         return MAP_VALUE(i);
     return nullptr;
-}
-
-void ObjectAnimation::SendAttributeAnimationAddedEvent(const QString& name)
-{
-    using namespace AttributeAnimationAdded;
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_OBJECTANIMATION] = this;
-    eventData[P_ATTRIBUTEANIMATIONNAME] = name;
-    SendEvent(E_ATTRIBUTEANIMATIONADDED, eventData);
-}
-
-void ObjectAnimation::SendAttributeAnimationRemovedEvent(const QString& name)
-{
-    using namespace AttributeAnimationRemoved;
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_OBJECTANIMATION] = this;
-    eventData[P_ATTRIBUTEANIMATIONNAME] = name;
-    SendEvent(E_ATTRIBUTEANIMATIONREMOVED, eventData);
 }
 
 }

@@ -973,7 +973,7 @@ void UIElement::SetFocus(bool enable)
     if (focusMode_ < FM_FOCUSABLE || !IsVisibleEffective())
         enable = false;
 
-    UI* ui = GetSubsystem<UI>();
+    UI* ui = context_->m_UISystem.get();
     // Can be null at exit time; no-op in that case
     if (!ui)
         return;
@@ -997,7 +997,7 @@ void UIElement::SetSelected(bool enable)
 
 void UIElement::SetVisible(bool enable)
 {
-    UI* ui = GetSubsystem<UI>();
+    UI* ui = context_->m_UISystem.get();
     // Can be null at exit time; no-op in that case
     if (!ui)
         return;
@@ -1232,13 +1232,7 @@ void UIElement::UpdateLayout()
                 children_[i]->UpdateAnchoring();
         }
     }
-
-    using namespace LayoutUpdated;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_ELEMENT] = this;
-    SendEvent(E_LAYOUTUPDATED, eventData);
-
+    layoutUpdated.Emit(this);
     EnableLayoutUpdate();
 }
 
@@ -1578,7 +1572,7 @@ float UIElement::GetDerivedOpacity() const
 
 bool UIElement::HasFocus() const
 {
-    UI* ui = GetSubsystem<UI>();
+    UI* ui = context_->m_UISystem.get();
     return ui ? ui->GetFocusElement() == this : false;
 }
 
@@ -1895,13 +1889,13 @@ IntVector2 UIElement::GetEffectiveMinSize() const
 void UIElement::OnAttributeAnimationAdded()
 {
     if (attributeAnimationInfos_.size() == 1)
-        SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(UIElement, HandlePostUpdate));
+        g_coreSignals.postUpdate.Connect(this,&UIElement::UpdateAttributeAnimations);
 }
 
 void UIElement::OnAttributeAnimationRemoved()
 {
     if (attributeAnimationInfos_.empty())
-        UnsubscribeFromEvent(E_POSTUPDATE);
+        g_coreSignals.postUpdate.Disconnect(this,&UIElement::UpdateAttributeAnimations);
 }
 
 Animatable* UIElement::FindAttributeAnimationTarget(const QString& name, QString& outName)
@@ -2240,13 +2234,6 @@ void UIElement::VerifyChildAlignment()
         (*i)->SetHorizontalAlignment((*i)->GetHorizontalAlignment());
         (*i)->SetVerticalAlignment((*i)->GetVerticalAlignment());
     }
-}
-
-void UIElement::HandlePostUpdate(StringHash eventType, VariantMap& eventData)
-{
-    using namespace PostUpdate;
-
-    UpdateAttributeAnimations(eventData[P_TIMESTEP].GetFloat());
 }
 
 }

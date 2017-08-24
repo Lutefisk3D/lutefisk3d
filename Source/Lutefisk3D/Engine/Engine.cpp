@@ -28,8 +28,12 @@
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/CoreEvents.h"
 #include "Lutefisk3D/UI/DebugHud.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/IOEvents.h"
 #include "Lutefisk3D/IO/FileSystem.h"
 #include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/GraphicsEvents.h"
+#include "Lutefisk3D/Graphics/Renderer.h"
 #include "Lutefisk3D/Core/StringUtils.h"
 #ifdef LUTEFISK3D_PROFILING
 #include "Lutefisk3D/Core/EventProfiler.h"
@@ -59,11 +63,11 @@
 #include "Lutefisk3D/UI/UI.h"
 #endif
 #ifdef LUTEFISK3D_2D
-#include "Lutefisk3D/Urho2D/Urho2D.h"
+#include "Lutefisk3D/2D/Urho2D.h"
 #endif
 #include "Lutefisk3D/Core/WorkQueue.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
-
+#include "jlsignal/StaticSignalConnectionAllocators.h"
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 // From dbgint.h
@@ -81,7 +85,13 @@ typedef struct _CrtMemBlockHeader
     unsigned char gap[nNoMansLandSize];
 } _CrtMemBlockHeader;
 #endif
+namespace {
 
+enum { eMaxConnections = 50000 };
+jl::StaticSignalConnectionAllocator< eMaxConnections > oSignalConnectionAllocator;
+jl::StaticObserverConnectionAllocator< eMaxConnections > oObserverConnectionAllocator;
+
+}
 namespace Urho3D
 {
 
@@ -89,6 +99,7 @@ extern const char* logLevelPrefixes[];
 
 Engine::Engine(Context* context) :
     Object(context),
+    jl::SignalObserver(),
     timeStep_(0.0f),
     timeStepSmoothing_(2),
     minFps_(10),
@@ -104,29 +115,44 @@ Engine::Engine(Context* context) :
     headless_(false),
     audioPaused_(false)
 {
+
+    // Initialize the signal system with static allocators
+    jl::SignalBase::SetCommonConnectionAllocator( &oSignalConnectionAllocator );
+    jl::SignalObserver::SetCommonConnectionAllocator( &oObserverConnectionAllocator );
+    SetConnectionAllocator(&oObserverConnectionAllocator);
+    g_coreSignals.init(&oSignalConnectionAllocator);
+    g_consoleSignals.init(&oSignalConnectionAllocator);
+    g_graphicsSignals.init(&oSignalConnectionAllocator);
+    g_resourceSignals.init(&oSignalConnectionAllocator);
+    g_sceneSignals.init(&oSignalConnectionAllocator);
+    g_uiSignals.init(&oSignalConnectionAllocator);
+    g_inputSignals.init(&oSignalConnectionAllocator);
+    g_ioSignals.init(&oSignalConnectionAllocator);
+    g_LogSignals.init(&oSignalConnectionAllocator);
+
     // Register self as a subsystem
     context_->RegisterSubsystem(StringHash("Engine"),this);
 
     // Create subsystems which do not depend on engine initialization or startup parameters
-    context_->RegisterSubsystem(StringHash("Time"),new Time(context_));
-    context_->RegisterSubsystem(StringHash("WorkQueue"),new WorkQueue(context_));
+    context_->m_TimeSystem.reset(new Time(context_));
+    context_->m_WorkQueueSystem.reset(new WorkQueue(context_));
 #ifdef LUTEFISK3D_PROFILING
-    context_->RegisterSubsystem(StringHash("Profiler"),new Profiler(context_));
+    context_->m_ProfilerSystem.reset(new Profiler(context_));
 #endif
-    context_->RegisterSubsystem(StringHash("FileSystem"),new FileSystem(context_));
+    context_->m_FileSystem.reset(new FileSystem(context_));
 #ifdef LUTEFISK3D_LOGGING
-    context_->RegisterSubsystem(StringHash("Log"),new Log(context_));
+    context_->m_LogSystem.reset(new Log(context_));
 #endif
-    context_->RegisterSubsystem(StringHash("ResourceCache"),new ResourceCache(context_));
+    context_->m_ResourceCache.reset(new ResourceCache(context_));
 #ifdef LUTEFISK3D_NETWORK
     context_->RegisterSubsystem(StringHash("Network"),new Network(context_));
 #endif
 #ifdef LUTEFISK3D_INPUT
-    context_->RegisterSubsystem(StringHash("Input"),new Input(context_));
+    context_->m_InputSystem.reset(new Input(context_));
 #endif
     context_->RegisterSubsystem(StringHash("Audio"),new Audio(context_));
 #ifdef LUTEFISK3D_UI
-    context_->RegisterSubsystem(StringHash("UI"),new UI(context_));
+    context_->m_UISystem.reset(new UI(context_));
 #endif
 
     // Register object factories for libraries which are not automatically registered along with subsystem creation
@@ -141,7 +167,7 @@ Engine::Engine(Context* context) :
 #endif
 
 #ifdef LUTEFISK3D_INPUT
-    SubscribeToEvent(E_EXITREQUESTED, URHO3D_HANDLER(Engine, HandleExitRequested));
+    g_inputSignals.exitRequested.Connect(this,&Engine::HandleExitRequested);
 #endif
 }
 
@@ -152,7 +178,7 @@ bool Engine::Initialize(const VariantMap& parameters)
     if (initialized_)
         return true;
 
-    URHO3D_PROFILE(InitEngine);
+    URHO3D_PROFILE_CTX(context_,InitEngine);
 
     // Set headless mode
     headless_ = GetParameter(parameters, EP_HEADLESS, false).GetBool();
@@ -160,8 +186,8 @@ bool Engine::Initialize(const VariantMap& parameters)
     // Register the rest of the subsystems
     if (!headless_)
     {
-        context_->RegisterSubsystem(StringHash("Graphics"),new Graphics(context_));
-        context_->RegisterSubsystem(StringHash("Renderer"),new Renderer(context_));
+        context_->m_Graphics.reset(new Graphics(context_));
+        context_->m_Renderer.reset(new Renderer(context_));
     }
     else
     {
@@ -175,7 +201,7 @@ bool Engine::Initialize(const VariantMap& parameters)
 #endif
 
     // Start logging
-    Log* log = GetSubsystem<Log>();
+    Log* log = context_->m_LogSystem.get();
     if (log)
     {
         if (HasParameter(parameters, EP_LOG_LEVEL))
@@ -185,7 +211,7 @@ bool Engine::Initialize(const VariantMap& parameters)
     }
 
     // Set maximally accurate low res timer
-    GetSubsystem<Time>()->SetTimerPeriod(1);
+    context_->m_TimeSystem->SetTimerPeriod(1);
 
     // Configure max FPS
     if (GetParameter(parameters, EP_FRAME_LIMITER, true) == false)
@@ -196,7 +222,7 @@ bool Engine::Initialize(const VariantMap& parameters)
     unsigned numThreads = GetParameter(parameters, EP_WORKER_THREADS, true).GetBool() ? GetNumPhysicalCPUs() - 1 : 0;
     if (numThreads)
     {
-        GetSubsystem<WorkQueue>()->CreateThreads(numThreads);
+        context_->m_WorkQueueSystem->CreateThreads(numThreads);
 
         URHO3D_LOGINFO(QString("Created %1 worker thread%2").arg(numThreads).arg(numThreads > 1 ? "s" : ""));
     }
@@ -205,13 +231,13 @@ bool Engine::Initialize(const VariantMap& parameters)
     if (!InitializeResourceCache(parameters, false))
         return false;
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
+    FileSystem* fileSystem = context_->m_FileSystem.get();
     // Initialize graphics & audio output
     if (!headless_)
     {
-        Graphics* graphics = GetSubsystem<Graphics>();
-        Renderer* renderer = GetSubsystem<Renderer>();
+        Graphics* graphics = context_->m_Graphics.get();
+        Renderer* renderer = context_->m_Renderer.get();
 
         if (HasParameter(parameters, EP_EXTERNAL_WINDOW))
             graphics->SetExternalWindow(GetParameter(parameters, EP_EXTERNAL_WINDOW).GetVoidPtr());
@@ -270,7 +296,7 @@ bool Engine::Initialize(const VariantMap& parameters)
     // Initialize input
 #ifdef LUTEFISK3D_INPUT
     if (HasParameter(parameters, EP_TOUCH_EMULATION))
-        GetSubsystem<Input>()->SetTouchEmulation(GetParameter(parameters, EP_TOUCH_EMULATION).GetBool());
+        context_->m_InputSystem->SetTouchEmulation(GetParameter(parameters, EP_TOUCH_EMULATION).GetBool());
 #endif
     // Initialize network
 #ifdef LUTEFISK3D_NETWORK
@@ -285,7 +311,7 @@ bool Engine::Initialize(const VariantMap& parameters)
 #ifdef LUTEFISK3D_PROFILING
     if (GetParameter(parameters, EP_EVENT_PROFILER, true).GetBool())
     {
-        context_->RegisterSubsystem(StringHash("EventProfiler"),new EventProfiler(context_));
+        context_->m_EventProfilerSystem.reset(new EventProfiler(context_));
         EventProfiler::SetActive(true);
     }
 #endif
@@ -298,8 +324,8 @@ bool Engine::Initialize(const VariantMap& parameters)
 
 bool Engine::InitializeResourceCache(const VariantMap& parameters, bool removeOld /*= true*/)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
+    FileSystem* fileSystem = context_->m_FileSystem.get();
 
     // Remove all resource paths and packages
     if (removeOld)
@@ -437,13 +463,13 @@ bool Engine::InitializeResourceCache(const VariantMap& parameters, bool removeOl
 
     return true;
 }
-
+/// Run one frame.
 void Engine::RunFrame()
 {
     assert(initialized_);
 
     // If not headless, and the graphics subsystem no longer has a window open, assume we should exit
-    if (!headless_ && !GetSubsystem<Graphics>()->IsInitialized())
+    if (!headless_ && !context_->m_Graphics->IsInitialized())
         exiting_ = true;
 
     if (exiting_)
@@ -451,10 +477,10 @@ void Engine::RunFrame()
 
     // Note: there is a minimal performance cost to looking up subsystems (uses a hashmap); if they would be looked up several
     // times per frame it would be better to cache the pointers
-    Time* time = GetSubsystem<Time>();
+    Time* time = context_->m_TimeSystem.get();
     bool isMinimized = false;
 #ifdef LUTEFISK3D_INPUT
-    Input* input = GetSubsystem<Input>();
+    Input* input = context_->m_InputSystem.get();
     isMinimized = input->IsMinimized();
 #endif
     Audio* audio = GetSubsystem<Audio>();
@@ -462,9 +488,8 @@ void Engine::RunFrame()
 #ifdef LUTEFISK3D_PROFILING
     if (EventProfiler::IsActive())
     {
-        EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
-        if (eventProfiler)
-            eventProfiler->BeginFrame();
+        if (context_->m_EventProfilerSystem)
+            context_->m_EventProfilerSystem->BeginFrame();
     }
 #endif
 
@@ -496,7 +521,8 @@ void Engine::RunFrame()
 
     time->EndFrame();
 }
-
+/// Create the console and return it.
+/// May return null if engine configuration does not allow creation (headless mode.)
 Console* Engine::CreateConsole()
 {
     if (headless_ || !initialized_)
@@ -512,7 +538,7 @@ Console* Engine::CreateConsole()
 
     return console;
 }
-
+/// Create the debug hud.
 DebugHud* Engine::CreateDebugHud()
 {
     if (headless_ || !initialized_)
@@ -528,22 +554,22 @@ DebugHud* Engine::CreateDebugHud()
 
     return debugHud;
 }
-
+/// Set how many frames to average for timestep smoothing. Default is 2. 1 disables smoothing.
 void Engine::SetTimeStepSmoothing(int frames)
 {
     timeStepSmoothing_ = (unsigned)Clamp(frames, 1, 20);
 }
-
+/// Set minimum frames per second. If FPS goes lower than this, time will appear to slow down.
 void Engine::SetMinFps(int fps)
 {
     minFps_ = (unsigned)Max(fps, 0);
 }
-
+/// Set maximum frames per second. The engine will sleep if FPS is higher than this.
 void Engine::SetMaxFps(unsigned fps)
 {
     maxFps_ = std::max(fps, 0U);
 }
-
+/// Set maximum frames per second when the application does not have input focus.
 void Engine::SetMaxInactiveFps(unsigned fps)
 {
     maxInactiveFps_ = std::max(fps, 0U);
@@ -560,9 +586,8 @@ void Engine::DumpProfiler()
     if (!Thread::IsMainThread())
         return;
 
-    Profiler* profiler = GetSubsystem<Profiler>();
-    if (profiler)
-        URHO3D_LOGRAW(profiler->PrintData(true, true) + "\n");
+    if (context_->m_ProfilerSystem)
+        URHO3D_LOGRAW(context_->m_ProfilerSystem->PrintData(true, true) + "\n");
 #endif
 }
 
@@ -572,7 +597,7 @@ void Engine::DumpResources(bool dumpFileName)
     if (!Thread::IsMainThread())
         return;
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
     const HashMap<StringHash, ResourceGroup>& resourceGroups = cache->GetAllResources();
     if (dumpFileName)
     {
@@ -634,23 +659,22 @@ void Engine::DumpMemory()
 
 void Engine::Update()
 {
-    URHO3D_PROFILE(Update);
-
-    // Logic update event
-    using namespace Update;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_TIMESTEP] = timeStep_;
-    SendEvent(E_UPDATE, eventData);
+    URHO3D_PROFILE_CTX(context_,Update);
+    if (!Thread::IsMainThread())
+    {
+        URHO3D_LOGERROR("Sending events is only supported from the main thread");
+        return;
+    }
+    g_coreSignals.update.Emit(timeStep_);
 
     // Logic post-update event
-    SendEvent(E_POSTUPDATE, eventData);
+    g_coreSignals.postUpdate.Emit(timeStep_);
 
     // Rendering update event
-    SendEvent(E_RENDERUPDATE, eventData);
+    g_coreSignals.renderUpdate.Emit(timeStep_);
 
     // Post-render update event
-    SendEvent(E_POSTRENDERUPDATE, eventData);
+    g_coreSignals.postRenderUpdate.Emit(timeStep_);
 }
 
 void Engine::Render()
@@ -658,16 +682,16 @@ void Engine::Render()
     if (headless_)
         return;
 
-    URHO3D_PROFILE(Render);
+    URHO3D_PROFILE_CTX(context_,Render);
 
     // If device is lost, BeginFrame will fail and we skip rendering
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = context_->m_Graphics.get();
     if (!graphics->BeginFrame())
         return;
 
-    GetSubsystem<Renderer>()->Render();
+    context_->m_Renderer->Render();
 #ifdef LUTEFISK3D_UI
-    GetSubsystem<UI>()->Render();
+    context_->m_UISystem->Render();
 #endif
     graphics->EndFrame();
 }
@@ -679,7 +703,7 @@ void Engine::ApplyFrameLimit()
 
     unsigned maxFps = maxFps_;
 #ifdef LUTEFISK3D_INPUT
-    Input* input = GetSubsystem<Input>();
+    Input* input = context_->m_InputSystem.get();
     if (input && !input->HasFocus())
         maxFps = std::min(maxInactiveFps_, maxFps);
 #endif
@@ -689,7 +713,7 @@ void Engine::ApplyFrameLimit()
     // Perform waiting loop if maximum FPS set
     if (maxFps)
     {
-        URHO3D_PROFILE(ApplyFrameLimit);
+        URHO3D_PROFILE_CTX(context_,ApplyFrameLimit);
 
         long long targetMax = 1000000LL / maxFps;
 
@@ -802,7 +826,7 @@ VariantMap Engine::ParseParameters(const QStringList& arguments)
                 ret[EP_LOG_QUIET] = true;
             else if (argument == "log" && !value.isEmpty())
             {
-                unsigned logLevel = GetStringListIndex(value, logLevelPrefixes, M_MAX_UNSIGNED);
+                unsigned logLevel = logLevelNameToIndex(value);
                 if (logLevel != M_MAX_UNSIGNED)
                 {
                     ret[EP_LOG_LEVEL] = logLevel;
@@ -915,8 +939,8 @@ const Variant& Engine::GetParameter(const VariantMap& parameters, const QString&
     VariantMap::const_iterator i = parameters.find(nameHash);
     return i != parameters.end() ? MAP_VALUE(i) : defaultValue;
 }
-
-void Engine::HandleExitRequested(StringHash eventType, VariantMap& eventData)
+/// Handle exit requested event. Auto-exit if enabled.
+void Engine::HandleExitRequested()
 {
     if (autoExit_)
     {
@@ -925,13 +949,11 @@ void Engine::HandleExitRequested(StringHash eventType, VariantMap& eventData)
         DoExit();
     }
 }
-
+/// Actually perform the exit actions.
 void Engine::DoExit()
 {
-    Graphics* graphics = GetSubsystem<Graphics>();
-    if (graphics)
-        graphics->Close();
-
+    if (context_->m_Graphics)
+        context_->m_Graphics->Close();
     exiting_ = true;
 }
 

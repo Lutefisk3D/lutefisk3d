@@ -25,6 +25,7 @@
 #include "GraphicsImpl.h"
 #include "Material.h"
 #include "Lutefisk3D/Core/StringUtils.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/IO/FileSystem.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
@@ -57,7 +58,7 @@ static const char* filterModeNames[] =
 
 Texture::Texture(Context* context) :
     Resource(context),
-    GPUObject(GetSubsystem<Graphics>()),
+    GPUObject(context->m_Graphics.get()),
     shaderResourceView_(nullptr),
     sampler_(nullptr),
     resolveTexture_(nullptr),
@@ -298,7 +299,7 @@ unsigned Texture::CheckMaxLevels(int width, int height, int depth, unsigned requ
 
 void Texture::CheckTextureBudget(StringHash type)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
     unsigned long long textureBudget = cache->GetMemoryBudget(type);
     unsigned long long textureUse = cache->GetMemoryUse(type);
     if (!textureBudget)

@@ -113,9 +113,9 @@ protected:
 
 private:
     /// Handle back button pressed.
-    void HandleBackButtonPressed(StringHash eventType, VariantMap& eventData);
+    void HandleBackButtonPressed(UIElement *);
     /// Handle forward button pressed.
-    void HandleForwardButtonPressed(StringHash eventType, VariantMap& eventData);
+    void HandleForwardButtonPressed(UIElement *);
     /// Handle slider movement.
     void HandleSliderChanged(StringHash eventType, VariantMap& eventData);
     /// Handle slider touch and click on "paging" area.

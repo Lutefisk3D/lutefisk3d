@@ -41,10 +41,6 @@ const char* textEffects[] =
     "None",
     "Shadow",
     "Stroke",
-    "Stroke 2",
-    "Stroke 3",
-    "Stroke 4",
-    "Stroke 5",
     nullptr
 };
 
@@ -65,8 +61,10 @@ Text::Text(Context* context) :
     selectionLength_(0),
     selectionColor_(Color::TRANSPARENT),
     hoverColor_(Color::TRANSPARENT),
-    strokeThickness_(0),
     textEffect_(TE_NONE),
+    shadowOffset_(IntVector2(1, 1)),
+    strokeThickness_(1),
+    roundStroke_(false),
     effectColor_(Color::BLACK),
     effectDepthBias_(0.0f),
     rowHeight_(0)
@@ -95,6 +93,9 @@ void Text::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Selection Color", GetSelectionColor, SetSelectionColor, Color, Color::TRANSPARENT, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Hover Color", GetHoverColor, SetHoverColor, Color, Color::TRANSPARENT, AM_FILE);
     URHO3D_ENUM_ATTRIBUTE("Text Effect", textEffect_, textEffects, TE_NONE, AM_FILE);
+    URHO3D_ATTRIBUTE("Shadow Offset", IntVector2, shadowOffset_, IntVector2(1, 1), AM_FILE);
+    URHO3D_ATTRIBUTE("Stroke Thickness", int, strokeThickness_, 1, AM_FILE);
+    URHO3D_ATTRIBUTE("Round Stroke", bool, roundStroke_, false, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Effect Color", GetEffectColor, SetEffectColor, Color, Color::BLACK, AM_FILE);
 
     // Change the default value for UseDerivedOpacity
@@ -105,9 +106,15 @@ void Text::ApplyAttributes()
 {
     UIElement::ApplyAttributes();
 
+    // Localize now if attributes were loaded out-of-order
+    if (autoLocalizable_ && stringId_.length())
+    {
+        Localization* l10n = GetSubsystem<Localization>();
+        text_ = l10n->Get(stringId_);
+    }
     DecodeToUnicode();
 
-    fontSize_ = Max(fontSize_, 1);
+    fontSize_ = std::max<float>(fontSize_, 1);
     strokeThickness_ = Abs(strokeThickness_);
     ValidateSelection();
     UpdateText();
@@ -149,12 +156,12 @@ void Text::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexD
         UIBatch batch(this, BLEND_ALPHA, currentScissor, nullptr, &vertexData);
         batch.SetColor(selectionColor_);
 
-        IntVector2 currentStart = charLocations_[selectionStart_].position_;
-        IntVector2 currentEnd = currentStart;
+        Vector2 currentStart = charLocations_[selectionStart_].position_;
+        Vector2 currentEnd = currentStart;
         for (unsigned i = selectionStart_; i < selectionStart_ + selectionLength_; ++i)
         {
             // Check if row changes, and start a new quad in that case
-            if (charLocations_[i].size_ != IntVector2::ZERO)
+            if (charLocations_[i].size_ != Vector2::ZERO)
             {
                 if (charLocations_[i].position_.y_ != currentStart.y_)
                 {
@@ -195,7 +202,7 @@ void Text::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexD
             break;
 
         case TE_SHADOW:
-            ConstructBatch(pageBatch, pageGlyphLocation, 1, 1, &effectColor_, effectDepthBias_);
+            ConstructBatch(pageBatch, pageGlyphLocation, shadowOffset_.x_, shadowOffset_.y_, &effectColor_, effectDepthBias_);
             ConstructBatch(pageBatch, pageGlyphLocation, 0, 0);
             break;
 
@@ -205,7 +212,7 @@ void Text::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexD
                 // Samples should be even or glyph may be redrawn in wrong x y pos making stroke corners rough
                 // Adding to thickness helps with thickness of 1 not having enought samples for this formula
                 // or certain fonts with reflex corners requiring more glyph samples for a smooth stroke when large
-                int thickness = Min(strokeThickness_, fontSize_);
+                int thickness = std::min<int>(strokeThickness_, fontSize_);
                 int samples = thickness * thickness + (thickness % 2 == 0 ? 4 : 3);
                 float angle = 360.f / samples;
                 float floatThickness = (float)thickness;
@@ -213,12 +220,12 @@ void Text::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexD
                 {
                     float x = Cos(angle * i) * floatThickness;
                     float y = Sin(angle * i) * floatThickness;
-                    ConstructBatch(pageBatch, pageGlyphLocation, (int)x, (int)y, &effectColor_, effectDepthBias_);
+                    ConstructBatch(pageBatch, pageGlyphLocation, x, y, &effectColor_, effectDepthBias_);
                 }
             }
             else
             {
-                int thickness = Min(strokeThickness_, fontSize_);
+                int thickness = std::min<int>(strokeThickness_, fontSize_);
                 int x, y;
                 for (x = -thickness; x <= thickness; ++x)
                 {
@@ -257,12 +264,12 @@ void Text::OnIndentSet()
     charLocationsDirty_ = true;
 }
 
-bool Text::SetFont(const QString& fontName, int size)
+bool Text::SetFont(const QString& fontName, float size)
 {
     return SetFont(context_->m_ResourceCache->GetResource<Font>(fontName), size);
 }
 
-bool Text::SetFont(Font* font, int size)
+bool Text::SetFont(Font* font, float size)
 {
     if (!font)
     {
@@ -273,14 +280,14 @@ bool Text::SetFont(Font* font, int size)
     if (font != font_ || size != fontSize_)
     {
         font_ = font;
-        fontSize_ = Max(size, 1);
+        fontSize_ = std::max<float>(size, 1);
         UpdateText();
     }
 
     return true;
 }
 
-bool Text::SetFontSize(int size)
+bool Text::SetFontSize(float size)
 {
     // Initial font must be set
     if (!font_)
@@ -428,29 +435,29 @@ void Text::SetEffectDepthBias(float bias)
     effectDepthBias_ = bias;
 }
 
-int Text::GetRowWidth(unsigned index) const
+float Text::GetRowWidth(unsigned index) const
 {
     return index < rowWidths_.size() ? rowWidths_[index] : 0;
 }
 
-IntVector2 Text::GetCharPosition(unsigned index)
+Vector2 Text::GetCharPosition(unsigned index)
 {
     if (charLocationsDirty_)
         UpdateCharLocations();
     if (charLocations_.empty())
-        return IntVector2::ZERO;
+        return Vector2::ZERO;
     // For convenience, return the position of the text ending if index exceeded
     if (index > charLocations_.size() - 1)
         index = charLocations_.size() - 1;
     return charLocations_[index].position_;
 }
 
-IntVector2 Text::GetCharSize(unsigned index)
+Vector2 Text::GetCharSize(unsigned index)
 {
     if (charLocationsDirty_)
         UpdateCharLocations();
     if (charLocations_.size() < 2)
-        return IntVector2::ZERO;
+        return Vector2::ZERO;
     // For convenience, return the size of the last char if index exceeded (last size entry is zero)
     if (index > charLocations_.size() - 2)
         index = charLocations_.size() - 2;
@@ -516,7 +523,7 @@ void Text::UpdateText(bool onResize)
         int width = 0;
         int height = 0;
         int rowWidth = 0;
-        int rowHeight = (int)(rowSpacing_ * rowHeight_);
+        int rowHeight = (int)(rowSpacing_ * rowHeight_ + 0.5f);
 
         // First see if the text must be split up
         if (!wordWrap_)
@@ -664,8 +671,13 @@ void Text::UpdateText(bool onResize)
         // Set minimum and current size according to the text size, but respect fixed width if set
         if (!IsFixedWidth())
         {
-            SetMinWidth(wordWrap_ ? 0 : width);
+            if (wordWrap_)
+                SetMinWidth(0);
+            else
+            {
+                SetMinWidth(width);
             SetWidth(width);
+            }
         }
         SetFixedHeight(height);
 
@@ -695,7 +707,7 @@ void Text::UpdateCharLocations()
         return;
     fontFace_ = face;
 
-    int rowHeight = (int)(rowSpacing_ * rowHeight_);
+    int rowHeight = (int)(rowSpacing_ * rowHeight_ + 0.5f);
 
     // Store position & size of each character, and locations per texture page
     unsigned numChars = unicodeText_.size();
@@ -708,19 +720,19 @@ void Text::UpdateCharLocations()
 
     unsigned rowIndex = 0;
     unsigned lastFilled = 0;
-    int x = GetRowStartPosition(rowIndex) + offset.x_;
-    int y = offset.y_;
+    float x = floor(GetRowStartPosition(rowIndex) + offset.x_ + 0.5f);
+    float y = floor(offset.y_ + 0.5f);
 
     for (unsigned i = 0; i < printText_.size(); ++i)
     {
         CharLocation loc;
-        loc.position_ = IntVector2(x, y);
+        loc.position_ = Vector2(x, y);
 
         QChar c = printText_[i];
         if (c != '\n')
         {
             const FontGlyph* glyph = face->GetGlyph(c.unicode());
-            loc.size_ = IntVector2(glyph ? glyph->advanceX_ : 0, rowHeight_);
+            loc.size_ = Vector2(glyph ? glyph->advanceX_ : 0, rowHeight_);
             if (glyph)
             {
                 // Store glyph's location for rendering. Verify that glyph page is valid
@@ -733,19 +745,21 @@ void Text::UpdateCharLocations()
         }
         else
         {
-            loc.size_ = IntVector2::ZERO;
+            loc.size_ = Vector2::ZERO;
             x = GetRowStartPosition(++rowIndex);
             y += rowHeight;
         }
 
+        if (lastFilled > printToText_[i])
+            lastFilled = printToText_[i];
         // Fill gaps in case characters were skipped from printing
         for (unsigned j = lastFilled; j <= printToText_[i]; ++j)
             charLocations_[j] = loc;
         lastFilled = printToText_[i] + 1;
     }
     // Store the ending position
-    charLocations_[numChars].position_ = IntVector2(x, y);
-    charLocations_[numChars].size_ = IntVector2::ZERO;
+    charLocations_[numChars].position_ = Vector2(x, y);
+    charLocations_[numChars].size_ = Vector2::ZERO;
 
     charLocationsDirty_ = false;
 }
@@ -770,7 +784,7 @@ void Text::ValidateSelection()
 
 int Text::GetRowStartPosition(unsigned rowIndex) const
 {
-    int rowWidth = 0;
+    float rowWidth = 0;
 
     if (rowIndex < rowWidths_.size())
         rowWidth = rowWidths_[rowIndex];
@@ -792,7 +806,7 @@ int Text::GetRowStartPosition(unsigned rowIndex) const
     return ret;
 }
 
-void Text::ConstructBatch(UIBatch& pageBatch, const std::vector<GlyphLocation>& pageGlyphLocation, int dx, int dy, Color* color,
+void Text::ConstructBatch(UIBatch& pageBatch, const std::vector<GlyphLocation>& pageGlyphLocation, float dx, float dy, Color* color,
                           float depthBias)
 {
     unsigned startDataSize = pageBatch.vertexData_->size();
@@ -808,7 +822,7 @@ void Text::ConstructBatch(UIBatch& pageBatch, const std::vector<GlyphLocation>& 
     {
         const FontGlyph& glyph = *glyphLocation.glyph_;
         pageBatch.AddQuad(dx + glyphLocation.x_ + glyph.offsetX_, dy + glyphLocation.y_ + glyph.offsetY_, glyph.width_,
-                          glyph.height_, glyph.x_, glyph.y_);
+            glyph.height_, glyph.x_, glyph.y_, glyph.texWidth_, glyph.texHeight_);
     }
 
     if (depthBias != 0.0f)

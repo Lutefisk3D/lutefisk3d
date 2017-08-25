@@ -311,7 +311,7 @@ QString GetPlatform()
 #elif defined(__linux__)
     return "Linux";
 #else
-    return String::null;
+    return "(?)";
 #endif
 }
 

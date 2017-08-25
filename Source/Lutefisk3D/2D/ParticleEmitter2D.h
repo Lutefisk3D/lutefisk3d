@@ -100,6 +100,8 @@ public:
     void SetBlendMode(BlendMode blendMode);
     /// Set max particles.
     void SetMaxParticles(unsigned maxParticles);
+    /// Set whether should be emitting. If the state was changed, also resets the emission period timer.
+    void SetEmitting(bool enable);
 
     /// Return particle effect.
     ParticleEffect2D* GetEffect() const;
@@ -118,6 +120,8 @@ public:
     void SetSpriteAttr(const ResourceRef& value);
     /// Return sprite attribute.
     ResourceRef GetSpriteAttr() const;
+    /// Return whether is currently emitting.
+    bool IsEmitting() const { return emitting_; }
 
 private:
     /// Handle scene being assigned.
@@ -151,6 +155,8 @@ private:
     float emissionTime_;
     /// Emit particle time
     float emitParticleTime_;
+    /// Currently emitting flag.
+    bool emitting_;
     /// Particles.
     std::vector<Particle2D> particles_;
     /// Bounding box min point.

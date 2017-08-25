@@ -585,6 +585,10 @@ private:
     bool hardwareShadowSupport_;
     /// Instancing support flag.
     bool instancingSupport_;
+    /// sRGB conversion on read support flag.
+    bool sRGBSupport_;
+    /// sRGB conversion on write support flag.
+    bool sRGBWriteSupport_;
     /// Number of primitives this frame.
     unsigned numPrimitives_;
     /// Number of batches this frame.

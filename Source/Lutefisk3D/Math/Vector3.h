@@ -343,6 +343,8 @@ public:
 
     /// Project vector onto axis.
     float ProjectOntoAxis(const Vector3& axis) const { return DotProduct(axis.Normalized()); }
+    /// Make vector orthogonal to the axis.
+    Vector3 Orthogonalize(const Vector3& axis) const { return axis.CrossProduct(*this).CrossProduct(axis).Normalized(); }
     /// Calculate cross product.
     Vector3 CrossProduct(const Vector3& rhs) const
     {

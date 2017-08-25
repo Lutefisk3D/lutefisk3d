@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -433,7 +433,6 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     fullscreen_ = fullscreen;
     borderless_ = borderless;
     resizable_ = resizable;
-    highDPI_ = highDPI;
     vsync_ = vsync;
     tripleBuffer_ = tripleBuffer;
     multiSample_ = multiSample;
@@ -443,6 +442,10 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     SDL_GL_GetDrawableSize(window_, &width_, &height_);
     if (!fullscreen)
         SDL_GetWindowPosition(window_, &position_.x_, &position_.y_);
+
+    int logicalWidth, logicalHeight;
+    SDL_GetWindowSize(window_, &logicalWidth, &logicalHeight);
+    highDPI_ = (width_ != logicalWidth) || (height_ != logicalHeight);
 
     // Reset rendertargets and viewport for the new screen mode
     ResetRenderTargets();
@@ -2000,6 +2003,10 @@ void Graphics::OnWindowResized()
 
     width_ = newWidth;
     height_ = newHeight;
+
+    int logicalWidth, logicalHeight;
+    SDL_GetWindowSize(window_, &logicalWidth, &logicalHeight);
+    highDPI_ = (width_ != logicalWidth) || (height_ != logicalHeight);
 
     // Reset rendertargets and viewport for the new screen size. Also clean up any FBO's, as they may be screen size dependent
     CleanupFramebuffers();

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -93,11 +93,11 @@ public:
     Tile2D* GetTile(int x, int y) const;
 
 protected:
-    /// Tile.
+    /// Tiles.
     std::vector<SharedPtr<Tile2D> > tiles_;
 };
 
-/// Tmx image layer.
+/// Tmx objects layer.
 class TmxObjectGroup2D : public TmxLayer2D
 {
 public:
@@ -105,6 +105,8 @@ public:
 
     /// Load from XML element.
     bool Load(const XMLElement& element, const TileMapInfo2D& info);
+    /// Store object.
+    void StoreObject(XMLElement objectElem, SharedPtr<TileMapObject2D> object, const TileMapInfo2D& info, bool isTile = false);
     /// Return number of objects.
     unsigned GetNumObjects() const { return objects_.size(); }
     /// Return tile map object at index.
@@ -172,6 +174,8 @@ public:
     /// Return tile sprite by gid, if not exist return 0.
     Sprite2D* GetTileSprite(int gid) const;
 
+    /// Return tile collision shapes for a given gid.
+    std::vector<SharedPtr<TileMapObject2D> > GetTileCollisionShapes(int gid) const;
     /// Return tile property set by gid, if not exist return 0.
     PropertySet2D* GetTilePropertySet(int gid) const;
     /// Return number of layers.
@@ -191,12 +195,12 @@ private:
     HashMap<QString, SharedPtr<XMLFile> > tsxXMLFiles_;
     /// Tile map information.
     TileMapInfo2D info_;
-    /// Tile set textures.
-    std::vector<SharedPtr<Texture2D> > tileSetTextures_;
     /// Gid to tile sprite mapping.
     HashMap<int, SharedPtr<Sprite2D> > gidToSpriteMapping_;
     /// Gid to tile property set mapping.
     HashMap<int, SharedPtr<PropertySet2D> > gidToPropertySetMapping_;
+    /// Gid to tile collision shape mapping.
+    HashMap<int, std::vector<SharedPtr<TileMapObject2D> > > gidToCollisionShapeMapping_;
     /// Layers.
     std::vector<TmxLayer2D*> layers_;
 };

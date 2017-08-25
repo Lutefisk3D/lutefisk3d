@@ -46,7 +46,8 @@ ParticleEmitter2D::ParticleEmitter2D(Context* context) :
     emissionTime_(0.0f),
     emitParticleTime_(0.0f),
     boundingBoxMinPoint_(Vector3::ZERO),
-    boundingBoxMaxPoint_(Vector3::ZERO)
+    boundingBoxMaxPoint_(Vector3::ZERO),
+    emitting_(true)
 {
     sourceBatch_.front().owner_ = this;
 }
@@ -64,6 +65,7 @@ void ParticleEmitter2D::RegisterObject(Context* context)
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Particle Effect", GetParticleEffectAttr, SetParticleEffectAttr, ResourceRef, ResourceRef(ParticleEffect2D::GetTypeStatic()), AM_DEFAULT);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Sprite ", GetSpriteAttr, SetSpriteAttr, ResourceRef, ResourceRef(Sprite2D::GetTypeStatic()), AM_DEFAULT);
     URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Blend Mode", GetBlendMode, SetBlendMode, BlendMode, blendModeNames, BLEND_ALPHA, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Is Emitting", IsEmitting, SetEmitting, bool, true, AM_DEFAULT);
 }
 
 void ParticleEmitter2D::OnSetEnabled()
@@ -159,6 +161,14 @@ void ParticleEmitter2D::SetSpriteAttr(const ResourceRef& value)
         SetSprite(sprite);
 }
 
+void ParticleEmitter2D::SetEmitting(bool enable)
+{
+    if (enable != emitting_)
+    {
+        emitting_ = enable;
+        emitParticleTime_ = 0.0f;
+    }
+}
 ResourceRef ParticleEmitter2D::GetSpriteAttr() const
 {
     return Sprite2D::SaveToResourceRef(sprite_);
@@ -166,13 +176,14 @@ ResourceRef ParticleEmitter2D::GetSpriteAttr() const
 
 void ParticleEmitter2D::OnSceneSet(Scene* scene)
 {
+    Scene* old_scene = scene; // todo: shouldn't this always unsubscribe from 'old' scene ?
     Drawable2D::OnSceneSet(scene);
 
     if (scene && IsEnabledEffective())
         scene->scenePostUpdate.Connect(this,&ParticleEmitter2D::HandleScenePostUpdate);
     else if(!scene) {
-        assert(GetScene());
-        GetScene()->scenePostUpdate.Disconnect(this,&ParticleEmitter2D::HandleScenePostUpdate);
+        assert(old_scene);
+        old_scene->scenePostUpdate.Disconnect(this,&ParticleEmitter2D::HandleScenePostUpdate);
     }
 }
 
@@ -306,7 +317,7 @@ void ParticleEmitter2D::Update(float timeStep)
         }
     }
 
-    if (emissionTime_ >= 0.0f)
+    if (emitting_ && emissionTime_ > 0.0f)
     {
         float worldAngle = GetNode()->GetWorldRotation().RollAngle();
 

@@ -73,7 +73,7 @@ public:
     bool SetModalElement(UIElement* modalElement, bool enable);
     /// Clear the UI (excluding the cursor.)
     void Clear();
-    /// Update the UI logic. Called during signal handling.
+    /// Update the UI logic. Called by HandlePostUpdate().
     void Update(float timeStep);
     /// Update the UI for rendering. Called by HandleRenderUpdate().
     void RenderUpdate();
@@ -134,9 +134,9 @@ public:
     Cursor* GetCursor() const { return cursor_; }
     /// Return cursor position.
     IntVector2 GetCursorPosition() const;
-    /// Return UI element at screen coordinates. By default returns only input-enabled elements.
+    /// Return UI element at global screen coordinates. By default returns only input-enabled elements.
     UIElement* GetElementAt(const IntVector2& position, bool enabledOnly = true);
-    /// Return UI element at screen coordinates. By default returns only input-enabled elements.
+    /// Return UI element at global screen coordinates. By default returns only input-enabled elements.
     UIElement* GetElementAt(int x, int y, bool enabledOnly = true);
     /// Get a child element at element's screen position relative to specified root element.
     UIElement* GetElementAt(UIElement* root, const IntVector2& position, bool enabledOnly=true);
@@ -232,13 +232,13 @@ private:
     /// Force release of font faces when global font properties change.
     void ReleaseFontFaces();
     /// Handle button or touch hover.
-    void ProcessHover(const IntVector2& cursorPos, int buttons, int qualifiers, Cursor* cursor);
+    void ProcessHover(const IntVector2& windowCursorPos, int buttons, int qualifiers, Cursor* cursor);
     /// Handle button or touch begin.
-    void ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
+    void ProcessClickBegin(const IntVector2& windowCursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle button or touch end.
-    void ProcessClickEnd(const IntVector2& cursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
+    void ProcessClickEnd(const IntVector2& windowCursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle mouse or touch move.
-    void ProcessMove(const IntVector2& cursorPos, const IntVector2& cursorDeltaPos, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
+    void ProcessMove(const IntVector2& windowCursorPos, const IntVector2& cursorDeltaPos, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle screen mode event.
     void HandleScreenMode(int, int, bool, bool, bool, bool, int, int);
     /// Handle mouse button down event.

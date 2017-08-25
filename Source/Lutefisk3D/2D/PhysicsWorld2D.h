@@ -87,7 +87,7 @@ public:
     /// Called when two fixtures cease to touch.
     virtual void EndContact(b2Contact* contact) override;
     /// Called when contact is updated.
-    virtual void PreSolve(b2Contact* contact, const b2Manifold* oldManifold);
+    virtual void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) override;
     // Implement b2Draw
     /// Draw a closed polygon provided in CCW order.
     virtual void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) override;

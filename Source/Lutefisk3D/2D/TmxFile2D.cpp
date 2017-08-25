@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,9 +30,11 @@
 #include "Lutefisk3D/IO/File.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Graphics/Texture2D.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
 #include "Lutefisk3D/Core/StringUtils.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
-
+#include "Lutefisk3D/Resource/Image.h"
+#include "Lutefisk3D/Math/AreaAllocator.h"
 
 
 namespace Urho3D
@@ -92,6 +94,11 @@ TmxTileLayer2D::TmxTileLayer2D(TmxFile2D* tmxFile) :
 {
 }
 
+enum LayerEncoding {
+    XML,
+    CSV,
+    Base64,
+};
 bool TmxTileLayer2D::Load(const XMLElement& element, const TileMapInfo2D& info)
 {
     LoadInfo(element);
@@ -103,33 +110,108 @@ bool TmxTileLayer2D::Load(const XMLElement& element, const TileMapInfo2D& info)
         return false;
     }
 
-    if (dataElem.HasAttribute("encoding") && dataElem.GetAttribute("encoding") != "xml")
+    LayerEncoding encoding;
+    if (dataElem.HasAttribute("compression"))
     {
-        URHO3D_LOGERROR("Encoding not support now");
+        URHO3D_LOGERROR("Compression not supported now");
         return false;
     }
 
-    XMLElement tileElem = dataElem.GetChild("tile");
-    tiles_.resize((unsigned)(width_ * height_));
-
-    for (int y = 0; y < height_; ++y)
+    if (dataElem.HasAttribute("encoding"))
     {
-        for (int x = 0; x < width_; ++x)
+        QString encodingAttribute = dataElem.GetAttribute("encoding");
+        if (encodingAttribute == "xml")
+            encoding = XML;
+        else if (encodingAttribute == "csv")
+            encoding = CSV;
+        else if (encodingAttribute == "base64")
+            encoding = Base64;
+        else
         {
-            if (!tileElem)
-                return false;
+            URHO3D_LOGERROR("Invalid encoding: " + encodingAttribute);
+            return false;
+        }
+    }
+    else
+        encoding = XML;
 
-            int gid = tileElem.GetInt("gid");
-            if (gid > 0)
+    tiles_.resize((unsigned)(width_ * height_));
+    if (encoding == XML)
+    {
+        XMLElement tileElem = dataElem.GetChild("tile");
+
+        for (int y = 0; y < height_; ++y)
+        {
+            for (int x = 0; x < width_; ++x)
             {
-                SharedPtr<Tile2D> tile(new Tile2D());
-                tile->gid_ = gid;
-                tile->sprite_ = tmxFile_->GetTileSprite(gid);
-                tile->propertySet_ = tmxFile_->GetTilePropertySet(gid);
-                tiles_[y * width_ + x] = tile;
-            }
+                if (!tileElem)
+                    return false;
 
-            tileElem = tileElem.GetNext("tile");
+                int gid = tileElem.GetInt("gid");
+                if (gid > 0)
+                {
+                    SharedPtr<Tile2D> tile(new Tile2D());
+                    tile->gid_ = gid;
+                    tile->sprite_ = tmxFile_->GetTileSprite(gid);
+                    tile->propertySet_ = tmxFile_->GetTilePropertySet(gid);
+                    tiles_[y * width_ + x] = tile;
+                }
+
+                tileElem = tileElem.GetNext("tile");
+            }
+        }
+    }
+    else if (encoding == CSV)
+    {
+        QString dataValue = dataElem.GetValue();
+        auto gidVector = dataValue.split(',');
+        int currentIndex = 0;
+        for (int y = 0; y < height_; ++y)
+        {
+            for (int x = 0; x < width_; ++x)
+            {
+                gidVector[currentIndex].replace("\n", "");
+                int gid = gidVector[currentIndex].toInt();
+                if (gid > 0)
+                {
+                    SharedPtr<Tile2D> tile(new Tile2D());
+                    tile->gid_ = gid;
+                    tile->sprite_ = tmxFile_->GetTileSprite(gid);
+                    tile->propertySet_ = tmxFile_->GetTilePropertySet(gid);
+                    tiles_[y * width_ + x] = tile;
+                }
+                ++currentIndex;
+            }
+        }
+    }
+    else if (encoding == Base64)
+    {
+        QString dataValue = dataElem.GetValue();
+        int startPosition = 0;
+        while (!dataValue[startPosition].isLetterOrNumber()
+               && dataValue[startPosition] != '+' && dataValue[startPosition] != '/')
+            ++startPosition;
+        dataValue = dataValue.mid(startPosition);
+
+        QByteArray buffer(QByteArray::fromBase64(dataValue.toLatin1()));
+        int currentIndex = 0;
+        for (int y = 0; y < height_; ++y)
+        {
+            for (int x = 0; x < width_; ++x)
+            {
+                // buffer contains 32-bit integers in little-endian format
+                int gid = (buffer[currentIndex+3] << 24) | (buffer[currentIndex+2] << 16)
+                        | (buffer[currentIndex+1] << 8) | buffer[currentIndex];
+                if (gid > 0)
+                {
+                    SharedPtr<Tile2D> tile(new Tile2D());
+                    tile->gid_ = gid;
+                    tile->sprite_ = tmxFile_->GetTileSprite(gid);
+                    tile->propertySet_ = tmxFile_->GetTilePropertySet(gid);
+                    tiles_[y * width_ + x] = tile;
+                }
+                currentIndex += 4;
+            }
         }
     }
 
@@ -159,28 +241,39 @@ bool TmxObjectGroup2D::Load(const XMLElement &element, const TileMapInfo2D &info
     for (XMLElement objectElem = element.GetChild("object"); objectElem; objectElem = objectElem.GetNext("object"))
     {
         SharedPtr<TileMapObject2D> object(new TileMapObject2D());
+        StoreObject(objectElem, object, info);
+        objects_.push_back(object);
+    }
 
-        if (objectElem.HasAttribute("name"))
-            object->name_ = objectElem.GetAttribute("name");
-        if (objectElem.HasAttribute("type"))
-            object->type_ = objectElem.GetAttribute("type");
+    if (element.HasChild("properties"))
+        LoadPropertySet(element.GetChild("properties"));
 
-        if (objectElem.HasAttribute("gid"))
-            object->objectType_ = OT_TILE;
-        else if (objectElem.HasChild("polygon"))
-            object->objectType_ = OT_POLYGON;
-        else if (objectElem.HasChild("polyline"))
-            object->objectType_ = OT_POLYLINE;
-        else if (objectElem.HasChild("ellipse"))
-            object->objectType_ = OT_ELLIPSE;
-        else
-            object->objectType_ = OT_RECTANGLE;
+    return true;
+}
 
-        const Vector2 position(objectElem.GetFloat("x"), objectElem.GetFloat("y"));
-        const Vector2 size(objectElem.GetFloat("width"), objectElem.GetFloat("height"));
+void TmxObjectGroup2D::StoreObject(XMLElement objectElem, SharedPtr<TileMapObject2D> object, const TileMapInfo2D& info, bool isTile)
+{
+    if (objectElem.HasAttribute("name"))
+        object->name_ = objectElem.GetAttribute("name");
+    if (objectElem.HasAttribute("type"))
+        object->type_ = objectElem.GetAttribute("type");
 
-        switch (object->objectType_)
-        {
+    if (objectElem.HasAttribute("gid"))
+        object->objectType_ = OT_TILE;
+    else if (objectElem.HasChild("polygon"))
+        object->objectType_ = OT_POLYGON;
+    else if (objectElem.HasChild("polyline"))
+        object->objectType_ = OT_POLYLINE;
+    else if (objectElem.HasChild("ellipse"))
+        object->objectType_ = OT_ELLIPSE;
+    else
+        object->objectType_ = OT_RECTANGLE;
+
+    const Vector2 position(objectElem.GetFloat("x"), objectElem.GetFloat("y"));
+    const Vector2 size(objectElem.GetFloat("width"), objectElem.GetFloat("height"));
+
+    switch (object->objectType_)
+    {
         case OT_RECTANGLE:
         case OT_ELLIPSE:
             object->position_ = info.ConvertPosition(Vector2(position.x_, position.y_ + size.y_));
@@ -214,7 +307,7 @@ bool TmxObjectGroup2D::Load(const XMLElement &element, const TileMapInfo2D &info
             points                  = polygonElem.GetAttribute("points").split(' ');
 
             if (points.size() <= 1)
-                continue;
+                return;
 
             object->points_.resize(points.size());
 
@@ -225,24 +318,17 @@ bool TmxObjectGroup2D::Load(const XMLElement &element, const TileMapInfo2D &info
                 object->points_[i] = info.ConvertPosition(point);
             }
         }
-        break;
+            break;
 
         default: break;
-        }
-
-        if (objectElem.HasChild("properties"))
-        {
-            object->propertySet_ = new PropertySet2D();
-            object->propertySet_->Load(objectElem.GetChild("properties"));
-        }
-
-        objects_.push_back(object);
     }
 
-    if (element.HasChild("properties"))
-        LoadPropertySet(element.GetChild("properties"));
+    if (objectElem.HasChild("properties"))
+    {
+        object->propertySet_ = new PropertySet2D();
+        object->propertySet_->Load(objectElem.GetChild("properties"));
+    }
 
-    return true;
 }
 
 TileMapObject2D* TmxObjectGroup2D::GetObject(unsigned index) const
@@ -482,7 +568,15 @@ Sprite2D* TmxFile2D::GetTileSprite(int gid) const
 
     return MAP_VALUE(i);
 }
+std::vector<SharedPtr<TileMapObject2D> > TmxFile2D::GetTileCollisionShapes(int gid) const
+{
+    std::vector<SharedPtr<TileMapObject2D> > tileShapes;
+    auto i = gidToCollisionShapeMapping_.find(gid);
+    if (i == gidToCollisionShapeMapping_.end())
+        return tileShapes;
 
+    return MAP_VALUE(i);
+}
 PropertySet2D* TmxFile2D::GetTilePropertySet(int gid) const
 {
     auto i = gidToPropertySetMapping_.find(gid);
@@ -513,6 +607,14 @@ SharedPtr<XMLFile> TmxFile2D::LoadTSXFile(const QString& source)
     return tsxXMLFile;
 }
 
+struct TileImageInfo {
+    Image* image;
+    int tileGid;
+    int imageWidth;
+    int imageHeight;
+    int x;
+    int y;
+};
 bool TmxFile2D::LoadTileSet(const XMLElement& element)
 {
     int firstgid = element.GetInt("firstgid");
@@ -528,7 +630,7 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
             if (!tsxXMLFile)
                 return false;
 
-            // Add to napping to avoid release
+            // Add to mapping to avoid release
             tsxXMLFiles_[source] = tsxXMLFile;
 
             tileSetElem = tsxXMLFile->GetRoot("tileset");
@@ -539,56 +641,147 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
     else
         tileSetElem = element;
 
-    XMLElement imageElem = tileSetElem.GetChild("image");
-    QString textureFilePath = GetParentPath(GetName()) + imageElem.GetAttribute("source");
-    ResourceCache* cache = context_->m_ResourceCache.get();
-    SharedPtr<Texture2D> texture(cache->GetResource<Texture2D>(textureFilePath));
-    if (!texture)
-    {
-        URHO3D_LOGERROR("Could not load texture " + textureFilePath);
-        return false;
-    }
-
-    tileSetTextures_.push_back(texture);
-
     int tileWidth = tileSetElem.GetInt("tilewidth");
     int tileHeight = tileSetElem.GetInt("tileheight");
     int spacing = tileSetElem.GetInt("spacing");
     int margin = tileSetElem.GetInt("margin");
-    int imageWidth = imageElem.GetInt("width");
-    int imageHeight = imageElem.GetInt("height");
+    int imageWidth;
+    int imageHeight;
+    bool isSingleTileSet = false;
 
-    // Set hot spot at left bottom
-    Vector2 hotSpot(0.0f, 0.0f);
-    if (tileSetElem.HasChild("tileoffset"))
+    ResourceCache* cache = context_->m_ResourceCache.get();
     {
-        XMLElement offsetElem = tileSetElem.GetChild("tileoffset");
-        hotSpot.x_ += offsetElem.GetFloat("x") / (float)tileWidth;
-        hotSpot.y_ += offsetElem.GetFloat("y") / (float)tileHeight;
-    }
+        XMLElement imageElem = tileSetElem.GetChild("image");
+        // Tileset based on single tileset image
+        if (imageElem.NotNull()) {
+            isSingleTileSet = true;
+            QString textureFilePath = GetParentPath(GetName()) + imageElem.GetAttribute("source");
+            SharedPtr<Texture2D> texture(cache->GetResource<Texture2D>(textureFilePath));
+            if (!texture)
+            {
+                URHO3D_LOGERROR("Could not load texture " + textureFilePath);
+                return false;
+            }
 
-    int gid = firstgid;
-    for (int y = margin; y + tileHeight <= imageHeight - margin; y += tileHeight + spacing)
-    {
-        for (int x = margin; x + tileWidth <= imageWidth - margin; x += tileWidth + spacing)
-        {
-            SharedPtr<Sprite2D> sprite(new Sprite2D(context_));
-            sprite->SetTexture(texture);
-            sprite->SetRectangle(IntRect(x, y, x + tileWidth, y + tileHeight));
-            sprite->SetHotSpot(hotSpot);
 
-            gidToSpriteMapping_[gid++] = sprite;
+            // Set hot spot at left bottom
+            Vector2 hotSpot(0.0f, 0.0f);
+            if (tileSetElem.HasChild("tileoffset"))
+            {
+                XMLElement offsetElem = tileSetElem.GetChild("tileoffset");
+                hotSpot.x_ += offsetElem.GetFloat("x") / (float)tileWidth;
+                hotSpot.y_ += offsetElem.GetFloat("y") / (float)tileHeight;
+            }
+            imageWidth = imageElem.GetInt("width");
+            imageHeight = imageElem.GetInt("height");
+
+            int gid = firstgid;
+            for (int y = margin; y + tileHeight <= imageHeight - margin; y += tileHeight + spacing)
+            {
+                for (int x = margin; x + tileWidth <= imageWidth - margin; x += tileWidth + spacing)
+                {
+                    SharedPtr<Sprite2D> sprite(new Sprite2D(context_));
+                    sprite->SetTexture(texture);
+                    sprite->SetRectangle(IntRect(x, y, x + tileWidth, y + tileHeight));
+                    sprite->SetHotSpot(hotSpot);
+
+                    gidToSpriteMapping_[gid++] = sprite;
+                }
+            }
         }
     }
 
+    std::vector<TileImageInfo> tileImageInfos;
     for (XMLElement tileElem = tileSetElem.GetChild("tile"); tileElem; tileElem = tileElem.GetNext("tile"))
     {
+        int gid = firstgid + tileElem.GetInt("id");
+        // Tileset based on collection of images
+        if (!isSingleTileSet)
+        {
+            XMLElement imageElem = tileElem.GetChild("image");
+            if (imageElem.NotNull()) {
+                QString textureFilePath = GetParentPath(GetName()) + imageElem.GetAttribute("source");
+                SharedPtr<Image> image(cache->GetResource<Image>(textureFilePath));
+                if (!image)
+                {
+                    URHO3D_LOGERROR("Could not load image " + textureFilePath);
+                    return false;
+                }
+                tileWidth = imageWidth = imageElem.GetInt("width");
+                tileHeight = imageHeight = imageElem.GetInt("height");
+                TileImageInfo info = {image, gid, imageWidth, imageHeight, 0, 0};
+                tileImageInfos.push_back(info);
+            }
+        }
+        // Tile collision shape(s)
+        TmxObjectGroup2D objectGroup(this);
+        for (XMLElement collisionElem = tileElem.GetChild("objectgroup"); collisionElem; collisionElem = collisionElem.GetNext("objectgroup"))
+        {
+            std::vector<SharedPtr<TileMapObject2D> > objects;
+            for (XMLElement objectElem = collisionElem.GetChild("object"); objectElem; objectElem = objectElem.GetNext("object"))
+            {
+                SharedPtr<TileMapObject2D> object(new TileMapObject2D());
+
+                // Convert Tiled local position (left top) to Urho3D local position (left bottom)
+                objectElem.SetAttribute("y", QString::number(info_.GetMapHeight() / PIXEL_SIZE - (tileHeight - objectElem.GetFloat("y"))));
+
+                objectGroup.StoreObject(objectElem, object, info_, true);
+                objects.push_back(object);
+            }
+            gidToCollisionShapeMapping_[gid] = objects;
+        }
         if (tileElem.HasChild("properties"))
         {
             SharedPtr<PropertySet2D> propertySet(new PropertySet2D());
             propertySet->Load(tileElem.GetChild("properties"));
-            gidToPropertySetMapping_[firstgid + tileElem.GetInt("id")] = propertySet;
+            gidToPropertySetMapping_[gid] = propertySet;
         }
+    }
+
+    if (!isSingleTileSet)
+    {
+        if (tileImageInfos.empty())
+            return false;
+
+        AreaAllocator allocator(128, 128, 2048, 2048);
+
+        for (int i = 0; i < tileImageInfos.size(); ++i)
+        {
+            TileImageInfo& info = tileImageInfos[i];
+            if (!allocator.Allocate(info.imageWidth + 1, info.imageHeight + 1, info.x, info.y))
+            {
+                URHO3D_LOGERROR("Could not allocate area");
+                return false;
+            }
+        }
+
+        SharedPtr<Texture2D> texture(new Texture2D(context_));
+        texture->SetMipsToSkip(QUALITY_LOW, 0);
+        texture->SetNumLevels(1);
+        texture->SetSize(allocator.GetWidth(), allocator.GetHeight(), Graphics::GetRGBAFormat());
+
+        unsigned textureDataSize = allocator.GetWidth() * allocator.GetHeight() * 4;
+        SharedArrayPtr<unsigned char> textureData(new unsigned char[textureDataSize]);
+        memset(textureData.Get(), 0, textureDataSize);
+
+        for (int i = 0; i < tileImageInfos.size(); ++i)
+        {
+            TileImageInfo& info = tileImageInfos[i];
+            Image* image = info.image;
+
+            for (int y = 0; y < image->GetHeight(); ++y)
+            {
+                memcpy(textureData.Get() + ((info.y + y) * allocator.GetWidth() + info.x) * 4,
+                       image->GetData() + y * image->GetWidth() * 4, image->GetWidth() * 4);
+            }
+
+            SharedPtr<Sprite2D> sprite(new Sprite2D(context_));
+            sprite->SetTexture(texture);
+            sprite->SetRectangle(IntRect(info.x, info.y, info.x + info.imageWidth, info.y +  + info.imageHeight));
+            sprite->SetHotSpot(Vector2::ZERO);
+            gidToSpriteMapping_[info.tileGid] = sprite;
+        }
+        texture->SetData(0, 0, 0, allocator.GetWidth(), allocator.GetHeight(), textureData.Get());
     }
 
     return true;

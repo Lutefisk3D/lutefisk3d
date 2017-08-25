@@ -39,7 +39,7 @@ class UIElement;
 static const unsigned UI_VERTEX_SIZE = 6;
 
 /// %UI rendering draw call.
-class UIBatch
+class URHO3D_API UIBatch
 {
 public:
     /// Construct with defaults.
@@ -52,7 +52,7 @@ public:
     /// Restore UI element's default color.
     void SetDefaultColor();
     /// Add a quad.
-    void AddQuad(int x, int y, int width, int height, int texOffsetX, int texOffsetY, int texWidth = 0, int texHeight = 0);
+    void AddQuad(float x, float y, float width, float height, int texOffsetX, int texOffsetY, int texWidth = 0, int texHeight = 0);
     /// Add a quad using a transform matrix.
     void AddQuad(const Matrix3x4& transform, int x, int y, int width, int height, int texOffsetX, int texOffsetY, int texWidth = 0, int texHeight = 0);
     /// Add a quad with tiled texture.
@@ -67,7 +67,7 @@ public:
     /// Merge with another batch.
     bool Merge(const UIBatch& batch);
     /// Return an interpolated color for the UI element.
-    unsigned GetInterpolatedColor(int x, int y);
+    unsigned GetInterpolatedColor(float x, float y);
 
     /// Add or merge a batch.
     static void AddOrMerge(const UIBatch& batch, std::vector<UIBatch>& batches);

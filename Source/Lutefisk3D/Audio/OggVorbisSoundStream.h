@@ -38,8 +38,10 @@ public:
     /// Destruct.
     ~OggVorbisSoundStream();
 
+    /// Seek to sample number. Return true on success.
+    virtual bool Seek(unsigned sample_number) override;
     /// Produce sound data into destination. Return number of bytes produced. Called by SoundSource from the mixing thread.
-    virtual unsigned GetData(signed char* dest, unsigned numBytes);
+    virtual unsigned GetData(signed char* dest, unsigned numBytes) override;
 
 protected:
     /// Decoder state.

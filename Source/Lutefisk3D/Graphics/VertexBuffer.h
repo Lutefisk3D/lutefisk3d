@@ -198,7 +198,8 @@ public:
 
     /// Return vertex size for a legacy vertex element bitmask.
     static unsigned GetVertexSize(unsigned elementMask);
-
+    /// Update offsets of vertex elements.
+    static void UpdateOffsets(std::vector<VertexElement>& elements);
 private:
     /// Update offsets of vertex elements.
     void UpdateOffsets();

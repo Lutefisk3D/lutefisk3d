@@ -205,6 +205,8 @@ Graphics::Graphics(Context* context_) :
     resizable_(false),
     highDPI_(false),
     vsync_(false),
+    monitor_(0),
+    refreshRate_(0),
     tripleBuffer_(false),
     sRGB_(false),
     lightPrepassSupport_(false),
@@ -361,9 +363,9 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
         SDL_Rect display_rect;
         SDL_GetDisplayBounds(monitor, &display_rect);
         SDL_SetWindowPosition(window_, display_rect.x, display_rect.y);
-
-        int x = fullscreen || borderless ? display_rect.x : position_.x_;
-        int y = fullscreen || borderless ? display_rect.y : position_.y_;
+        bool reposition = fullscreen || (borderless && width >= display_rect.w && height >= display_rect.h);
+        int x = reposition ? display_rect.x : position_.x_;
+        int y = reposition ? display_rect.y : position_.y_;
 
         unsigned flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
         if (fullscreen)
@@ -435,6 +437,8 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     vsync_ = vsync;
     tripleBuffer_ = tripleBuffer;
     multiSample_ = multiSample;
+    monitor_ = monitor;
+    refreshRate_ = refreshRate;
 
     SDL_GL_GetDrawableSize(window_, &width_, &height_);
     if (!fullscreen)

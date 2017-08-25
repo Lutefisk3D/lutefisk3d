@@ -21,6 +21,7 @@ set(INCLUDES
     Text.h
     ToolTip.h
     UIBatch.h
+    UIComponent.h
     UIElement.h
     UIEvents.h
     UI.h
@@ -55,6 +56,7 @@ set(SOURCE
     Text3D.cpp
     Text.cpp
     ToolTip.cpp
+    UIComponent.cpp
     UIBatch.cpp
     UI.cpp
     UIElement.cpp

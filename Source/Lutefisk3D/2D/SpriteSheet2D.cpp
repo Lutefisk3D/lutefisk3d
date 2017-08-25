@@ -152,7 +152,7 @@ bool SpriteSheet2D::EndLoadFromPListFile()
     if (!texture_)
     {
         URHO3D_LOGERROR("Could not load texture " + loadTextureName_);
-        loadXMLFile_.Reset();
+        loadPListFile_.Reset();
         loadTextureName_.clear();
         return false;
     }
@@ -189,7 +189,7 @@ bool SpriteSheet2D::EndLoadFromPListFile()
         DefineSprite(name, rectangle, hotSpot, offset);
     }
 
-    loadXMLFile_.Reset();
+    loadPListFile_.Reset();
     loadTextureName_.clear();
     return true;
 }

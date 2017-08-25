@@ -146,6 +146,7 @@ PhysicsWorld::PhysicsWorld(Context* context) :
     world_->setDebugDrawer(this);
     world_->setInternalTickCallback(InternalPreTickCallback, static_cast<void*>(this), true);
     world_->setInternalTickCallback(InternalTickCallback, static_cast<void*>(this), false);
+    world_->setSynchronizeAllMotionStates(true);
 }
 
 PhysicsWorld::~PhysicsWorld()

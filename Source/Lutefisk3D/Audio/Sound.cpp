@@ -58,7 +58,7 @@ struct WavHeader
 static const unsigned IP_SAFETY = 4;
 
 Sound::Sound(Context* context) :
-    Resource(context),
+    ResourceWithMetadata(context),
     repeat_(nullptr),
     end_(nullptr),
     dataSize_(0),
@@ -347,9 +347,8 @@ void Sound::LoadParameters()
         return;
 
     XMLElement rootElem = file->GetRoot();
-    XMLElement paramElem = rootElem.GetChild();
-
-    while (paramElem)
+    LoadMetadataFromXML(rootElem);
+    for (XMLElement paramElem = rootElem.GetChild(); paramElem; paramElem = paramElem.GetNext())
     {
         QString name = paramElem.GetName();
 
@@ -372,8 +371,6 @@ void Sound::LoadParameters()
             if (paramElem.HasAttribute("start") && paramElem.HasAttribute("end"))
                 SetLoop((unsigned)paramElem.GetInt("start"), (unsigned)paramElem.GetInt("end"));
         }
-
-        paramElem = paramElem.GetNext();
     }
 }
 

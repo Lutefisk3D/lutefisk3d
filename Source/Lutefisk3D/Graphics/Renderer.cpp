@@ -561,6 +561,22 @@ Viewport* Renderer::GetViewport(unsigned index) const
     return index < viewports_.size() ? viewports_[index] : (Viewport*)nullptr;
 }
 
+Viewport* Renderer::GetViewportForScene(Scene* scene, unsigned index) const
+{
+    for (unsigned i = 0; i < viewports_.size(); ++i)
+    {
+        Viewport* viewport = viewports_[i];
+        if (viewport && viewport->GetScene() == scene)
+        {
+            if (index == 0)
+                return viewport;
+            else
+                --index;
+        }
+    }
+    return 0;
+}
+
 RenderPath* Renderer::GetDefaultRenderPath() const
 {
     return defaultRenderPath_;
@@ -1026,8 +1042,9 @@ Texture* Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, int
         screenBufferAllocations_[searchKey] = 0;
 
     // Reuse depth-stencil buffers whenever the size matches, instead of allocating new
+    // Unless persistency specified
     unsigned allocations = screenBufferAllocations_[searchKey];
-    if(!depthStencil)
+    if (!depthStencil || persistentKey)
         ++screenBufferAllocations_[searchKey];
 
     if (allocations >= screenBuffers_[searchKey].size())

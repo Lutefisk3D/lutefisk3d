@@ -31,6 +31,18 @@
 namespace Urho3D
 {
 
+/// Font hinting level (only used for FreeType fonts)
+enum FontHintLevel
+{
+    /// Completely disable font hinting. Output will be blurrier but more "correct".
+    FONT_HINT_LEVEL_NONE = 0,
+
+    /// Light hinting. FreeType will pixel-align fonts vertically, but not horizontally.
+    FONT_HINT_LEVEL_LIGHT,
+
+    /// Full hinting, using either the font's own hinting or FreeType's auto-hinter.
+    FONT_HINT_LEVEL_NORMAL
+};
 class Cursor;
 class Graphics;
 class ResourceCache;
@@ -40,6 +52,8 @@ class UIElement;
 class VertexBuffer;
 class XMLElement;
 class XMLFile;
+class RenderSurface;
+class UIComponent;
 
 /// %UI subsystem. Manages the graphical user interface.
 class URHO3D_API UI : public RefCounted, public jl::SignalObserver
@@ -63,8 +77,8 @@ public:
     void Update(float timeStep);
     /// Update the UI for rendering. Called by HandleRenderUpdate().
     void RenderUpdate();
-    /// Render the UI. If resetRenderTargets is true, is assumed to be the default UI render to backbuffer called by Engine, and will be performed only once. Additional UI renders to a different rendertarget may be triggered from the renderpath.
-    void Render(bool resetRenderTargets = true);
+    /// Render the UI. If renderUICommand is false (default), is assumed to be the default UI render to backbuffer called by Engine, and will be performed only once. Additional UI renders to a different rendertarget may be triggered from the renderpath.
+    void Render(bool renderUICommand = false);
     /// Debug draw a UI element.
     void DebugDraw(UIElement* element);
     /// Load a UI layout from an XML file. Optionally specify another XML file for element style. Return the root element.
@@ -95,6 +109,12 @@ public:
     void SetUseMutableGlyphs(bool enable);
     /// Set whether to force font autohinting instead of using FreeType's TTF bytecode interpreter.
     void SetForceAutoHint(bool enable);
+    /// Set the hinting level used by FreeType fonts.
+    void SetFontHintLevel(FontHintLevel level);
+    /// Set the font subpixel threshold. Below this size, if the hint level is LIGHT or NONE, fonts will use subpixel positioning plus oversampling for higher-quality rendering. Has no effect at hint level NORMAL.
+    void SetFontSubpixelThreshold(float threshold);
+    /// Set the oversampling (horizonal stretching) used to improve subpixel font rendering. Only affects fonts smaller than the subpixel limit.
+    void SetFontOversampling(int oversampling);
     /// Set %UI scale. 1.0 is default (pixel perfect). Resize the root element to match.
     void SetScale(float scale);
     /// Scale %UI to the specified width in pixels.
@@ -118,6 +138,8 @@ public:
     UIElement* GetElementAt(const IntVector2& position, bool enabledOnly = true);
     /// Return UI element at screen coordinates. By default returns only input-enabled elements.
     UIElement* GetElementAt(int x, int y, bool enabledOnly = true);
+    /// Get a child element at element's screen position relative to specified root element.
+    UIElement* GetElementAt(UIElement* root, const IntVector2& position, bool enabledOnly=true);
     /// Return focused element.
     UIElement* GetFocusElement() const { return focusElement_; }
     /// Return topmost enabled root-level non-modal element.
@@ -150,6 +172,12 @@ public:
     bool GetUseMutableGlyphs() const { return useMutableGlyphs_; }
     /// Return whether is using forced autohinting.
     bool GetForceAutoHint() const { return forceAutoHint_; }
+    /// Return the current FreeType font hinting level.
+    FontHintLevel GetFontHintLevel() const { return fontHintLevel_; }
+    /// Get the font subpixel threshold. Below this size, if the hint level is LIGHT or NONE, fonts will use subpixel positioning plus oversampling for higher-quality rendering. Has no effect at hint level NORMAL.
+    float GetFontSubpixelThreshold() const { return fontSubpixelThreshold_; }
+    /// Get the oversampling (horizonal stretching) used to improve subpixel font rendering. Only affects fonts smaller than the subpixel limit.
+    int GetFontOversampling() const { return fontOversampling_; }
     /// Return true when UI has modal element(s).
     bool HasModalElement() const;
     /// Return whether a drag is in progress.
@@ -160,6 +188,8 @@ public:
 
     /// Return root element custom size. Returns 0,0 when custom size is not being used and automatic resizing according to window size is in use instead (default.)
     const IntVector2& GetCustomSize() const { return customSize_; }
+    /// Register UIElement for being rendered into a texture.
+    void SetRenderToTexture(UIComponent* component, bool enable);
     /// Data structure used to represent the drag data associated to a UIElement.
     struct DragData
     {
@@ -185,10 +215,12 @@ private:
     void Update(float timeStep, UIElement* element);
     /// Upload UI geometry into a vertex buffer.
     void SetVertexData(VertexBuffer* dest, const std::vector<float>& vertexData);
-    /// Render UI batches. Geometry must have been uploaded first.
-    void Render(bool resetRenderTargets, VertexBuffer* buffer, const std::vector<UIBatch>& batches, unsigned batchStart, unsigned batchEnd);
+    /// Render UI batches to the current rendertarget. Geometry must have been uploaded first.
+    void Render(VertexBuffer* buffer, const std::vector<UIBatch>& batches, unsigned batchStart, unsigned batchEnd);
     /// Generate batches from an UI element recursively. Skip the cursor element.
-    void GetBatches(UIElement* element, IntRect currentScissor);
+    void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, UIElement* element, IntRect currentScissor);
+    /// Return UI element at global screen coordinates. Return position converted to element's screen coordinates.
+    UIElement* GetElementAt(const IntVector2& position, bool enabledOnly, IntVector2* elementScreenPosition);
     /// Return UI element at screen position recursively.
     void GetElementAt(UIElement*& result, UIElement* current, const IntVector2& position, bool enabledOnly);
     /// Return the first element in hierarchy that can alter focus.
@@ -301,6 +333,12 @@ private:
     bool useMutableGlyphs_;
     /// Flag for forcing FreeType autohinting.
     bool forceAutoHint_;
+    /// FreeType hinting level (default is FONT_HINT_LEVEL_NORMAL).
+    FontHintLevel fontHintLevel_;
+    /// Maxmimum font size for subpixel glyph positioning and oversampling (default is 12).
+    float fontSubpixelThreshold_;
+    /// Horizontal oversampling for subpixel fonts (default is 2).
+    int fontOversampling_;
     /// Flag for UI already being rendered this frame.
     bool uiRendered_;
     /// Non-modal batch size (used internally for rendering).
@@ -325,6 +363,10 @@ private:
     float uiScale_;
     /// Root element custom size. 0,0 for automatic resizing (default.)
     IntVector2 customSize_;
+    /// Elements that should be rendered to textures.
+    SmallMembershipSet<WeakPtr<UIComponent>,4> renderToTexture_;
+
+    friend class UIComponent;
 };
 
 /// Register UI library objects.

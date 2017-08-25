@@ -543,7 +543,9 @@ VariantMap JSONValue::GetVariantMap() const
     }
     for (const auto & i : *objectValue_)
     {
-        StringHash key(ELEMENT_KEY(i).toUInt());
+        // TODO: consider using toUint parse status to verify things ?
+        /// \todo Ideally this should allow any strings, but for now the convention is that the keys need to be hexadecimal StringHashes
+        StringHash key(ELEMENT_KEY(i).toUInt(nullptr,16));
         Variant variant = ELEMENT_VALUE(i).GetVariant();
         variantMap[key] = variant;
     }

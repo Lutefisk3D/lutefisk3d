@@ -19,7 +19,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "UI.h"
 
+#include "UIComponent.h"
 #include "CheckBox.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/CoreEvents.h"
@@ -48,7 +50,6 @@
 #include "Text3D.h"
 #include "Lutefisk3D/Graphics/Texture2D.h"
 #include "ToolTip.h"
-#include "UI.h"
 #include "UIEvents.h"
 #include "Lutefisk3D/Graphics/VertexBuffer.h"
 #include "Window.h"
@@ -97,6 +98,9 @@ UI::UI(Context* context) :
     useScreenKeyboard_(false),
     useMutableGlyphs_(false),
     forceAutoHint_(false),
+    fontHintLevel_(FONT_HINT_LEVEL_NORMAL),
+    fontSubpixelThreshold_(12),
+    fontOversampling_(2),
     uiRendered_(false),
     nonModalBatchSize_(0),
     dragElementsCount_(0),
@@ -392,44 +396,106 @@ void UI::RenderUpdate()
     // Note: the scissors operate on unscaled coordinates. Scissor scaling is only performed during render
     IntRect currentScissor = IntRect(rootPos.x_, rootPos.y_, rootPos.x_ + rootSize.x_, rootPos.y_ + rootSize.y_);
     if (rootElement_->IsVisible())
-        GetBatches(rootElement_, currentScissor);
+        GetBatches(batches_, vertexData_, rootElement_, currentScissor);
 
     // Save the batch size of the non-modal batches for later use
     nonModalBatchSize_ = batches_.size();
 
     // Get rendering batches from the modal UI elements
-    GetBatches(rootModalElement_, currentScissor);
+    GetBatches(batches_, vertexData_, rootModalElement_, currentScissor);
 
     // Get batches from the cursor (and its possible children) last to draw it on top of everything
     if (cursor_ && cursor_->IsVisible() && !osCursorVisible)
     {
         currentScissor = IntRect(0, 0, rootSize.x_, rootSize.y_);
         cursor_->GetBatches(batches_, vertexData_, currentScissor);
-        GetBatches(cursor_, currentScissor);
+        GetBatches(batches_, vertexData_, cursor_, currentScissor);
+    }
+
+    // Get batches for UI elements rendered into textures. Each element rendered into texture is treated as root element.
+    for (auto it = renderToTexture_.begin(); it != renderToTexture_.end();)
+    {
+        WeakPtr<UIComponent> component = *it;
+        if (component.Null() || !component->IsEnabled())
+            it = renderToTexture_.erase(it);
+        else if (component->IsEnabled())
+        {
+            component->batches_.clear();
+            component->vertexData_.clear();
+            UIElement* element = component->GetRoot();
+            const IntVector2& size = element->GetSize();
+            const IntVector2& pos = element->GetPosition();
+            // Note: the scissors operate on unscaled coordinates. Scissor scaling is only performed during render
+            IntRect scissor = IntRect(pos.x_, pos.y_, pos.x_ + size.x_, pos.y_ + size.y_);
+            GetBatches(component->batches_, component->vertexData_, element, scissor);
+
+            // UIElement does not have anything to show. Insert dummy batch that will clear the texture.
+            if (component->batches_.empty())
+            {
+                UIBatch batch(element, BLEND_REPLACE, scissor, 0, &component->vertexData_);
+                batch.SetColor(Color::BLACK);
+                batch.AddQuad(scissor.left_, scissor.top_, scissor.right_, scissor.bottom_, 0, 0);
+                component->batches_.push_back(batch);
+            }
+            ++it;
+        }
     }
 }
 
-void UI::Render(bool resetRenderTargets)
+void UI::Render(bool renderUICommand)
 {
-    // Perform the default render only if not rendered yet
-    if (resetRenderTargets && uiRendered_)
-        return;
     URHO3D_PROFILE_CTX(m_context,RenderUI);
 
     // If the OS cursor is visible, apply its shape now if changed
+    if (!renderUICommand)
+    {
     bool osCursorVisible = m_context->m_InputSystem->IsMouseVisible();
     if (cursor_ && osCursorVisible)
         cursor_->ApplyOSCursorShape();
+    }
 
+    // Perform the default backbuffer render only if not rendered yet, or additional renders through RenderUI command
+    if (renderUICommand || !uiRendered_)
+    {
     SetVertexData(vertexBuffer_, vertexData_);
     SetVertexData(debugVertexBuffer_, debugVertexData_);
 
+        if (!renderUICommand)
+            graphics_->ResetRenderTargets();
     // Render non-modal batches
-    Render(resetRenderTargets, vertexBuffer_, batches_, 0, nonModalBatchSize_);
+        Render(vertexBuffer_, batches_, 0, nonModalBatchSize_);
     // Render debug draw
-    Render(resetRenderTargets, debugVertexBuffer_, debugDrawBatches_, 0, debugDrawBatches_.size());
+        Render(debugVertexBuffer_, debugDrawBatches_, 0, debugDrawBatches_.size());
     // Render modal batches
-    Render(resetRenderTargets, vertexBuffer_, batches_, nonModalBatchSize_, batches_.size());
+        Render(vertexBuffer_, batches_, nonModalBatchSize_, batches_.size());
+    }
+    
+    // Render to UIComponent textures. This is skipped when called from the RENDERUI command
+    if (!renderUICommand)
+    {
+        for (auto it = renderToTexture_.begin(); it != renderToTexture_.end(); it++)
+        {
+            WeakPtr<UIComponent> component = *it;
+            if (component->IsEnabled())
+            {
+                SetVertexData(component->vertexBuffer_, component->vertexData_);
+                SetVertexData(component->debugVertexBuffer_, component->debugVertexData_);
+                
+                RenderSurface* surface = component->GetTexture()->GetRenderSurface();
+                graphics_->SetRenderTarget(0, surface);
+                graphics_->SetViewport(IntRect(0, 0, surface->GetWidth(), surface->GetHeight()));
+                graphics_->Clear(Urho3D::CLEAR_COLOR);
+
+                Render(component->vertexBuffer_, component->batches_, 0, component->batches_.size());
+                Render(component->debugVertexBuffer_, component->debugDrawBatches_, 0, component->debugDrawBatches_.size());
+                component->debugDrawBatches_.clear();
+                component->debugVertexData_.clear();
+            }
+        }
+
+        if (renderToTexture_.size())
+            graphics_->ResetRenderTargets();
+    }
 
     // Clear the debug draw batches and data
     debugDrawBatches_.clear();
@@ -441,11 +507,26 @@ void UI::DebugDraw(UIElement* element)
 {
     if (element)
     {
-        const IntVector2& rootSize = rootElement_->GetSize();
-        const IntVector2& rootPos = rootElement_->GetPosition();
-        element->GetDebugDrawBatches(debugDrawBatches_, debugVertexData_, IntRect(rootPos.x_, rootPos.y_,
-                                                                                  rootPos.x_ + rootSize.x_,
-                                                                                  rootPos.y_ + rootSize.y_));
+        UIElement* root = element->GetRoot();
+        if (!root)
+            root = element;
+        const IntVector2& rootSize = root->GetSize();
+        const IntVector2& rootPos = root->GetPosition();
+        IntRect scissor(rootPos.x_, rootPos.y_, rootPos.x_ + rootSize.x_, rootPos.y_ + rootSize.y_);
+        if (root == rootElement_ || root == rootModalElement_)
+            element->GetDebugDrawBatches(debugDrawBatches_, debugVertexData_, scissor);
+        else
+        {
+            for (auto it = renderToTexture_.begin(); it != renderToTexture_.end(); it++)
+            {
+                WeakPtr<UIComponent> component = *it;
+                if (component.NotNull() && component->GetRoot() == root && component->IsEnabled())
+                {
+                    element->GetDebugDrawBatches(component->debugDrawBatches_, component->debugVertexData_, scissor);
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -580,6 +661,35 @@ void UI::SetForceAutoHint(bool enable)
     }
 }
 
+void UI::SetFontHintLevel(FontHintLevel level)
+{
+    if (level != fontHintLevel_)
+    {
+        fontHintLevel_ = level;
+        ReleaseFontFaces();
+    }
+}
+
+void UI::SetFontSubpixelThreshold(float threshold)
+{
+    assert(threshold >= 0);
+    if (threshold != fontSubpixelThreshold_)
+    {
+        fontSubpixelThreshold_ = threshold;
+        ReleaseFontFaces();
+    }
+}
+
+void UI::SetFontOversampling(int oversampling)
+{
+    assert(oversampling >= 1);
+    oversampling = Clamp(oversampling, 1, 8);
+    if (oversampling != fontOversampling_)
+    {
+        fontOversampling_ = oversampling;
+        ReleaseFontFaces();
+    }
+}
 void UI::SetScale(float scale)
 {
     uiScale_ = Max(scale, M_EPSILON);
@@ -613,12 +723,53 @@ IntVector2 UI::GetCursorPosition() const
 {
     return cursor_ ? cursor_->GetPosition() : m_context->m_InputSystem->GetMousePosition();
 }
+UIElement* UI::GetElementAt(const IntVector2& position, bool enabledOnly, IntVector2* elementScreenPosition)
+{
+    UIElement* result = 0;
 
+    if (HasModalElement())
+        result = GetElementAt(rootModalElement_, position, enabledOnly);
+
+    if (!result)
+        result = GetElementAt(rootElement_, position, enabledOnly);
+
+    // Mouse was not hovering UI element. Check elements rendered on 3D objects.
+    if (!result && !renderToTexture_.empty())
+    {
+        for (auto it = renderToTexture_.begin(); it != renderToTexture_.end(); it++)
+        {
+            WeakPtr<UIComponent> component = *it;
+            if (component.Null() || !component->IsEnabled())
+                continue;
+
+            IntVector2 screenPosition;
+            if (component->ScreenToUIPosition(position, screenPosition))
+            {
+                result = GetElementAt(component->GetRoot(), screenPosition, enabledOnly);
+                if (result)
+                {
+                    if (elementScreenPosition)
+                        *elementScreenPosition = screenPosition;
+                    break;
+                }
+            }
+        }
+    }
+    else if (elementScreenPosition)
+        *elementScreenPosition = position;
+
+    return result;
+}
 UIElement* UI::GetElementAt(const IntVector2& position, bool enabledOnly)
 {
+    return GetElementAt(position, enabledOnly, 0);
+}
+
+UIElement* UI::GetElementAt(UIElement* root, const IntVector2& position, bool enabledOnly)
+{
     IntVector2 positionCopy(position);
-    const IntVector2& rootSize = rootElement_->GetSize();
-    const IntVector2& rootPos = rootElement_->GetPosition();
+    const IntVector2& rootSize = root->GetSize();
+    const IntVector2& rootPos = root->GetPosition();
 
     // If position is out of bounds of root element return null.
     if (position.x_ < rootPos.x_ || position.x_ > rootPos.x_ + rootSize.x_)
@@ -637,7 +788,7 @@ UIElement* UI::GetElementAt(const IntVector2& position, bool enabledOnly)
     }
 
     UIElement* result = 0;
-    GetElementAt(result, HasModalElement() ? rootModalElement_ : rootElement_, positionCopy, enabledOnly);
+    GetElementAt(result, root, positionCopy, enabledOnly);
     return result;
 }
 
@@ -777,20 +928,26 @@ void UI::SetVertexData(VertexBuffer* dest, const std::vector<float>& vertexData)
     dest->SetData(&vertexData[0]);
 }
 
-void UI::Render(bool resetRenderTargets, VertexBuffer* buffer, const std::vector<UIBatch>& batches, unsigned batchStart, unsigned batchEnd)
+void UI::Render(VertexBuffer* buffer, const std::vector<UIBatch>& batches, unsigned batchStart, unsigned batchEnd)
 {
     // Engine does not render when window is closed or device is lost
     assert(graphics_ && graphics_->IsInitialized() && !graphics_->IsDeviceLost());
 
     if (batches.empty())
         return;
-    if (resetRenderTargets)
-        graphics_->ResetRenderTargets();
 
+    RenderSurface* surface = graphics_->GetRenderTarget(0);
     IntVector2 viewSize = graphics_->GetViewport().Size();
     Vector2 invScreenSize(1.0f / (float)viewSize.x_, 1.0f / (float)viewSize.y_);
     Vector2 scale(2.0f * invScreenSize.x_, -2.0f * invScreenSize.y_);
     Vector2 offset(-1.0f, 1.0f);
+    if (surface)
+    {
+        // On OpenGL, flip the projection if rendering to a texture so that the texture can be addressed in the
+        // same way as a render texture produced on Direct3D.
+        offset.y_ = -offset.y_;
+        scale.y_ = -scale.y_;
+    }
 
     Matrix4 projection(Matrix4::IDENTITY);
     projection.m00_ = scale.x_ * uiScale_;
@@ -803,7 +960,11 @@ void UI::Render(bool resetRenderTargets, VertexBuffer* buffer, const std::vector
 
     graphics_->ClearParameterSources();
     graphics_->SetColorWrite(true);
-    graphics_->SetCullMode(CULL_CCW);
+    // Reverse winding if rendering to texture on OpenGL
+    if (surface)
+        graphics_->SetCullMode(CULL_CW);
+    else
+        graphics_->SetCullMode(CULL_CCW);
     graphics_->SetDepthTest(CMP_ALWAYS);
     graphics_->SetDepthWrite(false);
     graphics_->SetFillMode(FILL_SOLID);
@@ -863,15 +1024,23 @@ void UI::Render(bool resetRenderTargets, VertexBuffer* buffer, const std::vector
         scissor.top_ = (int)(scissor.top_ * uiScale_);
         scissor.right_ = (int)(scissor.right_ * uiScale_);
         scissor.bottom_ = (int)(scissor.bottom_ * uiScale_);
+        // Flip scissor vertically if using OpenGL texture rendering
+        if (surface)
+        {
+            int top = scissor.top_;
+            int bottom = scissor.bottom_;
+            scissor.top_ = viewSize.y_ - bottom;
+            scissor.bottom_ = viewSize.y_ - top;
+        }
         graphics_->SetBlendMode(batch.blendMode_);
         graphics_->SetScissorTest(true, scissor);
         graphics_->SetTexture(0, batch.texture_);
-        graphics_->Draw(TRIANGLE_LIST, batch.vertexStart_ / UI_VERTEX_SIZE, (batch.vertexEnd_ - batch.vertexStart_) /
-                        UI_VERTEX_SIZE);
+        graphics_->Draw(TRIANGLE_LIST, batch.vertexStart_ / UI_VERTEX_SIZE, 
+              (batch.vertexEnd_ - batch.vertexStart_) / UI_VERTEX_SIZE);
     }
 }
 
-void UI::GetBatches(UIElement* element, IntRect currentScissor)
+void UI::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, UIElement* element, IntRect currentScissor)
 {
     // Set clipping scissor for child elements. No need to draw if zero size
     element->AdjustScissor(currentScissor);
@@ -895,14 +1064,14 @@ void UI::GetBatches(UIElement* element, IntRect currentScissor)
             while (j != children.end() && (*j)->GetPriority() == currentPriority)
             {
                 if ((*j)->IsWithinScissor(currentScissor) && (*j) != cursor_)
-                    (*j)->GetBatches(batches_, vertexData_, currentScissor);
+                    (*j)->GetBatches(batches, vertexData, currentScissor);
                 ++j;
             }
             // Now recurse into the children
             while (i != j)
             {
                 if ((*i)->IsVisible() && (*i) != cursor_)
-                    GetBatches(*i, currentScissor);
+                    GetBatches(batches, vertexData, *i, currentScissor);
                 ++i;
             }
         }
@@ -915,9 +1084,9 @@ void UI::GetBatches(UIElement* element, IntRect currentScissor)
             if ((*i) != cursor_)
             {
                 if ((*i)->IsWithinScissor(currentScissor))
-                    (*i)->GetBatches(batches_, vertexData_, currentScissor);
+                    (*i)->GetBatches(batches, vertexData, currentScissor);
                 if ((*i)->IsVisible())
-                    GetBatches(*i, currentScissor);
+                    GetBatches(batches, vertexData, *i, currentScissor);
             }
             ++i;
         }
@@ -1760,6 +1929,17 @@ IntVector2 UI::GetEffectiveRootElementSize(bool applyScale) const
 
     return size;
 }
+void UI::SetRenderToTexture(UIComponent* component, bool enable)
+{
+    WeakPtr<UIComponent> weak(component);
+    if (enable)
+    {
+        if (!renderToTexture_.contains(weak))
+            renderToTexture_.insert(weak);
+    }
+    else
+        renderToTexture_.remove(weak);
+}
 void RegisterUILibrary(Context* context)
 {
     Font::RegisterObject(context);
@@ -1784,6 +1964,7 @@ void RegisterUILibrary(Context* context)
     FileSelector::RegisterObject(context);
     MessageBox::RegisterObject(context);
     ToolTip::RegisterObject(context);
+    UIComponent::RegisterObject(context);
 }
 
 }

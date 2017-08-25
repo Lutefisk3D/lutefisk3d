@@ -45,6 +45,7 @@ class Graphics;
 class RenderPath;
 class RenderSurface;
 class ResourceCache;
+class Scene;
 class Skeleton;
 class OcclusionBuffer;
 class Technique;
@@ -253,6 +254,8 @@ public:
     unsigned GetNumViewports() const { return viewports_.size(); }
     /// Return backbuffer viewport by index.
     Viewport* GetViewport(unsigned index) const;
+    /// Return nth backbuffer viewport associated to a scene. Index 0 returns the first.
+    Viewport* GetViewportForScene(Scene* scene, unsigned index) const;
     /// Return default renderpath.
     RenderPath* GetDefaultRenderPath() const;
 
@@ -434,7 +437,7 @@ private:
 
     Context *m_context;
     /// Graphics subsystem.
-    Graphics *graphics_; // non-owning pointer
+    WeakPtr<Graphics> graphics_;
     /// Default renderpath.
     SharedPtr<RenderPath> defaultRenderPath_;
     /// Default non-textured material technique.

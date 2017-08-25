@@ -199,4 +199,15 @@ unsigned VertexBuffer::GetVertexSize(unsigned elementMask)
     return size;
 }
 
+void VertexBuffer::UpdateOffsets(std::vector<VertexElement> & elements)
+{
+    unsigned elementOffset = 0;
+
+    for (VertexElement &el :  elements)
+    {
+        el.offset_ = elementOffset;
+        elementOffset += ELEMENT_TYPESIZES[el.type_];
+    }
+}
+
 }

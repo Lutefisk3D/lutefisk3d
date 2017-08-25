@@ -661,7 +661,15 @@ public:
             sqrtf(m02_ * m02_ + m12_ * m12_ + m22_ * m22_)
         );
     }
-
+    /// Return the scaling part with the sign. Reference rotation matrix is required to avoid ambiguity.
+    Vector3 SignedScale(const Matrix3& rotation) const
+    {
+        return Vector3(
+            rotation.m00_ * m00_ + rotation.m10_ * m10_ + rotation.m20_ * m20_,
+            rotation.m01_ * m01_ + rotation.m11_ * m11_ + rotation.m21_ * m21_,
+            rotation.m02_ * m02_ + rotation.m12_ * m12_ + rotation.m22_ * m22_
+        );
+    }
     /// Test for equality with another matrix with epsilon.
     bool Equals(const Matrix3x4& rhs) const
     {

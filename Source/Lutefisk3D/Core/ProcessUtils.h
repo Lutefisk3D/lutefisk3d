@@ -60,9 +60,12 @@ URHO3D_API QString GetPlatform();
 URHO3D_API unsigned GetNumPhysicalCPUs();
 /// Return the number of logical CPUs (different from physical if hyperthreading is used.)
 URHO3D_API unsigned GetNumLogicalCPUs();
-/// Set minidump write location as an absolute path. If empty, uses default (UserProfile/AppData/Roaming/urho3D/crashdumps) Minidumps are only supported on MSVC compiler.
+/// Set minidump write location as an absolute path. If empty, uses default (UserProfile/AppData/Roaming/urho3D/crashdumps)
+/// Minidumps are only supported on MSVC compiler.
 URHO3D_API void SetMiniDumpDir(const QString& pathName);
 /// Return minidump write location.
 URHO3D_API QString GetMiniDumpDir();
+/// Return the total amount of useable memory.
+URHO3D_API unsigned long long GetTotalMemory();
 
 }

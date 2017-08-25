@@ -76,7 +76,7 @@ inline T Max(T lhs, T rhs) { return lhs > rhs ? lhs : rhs; }
 template<typename T>
 inline T Abs(T value) { return value >= T(0) ? value : -value; }
 /// Return the sign of a float (-1, 0 or 1.)
-inline float Sign(float value) { return value > 0.0f ? 1.0f : (value < 0.0f ? -1.0f : 0.0f); }
+inline int Sign(float value) { return (0 < value) - (value < 0); }
 /// Check whether a floating point value is NaN.
 /// Use a workaround for GCC, see https://github.com/urho3d/Urho3D/issues/655
 #ifndef __GNUC__

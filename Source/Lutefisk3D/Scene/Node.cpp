@@ -1222,7 +1222,7 @@ Node* Node::GetChild(unsigned index) const
     return index < children_.size() ? children_[index].Get() : nullptr;
 }
 
-Node* Node::GetChild(const QString& name, bool recursive) const
+Node* Node::GetChild(const QStringRef& name, bool recursive) const
 {
     return GetChild(StringHash(name), recursive);
 }
@@ -1829,9 +1829,16 @@ Animatable* Node::FindAttributeAnimationTarget(const QString& name, QString& out
     {
         if (!names[i].startsWith('#'))
             break;
-
-        unsigned index = names[i].mid(1, names[i].length() - 1).toUInt();
-        node = node->GetChild(index);
+        QStringRef nameref(names[i].midRef(1, names[i].length() - 1));
+        if(nameref[0].isDigit())
+        {
+            unsigned index = nameref.toUInt();
+            node = node->GetChild(index);
+        }
+        else
+        {
+            node = node->GetChild(nameref);
+        }
         if (node == nullptr)
         {
             URHO3D_LOGERROR("Could not find node by name " + name);
@@ -1982,9 +1989,11 @@ void Node::UpdateWorldTransform() const
 
 void Node::RemoveChild(std::vector<SharedPtr<Node> >::iterator i)
 {
-    // Send change event. Do not send when already being destroyed
-    Node* child = *i;
-
+    // Keep a shared pointer to the child about to be removed, to make sure the erase from container completes first. Otherwise
+    // it would be possible that other child nodes get removed as part of the node's components' cleanup, causing a re-entrant
+    // erase and a crash
+    SharedPtr<Node> child(*i);
+    // Send change event. Do not send when this node is already being destroyed
     if (Refs() > 0 && (scene_ != nullptr))
     {
         scene_->nodeRemoved.Emit(scene_,this,child);

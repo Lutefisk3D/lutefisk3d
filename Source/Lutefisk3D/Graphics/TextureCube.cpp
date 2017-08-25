@@ -298,6 +298,7 @@ bool TextureCube::SetSize(int size, gl::GLenum format, TextureUsage usage, int m
     width_ = size;
     height_ = size;
     format_ = format;
+    depth_ = 1;
     multiSample_ = multiSample;
     autoResolve_ = multiSample > 1;
 

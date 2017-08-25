@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
 #include <Box2D/Box2D.h>
 #include <unordered_set>
 namespace Urho3D
@@ -251,6 +252,8 @@ protected:
         SharedPtr<CollisionShape2D> shapeA_;
         /// Shape B.
         SharedPtr<CollisionShape2D> shapeB_;
+        /// Temporary buffer with contact data.
+        VectorBuffer contacts_;
     };
     /// Begin contact infos.
     std::vector<ContactInfo> beginContactInfos_;

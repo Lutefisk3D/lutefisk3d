@@ -260,7 +260,22 @@ void ParticleEmitter2D::UpdateMaterial()
 
 void ParticleEmitter2D::HandleScenePostUpdate(Scene *,float ts)
 {
+    const bool hadParticles = numParticles_ > 0;
+    const bool wasEmitting = emissionTime_ > 0.0f;
+
     Update(ts);
+
+    if (wasEmitting && 0.0f == emissionTime_)
+    {
+        // Make a weak pointer to self to check for destruction during event handling
+        WeakPtr<ParticleEmitter2D> self(this);
+        particlesDuration.Emit(node_,effect_);
+        if(self.Expired())
+            return;
+    }
+
+    if (hadParticles && 0==numParticles_)
+        particlesEnd.Emit(node_,effect_);
 }
 
 void ParticleEmitter2D::Update(float timeStep)

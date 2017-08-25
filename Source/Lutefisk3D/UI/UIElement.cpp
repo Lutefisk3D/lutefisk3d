@@ -1918,9 +1918,16 @@ Animatable* UIElement::FindAttributeAnimationTarget(const QString& name, QString
                 URHO3D_LOGERROR("Invalid name " + name);
                 return nullptr;
             }
-
-            unsigned index = names[i].mid(1, names[i].length() - 1).toInt();
-            element = element->GetChild(index);
+            QStringRef nameref(names[i].midRef(1, names[i].length() - 1));
+            if(nameref[0].isDigit())
+            {
+                unsigned index = nameref.toUInt();
+                element = element->GetChild(index);
+            }
+            else
+            {
+                element = element->GetChild(nameref);
+            }
             if (!element)
             {
                 URHO3D_LOGERROR("Could not find element by name " + name);

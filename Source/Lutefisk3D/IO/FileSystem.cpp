@@ -432,24 +432,10 @@ void FileSystem::ScanDir(QStringList& result, const QString& pathName, const QSt
 
 QString FileSystem::GetProgramDir() const
 {
-    // Return cached value if possible
-    if (!programDir_.isEmpty())
-        return programDir_;
     if(QCoreApplication::instance()) // an QApplication has been allocated, use it
-        programDir_ = QCoreApplication::applicationDirPath();
+        return QCoreApplication::applicationDirPath();
 
-    // If the executable directory does not contain CoreData & Data directories, but the current working directory does, use the
-    // current working directory instead
-    /// \todo Should not rely on such fixed convention
-    QString currentDir = GetCurrentDir();
-    if (!DirExists(programDir_ + "CoreData") && !DirExists(programDir_ + "Data") && (DirExists(currentDir + "CoreData") ||
-        DirExists(currentDir + "Data")))
-        programDir_ = currentDir;
-
-    // Sanitate /./ construct away
-    programDir_.replace("/./", "/");
-
-    return programDir_;
+    return GetCurrentDir();
 }
 
 QString FileSystem::GetUserDocumentsDir() const

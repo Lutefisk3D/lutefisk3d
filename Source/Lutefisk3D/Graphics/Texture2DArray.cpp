@@ -175,6 +175,7 @@ bool Texture2DArray::SetSize(unsigned layers, int width, int height, gl::GLenum 
     width_ = width;
     height_ = height;
     format_ = format;
+    depth_ = 1;
     if (layers)
         layers_ = layers;
 

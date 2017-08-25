@@ -150,7 +150,7 @@ bool ResourceCache::AddPackageFile(const QString& fileName, unsigned priority)
     SharedPtr<PackageFile> package(new PackageFile(m_context));
     return package->Open(fileName) && AddPackageFile(package);
 }
-/// Add a manually created resource. Must be uniquely named.
+/// Add a manually created resource. Must be uniquely named within its type.
 bool ResourceCache::AddManualResource(Resource* resource)
 {
     if (!resource)
@@ -726,7 +726,8 @@ void ResourceCache::GetResources(std::vector<Resource*>& result, StringHash type
             result.push_back(ELEMENT_VALUE(elem));
     }
 }
-/// Return whether a file exists by name.
+/// Return whether a file exists in the resource directories or package files. Does not check manually added
+/// in-memory resources.
 bool ResourceCache::Exists(const QString& nameIn) const
 {
     MutexLock lock(resourceMutex_);

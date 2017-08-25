@@ -71,11 +71,15 @@ class Sprite2D;
     /// Emit rotation delta.
     float emitRotationDelta_;
 };
-
+/// Particle emitter signals
+ struct ParticleEmitter2DSignals {
+     jl::Signal<Node*,SharedPtr<ParticleEffect2D> > particlesEnd;      ///< all particles are dead
+     jl::Signal<Node*,SharedPtr<ParticleEffect2D> > particlesDuration; ///< emitting particles stoped
+ };
 /// 2D particle emitter component.
-class URHO3D_API ParticleEmitter2D : public Drawable2D
+class URHO3D_API ParticleEmitter2D : public Drawable2D, public ParticleEmitter2DSignals
 {
-    URHO3D_OBJECT(ParticleEmitter2D,Drawable2D);
+    URHO3D_OBJECT(ParticleEmitter2D,Drawable2D)
 
 public:
     /// Construct.

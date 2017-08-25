@@ -147,6 +147,7 @@ bool Texture2D::SetSize(int width, int height, gl::GLenum format, TextureUsage u
     width_ = width;
     height_ = height;
     format_ = format;
+    depth_ = 1;
     multiSample_ = multiSample;
     autoResolve_ = autoResolve;
 

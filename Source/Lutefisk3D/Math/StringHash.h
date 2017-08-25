@@ -25,6 +25,7 @@
 #include <functional>
 #include "Lutefisk3D/Core/Lutefisk3D.h"
 class QString;
+class QStringRef;
 namespace Urho3D
 {
 
@@ -56,6 +57,8 @@ public:
     StringHash(const char* str);
     /// Construct from a string case-insensitively.
     StringHash(const QString& str);
+    /// Construct from a QString ref case-insensitively.
+    StringHash(const QStringRef& str);
 
     /// Assign from another hash.
     StringHash& operator = (const StringHash& rhs)

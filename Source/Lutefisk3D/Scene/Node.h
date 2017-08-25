@@ -440,7 +440,7 @@ public:
     /// Return child scene node by index.
     Node* GetChild(unsigned index) const;
     /// Return child scene node by name.
-    Node* GetChild(const QString& name, bool recursive = false) const;
+    Node* GetChild(const QStringRef& name, bool recursive = false) const;
     /// Return child scene node by name.
     Node* GetChild(const char* name, bool recursive = false) const;
     /// Return child scene node by name hash.

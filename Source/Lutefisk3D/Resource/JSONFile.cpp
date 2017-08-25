@@ -58,33 +58,33 @@ static void ToJSONValue(JSONValue& jsonValue, const rapidjson::Value& rapidjsonV
 {
     switch (rapidjsonValue.GetType())
     {
-    case kNullType:
-        // Reset to null type
-        jsonValue.SetType(JSON_NULL);
-        break;
+        case kNullType:
+            // Reset to null type
+            jsonValue.SetType(JSON_NULL);
+            break;
 
-    case kFalseType:
-        jsonValue = false;
-        break;
+        case kFalseType:
+            jsonValue = false;
+            break;
 
-    case kTrueType:
-        jsonValue = true;
-        break;
+        case kTrueType:
+            jsonValue = true;
+            break;
 
-    case kNumberType:
-        if (rapidjsonValue.IsInt())
-            jsonValue = rapidjsonValue.GetInt();
-        else if (rapidjsonValue.IsUint())
-            jsonValue = rapidjsonValue.GetUint();
-        else
-            jsonValue = rapidjsonValue.GetDouble();
-        break;
+        case kNumberType:
+            if (rapidjsonValue.IsInt())
+                jsonValue = rapidjsonValue.GetInt();
+            else if (rapidjsonValue.IsUint())
+                jsonValue = rapidjsonValue.GetUint();
+            else
+                jsonValue = rapidjsonValue.GetDouble();
+            break;
 
-    case kStringType:
-        jsonValue = rapidjsonValue.GetString();
-        break;
+        case kStringType:
+            jsonValue = rapidjsonValue.GetString();
+            break;
 
-    case kArrayType:
+        case kArrayType:
         {
             jsonValue.Resize(rapidjsonValue.Size());
             for (unsigned i = 0; i < rapidjsonValue.Size(); ++i)
@@ -92,9 +92,9 @@ static void ToJSONValue(JSONValue& jsonValue, const rapidjson::Value& rapidjsonV
                 ToJSONValue(jsonValue[i], rapidjsonValue[i]);
             }
         }
-        break;
+            break;
 
-    case kObjectType:
+        case kObjectType:
         {
             jsonValue.SetType(JSON_OBJECT);
             for (rapidjson::Value::ConstMemberIterator i = rapidjsonValue.MemberBegin(); i != rapidjsonValue.MemberEnd(); ++i)
@@ -103,10 +103,10 @@ static void ToJSONValue(JSONValue& jsonValue, const rapidjson::Value& rapidjsonV
                 ToJSONValue(value, i->value);
             }
         }
-        break;
+            break;
 
-    default:
-        break;
+        default:
+            break;
     }
 }
 bool JSONFile::BeginLoad(Deserializer& source)
@@ -140,39 +140,39 @@ static void ToRapidjsonValue(rapidjson::Value& rapidjsonValue, const JSONValue& 
 {
     switch (jsonValue.GetValueType())
     {
-    case JSON_NULL:
-        rapidjsonValue.SetNull();
-        break;
+        case JSON_NULL:
+            rapidjsonValue.SetNull();
+            break;
 
-    case JSON_BOOL:
-        rapidjsonValue.SetBool(jsonValue.GetBool());
-        break;
+        case JSON_BOOL:
+            rapidjsonValue.SetBool(jsonValue.GetBool());
+            break;
 
-    case JSON_NUMBER:
-{
+        case JSON_NUMBER:
+        {
             switch (jsonValue.GetNumberType())
             {
-            case JSONNT_INT:
-                rapidjsonValue.SetInt(jsonValue.GetInt());
-                break;
+                case JSONNT_INT:
+                    rapidjsonValue.SetInt(jsonValue.GetInt());
+                    break;
 
-            case JSONNT_UINT:
-                rapidjsonValue.SetUint(jsonValue.GetUInt());
-                break;
+                case JSONNT_UINT:
+                    rapidjsonValue.SetUint(jsonValue.GetUInt());
+                    break;
 
-            default:
-                rapidjsonValue.SetDouble(jsonValue.GetDouble());
-                break;
-}
+                default:
+                    rapidjsonValue.SetDouble(jsonValue.GetDouble());
+                    break;
+            }
         }
-        break;
+            break;
 
-    case JSON_STRING:
-        rapidjsonValue.SetString(qPrintable(jsonValue.GetString()), allocator);
-        break;
+        case JSON_STRING:
+            rapidjsonValue.SetString(qPrintable(jsonValue.GetString()), allocator);
+            break;
 
-    case JSON_ARRAY:
-{
+        case JSON_ARRAY:
+        {
             const JSONArray& jsonArray = jsonValue.GetArray();
 
             rapidjsonValue.SetArray();
@@ -181,29 +181,29 @@ static void ToRapidjsonValue(rapidjson::Value& rapidjsonValue, const JSONValue& 
             for (unsigned i = 0; i < jsonArray.size(); ++i)
             {
                 rapidjson::Value value;
+                ToRapidjsonValue(value, jsonArray[i], allocator);
                 rapidjsonValue.PushBack(value, allocator);
-                ToRapidjsonValue(rapidjsonValue[i], jsonArray[i], allocator);
-}
+            }
         }
-        break;
+            break;
 
-    case JSON_OBJECT:
-{
+        case JSON_OBJECT:
+        {
             const JSONObject& jsonObject = jsonValue.GetObject();
 
             rapidjsonValue.SetObject();
             for (JSONObject::const_iterator i = jsonObject.begin(); i != jsonObject.end(); ++i)
-    {
+            {
                 const char* name = qPrintable(MAP_KEY(i));
                 rapidjson::Value value;
+                ToRapidjsonValue(value, MAP_VALUE(i), allocator);
                 rapidjsonValue.AddMember(name, value, allocator);
-                ToRapidjsonValue(rapidjsonValue[name], MAP_VALUE(i), allocator);
-    }
+            }
         }
-        break;
+            break;
 
-    default:
-        break;
+        default:
+            break;
     }
 }
 

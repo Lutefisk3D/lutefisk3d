@@ -4,12 +4,14 @@ set(INCLUDES
   PhysicsEvents.h
   PhysicsUtils.h
   PhysicsWorld.h
+  RaycastVehicle.h
   RigidBody.h
 )
 set(SOURCE
   CollisionShape.cpp
   Constraint.cpp
   PhysicsWorld.cpp
+  RaycastVehicle.cpp
   RigidBody.cpp
 )
 add_library(Lutefisk3D_Physics STATIC ${SOURCE} ${INCLUDES}

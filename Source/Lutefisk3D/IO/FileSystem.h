@@ -93,7 +93,7 @@ public:
     bool DirExists(const QString& pathName) const;
     /// Scan a directory for specified files.
     void ScanDir(QStringList& result, const QString& pathName, const QString& filter, unsigned flags, bool recursive) const;
-    /// Return the program's directory. If it does not contain the Urho3D default CoreData and Data directories, and the current working directory does, return the working directory instead.
+    /// Return the program's directory.
     QString GetProgramDir() const;
     /// Return the user documents directory.
     QString GetUserDocumentsDir() const;
@@ -109,8 +109,6 @@ private:
     Context *m_context;
     /// Allowed directories.
     HashSet<QString> allowedPaths_;
-    /// Cached program directory.
-    mutable QString programDir_;
     /// Async execution queue.
     std::list<AsyncExecRequest*> asyncExecQueue_;
     /// Next async execution ID.

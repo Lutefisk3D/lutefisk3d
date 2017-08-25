@@ -15,6 +15,7 @@ SET(BulletSoftBody_SRCS
 	btSoftRigidDynamicsWorld.cpp
 	btSoftSoftCollisionAlgorithm.cpp
 	btDefaultSoftBodySolver.cpp
+    btSoftMultiBodyDynamicsWorld.cpp
 
 )
 
@@ -33,6 +34,7 @@ SET(BulletSoftBody_HDRS
 	btDefaultSoftBodySolver.h
 
 	btSoftBodySolverVertexBuffer.h
+    btSoftMultiBodyDynamicsWorld.h
 )
 
 

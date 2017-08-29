@@ -123,6 +123,7 @@ Engine::Engine(Context* context) :
     g_coreSignals.init(&oSignalConnectionAllocator);
     g_consoleSignals.init(&oSignalConnectionAllocator);
     g_graphicsSignals.init(&oSignalConnectionAllocator);
+    g_navigationSignals.init(&oSignalConnectionAllocator);
     g_resourceSignals.init(&oSignalConnectionAllocator);
     g_sceneSignals.init(&oSignalConnectionAllocator);
     g_uiSignals.init(&oSignalConnectionAllocator);

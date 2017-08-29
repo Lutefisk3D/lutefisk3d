@@ -776,6 +776,7 @@ void RigidBody::UpdateMass()
                 !ToQuaternion(childTransform.getRotation()).Equals(Quaternion::IDENTITY))
             useCompound = true;
     }
+    btCollisionShape* oldCollisionShape = body_->getCollisionShape();
     body_->setCollisionShape(useCompound ? shiftedCompoundShape_.get() : shiftedCompoundShape_->getChildShape(0));
 
     // If we have one shape and this is a triangle mesh, we use a custom material callback in order to adjust internal edges
@@ -802,6 +803,13 @@ void RigidBody::UpdateMass()
     {
         for (Constraint* elem : constraints_)
             elem->ApplyFrames();
+    }
+    // Readd body to world to reset Bullet collision cache if collision shape was changed (issue #2064)
+    if (inWorld_ && body_->getCollisionShape() != oldCollisionShape && physicsWorld_)
+    {
+        btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
+        world->removeRigidBody(body_.get());
+        world->addRigidBody(body_.get(), (short)collisionLayer_, (short)collisionMask_);
     }
 }
 

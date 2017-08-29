@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -88,7 +88,7 @@ public:
     /// Handle enabled/disabled state change.
     virtual void OnSetEnabled() override;
     /// Draw debug geometry.
-    void DrawDebugGeometry(bool);
+    void DrawDebugGeometry(bool depthTest);
     /// Draw debug feelers.
     virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
@@ -172,6 +172,8 @@ protected:
     virtual void OnMarkedDirty(Node* node) override;
     /// Get internal Detour crowd agent.
     const dtCrowdAgent* GetDetourCrowdAgent() const;
+    /// Handle navigation mesh tile added.
+    void HandleNavigationTileAdded(Node *, NavigationMesh *mesh, IntVector2);
 private:
     /// Update Detour crowd agent parameter.
     void UpdateParameters(unsigned scope = M_MAX_UNSIGNED);

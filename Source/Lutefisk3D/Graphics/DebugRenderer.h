@@ -109,11 +109,11 @@ public:
     /// Set the camera viewpoint. Call before rendering, or before adding geometry if you want to use culling.
     void SetView(Camera* camera);
     /// Add a line.
-    void AddLine(const Vector3& start, const Vector3& end, const Color& color, bool depthTest = true);
-    /// Add a line.
     void AddLine(const Vector2& start, const Vector2& end, const Color& color, bool depthTest = true) {
         AddLine(Vector3(start),Vector3(end),color,depthTest);
     }
+    /// Add a line.
+    void AddLine(const Vector3& start, const Vector3& end, const Color& color, bool depthTest = true);
     /// Add a line with color already converted to unsigned.
     void AddLine(const Vector3& start, const Vector3& end, unsigned color, bool depthTest = true);
     /// Add a solid triangle.
@@ -136,6 +136,9 @@ public:
     void AddPolyhedron(const Polyhedron& poly, const Color& color, bool depthTest = true);
     /// Add a sphere.
     void AddSphere(const Sphere& sphere, const Color& color, bool depthTest = true);
+    /// Add a sphere sector.
+    void AddSphereSector(const Sphere& sphere, const Quaternion& rotation, float angle,
+        bool drawLines, const Color& color, bool depthTest = true);
     /// Add a cylinder
     void AddCylinder(const Vector3& position, float radius, float height, const Color& color, bool depthTest = true);
     /// Add a skeleton.

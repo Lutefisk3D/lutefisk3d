@@ -52,40 +52,36 @@ void TileMap2D::RegisterObject(Context* context)
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Tmx File", GetTmxFileAttr, SetTmxFileAttr, ResourceRef, ResourceRef(TmxFile2D::GetTypeStatic()), AM_DEFAULT);
 }
 
+// Transform vector from node-local space to global space
+static Vector2 TransformNode2D(Matrix3x4 transform, Vector2 local)
+{
+    Vector3 transformed = transform * Vector4(local.x_, local.y_, 0.f, 1.f);
+    return Vector2(transformed.x_, transformed.y_);
+}
+
 void TileMap2D::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 {
     const Color& color = Color::RED;
     float mapW = info_.GetMapWidth();
     float mapH = info_.GetMapHeight();
+    const Matrix3x4 transform = GetNode()->GetTransform();
 
     switch (info_.orientation_)
     {
     case O_ORTHOGONAL:
-        debug->AddLine(Vector2(0.0f, 0.0f), Vector2(mapW, 0.0f), color);
-        debug->AddLine(Vector2(mapW, 0.0f), Vector2(mapW, mapH), color);
-        debug->AddLine(Vector2(mapW, mapH), Vector2(0.0f, mapH), color);
-        debug->AddLine(Vector2(0.0f, mapH), Vector2(0.0f, 0.0f), color);
+    case O_STAGGERED:
+    case O_HEXAGONAL:
+        debug->AddLine(TransformNode2D(transform, Vector2(0.0f, 0.0f)), TransformNode2D(transform, Vector2(mapW, 0.0f)), color);
+        debug->AddLine(TransformNode2D(transform, Vector2(mapW, 0.0f)), TransformNode2D(transform, Vector2(mapW, mapH)), color);
+        debug->AddLine(TransformNode2D(transform, Vector2(mapW, mapH)), TransformNode2D(transform, Vector2(0.0f, mapH)), color);
+        debug->AddLine(TransformNode2D(transform, Vector2(0.0f, mapH)), TransformNode2D(transform, Vector2(0.0f, 0.0f)), color);
         break;
 
     case O_ISOMETRIC:
-        debug->AddLine(Vector2(0.0f, mapH * 0.5f), Vector2(mapW * 0.5f, 0.0f), color);
-        debug->AddLine(Vector2(mapW * 0.5f, 0.0f), Vector2(mapW, mapH * 0.5f), color);
-        debug->AddLine(Vector2(mapW, mapH * 0.5f), Vector2(mapW * 0.5f, mapH), color);
-        debug->AddLine(Vector2(mapW * 0.5f, mapH), Vector2(0.0f, mapH * 0.5f), color);
-        break;
-
-    case O_STAGGERED:
-        debug->AddLine(Vector2(0.0f, 0.0f), Vector2(mapW, 0.0f), color);
-        debug->AddLine(Vector2(mapW, 0.0f), Vector2(mapW, mapH), color);
-        debug->AddLine(Vector2(mapW, mapH), Vector2(0.0f, mapH), color);
-        debug->AddLine(Vector2(0.0f, mapH), Vector2(0.0f, 0.0f), color);
-        break;
-
-    case O_HEXAGONAL:
-        debug->AddLine(Vector2(0.0f, 0.0f), Vector2(mapW, 0.0f), color);
-        debug->AddLine(Vector2(mapW, 0.0f), Vector2(mapW, mapH), color);
-        debug->AddLine(Vector2(mapW, mapH), Vector2(0.0f, mapH), color);
-        debug->AddLine(Vector2(0.0f, mapH), Vector2(0.0f, 0.0f), color);
+        debug->AddLine(TransformNode2D(transform, Vector2(0.0f, mapH * 0.5f)), TransformNode2D(transform, Vector2(mapW * 0.5f, 0.0f)), color);
+        debug->AddLine(TransformNode2D(transform, Vector2(mapW * 0.5f, 0.0f)), TransformNode2D(transform, Vector2(mapW, mapH * 0.5f)), color);
+        debug->AddLine(TransformNode2D(transform, Vector2(mapW, mapH * 0.5f)), TransformNode2D(transform, Vector2(mapW * 0.5f, mapH)), color);
+        debug->AddLine(TransformNode2D(transform, Vector2(mapW * 0.5f, mapH)), TransformNode2D(transform, Vector2(0.0f, mapH * 0.5f)), color);
         break;
     }
 
@@ -176,6 +172,12 @@ void TileMap2D::SetTmxFileAttr(const ResourceRef& value)
 ResourceRef TileMap2D::GetTmxFileAttr() const
 {
     return GetResourceRef(tmxFile_, TmxFile2D::GetTypeStatic());
+}
+
+std::vector<SharedPtr<TileMapObject2D> > TileMap2D::GetTileCollisionShapes(int gid) const
+{
+    std::vector<SharedPtr<TileMapObject2D> > shapes;
+    return tmxFile_ ? tmxFile_->GetTileCollisionShapes(gid) : shapes;
 }
 
 }

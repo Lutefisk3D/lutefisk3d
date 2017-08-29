@@ -22,14 +22,13 @@
 
 #pragma once
 
-#include "Lutefisk3D/IO/Deserializer.h"
-#include "Lutefisk3D/IO/Serializer.h"
+#include "Lutefisk3D/IO/AbstractFile.h"
 
 namespace Urho3D
 {
 
 /// Dynamically sized buffer that can be read and written to as a stream.
-class VectorBuffer : public Deserializer, public Serializer
+class URHO3D_API VectorBuffer : public AbstractFile
 {
 public:
     /// Construct an empty buffer.
@@ -43,7 +42,7 @@ public:
 
     /// Read bytes from the buffer. Return number of bytes actually read.
     virtual unsigned Read(void* dest, unsigned size) override;
-    /// Set position from the beginning of the buffer.
+    /// Set position from the beginning of the buffer. Return actual new position.
     virtual unsigned Seek(unsigned position) override;
     /// Write bytes to the buffer. Return number of bytes actually written.
     virtual unsigned Write(const void* data, unsigned size) override;

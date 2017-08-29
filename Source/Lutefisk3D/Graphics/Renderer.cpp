@@ -1372,17 +1372,6 @@ bool Renderer::ResizeInstancingBuffer(unsigned numInstances)
     return true;
 }
 
-void Renderer::SaveScreenBufferAllocations()
-{
-    savedScreenBufferAllocations_ = screenBufferAllocations_;
-}
-
-void Renderer::RestoreScreenBufferAllocations()
-{
-    screenBufferAllocations_ = savedScreenBufferAllocations_;
-}
-
-
 void Renderer::OptimizeLightByScissor(Light* light, Camera* camera)
 {
     if (light && light->GetLightType() != LIGHT_DIRECTIONAL)

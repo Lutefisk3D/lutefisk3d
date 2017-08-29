@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -248,6 +248,15 @@ Intersection Sphere::IsInsideFast(const BoundingBox& box) const
         return OUTSIDE;
     else
         return INSIDE;
+}
+
+Vector3 Sphere::GetLocalPoint(float theta, float phi) const
+{
+    return Vector3(
+        radius_ * std::sin(theta) * std::sin(phi),
+        radius_ * std::cos(phi),
+        radius_ * std::cos(theta) * std::sin(phi)
+    );
 }
 
 }

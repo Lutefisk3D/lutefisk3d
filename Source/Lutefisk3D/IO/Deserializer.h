@@ -69,8 +69,12 @@ public:
     virtual unsigned GetChecksum();
     /// Return whether the end of stream has been reached.
     virtual bool IsEof() const { return position_ >= size_; }
+    /// Set position relative to current position. Return actual new position.
+    unsigned SeekRelative(int delta);
     /// Return current position.
     unsigned GetPosition() const { return position_; }
+    /// Return current position.
+    unsigned Tell() const { return position_; }
     /// Return size.
     unsigned GetSize() const { return size_; }
 

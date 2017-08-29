@@ -452,8 +452,6 @@ void CollisionShape::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 {
     if (debug && physicsWorld_ && shape_ && node_ && IsEnabledEffective())
     {
-        physicsWorld_->SetDebugRenderer(debug);
-        physicsWorld_->SetDebugDepthTest(depthTest);
 
         // Use the rigid body's world transform if possible, as it may be different from the rendering transform
         Matrix3x4 worldTransform;
@@ -467,22 +465,48 @@ void CollisionShape::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
         else
             worldTransform = node_->GetWorldTransform();
 
-        Vector3 position = position_;
-        // For terrains, undo the height centering performed automatically by Bullet
-        if (shapeType_ == SHAPE_TERRAIN && geometry_)
+        // Special case code for convex hull: bypass Bullet's own rendering to draw triangles correctly, not just edges
+        if (shapeType_ == SHAPE_CONVEXHULL)
         {
-            HeightfieldData* heightfield = static_cast<HeightfieldData*>(geometry_.Get());
-            position.y_ += (heightfield->minHeight_ + heightfield->maxHeight_) * 0.5f;
+            ConvexData *convexData = static_cast<ConvexData*>(GetGeometryData());
+            RigidBody* body = GetComponent<RigidBody>();
+            Color color = bodyActive ? Color::WHITE : Color::GREEN;
+            Matrix3x4 shapeTransform(worldTransform * position_, worldTransform.Rotation() * rotation_, worldTransform.Scale());
+
+            if (convexData)
+            {
+                for (unsigned i = 0; i < convexData->indexCount_; i += 3)
+                {
+                    Vector3 a = shapeTransform * convexData->vertexData_[convexData->indexData_[i + 0]];
+                    Vector3 b = shapeTransform * convexData->vertexData_[convexData->indexData_[i + 1]];
+                    Vector3 c = shapeTransform * convexData->vertexData_[convexData->indexData_[i + 2]];
+                    debug->AddLine(a, b, color, depthTest);
+                    debug->AddLine(b, c, color, depthTest);
+                    debug->AddLine(a, c, color, depthTest);
+                }
+            }
         }
+        else
+        {
+            physicsWorld_->SetDebugRenderer(debug);
+            physicsWorld_->SetDebugDepthTest(depthTest);
+            Vector3 position = position_;
+            // For terrains, undo the height centering performed automatically by Bullet
+            if (shapeType_ == SHAPE_TERRAIN && geometry_)
+            {
+                HeightfieldData* heightfield = static_cast<HeightfieldData*>(geometry_.Get());
+                position.y_ += (heightfield->minHeight_ + heightfield->maxHeight_) * 0.5f;
+            }
 
-        Vector3 worldPosition(worldTransform * position);
-        Quaternion worldRotation(worldTransform.Rotation() * rotation_);
+            Vector3 worldPosition(worldTransform * position);
+            Quaternion worldRotation(worldTransform.Rotation() * rotation_);
 
-        btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
-        world->debugDrawObject(btTransform(ToBtQuaternion(worldRotation), ToBtVector3(worldPosition)), shape_.get(), bodyActive ?
-                                   WHITE : GREEN);
+            btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
+            world->debugDrawObject(btTransform(ToBtQuaternion(worldRotation), ToBtVector3(worldPosition)), shape_.get(), bodyActive ?
+                                       WHITE : GREEN);
 
-        physicsWorld_->SetDebugRenderer(nullptr);
+            physicsWorld_->SetDebugRenderer(nullptr);
+        }
     }
 }
 
@@ -1059,7 +1083,7 @@ void CollisionShape::UpdateShape()
                 }
                 else
                     URHO3D_LOGWARNING("Could not find custom geometry component from node ID " +
-                               QString::number(customGeometryID_) + " for triangle mesh shape creation");
+                                      QString::number(customGeometryID_) + " for triangle mesh shape creation");
             }
             else if (model_ && model_->GetNumGeometries())
             {
@@ -1098,7 +1122,7 @@ void CollisionShape::UpdateShape()
                 }
                 else
                     URHO3D_LOGWARNING("Could not find custom geometry component from node ID " +
-                               QString::number(customGeometryID_) + " for convex shape creation");
+                                      QString::number(customGeometryID_) + " for convex shape creation");
             }
             else if (model_ && model_->GetNumGeometries())
             {
@@ -1133,8 +1157,8 @@ void CollisionShape::UpdateShape()
                 HeightfieldData* heightfield = static_cast<HeightfieldData*>(geometry_.Get());
 
                 shape_ .reset(new btHeightfieldTerrainShape(heightfield->size_.x_, heightfield->size_.y_,
-                                                       heightfield->heightData_.Get(), 1.0f, heightfield->minHeight_, heightfield->maxHeight_, 1, PHY_FLOAT,
-                                                       false));
+                                                            heightfield->heightData_.Get(), 1.0f, heightfield->minHeight_, heightfield->maxHeight_, 1, PHY_FLOAT,
+                                                            false));
                 shape_->setLocalScaling(ToBtVector3(Vector3(heightfield->spacing_.x_, 1.0f, heightfield->spacing_.z_) *
                                                     newWorldScale * size_));
             }

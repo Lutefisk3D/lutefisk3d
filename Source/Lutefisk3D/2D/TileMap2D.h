@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -70,6 +70,8 @@ public:
     /// Return tile map file attribute.
     ResourceRef GetTmxFileAttr() const;
 
+    ///
+    std::vector<SharedPtr<TileMapObject2D> > GetTileCollisionShapes(int gid) const;
 private:
 
     /// Tmx file.

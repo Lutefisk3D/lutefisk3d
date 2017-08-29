@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,8 @@ protected:
     virtual void OnSceneSet(Scene* scene) override;
     /// Handle node transform being dirtied.
     virtual void OnMarkedDirty(Node* node) override;
-
+    /// Handle navigation mesh tile added.
+    void HandleNavigationTileAdded(Node *,class NavigationMesh *,IntVector2);
 private:
     /// Radius of this obstacle.
     float radius_;

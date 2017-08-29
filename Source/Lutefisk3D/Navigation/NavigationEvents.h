@@ -34,7 +34,22 @@ struct NavigationMeshSignals {
     jl::Signal<Node *,NavigationMesh *> navigationMeshRebuilt;
     /// Partial bounding box rebuild of navigation mesh.
     jl::Signal<Node *,NavigationMesh *,Vector3,Vector3> navigationAreaRebuilt; // Node,Mesh,BoundsMin,BoundsMax
+    /// Mesh tile is added to navigation mesh.
+    jl::Signal<Node *,NavigationMesh *,IntVector2> navigationTileRebuilt; // Node,Mesh,Tile
+    /// Mesh tile is removed from navigation mesh.
+    jl::Signal<Node *,NavigationMesh *,IntVector2> navigationTileRemoved; // Node,Mesh,Tile
+    /// All mesh tiles are removed from navigation mesh.
+    jl::Signal<Node *,NavigationMesh *> navigationAllTilesRemoved; // Node,Mesh
 };
+struct NavigationSignals {
+    jl::Signal<Node *,NavigationMesh *,IntVector2> navigationTileAdded; // Node,Mesh,Tile
+    void init(jl::ScopedAllocator *allocator)
+    {
+        navigationTileAdded.SetAllocator(allocator);
+    }
+};
+extern NavigationSignals g_navigationSignals;
+
 struct CrowdManagerSignals {
 
 };

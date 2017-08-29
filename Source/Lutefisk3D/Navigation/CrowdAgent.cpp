@@ -21,6 +21,7 @@
 //
 
 #include "CrowdAgent.h"
+#include "NavigationMesh.h"
 
 #include "CrowdManager.h"
 #include "NavigationEvents.h"
@@ -94,6 +95,7 @@ CrowdAgent::CrowdAgent(Context* context) :
     previousAgentState_(CA_STATE_WALKING),
     ignoreTransformChanges_(false)
 {
+    g_navigationSignals.navigationTileAdded.Connect(this,&CrowdAgent::HandleNavigationTileAdded);
 }
 
 CrowdAgent::~CrowdAgent()
@@ -623,19 +625,10 @@ void CrowdAgent::OnMarkedDirty(Node* node)
         {
             Vector3& agentPos = reinterpret_cast<Vector3&>(agent->npos);
             Vector3 nodePos = node->GetWorldPosition();
-            
+
             // Only reset position / state if actually changed
             if (nodePos != agentPos)
             {
-                // If position difference is significant, readd to crowd (issue 1695)
-                /// \todo Somewhat arbitrary
-                float diff = (agentPos - nodePos).LengthSquared();
-                if (diff >= 1.0f)
-                {
-                    RemoveAgentFromCrowd();
-                    AddAgentToCrowd();
-                }
-                else
                     agentPos = nodePos;
 
             // If the node has been externally altered, provide the opportunity for DetourCrowd to reevaluate the crowd agent
@@ -649,6 +642,23 @@ void CrowdAgent::OnMarkedDirty(Node* node)
 const dtCrowdAgent* CrowdAgent::GetDetourCrowdAgent() const
 {
     return IsInCrowd() ? crowdManager_->GetDetourCrowdAgent(agentCrowdId_) : 0;
+}
+
+void CrowdAgent::HandleNavigationTileAdded(Node *,NavigationMesh *mesh,IntVector2 tile)
+{
+    if (!crowdManager_)
+        return;
+
+    if (crowdManager_->GetNavigationMesh() != mesh)
+        return;
+
+    const IntVector2 agentTile = mesh->GetTileIndex(node_->GetWorldPosition());
+    const BoundingBox boundingBox = mesh->GetTileBoudningBox(agentTile);
+    if (tile == agentTile && IsInCrowd())
+    {
+        RemoveAgentFromCrowd();
+        AddAgentToCrowd();
+    }
 }
 
 }

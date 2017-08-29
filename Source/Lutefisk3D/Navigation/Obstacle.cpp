@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -100,12 +100,16 @@ void Obstacle::OnSceneSet(Scene* scene)
         if (!ownerMesh_)
             ownerMesh_ = node_->GetParentComponent<DynamicNavigationMesh>(true);
         if (ownerMesh_)
+        {
             ownerMesh_->AddObstacle(this);
+            g_navigationSignals.navigationTileAdded.Connect(this,&Obstacle::HandleNavigationTileAdded);
+        }
     }
     else
     {
         if (obstacleId_ > 0 && ownerMesh_)
             ownerMesh_->RemoveObstacle(this);
+        g_navigationSignals.navigationTileAdded.Disconnect(this,&Obstacle::HandleNavigationTileAdded);
         ownerMesh_.Reset();
     }
 }
@@ -128,6 +132,13 @@ void Obstacle::OnMarkedDirty(Node* node)
 
         ownerMesh_->ObstacleChanged(this);
     }
+}
+
+void Obstacle::HandleNavigationTileAdded(Node *node,NavigationMesh *m,IntVector2 tile)
+{
+    // Re-add obstacle if it is intersected with newly added tile
+    if (IsEnabledEffective() && ownerMesh_ && ownerMesh_->IsObstacleInTile(this, tile))
+        ownerMesh_->ObstacleChanged(this);
 }
 
 void Obstacle::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)

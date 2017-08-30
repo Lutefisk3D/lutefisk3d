@@ -48,7 +48,7 @@ typedef std::deque<EventHandler *>::iterator ilEventHandler;
 typedef std::deque<EventHandler *>::const_iterator cilEventHandler;
 
 /// Type info.
-class URHO3D_API TypeInfo
+class LUTEFISK3D_EXPORT TypeInfo
 {
 public:
     /// Construct.
@@ -91,7 +91,7 @@ private:
 
 
 /// Base class for objects with type identification, subsystem access and event sending/receiving capability.
-class URHO3D_API Object : public RefCounted
+class LUTEFISK3D_EXPORT Object : public RefCounted
 {
     friend class Context;
 
@@ -208,7 +208,7 @@ template <class T> T* Object::GetSubsystem() const { return static_cast<T*>(GetS
 
 
 /// Base class for object factories.
-class URHO3D_API ObjectFactory : public RefCounted
+class LUTEFISK3D_EXPORT ObjectFactory : public RefCounted
 {
 public:
     /// Construct.
@@ -252,7 +252,7 @@ public:
 };
 
 /// Internal helper class for invoking event handler functions.
-class URHO3D_API EventHandler
+class LUTEFISK3D_EXPORT EventHandler
 {
 public:
     /// Construct with specified receiver and userdata.

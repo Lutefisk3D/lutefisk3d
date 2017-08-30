@@ -1,9 +1,14 @@
+include(GenerateExportHeader)
 
 ################# Engine Core ########################
 
-macro(add_lutefisk_component Name)
+macro(lutefisk_add_component Name)
     add_subdirectory(${Name})
-    set_property(TARGET Lutefisk3D APPEND PROPERTY INTERFACE_LINK_LIBRARIES Lutefisk3D_${Name} )
+    #set_property(TARGET Lutefisk3D APPEND PROPERTY INTERFACE_LINK_LIBRARIES Lutefisk3D_${Name} )
+endmacro()
+macro(lutefisk_add_to_core Name)
+    add_subdirectory(${Name})
+    set_property(TARGET Lutefisk3D APPEND PROPERTY SOURCES $<TARGET_OBJECTS:Lutefisk3D_${Name}>)
 endmacro()
 
 set(Lutefisk3D_components "")
@@ -18,13 +23,17 @@ set(MinimalSources
     Graphics/GraphicsEvents.cpp
     Graphics/GraphicsEvents.h
 )
-add_subdirectory(Container)
-add_subdirectory(Core)
-add_subdirectory(Math)
-add_subdirectory(IO)
-add_subdirectory(Resource)
-add_subdirectory(Scene)
-add_subdirectory(Engine)
+add_library(Lutefisk3D SHARED
+    ${MinimalSources}
+)
+
+lutefisk_add_to_core(Container)
+lutefisk_add_to_core(Core)
+lutefisk_add_to_core(Math)
+lutefisk_add_to_core(IO)
+lutefisk_add_to_core(Resource)
+lutefisk_add_to_core(Scene)
+lutefisk_add_to_core(Engine)
 
 if(NOT LUTEFISK3D_HEADLESS)
     add_subdirectory(Graphics)
@@ -34,48 +43,26 @@ if(NOT LUTEFISK3D_HEADLESS)
 endif()
 
 if(NOT LUTEFISK3D_INPUTLESS)
-    add_subdirectory(Input)
+    lutefisk_add_component(Input)
 endif()
 
-#if(NOT LUTEFISK3D_NETLESS)
-#    add_subdirectory(Network)
-#endif()
-
-
-add_library(Lutefisk3D STATIC
-    ${MinimalSources}
-    ${Lutefisk3D_components}
-    ${ThirdParty_requisites}
-)
-
-set_property(TARGET Lutefisk3D APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-    Lutefisk3D_Core
-    Lutefisk3D_Containers
-    Lutefisk3D_Engine
-    Lutefisk3D_IO
-    Lutefisk3D_Resource
-    Lutefisk3D_Math
-    Lutefisk3D_Scene
-    Lutefisk3D_UI
-    Lutefisk3D_Graphics
-    )
+GENERATE_EXPORT_HEADER(${PROJECT_NAME})
 if(NOT LUTEFISK3D_SOUNDLESS)
-    add_lutefisk_component(Audio)
+    lutefisk_add_component(Audio)
 endif()
 if(NOT LUTEFISK3D_NAVIGATIONLESS)
-    add_lutefisk_component(Navigation)
+    lutefisk_add_component(Navigation)
 endif()
 if(NOT LUTEFISK3D_PHYSICLESS)
-    add_lutefisk_component(Physics)
+    lutefisk_add_component(Physics)
 endif()
 if(NOT LUTEFISK3D_2DLESS)
-    add_lutefisk_component(2D)
+    lutefisk_add_component(2D)
 endif()
 
-target_link_libraries(Lutefisk3D Threads::Threads Lutefisk3D_Core Lutefisk3D_Containers)
+target_link_libraries(Lutefisk3D Threads::Threads ${CMAKE_DL_LIBS} ${ThirdParty_requisites})
 #set_property(TARGET Lutefisk3D PROPERTY CXX_INCLUDE_WHAT_YOU_USE /usr/bin/include-what-you-use)
 
-target_link_libraries(Lutefisk3D ${CMAKE_DL_LIBS}) # add imported SDL target
 if(NOT LUTEFISK3D_HEADLESS)
     IF(WIN32)
          target_link_libraries(Lutefisk3D winmm imm32 version)

@@ -33,7 +33,7 @@ class Animation;
 class AnimationState;
 
 /// Animated model component.
-class URHO3D_API AnimatedModel : public StaticModel
+class LUTEFISK3D_EXPORT AnimatedModel : public StaticModel
 {
     URHO3D_OBJECT(AnimatedModel,StaticModel)
 

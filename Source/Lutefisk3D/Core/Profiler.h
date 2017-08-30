@@ -31,7 +31,7 @@ namespace Urho3D
 {
 
 /// Profiling data for one block in the profiling tree.
-class URHO3D_API ProfilerBlock
+class LUTEFISK3D_EXPORT ProfilerBlock
 {
 public:
     /// Construct with the specified parent block and name.
@@ -170,7 +170,7 @@ public:
 };
 
 /// Hierarchical performance profiler subsystem.
-class URHO3D_API Profiler : public RefCounted
+class LUTEFISK3D_EXPORT Profiler : public RefCounted
 {
 public:
     /// Construct.
@@ -227,7 +227,7 @@ protected:
 };
 
 /// Helper class for automatically beginning and ending a profiling block
-class URHO3D_API AutoProfileBlock
+class LUTEFISK3D_EXPORT AutoProfileBlock
 {
 public:
     /// Construct. Begin a profiling block with the specified name and optional call count.

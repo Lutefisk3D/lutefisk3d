@@ -40,7 +40,7 @@ class Matrix3x4;
 class Sphere;
 
 /// Three-dimensional axis-aligned bounding box.
-class URHO3D_API BoundingBox
+class LUTEFISK3D_EXPORT BoundingBox
 {
 public:
     /// Construct with zero size.

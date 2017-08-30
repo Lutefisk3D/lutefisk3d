@@ -37,8 +37,8 @@ class Context;
 class BackgroundLoader;
 class FileWatcher;
 class PackageFile;
-class URHO3D_API Resource;
-class URHO3D_API File;
+class LUTEFISK3D_EXPORT Resource;
+class LUTEFISK3D_EXPORT File;
 /// Sets to priority so that a package or file is pushed to the end of the vector.
 static const unsigned PRIORITY_LAST = 0xffffffff;
 
@@ -58,7 +58,7 @@ enum ResourceRequest
 };
 
 /// Optional resource request processor. Can deny requests, re-route resource file names, or perform other processing per request.
-class URHO3D_API ResourceRouter : public RefCounted
+class LUTEFISK3D_EXPORT ResourceRouter : public RefCounted
 {
 public:
     /// Construct.
@@ -74,7 +74,7 @@ protected:
 };
 
 /// %Resource cache subsystem. Loads resources on demand and stores them for later access.
-class URHO3D_API ResourceCache : public jl::SignalObserver
+class LUTEFISK3D_EXPORT ResourceCache : public jl::SignalObserver
 {
 public:
     /// Construct.
@@ -239,6 +239,6 @@ template <class T> void ResourceCache::GetResources(std::vector<T*>& result) con
 }
 
 /// Register Resource library subsystems and objects.
-void URHO3D_API RegisterResourceLibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterResourceLibrary(Context* context);
 
 }

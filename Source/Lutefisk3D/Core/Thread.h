@@ -33,7 +33,7 @@ namespace Urho3D
 {
 
 /// Operating system thread.
-class URHO3D_API Thread
+class LUTEFISK3D_EXPORT Thread
 {
 public:
     /// Construct. Does not start the thread yet.

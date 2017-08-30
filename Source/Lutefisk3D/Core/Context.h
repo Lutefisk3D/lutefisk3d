@@ -31,6 +31,9 @@
 #ifdef _MSC_VER
 #include <iso646.h>
 #endif
+namespace jl {
+class ScopedAllocator;
+};
 namespace Urho3D
 {
 #ifndef LUTEFISK3D_UILESS
@@ -48,7 +51,7 @@ class Profiler;
 class EventProfiler;
 class Renderer;
 class WorkQueue;
-class URHO3D_API EventReceiverGroup : public RefCounted
+class LUTEFISK3D_EXPORT EventReceiverGroup : public RefCounted
 {
 public:
     void BeginSendEvent();
@@ -62,7 +65,7 @@ private:
     bool     dirty_  = false;
 };
 
-class URHO3D_API Context : public RefCounted
+class LUTEFISK3D_EXPORT Context : public RefCounted
 {
     friend class Object;
     friend class Context_EventGuard;
@@ -70,17 +73,21 @@ public:
     Context();
     ~Context();
 
-    std::unique_ptr<Log> m_LogSystem;
-    std::unique_ptr<FileSystem> m_FileSystem;
-    std::unique_ptr<Input> m_InputSystem;
+    std::unique_ptr<Log>           m_LogSystem;
+    std::unique_ptr<FileSystem>    m_FileSystem;
+    std::unique_ptr<Input>         m_InputSystem;
     std::unique_ptr<ResourceCache> m_ResourceCache;
-    std::unique_ptr<Graphics> m_Graphics;
-    std::unique_ptr<Renderer> m_Renderer;
-    std::unique_ptr<Time> m_TimeSystem;
-    std::unique_ptr<Profiler> m_ProfilerSystem;
+    std::unique_ptr<Graphics>      m_Graphics;
+    std::unique_ptr<Renderer>      m_Renderer;
+    std::unique_ptr<Time>          m_TimeSystem;
+    std::unique_ptr<Profiler>      m_ProfilerSystem;
     std::unique_ptr<EventProfiler> m_EventProfilerSystem;
-    std::unique_ptr<WorkQueue> m_WorkQueueSystem;
-    std::unique_ptr<UI> m_UISystem;
+    std::unique_ptr<WorkQueue>     m_WorkQueueSystem;
+    std::unique_ptr<UI>            m_UISystem;
+
+    jl::ScopedAllocator *          m_signal_allocator; // Those point to static instances, no need to free them
+    jl::ScopedAllocator *          m_observer_allocator;
+
     template <class T> inline SharedPtr<T> CreateObject() { return StaticCast<T>(CreateObject(T::GetTypeStatic())); }
     SharedPtr<Object> CreateObject(StringHash objectType);
     void RegisterFactory(ObjectFactory* factory, const char* category=nullptr);

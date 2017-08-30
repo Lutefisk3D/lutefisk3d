@@ -27,7 +27,7 @@
 
 namespace Urho3D
 {
-class URHO3D_API NavArea : public Component
+class LUTEFISK3D_EXPORT NavArea : public Component
     {
         URHO3D_OBJECT(NavArea,Component);
 

@@ -77,23 +77,28 @@ TmxFile2D.cpp
 Urho2D.cpp
 )
 
-
-add_library(Lutefisk3D_2D STATIC ${SOURCE} ${INCLUDES}
-    $<TARGET_OBJECTS:Box2D>
-    $<TARGET_OBJECTS:PugiXml>
+if(LUTEFISK3D_AS_DLLS)
+    add_library(Lutefisk3D_2D SHARED ${SOURCE} ${INCLUDES}
+        $<TARGET_OBJECTS:Box2D>
+        )
+    target_link_libraries(Lutefisk3D_2D Lutefisk3D PugiXml)
+    qt5_use_modules(Lutefisk3D_2D Core Gui)
+else()
+    add_library(Lutefisk3D_2D STATIC ${SOURCE} ${INCLUDES}
+        $<TARGET_OBJECTS:Box2D>
+        )
+    target_include_directories(Lutefisk3D_2D PRIVATE
+        $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:Qt5::Gui,INTERFACE_INCLUDE_DIRECTORIES>
     )
+    target_compile_definitions(Lutefisk3D_2D PRIVATE
+        $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>
+        $<TARGET_PROPERTY:Qt5::Gui,INTERFACE_COMPILE_DEFINITIONS>
+    )
+    set_property(TARGET Lutefisk3D_2D APPEND PROPERTY INTERFACE_LINK_LIBRARIES PugiXml)
+endif()
 add_dependencies(Lutefisk3D_2D PugiXml Box2D)
-#set_property(TARGET Lutefisk3D_2D APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-#    Box2D
-#)
-
-target_include_directories(Lutefisk3D_2D PRIVATE
-    $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>
-    $<TARGET_PROPERTY:Qt5::Gui,INTERFACE_INCLUDE_DIRECTORIES>
-)
-target_compile_definitions(Lutefisk3D_2D PRIVATE
-    $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>
-    $<TARGET_PROPERTY:Qt5::Gui,INTERFACE_COMPILE_DEFINITIONS>
-)
 set_property(TARGET Lutefisk3D_2D PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET Lutefisk3D_2D APPEND PROPERTY INTERFACE_LINK_LIBRARIES Lutefisk3D_Graphics)
+
 

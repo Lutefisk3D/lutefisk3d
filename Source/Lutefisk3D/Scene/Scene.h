@@ -79,7 +79,7 @@ struct AsyncProgress
 };
 
 /// Root scene node, represents the whole scene.
-class URHO3D_API Scene : public Node, public SingularSceneSignals
+class LUTEFISK3D_EXPORT Scene : public Node, public SingularSceneSignals
 {
     URHO3D_OBJECT(Scene,Node);
 
@@ -311,6 +311,6 @@ private:
 
 
 /// Register Scene library objects.
-void URHO3D_API RegisterSceneLibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterSceneLibrary(Context* context);
 
 }

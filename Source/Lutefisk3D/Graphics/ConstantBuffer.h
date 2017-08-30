@@ -31,7 +31,7 @@ namespace Urho3D
 {
 class Context;
 /// Hardware constant buffer.
-class URHO3D_API ConstantBuffer : public RefCounted, public GPUObject
+class LUTEFISK3D_EXPORT ConstantBuffer : public RefCounted, public GPUObject
 {
 public:
     /// Construct.

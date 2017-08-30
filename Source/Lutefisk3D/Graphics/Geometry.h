@@ -39,7 +39,7 @@ class Context;
 using IndexBufferHandle = DataHandle<IndexBuffer,20,20>;
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 /// Defines one or more vertex buffers, an index buffer and a draw range.
-class URHO3D_API Geometry : public RefCounted
+class LUTEFISK3D_EXPORT Geometry : public RefCounted
 {
 public:
     /// Construct with one empty vertex buffer.

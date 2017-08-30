@@ -34,7 +34,7 @@ class Node;
 class TerrainPatch;
 
 /// Heightmap terrain component.
-class URHO3D_API Terrain : public Component
+class LUTEFISK3D_EXPORT Terrain : public Component
 {
     URHO3D_OBJECT(Terrain,Component)
 

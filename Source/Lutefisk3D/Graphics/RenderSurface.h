@@ -37,7 +37,7 @@ class Viewport;
 class Texture;
 
 /// %Color or depth-stencil surface that can be rendered into.
-class URHO3D_API RenderSurface : public RefCounted
+class LUTEFISK3D_EXPORT RenderSurface : public RefCounted
 {
     friend class Texture2D;
     friend class Texture2DArray;

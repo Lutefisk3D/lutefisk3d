@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// 3x3 matrix for rotation and scaling.
-class URHO3D_API Matrix3
+class LUTEFISK3D_EXPORT Matrix3
 {
 public:
     /// Construct an identity matrix.

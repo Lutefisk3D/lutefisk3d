@@ -88,7 +88,7 @@ struct CompressedLevel
 };
 
 /// %Image resource.
-class URHO3D_API Image : public Resource
+class LUTEFISK3D_EXPORT Image : public Resource
 {
     URHO3D_OBJECT(Image, Resource)
 

@@ -35,7 +35,7 @@ class IndexBuffer;
 class VertexBuffer;
 
 /// One billboard in the billboard set.
-struct URHO3D_API Billboard
+struct LUTEFISK3D_EXPORT Billboard
 {
     /// Position.
     Vector3 position_;
@@ -59,7 +59,7 @@ struct URHO3D_API Billboard
 
 
 /// %Billboard component.
-class URHO3D_API BillboardSet : public Drawable
+class LUTEFISK3D_EXPORT BillboardSet : public Drawable
 {
     URHO3D_OBJECT(BillboardSet,Drawable);
 

@@ -28,7 +28,7 @@ namespace Urho3D
 {
 class JSONValue;
 /// Placeholder for allowing unregistered components to be loaded & saved along with scenes.
-class URHO3D_API UnknownComponent : public Component
+class LUTEFISK3D_EXPORT UnknownComponent : public Component
 {
 public:
     /// Construct.

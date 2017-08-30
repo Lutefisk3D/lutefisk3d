@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// 2D distance constraint component.
-class URHO3D_API ConstraintDistance2D : public Constraint2D
+class LUTEFISK3D_EXPORT ConstraintDistance2D : public Constraint2D
 {
     URHO3D_OBJECT(ConstraintDistance2D,Constraint2D)
 

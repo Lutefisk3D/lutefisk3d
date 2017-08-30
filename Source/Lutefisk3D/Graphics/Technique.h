@@ -40,7 +40,7 @@ enum PassLightingMode
 };
 
 /// %Material rendering pass, which defines shaders and render state.
-class URHO3D_API Pass : public RefCounted
+class LUTEFISK3D_EXPORT Pass : public RefCounted
 {
 public:
     /// Construct.
@@ -169,7 +169,7 @@ private:
 };
 
 /// %Material technique. Consists of several passes.
-class URHO3D_API Technique : public Resource
+class LUTEFISK3D_EXPORT Technique : public Resource
 {
     URHO3D_OBJECT(Technique,Resource);
 

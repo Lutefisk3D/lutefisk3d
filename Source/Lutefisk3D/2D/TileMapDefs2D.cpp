@@ -27,7 +27,7 @@
 
 namespace Urho3D
 {
-extern URHO3D_API const float PIXEL_SIZE;
+extern LUTEFISK3D_EXPORT const float PIXEL_SIZE;
 
 float TileMapInfo2D::GetMapWidth() const
 {

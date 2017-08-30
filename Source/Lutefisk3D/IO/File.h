@@ -41,7 +41,7 @@ enum FileMode
 class PackageFile;
 
 /// %File opened either through the filesystem or from within a package file.
-class URHO3D_API File : public RefCounted, public AbstractFile
+class LUTEFISK3D_EXPORT File : public RefCounted, public AbstractFile
 {
 public:
     /// Construct.

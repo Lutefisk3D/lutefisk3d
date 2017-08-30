@@ -48,7 +48,7 @@ struct FileSelectorEntry
 };
 
 /// %File selector dialog.
-class URHO3D_API FileSelector : public Object, public jl::SignalObserver
+class LUTEFISK3D_EXPORT FileSelector : public Object, public jl::SignalObserver
 {
     URHO3D_OBJECT(FileSelector,Object)
 

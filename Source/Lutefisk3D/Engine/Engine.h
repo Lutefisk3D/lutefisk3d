@@ -33,7 +33,7 @@ class Console;
 class DebugHud;
 
 /// Urho3D engine. Creates the other subsystems.
-class URHO3D_API Engine : public Object, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Engine : public Object, public jl::SignalObserver
 {
     URHO3D_OBJECT(Engine,Object)
 

@@ -32,8 +32,6 @@ set(INCLUDES
 add_library(DetourTileCache OBJECT ${SOURCE_FILES} ${INCLUDES})
 install (FILES ${INCLUDES} DESTINATION include/ThirdParty/DetourTileCache)
 target_include_directories(DetourTileCache PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} )
+set_property(TARGET DetourTileCache PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_dependencies(DetourTileCache Detour)
-######################### Add component to the project's list
-list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:DetourTileCache>)
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)

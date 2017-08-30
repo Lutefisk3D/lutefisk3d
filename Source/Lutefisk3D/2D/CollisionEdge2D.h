@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// 2D edge collision component.
-class URHO3D_API CollisionEdge2D : public CollisionShape2D
+class LUTEFISK3D_EXPORT CollisionEdge2D : public CollisionShape2D
 {
     URHO3D_OBJECT(CollisionEdge2D,CollisionShape2D)
 

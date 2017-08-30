@@ -48,7 +48,7 @@ namespace Spriter
 class AnimationSet2D;
 
 /// Animated sprite component, it uses to play animation created by Spine (http://www.esotericsoftware.com) and Spriter (http://www.brashmonkey.com/).
-class URHO3D_API AnimatedSprite2D : public StaticSprite2D
+class LUTEFISK3D_EXPORT AnimatedSprite2D : public StaticSprite2D
 {
     URHO3D_OBJECT(AnimatedSprite2D,StaticSprite2D)
 

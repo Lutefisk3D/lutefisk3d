@@ -50,7 +50,7 @@ enum AsyncLoadState
 };
 
 /// Base class for resources.
-class URHO3D_API Resource : public Object, public SingleResourceSignals
+class LUTEFISK3D_EXPORT Resource : public Object, public SingleResourceSignals
 {
     URHO3D_OBJECT(Resource, Object)
 
@@ -87,7 +87,7 @@ private:
     AsyncLoadState asyncLoadState_; ///< Asynchronous loading state.
 };
 /// Base class for resources that support arbitrary metadata stored. Metadata serialization shall be implemented in derived classes.
-class URHO3D_API ResourceWithMetadata : public Resource
+class LUTEFISK3D_EXPORT ResourceWithMetadata : public Resource
 {
     URHO3D_OBJECT(ResourceWithMetadata, Resource)
 

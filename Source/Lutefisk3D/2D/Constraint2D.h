@@ -32,7 +32,7 @@ class RigidBody2D;
 class PhysicsWorld2D;
 
 /// 2D physics constraint component.
-class URHO3D_API Constraint2D : public Component
+class LUTEFISK3D_EXPORT Constraint2D : public Component
 {
     URHO3D_OBJECT(Constraint2D,Component);
 

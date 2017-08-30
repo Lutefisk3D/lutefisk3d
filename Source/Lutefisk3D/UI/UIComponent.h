@@ -34,7 +34,7 @@ class UIElement;
 class UIBatch;
 class VertexBuffer;
 
-class URHO3D_API UIComponent : public Component
+class LUTEFISK3D_EXPORT UIComponent : public Component
 {
     URHO3D_OBJECT(UIComponent, Component)
 

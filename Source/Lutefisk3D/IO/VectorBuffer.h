@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// Dynamically sized buffer that can be read and written to as a stream.
-class URHO3D_API VectorBuffer : public AbstractFile
+class LUTEFISK3D_EXPORT VectorBuffer : public AbstractFile
 {
 public:
     /// Construct an empty buffer.

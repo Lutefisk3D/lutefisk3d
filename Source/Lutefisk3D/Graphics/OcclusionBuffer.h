@@ -86,7 +86,7 @@ static const float OCCLUSION_X_SCALE = 65536.0f;
 static const float OCCLUSION_Z_SCALE = 16777216.0f;
 
 /// Software renderer for occlusion.
-class URHO3D_API OcclusionBuffer : public Object
+class LUTEFISK3D_EXPORT OcclusionBuffer : public Object
 {
     URHO3D_OBJECT(OcclusionBuffer,Object)
 

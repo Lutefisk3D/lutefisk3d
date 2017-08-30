@@ -41,7 +41,7 @@ enum AutoRemoveMode
     REMOVE_NODE
 };
 /// Base class for components. Components can be created to scene nodes.
-class URHO3D_API Component : public Animatable
+class LUTEFISK3D_EXPORT Component : public Animatable
 {
     URHO3D_OBJECT(Component,Animatable)
 

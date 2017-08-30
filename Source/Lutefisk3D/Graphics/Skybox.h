@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// Static model component with fixed position in relation to the camera.
-class URHO3D_API Skybox : public StaticModel
+class LUTEFISK3D_EXPORT Skybox : public StaticModel
 {
     URHO3D_OBJECT(Skybox,StaticModel);
 

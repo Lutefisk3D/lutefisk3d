@@ -31,7 +31,7 @@ class Font;
 class Text;
 
 /// Single-line text editor %UI element.
-class URHO3D_API LineEdit : public BorderImage, public LineEditSignals
+class LUTEFISK3D_EXPORT LineEdit : public BorderImage, public LineEditSignals
 {
     URHO3D_OBJECT(LineEdit,BorderImage)
 

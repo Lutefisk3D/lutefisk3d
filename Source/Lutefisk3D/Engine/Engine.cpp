@@ -25,6 +25,7 @@
 
 #include "Lutefisk3D/Audio/Audio.h"
 #include "Lutefisk3D/UI/Console.h"
+#include "Lutefisk3D/Container/Allocator.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/CoreEvents.h"
 #include "Lutefisk3D/UI/DebugHud.h"
@@ -69,6 +70,7 @@
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "jlsignal/StaticSignalConnectionAllocators.h"
 
+
 #if defined(_MSC_VER) && defined(_DEBUG)
 // From dbgint.h
 #define nNoMansLandSize 4
@@ -86,10 +88,33 @@ typedef struct _CrtMemBlockHeader
 } _CrtMemBlockHeader;
 #endif
 namespace {
+template <int T>
+struct AllocatorWrapper : public jl::ScopedAllocator
+{
+    Urho3D::AllocatorBlock* allocator_;
+public:
+    AllocatorWrapper() {
+        allocator_ = Urho3D::AllocatorInitialize(T,1024);
+    }
+    void *Alloc(size_t nBytes) override
+    {
+        assert(nBytes==T);
+        return static_cast<void *>(Urho3D::AllocatorReserve(allocator_));
+    }
+    void Free(void *pObject) override
+    {
+        Urho3D::AllocatorFree(allocator_,pObject);
 
-enum { eMaxConnections = 50000 };
-jl::StaticSignalConnectionAllocator< eMaxConnections > oSignalConnectionAllocator;
-jl::StaticObserverConnectionAllocator< eMaxConnections > oObserverConnectionAllocator;
+    }
+};
+struct SignalAllocator : public AllocatorWrapper<jl::Signal<void>::eAllocationSize> {
+};
+struct ObserverAllocator : public AllocatorWrapper<jl::SignalObserver::eAllocationSize> {
+};
+
+enum { eMaxConnections = 32000 };
+SignalAllocator oSignalConnectionAllocator;
+ObserverAllocator oObserverConnectionAllocator;
 
 }
 namespace Urho3D
@@ -116,14 +141,15 @@ Engine::Engine(Context* context) :
     audioPaused_(false)
 {
 
-    // Initialize the signal system with static allocators
+    // Initialize the signal system with allocators
+    context->m_signal_allocator = &oSignalConnectionAllocator;
+    context->m_observer_allocator = &oObserverConnectionAllocator;
     jl::SignalBase::SetCommonConnectionAllocator( &oSignalConnectionAllocator );
     jl::SignalObserver::SetCommonConnectionAllocator( &oObserverConnectionAllocator );
     SetConnectionAllocator(&oObserverConnectionAllocator);
     g_coreSignals.init(&oSignalConnectionAllocator);
     g_consoleSignals.init(&oSignalConnectionAllocator);
     g_graphicsSignals.init(&oSignalConnectionAllocator);
-    g_navigationSignals.init(&oSignalConnectionAllocator);
     g_resourceSignals.init(&oSignalConnectionAllocator);
     g_sceneSignals.init(&oSignalConnectionAllocator);
     g_uiSignals.init(&oSignalConnectionAllocator);
@@ -294,11 +320,6 @@ bool Engine::Initialize(const VariantMap& parameters)
     // Init FPU state of main thread
     InitFPU();
 
-    // Initialize input
-#ifdef LUTEFISK3D_INPUT
-    if (HasParameter(parameters, EP_TOUCH_EMULATION))
-        context_->m_InputSystem->SetTouchEmulation(GetParameter(parameters, EP_TOUCH_EMULATION).GetBool());
-#endif
     // Initialize network
 #ifdef LUTEFISK3D_NETWORK
     if (HasParameter(parameters, EP_PACKAGE_CACHE_DIR))
@@ -913,8 +934,6 @@ VariantMap Engine::ParseParameters(const QStringList& arguments)
                 ret[EP_TEXTURE_ANISOTROPY] = value.toInt();
                 ++i;
             }
-            else if (argument == "touch")
-                ret[EP_TOUCH_EMULATION] = true;
 #ifdef LUTEFISK3D_TESTING
             else if (argument == "timeout" && !value.isEmpty())
             {

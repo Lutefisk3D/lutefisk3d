@@ -33,7 +33,7 @@ class Image;
 class XMLFile;
 
 /// 2D texture resource.
-class URHO3D_API Texture2D : public Texture
+class LUTEFISK3D_EXPORT Texture2D : public Texture
 {
     URHO3D_OBJECT(Texture2D,Texture)
 

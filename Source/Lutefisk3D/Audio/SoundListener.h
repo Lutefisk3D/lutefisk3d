@@ -30,7 +30,7 @@ class Scene;
 class Node;
 
 /// %Sound listener component
-class URHO3D_API SoundListener : public Serializable //Component
+class LUTEFISK3D_EXPORT SoundListener : public Serializable //Component
 {
     URHO3D_OBJECT(SoundListener,Serializable)
 

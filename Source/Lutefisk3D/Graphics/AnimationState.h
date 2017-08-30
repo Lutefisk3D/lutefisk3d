@@ -65,7 +65,7 @@ struct AnimationStateTrack
 };
 
 /// %Animation instance.
-class URHO3D_API AnimationState : public RefCounted
+class LUTEFISK3D_EXPORT AnimationState : public RefCounted
 {
 public:
     /// Construct with animated model and animation pointers.

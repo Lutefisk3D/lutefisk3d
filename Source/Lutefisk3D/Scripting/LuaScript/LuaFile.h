@@ -31,7 +31,7 @@ namespace Urho3D
 {
 
 /// Lua file.
-class URHO3D_API LuaFile : public Resource
+class LUTEFISK3D_EXPORT LuaFile : public Resource
 {
     OBJECT(LuaFile);
 

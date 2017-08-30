@@ -31,7 +31,7 @@ namespace Urho3D
 {
 
 /// 3x4 matrix for scene node transform calculations.
-class URHO3D_API Matrix3x4
+class LUTEFISK3D_EXPORT Matrix3x4
 {
 public:
     /// Construct an identity matrix.

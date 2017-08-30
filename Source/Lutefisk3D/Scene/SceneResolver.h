@@ -32,7 +32,7 @@ class Component;
 class Node;
 
 /// Utility class that resolves node & component IDs after a scene or partial scene load.
-class URHO3D_API SceneResolver
+class LUTEFISK3D_EXPORT SceneResolver
 {
 public:
     SceneResolver();

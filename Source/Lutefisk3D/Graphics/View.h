@@ -115,7 +115,7 @@ struct PerThreadSceneResult
 static const unsigned MAX_VIEWPORT_TEXTURES = 2;
 
 /// Internal structure for 3D rendering work. Created for each backbuffer and texture viewport, but not for shadow cameras.
-class URHO3D_API View : public RefCounted
+class LUTEFISK3D_EXPORT View : public RefCounted
 {
     friend void CheckVisibilityWork(const WorkItem* item, unsigned threadIndex);
     friend void ProcessLightWork(const WorkItem* item, unsigned threadIndex);

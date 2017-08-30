@@ -27,7 +27,6 @@
 #include "Lutefisk3D/IO/FileSystem.h"
 #include "Lutefisk3D/Graphics/Graphics.h"
 #include "Lutefisk3D/Graphics/GraphicsEvents.h"
-#include "Lutefisk3D/Graphics/GraphicsImpl.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/ProcessUtils.h"
@@ -41,8 +40,6 @@
 #include <cstring>
 
 #include <SDL2/SDL.h>
-
-extern "C" int SDL_AddTouch(SDL_TouchID touchID, const char *name);
 
 // Use a "click inside window to focus" mechanism on desktop platforms when the mouse cursor is hidden
 // TODO: For now, in this particular case only, treat all the ARM on Linux as "desktop" (e.g. RPI, odroid, etc), revisit this again when we support "mobile" ARM on Linux
@@ -518,27 +515,6 @@ void Input::SetScreenKeyboardVisible(bool enable)
             SDL_StartTextInput();
         else
             SDL_StopTextInput();
-    }
-}
-
-void Input::SetTouchEmulation(bool enable)
-{
-    if (enable != touchEmulation_)
-    {
-        if (enable)
-        {
-            // Touch emulation needs the mouse visible
-            if (!mouseVisible_)
-                SetMouseVisible(true);
-
-            // Add a virtual touch device the first time we are enabling emulated touch
-            if (!SDL_GetNumTouchDevices())
-                SDL_AddTouch(0, "Emulated Touch");
-        }
-        else
-            ResetTouches();
-
-        touchEmulation_ = enable;
     }
 }
 

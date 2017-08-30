@@ -103,7 +103,7 @@ struct Decal
 };
 
 /// %Decal renderer component.
-class URHO3D_API DecalSet : public Drawable
+class LUTEFISK3D_EXPORT DecalSet : public Drawable
 {
     URHO3D_OBJECT(DecalSet,Drawable);
 

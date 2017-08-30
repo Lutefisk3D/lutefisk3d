@@ -76,7 +76,7 @@ struct FrameInfo
 };
 
 /// Source data for a 3D geometry draw call.
-struct URHO3D_API SourceBatch
+struct LUTEFISK3D_EXPORT SourceBatch
 {
     /// Construct with defaults.
     SourceBatch();
@@ -104,7 +104,7 @@ struct URHO3D_API SourceBatch
 };
 
 /// Base class for visible components.
-class URHO3D_API Drawable : public Component
+class LUTEFISK3D_EXPORT Drawable : public Component
 {
     URHO3D_OBJECT(Drawable,Component)
 
@@ -348,6 +348,6 @@ inline bool CompareDrawables(Drawable* lhs, Drawable* rhs)
 {
     return lhs->GetSortValue() < rhs->GetSortValue();
 }
-URHO3D_API bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, bool asZUp, bool asRightHanded, bool writeLightmapUV = false);
+LUTEFISK3D_EXPORT bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, bool asZUp, bool asRightHanded, bool writeLightmapUV = false);
 
 }

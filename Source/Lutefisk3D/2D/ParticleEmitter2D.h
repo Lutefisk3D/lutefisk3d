@@ -77,7 +77,7 @@ class Sprite2D;
      jl::Signal<Node*,SharedPtr<ParticleEffect2D> > particlesDuration; ///< emitting particles stoped
  };
 /// 2D particle emitter component.
-class URHO3D_API ParticleEmitter2D : public Drawable2D, public ParticleEmitter2DSignals
+class LUTEFISK3D_EXPORT ParticleEmitter2D : public Drawable2D, public ParticleEmitter2DSignals
 {
     URHO3D_OBJECT(ParticleEmitter2D,Drawable2D)
 

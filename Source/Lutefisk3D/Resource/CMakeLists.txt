@@ -26,8 +26,10 @@ set(SOURCE
 )
 
 
-add_library(Lutefisk3D_Resource STATIC ${SOURCE} ${INCLUDES} $<TARGET_OBJECTS:PugiXml>)
+add_library(Lutefisk3D_Resource OBJECT ${SOURCE} ${INCLUDES})
 add_dependencies(Lutefisk3D_Resource PugiXml rapidjson SDL2_LIB)
+SET(ThirdParty_requisites ${ThirdParty_requisites} PugiXml PARENT_SCOPE)
+
 set_property(TARGET Lutefisk3D_Resource PROPERTY INTERFACE_LINK_LIBRARIES
     SDL2_LIB
     Lutefisk3D_IO # for FileWatcher

@@ -55,7 +55,7 @@ private:
 };
 
 /// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an object animation to it.
-class URHO3D_API Animatable : public Serializable, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Animatable : public Serializable, public jl::SignalObserver
 {
     URHO3D_OBJECT(Animatable,Serializable)
 

@@ -32,7 +32,7 @@ namespace Urho3D
 class FileSystem;
 
 /// Watches a directory and its subdirectories for files being modified.
-class URHO3D_API FileWatcher : public Object, public Thread
+class LUTEFISK3D_EXPORT FileWatcher : public Object, public Thread
 {
     URHO3D_OBJECT(FileWatcher, Object)
 

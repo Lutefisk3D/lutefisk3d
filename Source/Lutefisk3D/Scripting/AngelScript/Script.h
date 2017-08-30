@@ -50,7 +50,7 @@ enum DumpMode
 };
 
 /// Scripting subsystem. Allows execution of AngelScript.
-class URHO3D_API Script : public Object
+class LUTEFISK3D_EXPORT Script : public Object
 {
     OBJECT(Script);
 
@@ -131,6 +131,6 @@ private:
 };
 
 /// Register Script library objects.
-void URHO3D_API RegisterScriptLibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterScriptLibrary(Context* context);
 
 }

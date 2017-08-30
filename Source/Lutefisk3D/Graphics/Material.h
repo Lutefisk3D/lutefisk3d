@@ -106,7 +106,7 @@ private:
 };
 
 /// Describes how to render 3D geometries.
-class URHO3D_API Material : public Resource, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Material : public Resource, public jl::SignalObserver
 {
     URHO3D_OBJECT(Material,Resource)
 

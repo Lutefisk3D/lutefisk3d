@@ -30,7 +30,7 @@ namespace Urho3D
 class Audio;
 
 /// %Sound source component with three-dimensional position.
-class URHO3D_API SoundSource3D : public SoundSource
+class LUTEFISK3D_EXPORT SoundSource3D : public SoundSource
 {
     URHO3D_OBJECT(SoundSource3D,SoundSource);
 

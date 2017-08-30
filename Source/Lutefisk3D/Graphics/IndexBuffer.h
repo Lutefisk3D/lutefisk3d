@@ -30,7 +30,7 @@ namespace Urho3D
 {
 class Context;
 /// Hardware index buffer.
-class URHO3D_API IndexBuffer : public RefCounted,public GPUObject
+class LUTEFISK3D_EXPORT IndexBuffer : public RefCounted,public GPUObject
 {
     /// Prevent copy construction.
     IndexBuffer(const IndexBuffer& rhs)=delete;

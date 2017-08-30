@@ -34,7 +34,7 @@ class UIElement;
 class XMLFile;
 
 /// Message box dialog. Manages its lifetime automatically, so the application does not need to hold a reference to it, and shouldn't attempt to destroy it manually.
-class URHO3D_API MessageBox : public Object,public UIMessageBoxSignals, public jl::SignalObserver
+class LUTEFISK3D_EXPORT MessageBox : public Object,public UIMessageBoxSignals, public jl::SignalObserver
 {
     URHO3D_OBJECT(MessageBox,Object)
 

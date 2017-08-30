@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// Two-dimensional bounding rectangle.
-class URHO3D_API Rect
+class LUTEFISK3D_EXPORT Rect
 {
 public:
     /// Construct an undefined rect.
@@ -198,7 +198,7 @@ public:
 };
 
 /// Two-dimensional bounding rectangle with integer values.
-class URHO3D_API IntRect
+class LUTEFISK3D_EXPORT IntRect
 {
 public:
     /// Construct a zero rect.

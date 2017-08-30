@@ -36,7 +36,7 @@ namespace Urho3D
 {
 
 /// Spline for creating smooth movement based on Speed along a set of Control Points modified by the Interpolation Mode.
-class URHO3D_API SplinePath : public Component
+class LUTEFISK3D_EXPORT SplinePath : public Component
 {
     URHO3D_OBJECT(SplinePath,Component)
 

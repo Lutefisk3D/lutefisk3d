@@ -70,7 +70,7 @@ struct StoredLogMessage
 };
 
 /// Logging subsystem.
-class URHO3D_API Log : public jl::SignalObserver
+class LUTEFISK3D_EXPORT Log : public jl::SignalObserver
 {
 public:
     Log(Context *ctx);

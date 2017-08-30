@@ -30,15 +30,11 @@
 #include "Lutefisk3D/Container/HandleManager.h"
 #include <vector>
 #include <limits>
-namespace gl {
-enum class GLenum : uint32_t;
-class GLboolean;
-}
 namespace Urho3D
 {
 class Context;
 /// Hardware vertex buffer.
-class URHO3D_API VertexBuffer : public RefCounted, public GPUObject
+class LUTEFISK3D_EXPORT VertexBuffer : public RefCounted, public GPUObject
 {
     /// Prevent copy construction.
     VertexBuffer(const VertexBuffer& rhs)=delete;

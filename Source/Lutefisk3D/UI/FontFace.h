@@ -36,7 +36,7 @@ class Image;
 class Texture2D;
 
 /// %Font glyph description.
-struct URHO3D_API FontGlyph
+struct LUTEFISK3D_EXPORT FontGlyph
 {
     /// Construct.
     FontGlyph();
@@ -66,7 +66,7 @@ struct URHO3D_API FontGlyph
 };
 
 /// %Font face description.
-class URHO3D_API FontFace : public RefCounted
+class LUTEFISK3D_EXPORT FontFace : public RefCounted
 {
     friend class Font;
 

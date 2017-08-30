@@ -31,7 +31,7 @@ namespace Urho3D
 {
 class Context;
 /// Low-resolution operating system timer.
-class URHO3D_API Timer
+class LUTEFISK3D_EXPORT Timer
 {
 public:
     /// Construct. Get the starting clock value.
@@ -49,7 +49,7 @@ private:
 };
 
 /// High-resolution operating system timer used in profiling.
-class URHO3D_API HiresTimer
+class LUTEFISK3D_EXPORT HiresTimer
 {
     friend class Time;
 
@@ -79,7 +79,7 @@ private:
 };
 
 /// %Time and frame counter subsystem.
-class URHO3D_API Time : public RefCounted
+class LUTEFISK3D_EXPORT Time : public RefCounted
 {
 public:
     /// Construct.

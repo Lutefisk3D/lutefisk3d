@@ -100,7 +100,7 @@ class XMLFile;
 class XMLElement;
 
 /// %Particle effect definition.
-class URHO3D_API ParticleEffect : public Resource
+class LUTEFISK3D_EXPORT ParticleEffect : public Resource
 {
     URHO3D_OBJECT(ParticleEffect,Resource);
 

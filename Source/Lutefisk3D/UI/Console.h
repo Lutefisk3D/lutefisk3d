@@ -44,7 +44,7 @@ class IConsoleCommandHandler {
     virtual void handleCommand() = 0;
 };
 /// %Console window with log history and command line prompt.
-class URHO3D_API Console : public Object, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Console : public Object, public jl::SignalObserver
 {
     URHO3D_OBJECT(Console,Object)
 

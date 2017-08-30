@@ -174,5 +174,3 @@ if(NOT LUTEFISK3D_PHYSICLESS)
 
     add_subdirectory(StanHull)
 endif()
-
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)

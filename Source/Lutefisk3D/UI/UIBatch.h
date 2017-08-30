@@ -39,7 +39,7 @@ class UIElement;
 static const unsigned UI_VERTEX_SIZE = 6;
 
 /// %UI rendering draw call.
-class URHO3D_API UIBatch
+class LUTEFISK3D_EXPORT UIBatch
 {
 public:
     /// Construct with defaults.

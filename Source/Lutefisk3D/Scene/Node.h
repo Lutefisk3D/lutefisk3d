@@ -53,7 +53,7 @@ enum TransformSpace
 };
 
 /// Internal implementation structure for less performance-critical Node variables.
-struct URHO3D_API NodeImpl
+struct LUTEFISK3D_EXPORT NodeImpl
 {
     /// Nodes this node depends on for network updates.
     std::vector<Node*> dependencyNodes_;
@@ -69,7 +69,7 @@ struct URHO3D_API NodeImpl
     mutable VectorBuffer attrBuffer_;
 };
 /// %Scene node that may contain components and child nodes.
-class URHO3D_API Node : public Animatable
+class LUTEFISK3D_EXPORT Node : public Animatable
 {
     URHO3D_OBJECT(Node,Animatable)
 

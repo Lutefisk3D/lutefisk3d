@@ -40,7 +40,4 @@ Recast.h
 
 add_library(Recast OBJECT ${SOURCE_FILES} ${INCLUDES})
 install (FILES ${INCLUDES} DESTINATION include/ThirdParty/Recast)
-
-######################### Add component to the project's list
-list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:Recast>)
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)
+set_property(TARGET Recast PROPERTY POSITION_INDEPENDENT_CODE ON)

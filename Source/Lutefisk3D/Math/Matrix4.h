@@ -34,7 +34,7 @@ namespace Urho3D
 class Matrix3x4;
 
 /// 4x4 matrix for arbitrary linear transforms including projection.
-class URHO3D_API Matrix4
+class LUTEFISK3D_EXPORT Matrix4
 {
 public:
     /// Construct an identity matrix.

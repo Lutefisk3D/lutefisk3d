@@ -107,7 +107,7 @@ struct GeometryDesc
 };
 
 /// 3D model resource.
-class URHO3D_API Model : public ResourceWithMetadata
+class LUTEFISK3D_EXPORT Model : public ResourceWithMetadata
 {
     URHO3D_OBJECT(Model,ResourceWithMetadata)
 

@@ -1,16 +1,15 @@
 set(INCLUDES
-Allocator.h
-ArrayPtr.h
-Hash.h
-HashMap.h
-HashTable.h
-Ptr.h
-RefCounted.h
-SmallOrig.h
-SmallVector.h
-Str.h
-
-sherwood_map.hpp
+    Allocator.h
+    ArrayPtr.h
+    Hash.h
+    HashMap.h
+    HashTable.h
+    Ptr.h
+    RefCounted.h
+    SmallOrig.h
+    SmallVector.h
+    Str.h
+    sherwood_map.hpp
 )
 set(SOURCE
     Allocator.cpp
@@ -19,8 +18,8 @@ set(SOURCE
     sherwood_map.cpp
 )
 
-add_library(Lutefisk3D_Containers STATIC ${SOURCE} ${INCLUDES})
+add_library(Lutefisk3D_Container OBJECT ${SOURCE} ${INCLUDES})
 
-target_include_directories(Lutefisk3D_Containers PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
-target_compile_definitions(Lutefisk3D_Containers PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
-set_property(TARGET Lutefisk3D_Containers PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_include_directories(Lutefisk3D_Container PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
+target_compile_definitions(Lutefisk3D_Container PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
+set_property(TARGET Lutefisk3D_Container PROPERTY POSITION_INDEPENDENT_CODE ON)

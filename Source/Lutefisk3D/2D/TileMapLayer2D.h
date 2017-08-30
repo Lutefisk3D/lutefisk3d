@@ -40,7 +40,7 @@ class TmxObjectGroup2D;
 class TmxTileLayer2D;
 
 /// Tile map component.
-class URHO3D_API TileMapLayer2D : public Component
+class LUTEFISK3D_EXPORT TileMapLayer2D : public Component
 {
     URHO3D_OBJECT(TileMapLayer2D,Component);
 

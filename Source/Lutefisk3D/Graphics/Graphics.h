@@ -83,7 +83,7 @@ struct ScratchBuffer
 };
 
 /// %Graphics subsystem. Manages the application window, rendering state and GPU resources.
-class URHO3D_API Graphics : public RefCounted
+class LUTEFISK3D_EXPORT Graphics : public RefCounted
 {
 public:
     /// Construct.
@@ -699,6 +699,6 @@ private:
 };
 
 /// Register Graphics library objects.
-void URHO3D_API RegisterGraphicsLibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterGraphicsLibrary(Context* context);
 
 }

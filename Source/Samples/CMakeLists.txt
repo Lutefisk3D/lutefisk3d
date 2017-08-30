@@ -35,8 +35,8 @@ endmacro ()
 
 macro(add_sample NAME MAIN_SOURCE)
     add_executable(${NAME} ${MAIN_SOURCE}.cpp ${MAIN_SOURCE}.h ${COMMON_SAMPLE_H_FILES} ${ARGN})
-    get_target_property(libs Lutefisk3D INTERFACE_LINK_LIBRARIES)
-    target_link_libraries(${NAME} Lutefisk3D ${libs})
+    target_link_libraries(${NAME} Lutefisk3D_UI Lutefisk3D_Input
+        Lutefisk3D_Navigation Lutefisk3D_Physics Lutefisk3D_Audio Lutefisk3D )
 endmacro()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})

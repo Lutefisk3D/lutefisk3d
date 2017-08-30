@@ -68,20 +68,20 @@ set(SOURCE
 
 INCLUDE_DIRECTORIES(../../ThirdParty/FreeType/include)
 
-add_library(Lutefisk3D_UI STATIC ${SOURCE} ${INCLUDES} ${UI_COMPONENTS})
+if(LUTEFISK3D_AS_DLLS)
+    add_library(Lutefisk3D_UI SHARED ${SOURCE} ${INCLUDES} ${UI_COMPONENTS})
+    target_link_libraries(Lutefisk3D_UI Lutefisk3D FreeType )
+    qt5_use_modules(Lutefisk3D_UI Core)
+else()
+    add_library(Lutefisk3D_UI STATIC ${SOURCE} ${INCLUDES} ${UI_COMPONENTS})
+    target_include_directories(Lutefisk3D_UI PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_compile_definitions(Lutefisk3D_UI PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
+    set_property(TARGET Lutefisk3D_UI PROPERTY INTERFACE_LINK_LIBRARIES FreeType)
+endif()
+
 add_dependencies(Lutefisk3D_UI FreeType)
-target_include_directories(Lutefisk3D_UI PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
-target_compile_definitions(Lutefisk3D_UI PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_UI PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET Lutefisk3D_UI PROPERTY INTERFACE_LINK_LIBRARIES
-    FreeType
-    Lutefisk3D_Math
-    Lutefisk3D_Core
-    Lutefisk3D_Containers
-    Lutefisk3D_Math
-    Lutefisk3D_Resource
-    Lutefisk3D_Graphics
-)
+set_property(TARGET Lutefisk3D_UI APPEND PROPERTY INTERFACE_LINK_LIBRARIES Lutefisk3D_2D)
 
 if(UNIT_TESTING)
 endif()

@@ -43,7 +43,7 @@ enum WindowDragMode
 };
 
 /// %Window %UI element that can optionally by moved or resized.
-class URHO3D_API Window : public BorderImage,public UIWindowSignals
+class LUTEFISK3D_EXPORT Window : public BorderImage,public UIWindowSignals
 {
     URHO3D_OBJECT(Window,BorderImage)
 

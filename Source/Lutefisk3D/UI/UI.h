@@ -56,7 +56,7 @@ class RenderSurface;
 class UIComponent;
 
 /// %UI subsystem. Manages the graphical user interface.
-class URHO3D_API UI : public RefCounted, public jl::SignalObserver
+class LUTEFISK3D_EXPORT UI : public RefCounted, public jl::SignalObserver
 {
 public:
     /// Construct.
@@ -370,7 +370,7 @@ private:
 };
 
 /// Register UI library objects.
-void URHO3D_API RegisterUILibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterUILibrary(Context* context);
 
 }
 

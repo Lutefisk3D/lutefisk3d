@@ -92,7 +92,7 @@ struct DebugTriangle
 };
 
 /// Debug geometry rendering component. Should be added only to the root scene node.
-class URHO3D_API DebugRenderer : public Component
+class LUTEFISK3D_EXPORT DebugRenderer : public Component
 {
     URHO3D_OBJECT(DebugRenderer,Component)
 

@@ -43,7 +43,7 @@ enum FontType
 };
 
 /// %Font resource.
-class URHO3D_API Font : public Resource
+class LUTEFISK3D_EXPORT Font : public Resource
 {
     URHO3D_OBJECT(Font,Resource);
 

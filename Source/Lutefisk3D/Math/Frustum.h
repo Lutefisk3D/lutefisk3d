@@ -46,7 +46,7 @@ static const unsigned NUM_FRUSTUM_PLANES = 6;
 static const unsigned NUM_FRUSTUM_VERTICES = 8;
 
 /// Convex constructed of 6 planes.
-class URHO3D_API Frustum
+class LUTEFISK3D_EXPORT Frustum
 {
 public:
     /// Construct a degenerate frustum with all points at origin.

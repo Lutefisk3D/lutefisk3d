@@ -31,7 +31,7 @@ namespace Urho3D
 
 struct RaycastVehicleData;
 
-class URHO3D_API RaycastVehicle : public LogicComponent
+class LUTEFISK3D_EXPORT RaycastVehicle : public LogicComponent
 {
     URHO3D_OBJECT(RaycastVehicle, LogicComponent)
 

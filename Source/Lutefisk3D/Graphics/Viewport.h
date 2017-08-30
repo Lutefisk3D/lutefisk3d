@@ -38,7 +38,7 @@ class XMLFile;
 class View;
 
 /// %Viewport definition either for a render surface or the backbuffer.
-class URHO3D_API Viewport : public Object
+class LUTEFISK3D_EXPORT Viewport : public Object
 {
     URHO3D_OBJECT(Viewport,Object);
 

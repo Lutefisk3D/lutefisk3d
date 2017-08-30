@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-using namespace Urho3D;
+namespace Urho3D {
 
 
 AllocatorBlock* AllocatorReserveBlock(AllocatorBlock* allocator, unsigned nodeSize, unsigned capacity)
@@ -118,4 +118,6 @@ void AllocatorFree(AllocatorBlock* allocator, void* ptr)
     // Chain the node back to free nodes
     node->next_ = allocator->free_;
     allocator->free_ = node;
+}
+
 }

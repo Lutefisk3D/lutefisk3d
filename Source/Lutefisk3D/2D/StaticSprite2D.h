@@ -29,7 +29,7 @@ namespace Urho3D
 
 class Sprite2D;
 /// Static sprite component.
-class URHO3D_API StaticSprite2D : public Drawable2D
+class LUTEFISK3D_EXPORT StaticSprite2D : public Drawable2D
 {
     URHO3D_OBJECT(StaticSprite2D,Drawable2D)
     friend class StaticSprite2D_Manager;

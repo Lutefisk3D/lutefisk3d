@@ -33,7 +33,7 @@ set(SOURCE
 )
 
 
-add_library(Lutefisk3D_Scene STATIC ${SOURCE} ${INCLUDES})
+add_library(Lutefisk3D_Scene OBJECT ${SOURCE} ${INCLUDES})
 target_include_directories(Lutefisk3D_Scene PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Scene PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Scene PROPERTY POSITION_INDEPENDENT_CODE ON)

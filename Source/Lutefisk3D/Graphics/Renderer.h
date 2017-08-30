@@ -173,7 +173,7 @@ enum DeferredLightPSVariation
 };
 
 /// High-level rendering subsystem. Manages drawing of 3D views.
-class URHO3D_API Renderer : public RefCounted, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Renderer : public RefCounted, public jl::SignalObserver
 {
 public:
     typedef void(RefCounted::*ShadowMapFilter)(View* view, Texture2D* shadowMap,float blurScale);

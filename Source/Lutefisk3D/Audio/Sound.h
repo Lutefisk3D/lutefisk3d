@@ -31,7 +31,7 @@ namespace Urho3D
 class SoundStream;
 
 /// %Sound resource.
-class URHO3D_API Sound : public ResourceWithMetadata
+class LUTEFISK3D_EXPORT Sound : public ResourceWithMetadata
 {
     URHO3D_OBJECT(Sound,ResourceWithMetadata);
 

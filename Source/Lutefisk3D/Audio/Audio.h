@@ -37,7 +37,7 @@ class SoundListener;
 class SoundSource;
 
 /// %Audio subsystem.
-class URHO3D_API Audio : public Object, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Audio : public Object, public jl::SignalObserver
 {
     URHO3D_OBJECT(Audio,Object)
     friend void SDLAudioCallback(void *userdata, uint8_t* stream, int len);
@@ -105,6 +105,6 @@ private:
 };
 
 /// Register Audio library objects.
-void URHO3D_API RegisterAudioLibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterAudioLibrary(Context* context);
 
 }

@@ -33,7 +33,7 @@ class Deserializer;
 class Image;
 
 /// Cube texture resource.
-class URHO3D_API TextureCube : public Texture
+class LUTEFISK3D_EXPORT TextureCube : public Texture
 {
     URHO3D_OBJECT(TextureCube,Texture);
 

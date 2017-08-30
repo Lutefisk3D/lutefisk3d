@@ -37,7 +37,7 @@ class ConstantBuffer;
 class Graphics;
 struct ShaderParameter;
 /// Linked shader program on the GPU.
-class URHO3D_API ShaderProgram : public RefCounted, public GPUObject
+class LUTEFISK3D_EXPORT ShaderProgram : public RefCounted, public GPUObject
 {
 public:
     /// Construct.

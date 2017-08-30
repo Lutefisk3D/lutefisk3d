@@ -38,7 +38,7 @@ class LuaScriptEventInvoker;
 class Scene;
 
 /// Lua script subsystem.
-class URHO3D_API LuaScript : public Object, public LuaScriptEventListener
+class LUTEFISK3D_EXPORT LuaScript : public Object, public LuaScriptEventListener
 {
     OBJECT(LuaScript);
 
@@ -120,6 +120,6 @@ private:
 };
 
 /// Register Lua script library objects.
-void URHO3D_API RegisterLuaScriptLibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterLuaScriptLibrary(Context* context);
 
 }

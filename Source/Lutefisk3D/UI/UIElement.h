@@ -113,7 +113,7 @@ class Cursor;
 class ResourceCache;
 
 /// Base class for %UI elements.
-class URHO3D_API UIElement : public Animatable, public UiElementSignals
+class LUTEFISK3D_EXPORT UIElement : public Animatable, public UiElementSignals
 {
     URHO3D_OBJECT(UIElement,Animatable);
 

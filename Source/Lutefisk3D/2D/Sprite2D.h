@@ -31,7 +31,7 @@ class SpriteSheet2D;
 class Texture2D;
 
 /// Sprite.
-class URHO3D_API Sprite2D : public Resource
+class LUTEFISK3D_EXPORT Sprite2D : public Resource
 {
     URHO3D_OBJECT(Sprite2D,Resource);
 

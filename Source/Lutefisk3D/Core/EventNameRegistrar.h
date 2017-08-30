@@ -5,7 +5,7 @@
 #include "Lutefisk3D/Container/HashMap.h"
 namespace Urho3D {
 /// Register event names.
-struct URHO3D_API EventNameRegistrar
+struct LUTEFISK3D_EXPORT EventNameRegistrar
 {
     /// Register an event name for hash reverse mapping.
     static StringHash RegisterEventName(const char* eventName);

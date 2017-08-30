@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// 2D wheel constraint component.
-class URHO3D_API ConstraintWheel2D : public Constraint2D
+class LUTEFISK3D_EXPORT ConstraintWheel2D : public Constraint2D
 {
     URHO3D_OBJECT(ConstraintWheel2D,Constraint2D);
 

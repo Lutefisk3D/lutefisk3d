@@ -32,7 +32,7 @@ namespace Urho3D
 class Engine;
 enum LogLevels : int32_t;
 
-class URHO3D_API Application : public jl::SignalObserver
+class LUTEFISK3D_EXPORT Application : public jl::SignalObserver
 {
 public:
     Application(const QString &appName,Context* context);

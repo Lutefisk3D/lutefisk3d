@@ -31,9 +31,5 @@ set(INCLUDES
     pugiconfig.hpp
 )
 
-add_library(PugiXml OBJECT ${SOURCE_FILES} ${INCLUDES})
-install (FILES ${INCLUDES} DESTINATION include/ThirdParty/PugiXml)
-
-######################### Add component to the project's list
-list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:PugiXml>)
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)
+add_library(PugiXml STATIC ${SOURCE_FILES} ${INCLUDES})
+set_property(TARGET PugiXml PROPERTY POSITION_INDEPENDENT_CODE ON)

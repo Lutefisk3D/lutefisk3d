@@ -31,7 +31,7 @@ namespace Urho3D
 {
 
 /// Rotation represented as a four-dimensional normalized vector.
-class URHO3D_API Quaternion
+class LUTEFISK3D_EXPORT Quaternion
 {
 public:
     /// Construct an identity quaternion.

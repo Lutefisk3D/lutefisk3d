@@ -38,7 +38,7 @@ union GPUObjectHandle
     unsigned name_;
 };
 /// Base class for GPU resources.
-class URHO3D_API GPUObject
+class LUTEFISK3D_EXPORT GPUObject
 {
 public:
     /// Construct with graphics subsystem pointer.

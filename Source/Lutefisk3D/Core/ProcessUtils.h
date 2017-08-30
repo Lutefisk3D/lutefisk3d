@@ -31,41 +31,41 @@ namespace Urho3D
 class Mutex;
 
 /// Initialize the FPU to round-to-nearest, single precision mode.
-URHO3D_API void InitFPU();
+LUTEFISK3D_EXPORT void InitFPU();
 /// Display an error dialog with the specified title and message.
-URHO3D_API void ErrorDialog(const QString& title, const QString& message);
+LUTEFISK3D_EXPORT void ErrorDialog(const QString& title, const QString& message);
 /// Exit the application with an error message to the console.
-URHO3D_API void ErrorExit(const QString& message = QString::null, int exitCode = EXIT_FAILURE);
+LUTEFISK3D_EXPORT void ErrorExit(const QString& message = QString::null, int exitCode = EXIT_FAILURE);
 /// Open a console window.
-URHO3D_API void OpenConsoleWindow();
+LUTEFISK3D_EXPORT void OpenConsoleWindow();
 /// Print Unicode text to the console. Will not be printed to the MSVC output window.
-URHO3D_API void PrintUnicode(const QString& str, bool error = false);
+LUTEFISK3D_EXPORT void PrintUnicode(const QString& str, bool error = false);
 /// Print Unicode text to the console with a newline appended. Will not be printed to the MSVC output window.
-URHO3D_API void PrintUnicodeLine(const QString& str, bool error = false);
+LUTEFISK3D_EXPORT void PrintUnicodeLine(const QString& str, bool error = false);
 /// Print ASCII text to the console with a newline appended. Uses printf() to allow printing into the MSVC output window.
-URHO3D_API void PrintLine(const QString& str, bool error = false);
+LUTEFISK3D_EXPORT void PrintLine(const QString& str, bool error = false);
 /// Parse arguments from the command line. First argument is by default assumed to be the executable name and is skipped.
-URHO3D_API const QStringList& ParseArguments(const QString& cmdLine, bool skipFirstArgument = true);
+LUTEFISK3D_EXPORT const QStringList& ParseArguments(const QString& cmdLine, bool skipFirstArgument = true);
 /// Parse arguments from the command line.
-URHO3D_API const QStringList& ParseArguments(const char* cmdLine);
+LUTEFISK3D_EXPORT const QStringList& ParseArguments(const char* cmdLine);
 /// Parse arguments from argc & argv.
-URHO3D_API const QStringList& ParseArguments(int argc, char** argv);
+LUTEFISK3D_EXPORT const QStringList& ParseArguments(int argc, char** argv);
 /// Return previously parsed arguments.
-URHO3D_API const QStringList& GetArguments();
+LUTEFISK3D_EXPORT const QStringList& GetArguments();
 /// Read input from the console window. Return empty if no input.
-URHO3D_API QString GetConsoleInput();
+LUTEFISK3D_EXPORT QString GetConsoleInput();
 /// Return the runtime platform identifier, one of "Windows", "Linux", "Mac OS X", "Android", "iOS", "Web" or "Raspberry Pi".
-URHO3D_API QString GetPlatform();
+LUTEFISK3D_EXPORT QString GetPlatform();
 /// Return the number of physical CPU cores.
-URHO3D_API unsigned GetNumPhysicalCPUs();
+LUTEFISK3D_EXPORT unsigned GetNumPhysicalCPUs();
 /// Return the number of logical CPUs (different from physical if hyperthreading is used.)
-URHO3D_API unsigned GetNumLogicalCPUs();
+LUTEFISK3D_EXPORT unsigned GetNumLogicalCPUs();
 /// Set minidump write location as an absolute path. If empty, uses default (UserProfile/AppData/Roaming/urho3D/crashdumps)
 /// Minidumps are only supported on MSVC compiler.
-URHO3D_API void SetMiniDumpDir(const QString& pathName);
+LUTEFISK3D_EXPORT void SetMiniDumpDir(const QString& pathName);
 /// Return minidump write location.
-URHO3D_API QString GetMiniDumpDir();
+LUTEFISK3D_EXPORT QString GetMiniDumpDir();
 /// Return the total amount of useable memory.
-URHO3D_API unsigned long long GetTotalMemory();
+LUTEFISK3D_EXPORT unsigned long long GetTotalMemory();
 
 }

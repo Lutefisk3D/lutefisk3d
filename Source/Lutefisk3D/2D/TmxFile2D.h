@@ -142,7 +142,7 @@ private:
 };
 
 /// Tile map file.
-class URHO3D_API TmxFile2D : public Resource
+class LUTEFISK3D_EXPORT TmxFile2D : public Resource
 {
     URHO3D_OBJECT(TmxFile2D,Resource);
 

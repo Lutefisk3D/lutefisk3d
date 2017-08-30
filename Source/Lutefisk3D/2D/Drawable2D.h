@@ -64,10 +64,10 @@ public:
 };
 extern SourceBatch2D_Manager source2DBatchManger;
 /// Pixel size (equal 0.01f).
-extern URHO3D_API const float PIXEL_SIZE;
+extern LUTEFISK3D_EXPORT const float PIXEL_SIZE;
 
 /// Base class for 2D visible components.
-class URHO3D_API Drawable2D : public Drawable
+class LUTEFISK3D_EXPORT Drawable2D : public Drawable
 {
     URHO3D_OBJECT(Drawable2D,Drawable)
 

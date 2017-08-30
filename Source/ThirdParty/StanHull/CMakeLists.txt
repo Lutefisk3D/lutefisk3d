@@ -28,4 +28,4 @@ set(INCLUDES
 )
 
 add_library(StanHull OBJECT ${SOURCE_FILES} ${INCLUDES})
-install (FILES ${INCLUDES} DESTINATION include/ThirdParty/StanHull)
+set_property(TARGET StanHull PROPERTY POSITION_INDEPENDENT_CODE ON)

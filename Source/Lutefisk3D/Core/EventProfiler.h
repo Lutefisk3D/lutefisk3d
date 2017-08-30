@@ -28,7 +28,7 @@
 namespace Urho3D
 {
 
-class URHO3D_API EventProfilerBlock : public ProfilerBlock
+class LUTEFISK3D_EXPORT EventProfilerBlock : public ProfilerBlock
 {
 public:
     EventProfilerBlock(EventProfilerBlock* parent, StringHash eventID) :
@@ -55,7 +55,7 @@ public:
 };
 
 /// Hierarchical performance event profiler subsystem.
-class URHO3D_API EventProfiler : public Profiler
+class LUTEFISK3D_EXPORT EventProfiler : public Profiler
 {
 public:
     /// Construct.

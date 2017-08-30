@@ -40,7 +40,7 @@ class XMLElement;
 class XMLFile;
 
 /// Base class for texture resources.
-class URHO3D_API Texture : public ResourceWithMetadata, public GPUObject, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Texture : public ResourceWithMetadata, public GPUObject, public jl::SignalObserver
 {
 public:
     /// Construct.

@@ -29,7 +29,7 @@ class QString;
 namespace Urho3D
 {
 /// Three-dimensional vector with integer values.
-class URHO3D_API IntVector3
+class LUTEFISK3D_EXPORT IntVector3
 {
 public:
     /// Construct a zero vector.
@@ -167,7 +167,7 @@ public:
     static const IntVector3 ONE;
 };
 /// Three-dimensional vector.
-class URHO3D_API Vector3
+class LUTEFISK3D_EXPORT Vector3
 {
 public:
     /// Construct a zero vector.

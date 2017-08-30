@@ -34,7 +34,7 @@ class XMLFile;
 class JSONFile;
 
 /// Sprite sheet.
-class URHO3D_API SpriteSheet2D : public Resource
+class LUTEFISK3D_EXPORT SpriteSheet2D : public Resource
 {
     URHO3D_OBJECT(SpriteSheet2D,Resource);
 

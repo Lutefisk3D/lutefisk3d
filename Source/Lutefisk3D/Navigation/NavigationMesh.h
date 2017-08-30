@@ -75,7 +75,7 @@ enum NavigationPathPointFlag
     NAVPATHFLAG_OFF_MESH = 0x04
 };
 
-struct URHO3D_API NavigationPathPoint
+struct LUTEFISK3D_EXPORT NavigationPathPoint
 {
     /// World-space position of the path point.
     Vector3 position_;
@@ -86,7 +86,7 @@ struct URHO3D_API NavigationPathPoint
 };
 
 /// Navigation mesh component. Collects the navigation geometry from child nodes with the Navigable component and responds to path queries.
-class URHO3D_API NavigationMesh : public Component, public NavigationMeshSignals
+class LUTEFISK3D_EXPORT NavigationMesh : public Component, public NavigationMeshSignals
 {
     URHO3D_OBJECT(NavigationMesh,Component);
     friend class CrowdManager;
@@ -327,6 +327,6 @@ protected:
 };
 
 /// Register Navigation library objects.
-void URHO3D_API RegisterNavigationLibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterNavigationLibrary(Context* context);
 
 }

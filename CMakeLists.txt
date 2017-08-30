@@ -22,6 +22,7 @@ find_package(Qt5Xml  5.8.0)
 find_package(Qt5Gui  5.8.0)
 find_package(Threads REQUIRED)
 
+set(LUTEFISK3D_AS_DLLS TRUE)
 # adds testing options and add_lutefisk_test macro
 include(LutefiskTestingFacilities)
 

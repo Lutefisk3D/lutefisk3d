@@ -44,8 +44,6 @@ class Touch;
 ///     - Defining attributes of a custom component so that it can be saved and loaded
 class CharacterDemo : public Sample
 {
-    URHO3D_OBJECT(CharacterDemo,Sample)
-
 public:
     /// Construct.
     CharacterDemo(Context* context);
@@ -65,9 +63,9 @@ private:
     /// Subscribe to necessary events.
     void SubscribeToEvents();
     /// Handle application update. Set controls to character.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Handle application post-update. Update camera position after character has moved.
-    void HandlePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandlePostUpdate(float ts);
 
     /// Touch utility object.
     SharedPtr<Touch> touch_;

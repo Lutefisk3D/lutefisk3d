@@ -44,8 +44,6 @@ class Scene;
 ///     - Making a node follow the Detour path
 class Navigation : public Sample
 {
-    URHO3D_OBJECT(Navigation,Sample)
-
 public:
     /// Construct.
     Navigation(Context* context);
@@ -75,9 +73,9 @@ private:
     /// Make Jack follow the Detour path.
     void FollowPath(float timeStep);
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Handle the post-render update event.
-    void HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandlePostRenderUpdate(float);
 
     /// Last calculated path.
     std::deque<Vector3> currentPath_;

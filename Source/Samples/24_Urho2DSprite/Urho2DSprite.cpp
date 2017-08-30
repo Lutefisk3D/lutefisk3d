@@ -22,23 +22,23 @@
 
 #include "Urho2DSprite.h"
 
-#include <Lutefisk3D/Urho2D/AnimatedSprite2D.h>
-#include <Lutefisk3D/Urho2D/AnimationSet2D.h>
-#include <Lutefisk3D/Graphics/Camera.h>
+#include <Lutefisk3D/2D/AnimatedSprite2D.h>
+#include <Lutefisk3D/2D/AnimationSet2D.h>
+#include <Lutefisk3D/2D/Sprite2D.h>
+#include <Lutefisk3D/2D/StaticSprite2D.h>
 #include <Lutefisk3D/Core/CoreEvents.h>
 #include <Lutefisk3D/Engine/Engine.h>
 #include <Lutefisk3D/Engine/Application.h>
 #include <Lutefisk3D/UI/Font.h>
-#include <Lutefisk3D/Graphics/Graphics.h>
+#include <Lutefisk3D/UI/Text.h>
 #include <Lutefisk3D/Input/Input.h>
-#include <Lutefisk3D/Graphics/Octree.h>
-#include <Lutefisk3D/Graphics/Renderer.h>
 #include <Lutefisk3D/Resource/ResourceCache.h>
 #include <Lutefisk3D/Scene/Scene.h>
-#include <Lutefisk3D/Urho2D/Sprite2D.h>
-#include <Lutefisk3D/Urho2D/StaticSprite2D.h>
-#include <Lutefisk3D/UI/Text.h>
+#include <Lutefisk3D/Graphics/Camera.h>
 #include <Lutefisk3D/Graphics/Zone.h>
+#include <Lutefisk3D/Graphics/Graphics.h>
+#include <Lutefisk3D/Graphics/Octree.h>
+#include <Lutefisk3D/Graphics/Renderer.h>
 
 
 
@@ -51,7 +51,7 @@ static const StringHash VAR_ROTATESPEED("RotateSpeed");
 URHO3D_DEFINE_APPLICATION_MAIN(Urho2DSprite)
 
 Urho2DSprite::Urho2DSprite(Context* context) :
-    Sample(context)
+    Sample("Urho2DSprite",context)
 {
 }
 
@@ -75,7 +75,7 @@ void Urho2DSprite::Start()
 
 void Urho2DSprite::CreateScene()
 {
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
     scene_->CreateComponent<Octree>();
 
     // Create camera node
@@ -86,10 +86,10 @@ void Urho2DSprite::CreateScene()
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetOrthographic(true);
 
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
     // Get sprite
     Sprite2D* sprite = cache->GetResource<Sprite2D>("Urho2D/Aster.png");
     if (!sprite)
@@ -136,8 +136,8 @@ void Urho2DSprite::CreateScene()
 
 void Urho2DSprite::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -152,20 +152,20 @@ void Urho2DSprite::CreateInstructions()
 
 void Urho2DSprite::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void Urho2DSprite::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 4.0f;
@@ -196,23 +196,18 @@ void Urho2DSprite::MoveCamera(float timeStep)
 void Urho2DSprite::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Urho2DSprite, HandleUpdate));
+    g_coreSignals.update.Connect(this,&Urho2DSprite::HandleUpdate);
 
     // Unsubscribe the SceneUpdate event from base class to prevent camera pitch and yaw in 2D sample
-    UnsubscribeFromEvent(E_SCENEUPDATE);
+    g_sceneSignals.sceneUpdate.Disconnect(this);
 }
 
-void Urho2DSprite::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void Urho2DSprite::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     float halfWidth = (float)graphics->GetWidth() * 0.5f * PIXEL_SIZE;
     float halfHeight = (float)graphics->GetHeight() * 0.5f * PIXEL_SIZE;
 

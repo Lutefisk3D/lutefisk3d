@@ -37,8 +37,6 @@ namespace Urho3D
 ///     - Handling keyboard to move and zoom 2D camera
 class Urho2DSprite : public Sample
 {
-    URHO3D_OBJECT(Urho2DSprite,Sample)
-
 public:
     /// Construct.
     Urho2DSprite(Context* context);
@@ -57,7 +55,7 @@ private:
     /// Subscribe to application-wide logic update events.
     void SubscribeToEvents();
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
 
     /// Sprite nodes.
     std::vector<SharedPtr<Node> > spriteNodes_;

@@ -39,8 +39,6 @@ class Scene;
 ///     - Optimizing physics simulation by leaving out collision event signaling
 class PhysicsStressTest : public Sample
 {
-    URHO3D_OBJECT(PhysicsStressTest,Sample)
-
 public:
     /// Construct.
     PhysicsStressTest(Context* context);
@@ -62,9 +60,9 @@ private:
     /// Spawn a physics object from the camera position.
     void SpawnObject();
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Handle the post-render update event.
-    void HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandlePostRenderUpdate(float);
 
     /// Flag for drawing debug geometry.
     bool drawDebug_;

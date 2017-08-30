@@ -31,6 +31,7 @@ class Drawable;
 class Node;
 class Scene;
 class Zone;
+class UIElement;
 
 }
 
@@ -42,8 +43,6 @@ class Zone;
 /// CoreData/RenderPaths/PBRDeferred.xml or CoreData/RenderPaths/PBRDeferredHWDepth.xml
 class PBRMaterials : public Sample
 {
-    URHO3D_OBJECT(PBRMaterials, Sample);
-
 public:
     /// Construct.
     PBRMaterials(Context* context);
@@ -63,16 +62,16 @@ private:
     /// Reads input and moves the camera.
     void MoveCamera(float timeStep);
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Construct an instruction text to the UI.
     void CreateInstructions();
     /// Handle the roughness slider drag event.
-    void HandleRoughnessSliderChanged(StringHash eventType, VariantMap& eventData);
+    void HandleRoughnessSliderChanged(UIElement *,float newValue);
     /// Handle the metallic slider drag event.
-    void HandleMetallicSliderChanged(StringHash eventType, VariantMap& eventData);
+    void HandleMetallicSliderChanged(UIElement *,float newValue);
     /// Handle the ambient HDR scale slider drag event.
-    void HandleAmbientSliderChanged(StringHash eventType, VariantMap& eventData);
-    
+    void HandleAmbientSliderChanged(UIElement *,float newValue);
+
     /// Dynamic material.
     Material* dynamicMaterial_;
     /// Roughness label.

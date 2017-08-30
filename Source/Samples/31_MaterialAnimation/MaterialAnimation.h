@@ -37,8 +37,6 @@ class Scene;
 ///     - Usage of material shader animation for mush room material
 class MaterialAnimation : public Sample
 {
-    URHO3D_OBJECT(MaterialAnimation,Sample);
-
 public:
     /// Construct.
     MaterialAnimation(Context* context);
@@ -58,5 +56,5 @@ private:
     /// Subscribe to application-wide logic update events.
     void SubscribeToEvents();
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
 };

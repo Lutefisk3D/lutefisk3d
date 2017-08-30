@@ -38,8 +38,6 @@ namespace Urho3D
 ///     - Working with GUI elements with specific tags.
 class UIDrag : public Sample
 {
-    URHO3D_OBJECT(UIDrag,Sample)
-
 public:
     /// Construct.
     UIDrag(Context* context);
@@ -55,7 +53,7 @@ private:
     /// Subscribe to application-wide logic update events.
     void SubscribeToEvents();
 
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     void HandleDragBegin(StringHash eventType, VariantMap& eventData);
     void HandleDragMove(StringHash eventType, VariantMap& eventData);
     void HandleDragCancel(StringHash eventType, VariantMap& eventData);

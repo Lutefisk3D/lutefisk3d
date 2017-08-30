@@ -53,7 +53,7 @@ LuaIntegration::LuaIntegration(Context* context) :
     Sample(context)
 {
     // Instantiate and register the Lua script subsystem so that we can use the LuaScriptInstance component
-    context_->RegisterSubsystem(new LuaScript(context_));
+    m_context->RegisterSubsystem(new LuaScript(m_context));
 }
 
 void LuaIntegration::Start()
@@ -78,7 +78,7 @@ void LuaIntegration::CreateScene()
 {
     ResourceCache* cache = GetSubsystem<ResourceCache>();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create the Octree component to the scene so that drawable objects can be rendered. Use default volume
     // (-1000, -1000, -1000) to (1000, 1000, 1000)
@@ -159,7 +159,7 @@ void LuaIntegration::SetupViewport()
     Renderer* renderer = GetSubsystem<Renderer>();
     
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 

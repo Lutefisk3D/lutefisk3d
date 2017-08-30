@@ -82,7 +82,7 @@ void Urho2DConstraints::Start()
     CreateScene();
 
     // Enable OS cursor
-    GetSubsystem<Input>()->SetMouseVisible(true);
+    m_context->m_InputSystem.get()->SetMouseVisible(true);
 
     // Create the UI content
     CreateInstructions();
@@ -93,7 +93,7 @@ void Urho2DConstraints::Start()
 
 void Urho2DConstraints::CreateScene()
 {
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
     scene_->CreateComponent<Octree>();
     scene_->CreateComponent<DebugRenderer>();
     PhysicsWorld2D* physicsWorld = scene_->CreateComponent<PhysicsWorld2D>(); // Create 2D physics world component
@@ -108,13 +108,13 @@ void Urho2DConstraints::CreateScene()
     camera_ = cameraNode_->CreateComponent<Camera>();
     camera_->SetOrthographic(true);
 
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     camera_->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
     camera_->SetZoom(1.2f * Min((float)graphics->GetWidth() / 1280.0f, (float)graphics->GetHeight() / 800.0f)); // Set zoom according to user's resolution to ensure full visibility (initial zoom (1.2) is set for full visibility at 1280x800 resolution)
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, camera_));
-    Renderer* renderer = GetSubsystem<Renderer>();
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, camera_));
+    Renderer* renderer = m_context->m_Renderer.get();
     renderer->SetViewport(0, viewport);
 
     Zone* zone = renderer->GetDefaultZone();
@@ -141,7 +141,7 @@ void Urho2DConstraints::CreateScene()
         edgeShape->SetFriction(0.5f); // Set friction
     }
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
     // Create a box (will be cloned later)
     Node* box  = scene_->CreateChild("Box");
@@ -407,14 +407,14 @@ void Urho2DConstraints::CreateFlag(const QString& text, float x, float y) // Use
     flagNode->SetPosition(Vector3(x, y, 0.0f));
     Text3D* flag3D = flagNode->CreateComponent<Text3D>(); // We use Text3D in order to make the text affected by zoom (so that it sticks to 2D)
     flag3D->SetText(text);
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
     flag3D->SetFont(cache->GetResource<Font>("Fonts/Anonymous Pro.ttf"), 15);
 }
 
 void Urho2DConstraints::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -431,10 +431,10 @@ void Urho2DConstraints::CreateInstructions()
 void Urho2DConstraints::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 4.0f;
@@ -459,10 +459,10 @@ void Urho2DConstraints::MoveCamera(float timeStep)
 void Urho2DConstraints::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Urho2DConstraints, HandleUpdate));
+    g_coreSignals.update.Connect(this,&Urho2DConstraints::HandleUpdate);
 
     // Subscribe HandlePostRenderUpdate() function for processing the post-render update event, during which we request debug geometry
-    SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(Urho2DConstraints, HandlePostRenderUpdate));
+    g_coreSignals.postRenderUpdate.Connect(this,&Urho2DConstraints::HandlePostRenderUpdate);
 
     // Subscribe to mouse click
     SubscribeToEvent(E_MOUSEBUTTONDOWN, URHO3D_HANDLER(Urho2DConstraints, HandleMouseButtonDown));
@@ -474,7 +474,7 @@ void Urho2DConstraints::SubscribeToEvents()
         SubscribeToEvent(E_TOUCHBEGIN, URHO3D_HANDLER(Urho2DConstraints, HandleTouchBegin3));
 }
 
-void Urho2DConstraints::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void Urho2DConstraints::HandleUpdate(float timeStep)
 {
     using namespace Update;
 
@@ -484,7 +484,7 @@ void Urho2DConstraints::HandleUpdate(StringHash eventType, VariantMap& eventData
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Toggle physics debug geometry with space
     if (input->GetKeyPress(KEY_SPACE))
@@ -493,12 +493,12 @@ void Urho2DConstraints::HandleUpdate(StringHash eventType, VariantMap& eventData
     // Save scene
     if (input->GetKeyPress(KEY_F5))
     {
-        File saveFile(context_, GetSubsystem<FileSystem>()->GetProgramDir() + "Data/Scenes/Constraints.xml", FILE_WRITE);
+        File saveFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/Constraints.xml", FILE_WRITE);
         scene_->SaveXML(saveFile);
     }
 }
 
-void Urho2DConstraints::HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData)
+void Urho2DConstraints::HandlePostRenderUpdate(float)
 {
     PhysicsWorld2D* physicsWorld = scene_->GetComponent<PhysicsWorld2D>();
     if (drawDebug_) physicsWorld->DrawDebugGeometry();
@@ -506,7 +506,7 @@ void Urho2DConstraints::HandlePostRenderUpdate(StringHash eventType, VariantMap&
 
 void Urho2DConstraints::HandleMouseButtonDown(StringHash eventType, VariantMap& eventData)
 {
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
     PhysicsWorld2D* physicsWorld = scene_->GetComponent<PhysicsWorld2D>();
     RigidBody2D* rigidBody = physicsWorld->GetRigidBody(input->GetMousePosition().x_, input->GetMousePosition().y_, M_MAX_UNSIGNED); // Raycast for RigidBody2Ds to pick
     if (rigidBody)
@@ -544,8 +544,8 @@ void Urho2DConstraints::HandleMouseButtonUp(StringHash eventType, VariantMap& ev
 
 Vector2 Urho2DConstraints::GetMousePositionXY()
 {
-    Input* input = GetSubsystem<Input>();
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Input* input = m_context->m_InputSystem.get();
+    Graphics* graphics = m_context->m_Graphics.get();
     Vector3 screenPoint = Vector3((float)input->GetMousePosition().x_ / graphics->GetWidth(), (float)input->GetMousePosition().y_ / graphics->GetHeight(), 0.0f);
     Vector3 worldPoint = camera_->ScreenToWorldPoint(screenPoint);
     return Vector2(worldPoint.x_, worldPoint.y_);
@@ -562,7 +562,7 @@ void Urho2DConstraints::HandleMouseMove(StringHash eventType, VariantMap& eventD
 
 void Urho2DConstraints::HandleTouchBegin3(StringHash eventType, VariantMap& eventData)
 {
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     PhysicsWorld2D* physicsWorld = scene_->GetComponent<PhysicsWorld2D>();
     using namespace TouchBegin;
     RigidBody2D* rigidBody = physicsWorld->GetRigidBody(Vector2((float)eventData[P_X].GetInt(), (float)eventData[P_Y].GetInt())); // Raycast for RigidBody2Ds to pick
@@ -590,7 +590,7 @@ void Urho2DConstraints::HandleTouchMove3(StringHash eventType, VariantMap& event
 {
     if (pickedNode)
     {
-        Graphics* graphics = GetSubsystem<Graphics>();
+        Graphics* graphics = m_context->m_Graphics.get();
         ConstraintMouse2D* constraintMouse = pickedNode->GetComponent<ConstraintMouse2D>();
         using namespace TouchMove;
         Vector3 pos = camera_->ScreenToWorldPoint(Vector3(float(eventData[P_X].GetInt()) / graphics->GetWidth(), float(eventData[P_Y].GetInt()) / graphics->GetHeight(), 0.0f));

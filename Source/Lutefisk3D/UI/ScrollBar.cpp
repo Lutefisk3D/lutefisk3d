@@ -65,8 +65,8 @@ ScrollBar::ScrollBar(Context* context) :
     SetColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
     backButton_->pressed.Connect(this,&ScrollBar::HandleBackButtonPressed);
     forwardButton_->pressed.Connect(this,&ScrollBar::HandleForwardButtonPressed);
-    SubscribeToEvent(slider_, E_SLIDERCHANGED, URHO3D_HANDLER(ScrollBar, HandleSliderChanged));
-    SubscribeToEvent(slider_, E_SLIDERPAGED, URHO3D_HANDLER(ScrollBar, HandleSliderPaged));
+    slider_->sliderChanged.Connect(this,&ScrollBar::HandleSliderChanged);
+    slider_->sliderPaged.Connect(this,&ScrollBar::HandleSliderPaged);
 
     // Set default orientation
     SetOrientation(O_HORIZONTAL);
@@ -282,7 +282,7 @@ void ScrollBar::HandleForwardButtonPressed(UIElement *)
         StepForward();
 }
 
-void ScrollBar::HandleSliderChanged(StringHash eventType, VariantMap& eventData)
+void ScrollBar::HandleSliderChanged(UIElement *,float)
 {
     // Send the event forward
     VariantMap& newEventData = GetEventDataMap();
@@ -291,20 +291,18 @@ void ScrollBar::HandleSliderChanged(StringHash eventType, VariantMap& eventData)
     SendEvent(E_SCROLLBARCHANGED, newEventData);
 }
 
-void ScrollBar::HandleSliderPaged(StringHash eventType, VariantMap &eventData)
+void ScrollBar::HandleSliderPaged(UIElement *,int offset,bool pressed)
 {
-    using namespace SliderPaged;
-
     // Synthesize hover event to the forward/back buttons
-    if (eventData[P_OFFSET].GetInt() < 0)
+    if (offset < 0)
         backButton_->OnHover(IntVector2::ZERO, backButton_->ElementToScreen(IntVector2::ZERO), 0, 0, nullptr);
     else
         forwardButton_->OnHover(IntVector2::ZERO, forwardButton_->ElementToScreen(IntVector2::ZERO), 0, 0, nullptr);
 
     // Synthesize click / release events to the buttons
-    if (eventData[P_PRESSED].GetBool())
+    if (pressed)
     {
-        if (eventData[P_OFFSET].GetInt() < 0)
+        if (offset < 0)
             backButton_->OnClickBegin(IntVector2::ZERO, backButton_->ElementToScreen(IntVector2::ZERO), MOUSEB_LEFT,
                                       MOUSEB_LEFT, 0, nullptr);
         else
@@ -313,7 +311,7 @@ void ScrollBar::HandleSliderPaged(StringHash eventType, VariantMap &eventData)
     }
     else
     {
-        if (eventData[P_OFFSET].GetInt() < 0)
+        if (offset < 0)
             backButton_->OnClickEnd(IntVector2::ZERO, backButton_->ElementToScreen(IntVector2::ZERO), MOUSEB_LEFT, 0, 0,
                                     nullptr, backButton_);
         else

@@ -37,7 +37,7 @@ class Scene;
 ///     - Usage of attribute animation for light color animation
 class LightAnimation : public Sample
 {
-    URHO3D_OBJECT(LightAnimation,Sample);
+    
 
 public:
     /// Construct.
@@ -58,5 +58,5 @@ private:
     /// Subscribe to application-wide logic update events.
     void SubscribeToEvents();
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
 };

@@ -40,7 +40,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(SceneAndUILoad)
 
 SceneAndUILoad::SceneAndUILoad(Context* context) :
-    Sample(context)
+    Sample("SceneAndUILoad",context)
 {
 }
 
@@ -64,9 +64,9 @@ void SceneAndUILoad::Start()
 
 void SceneAndUILoad::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Load scene content prepared in the editor (XML format). GetFile() returns an open file from the resource system
     // which scene.LoadXML() will read
@@ -83,8 +83,8 @@ void SceneAndUILoad::CreateScene()
 
 void SceneAndUILoad::CreateUI()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Set up global UI style into the root UI element
     XMLFile* style = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
@@ -92,11 +92,11 @@ void SceneAndUILoad::CreateUI()
 
     // Create a Cursor UI element because we want to be able to hide and show it at will. When hidden, the mouse cursor will
     // control the camera, and when visible, it will interact with the UI
-    SharedPtr<Cursor> cursor(new Cursor(context_));
+    SharedPtr<Cursor> cursor(new Cursor(m_context));
     cursor->SetStyleAuto();
     ui->SetCursor(cursor);
     // Set starting position of the cursor at the rendering window center
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     cursor->SetPosition(graphics->GetWidth() / 2, graphics->GetHeight() / 2);
 
     // Load UI content prepared in the editor and add to the UI hierarchy
@@ -106,32 +106,32 @@ void SceneAndUILoad::CreateUI()
     // Subscribe to button actions (toggle scene lights when pressed then released)
     Button* button = static_cast<Button*>(layoutRoot->GetChild("ToggleLight1", true));
     if (button)
-        SubscribeToEvent(button, E_RELEASED, URHO3D_HANDLER(SceneAndUILoad, ToggleLight1));
+        button->released.Connect(this,&SceneAndUILoad::ToggleLight1);
     button = static_cast<Button*>(layoutRoot->GetChild("ToggleLight2", true));
     if (button)
-        SubscribeToEvent(button, E_RELEASED, URHO3D_HANDLER(SceneAndUILoad, ToggleLight2));
+        button->released.Connect(this,&SceneAndUILoad::ToggleLight2);
 }
 
 void SceneAndUILoad::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void SceneAndUILoad::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for camera motion
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(SceneAndUILoad, HandleUpdate));
+    g_coreSignals.update.Connect(this,&SceneAndUILoad::HandleUpdate);
 }
 
 void SceneAndUILoad::MoveCamera(float timeStep)
 {
     // Right mouse button controls mouse cursor visibility: hide when pressed
-    UI* ui = GetSubsystem<UI>();
-    Input* input = GetSubsystem<Input>();
+    UI* ui = m_context->m_UISystem.get();
+    Input* input = m_context->m_InputSystem.get();
     ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MOUSEB_RIGHT));
 
     // Do not move if the UI has a focused element
@@ -167,25 +167,20 @@ void SceneAndUILoad::MoveCamera(float timeStep)
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 }
 
-void SceneAndUILoad::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void SceneAndUILoad::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }
 
-void SceneAndUILoad::ToggleLight1(StringHash eventType, VariantMap& eventData)
+void SceneAndUILoad::ToggleLight1(UIElement *)
 {
     Node* lightNode = scene_->GetChild("Light1", true);
     if (lightNode)
         lightNode->SetEnabled(!lightNode->IsEnabled());
 }
 
-void SceneAndUILoad::ToggleLight2(StringHash eventType, VariantMap& eventData)
+void SceneAndUILoad::ToggleLight2(UIElement *)
 {
     Node* lightNode = scene_->GetChild("Light2", true);
     if (lightNode)

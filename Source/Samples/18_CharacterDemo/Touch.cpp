@@ -24,6 +24,7 @@
 #include "Character.h"
 
 #include <Lutefisk3D/Input/Controls.h>
+#include <Lutefisk3D/Core/Context.h>
 #include <Lutefisk3D/Graphics/Graphics.h>
 #include <Lutefisk3D/Input/Input.h>
 #include <Lutefisk3D/Graphics/Renderer.h>
@@ -47,7 +48,7 @@ void Touch::UpdateTouches(Controls& controls) // Called from HandleUpdate
 {
     zoom_ = false; // reset bool
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = context_->m_InputSystem.get();
 
     // Zoom in/out
     if (input->GetNumTouches() == 2)

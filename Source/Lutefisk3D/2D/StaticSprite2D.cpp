@@ -49,7 +49,8 @@ StaticSprite2D::StaticSprite2D(Context* context) :
     drawRect_(Rect::ZERO),
     textureRect_(Rect::ZERO)
 {
-    //sourceBatch_.owner_ = this;
+//    sourceBatch_.resize(1);
+//    sourceBatch_[0].owner_ = this;
 }
 
 StaticSprite2D::~StaticSprite2D()

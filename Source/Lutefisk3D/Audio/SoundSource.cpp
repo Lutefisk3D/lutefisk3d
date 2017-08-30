@@ -343,13 +343,8 @@ void SoundSource::Update(float timeStep)
         // Make a weak pointer to self to check for destruction during event handling
         WeakPtr<SoundSource> self(this);
 
-        using namespace SoundFinished;
-
-        VariantMap& eventData = context_->GetEventDataMap();
-        eventData[P_NODE] = node_;
-        eventData[P_SOUNDSOURCE] = this;
-        eventData[P_SOUND] = sound_;
-        node_->SendEvent(E_SOUNDFINISHED, eventData);
+        soundFinished.Emit(node_,this,sound_);
+        //TODO: verify same semantics as original : node_->SendEvent(E_SOUNDFINISHED, eventData);
 
         if (self.Expired())
             return;

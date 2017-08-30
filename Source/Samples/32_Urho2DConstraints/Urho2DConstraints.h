@@ -73,9 +73,9 @@ private:
     /// Subscribe to application-wide logic update events.
     void SubscribeToEvents();
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Handle the post render update event during which we request debug geometry.
-    void HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandlePostRenderUpdate(float);
     /// Handle the mouse click event.
     void HandleMouseButtonDown(StringHash eventType, VariantMap& eventData);
     /// Handle the mouse button up event.

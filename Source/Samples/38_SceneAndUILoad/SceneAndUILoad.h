@@ -30,7 +30,7 @@ namespace Urho3D
 class Drawable;
 class Node;
 class Scene;
-
+class UIElement;
 }
 
 /// Scene & UI load example.
@@ -40,7 +40,7 @@ class Scene;
 ///      - Subscribing to the UI layout's events
 class SceneAndUILoad : public Sample
 {
-    URHO3D_OBJECT(SceneAndUILoad,Sample);
+
 
 public:
     /// Construct.
@@ -61,9 +61,9 @@ private:
     /// Reads input and moves the camera.
     void MoveCamera(float timeStep);
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Handle toggle button 1 being pressed.
-    void ToggleLight1(StringHash eventType, VariantMap& eventData);
+    void ToggleLight1(UIElement *);
     /// Handle toggle button 2 being pressed.
-    void ToggleLight2(StringHash eventType, VariantMap& eventData);
+    void ToggleLight2(UIElement *);
 };

@@ -146,20 +146,13 @@ URHO3D_EVENT(E_TOGGLED, Toggled)
     URHO3D_PARAM(P_STATE, State);                  // bool
 }
 
-/// UI slider value changed
-URHO3D_EVENT(E_SLIDERCHANGED, SliderChanged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_VALUE, Value);                  // float
-}
+struct UISliderSignals {
+    /// UI slider value changed
+    jl::Signal<UIElement *,float> sliderChanged; // UIElement *,float
+    /// UI slider being paged.
+    jl::Signal<UIElement *,int,bool> sliderPaged; // UIElement *,int offset,bool pressed
+};
 
-/// UI slider being paged.
-URHO3D_EVENT(E_SLIDERPAGED, SliderPaged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_OFFSET, Offset);                // int
-    URHO3D_PARAM(P_PRESSED, Pressed);              // bool
-}
 
 /// UI progressbar value changed
 URHO3D_EVENT(E_PROGRESSBARCHANGED, ProgressBarChanged)

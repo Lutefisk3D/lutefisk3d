@@ -44,7 +44,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(LightAnimation)
 
 LightAnimation::LightAnimation(Context* context) :
-    Sample(context)
+    Sample("LightAnimation",context)
 {
 }
 
@@ -68,9 +68,9 @@ void LightAnimation::Start()
 
 void LightAnimation::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create the Octree component to the scene. This is required before adding any drawable components, or else nothing will
     // show up. The default octree volume will be from (-1000, -1000, -1000) to (1000, 1000, 1000) in world coordinates; it
@@ -94,10 +94,10 @@ void LightAnimation::CreateScene()
     light->SetRange(10.0f);
 
     // Create light animation
-    SharedPtr<ObjectAnimation> lightAnimation(new ObjectAnimation(context_));
+    SharedPtr<ObjectAnimation> lightAnimation(new ObjectAnimation(m_context));
 
     // Create light position animation
-    SharedPtr<ValueAnimation> positionAnimation(new ValueAnimation(context_));
+    SharedPtr<ValueAnimation> positionAnimation(new ValueAnimation(m_context));
     // Use spline interpolation method
     positionAnimation->SetInterpolationMethod(IM_SPLINE);
     // Set spline tension
@@ -111,16 +111,16 @@ void LightAnimation::CreateScene()
     lightAnimation->AddAttributeAnimation("Position", positionAnimation);
 
     // Create text animation
-    SharedPtr<ValueAnimation> textAnimation(new ValueAnimation(context_));
+    SharedPtr<ValueAnimation> textAnimation(new ValueAnimation(m_context));
     textAnimation->SetKeyFrame(0.0f, "WHITE");
     textAnimation->SetKeyFrame(1.0f, "RED");
     textAnimation->SetKeyFrame(2.0f, "YELLOW");
     textAnimation->SetKeyFrame(3.0f, "GREEN");
     textAnimation->SetKeyFrame(4.0f, "WHITE");
-    GetSubsystem<UI>()->GetRoot()->GetChild(QString("animatingText"))->SetAttributeAnimation("Text", textAnimation);
+    m_context->m_UISystem.get()->GetRoot()->GetChild(QString("animatingText"))->SetAttributeAnimation("Text", textAnimation);
 
     // Create light color animation
-    SharedPtr<ValueAnimation> colorAnimation(new ValueAnimation(context_));
+    SharedPtr<ValueAnimation> colorAnimation(new ValueAnimation(m_context));
     colorAnimation->SetKeyFrame(0.0f, Color::WHITE);
     colorAnimation->SetKeyFrame(1.0f, Color::RED);
     colorAnimation->SetKeyFrame(2.0f, Color::YELLOW);
@@ -161,8 +161,8 @@ void LightAnimation::CreateScene()
 
 void LightAnimation::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -185,22 +185,22 @@ void LightAnimation::CreateInstructions()
 
 void LightAnimation::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen. We need to define the scene and the camera
     // at minimum. Additionally we could configure the viewport screen size and the rendering path (eg. forward / deferred) to
     // use, but now we just use full screen and default render path configured in the engine command line options
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void LightAnimation::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -231,16 +231,11 @@ void LightAnimation::MoveCamera(float timeStep)
 void LightAnimation::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(LightAnimation, HandleUpdate));
+    g_coreSignals.update.Connect(this,&LightAnimation::HandleUpdate);
 }
 
-void LightAnimation::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void LightAnimation::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }

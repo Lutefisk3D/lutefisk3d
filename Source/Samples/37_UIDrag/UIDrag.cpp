@@ -31,7 +31,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(UIDrag)
 
 UIDrag::UIDrag(Context* context) :
-    Sample(context)
+    Sample("UIDrag",context)
 {
 }
 
@@ -43,7 +43,7 @@ void UIDrag::Start()
     // Set mouse visible
     QString platform = GetPlatform();
     if (platform != "Android" && platform != "iOS")
-        GetSubsystem<Input>()->SetMouseVisible(true);
+        m_context->m_InputSystem.get()->SetMouseVisible(true);
 
     // Create the UI content
     CreateGUI();
@@ -55,8 +55,8 @@ void UIDrag::Start()
 
 void UIDrag::CreateGUI()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     UIElement* root = ui->GetRoot();
     // Load the style sheet from xml
@@ -64,7 +64,7 @@ void UIDrag::CreateGUI()
 
     for (int i=0; i < 10; i++)
     {
-        Button* b = new Button(context_);
+        Button* b = new Button(m_context);
         root->AddChild(b);
         // Reference a style from the style sheet loaded earlier:
         b->SetStyle("Button");
@@ -79,7 +79,7 @@ void UIDrag::CreateGUI()
         SubscribeToEvent(b, E_DRAGEND, URHO3D_HANDLER(UIDrag, HandleDragEnd));
 
         {
-            Text* t = new Text(context_);
+            Text* t = new Text(m_context);
             b->AddChild(t);
             t->SetStyle("Text");
             t->SetHorizontalAlignment(HA_CENTER);
@@ -88,7 +88,7 @@ void UIDrag::CreateGUI()
         }
 
         {
-            Text* t = new Text(context_);
+            Text* t = new Text(m_context);
             b->AddChild(t);
             t->SetStyle("Text");
             t->SetName("Event Touch");
@@ -97,7 +97,7 @@ void UIDrag::CreateGUI()
         }
 
         {
-            Text* t = new Text(context_);
+            Text* t = new Text(m_context);
             b->AddChild(t);
             t->SetStyle("Text");
             t->SetName("Num Touch");
@@ -108,7 +108,7 @@ void UIDrag::CreateGUI()
 
     for (int i = 0; i < 10; i++)
     {
-        Text* t = new Text(context_);
+        Text* t = new Text(m_context);
         root->AddChild(t);
         t->SetStyle("Text");
         t->SetName("Touch "+ QString::number(i));
@@ -118,8 +118,8 @@ void UIDrag::CreateGUI()
 
 void UIDrag::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -137,7 +137,7 @@ void UIDrag::CreateInstructions()
 
 void UIDrag::SubscribeToEvents()
 {
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(UIDrag, HandleUpdate));
+    g_coreSignals.update.Connect(this,&UIDrag::HandleUpdate);
 }
 
 void UIDrag::HandleDragBegin(StringHash eventType, VariantMap& eventData)
@@ -193,12 +193,12 @@ void UIDrag::HandleDragEnd(StringHash eventType, VariantMap& eventData)
     Button* element = (Button*)eventData[P_ELEMENT].GetVoidPtr();
 }
 
-void UIDrag::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void UIDrag::HandleUpdate(float timeStep)
 {
-    UI* ui = GetSubsystem<UI>();
+    UI* ui = m_context->m_UISystem.get();
     UIElement* root = ui->GetRoot();
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     unsigned n = input->GetNumTouches();
     for (unsigned i = 0; i < n; i++)

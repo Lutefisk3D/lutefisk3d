@@ -179,13 +179,7 @@ void Slider::SetValue(float value)
     {
         value_ = value;
         UpdateSlider();
-
-        using namespace SliderChanged;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_ELEMENT] = this;
-        eventData[P_VALUE] = value_;
-        SendEvent(E_SLIDERCHANGED, eventData);
+        sliderChanged.Emit(this,value_);
     }
 }
 
@@ -276,11 +270,6 @@ void Slider::Page(const IntVector2 &position, bool pressed)
     int        offset   = orientation_ == O_HORIZONTAL ? offsetXY.x_ : offsetXY.y_;
     float      length   = (float)(orientation_ == O_HORIZONTAL ? GetWidth() : GetHeight());
 
-    using namespace SliderPaged;
-
-    VariantMap &eventData = GetEventDataMap();
-    eventData[P_ELEMENT]  = this;
-    eventData[P_OFFSET]   = offset;
 
     // Start transmitting repeated pages after the initial press
     if (selected_ && pressed && repeatRate_ > 0.0f &&
@@ -289,9 +278,7 @@ void Slider::Page(const IntVector2 &position, bool pressed)
     else
         pressed = false;
 
-    eventData[P_PRESSED] = pressed;
-
-    SendEvent(E_SLIDERPAGED, eventData);
+    sliderPaged.Emit(this,offset,pressed);
 }
 
 }

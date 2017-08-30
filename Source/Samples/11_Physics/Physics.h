@@ -40,8 +40,6 @@ class Scene;
 ///     - Saving a scene to a file and loading it to restore a previous state
 class Physics : public Sample
 {
-    URHO3D_OBJECT(Physics,Sample)
-
 public:
     /// Construct.
     Physics(Context* context);
@@ -63,9 +61,9 @@ private:
     /// Spawn a physics object from the camera position.
     void SpawnObject();
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Handle the post-render update event.
-    void HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandlePostRenderUpdate(float ts);
 
     /// Flag for drawing debug geometry.
     bool drawDebug_;

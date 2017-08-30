@@ -46,7 +46,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(PBRMaterials)
 
 PBRMaterials::PBRMaterials(Context* context) :
-    Sample(context),
+    Sample("PBRMaterials",context),
     dynamicMaterial_(0),
     roughnessLabel_(0),
     metallicLabel_(0),
@@ -75,8 +75,8 @@ void PBRMaterials::Start()
 
 void PBRMaterials::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -93,14 +93,14 @@ void PBRMaterials::CreateInstructions()
 
 void PBRMaterials::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
 #ifdef LUTEFISK3D_ANGELSCRIPT
     // The scene uses an AngelScript component for animation. Instantiate the subsystem if possible
-    context_->RegisterSubsystem(new Script(context_));
+    m_context->RegisterSubsystem(new Script(m_context));
 #endif
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Load scene content prepared in the editor (XML format). GetFile() returns an open file from the resource system
     // which scene.LoadXML() will read
@@ -126,8 +126,8 @@ void PBRMaterials::CreateScene()
 
 void PBRMaterials::CreateUI()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Set up global UI style into the root UI element
     XMLFile* style = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
@@ -135,11 +135,11 @@ void PBRMaterials::CreateUI()
 
     // Create a Cursor UI element because we want to be able to hide and show it at will. When hidden, the mouse cursor will
     // control the camera, and when visible, it will interact with the UI
-    SharedPtr<Cursor> cursor(new Cursor(context_));
+    SharedPtr<Cursor> cursor(new Cursor(m_context));
     cursor->SetStyleAuto();
     ui->SetCursor(cursor);
     // Set starting position of the cursor at the rendering window center
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     cursor->SetPosition(graphics->GetWidth() / 2, graphics->GetHeight() / 2);
 
     roughnessLabel_ = ui->GetRoot()->CreateChild<Text>();
@@ -162,7 +162,7 @@ void PBRMaterials::CreateUI()
     roughnessSlider->SetPosition(50, 50);
     roughnessSlider->SetSize(300, 20);
     roughnessSlider->SetRange(1.0f); // 0 - 1 range
-    SubscribeToEvent(roughnessSlider, E_SLIDERCHANGED, URHO3D_HANDLER(PBRMaterials, HandleRoughnessSliderChanged));
+    roughnessSlider->sliderChanged.Connect(this,&PBRMaterials::HandleRoughnessSliderChanged);
     roughnessSlider->SetValue(0.5f);
 
     Slider* metallicSlider = ui->GetRoot()->CreateChild<Slider>();
@@ -170,7 +170,7 @@ void PBRMaterials::CreateUI()
     metallicSlider->SetPosition(50, 100);
     metallicSlider->SetSize(300, 20);
     metallicSlider->SetRange(1.0f); // 0 - 1 range
-    SubscribeToEvent(metallicSlider, E_SLIDERCHANGED, URHO3D_HANDLER(PBRMaterials, HandleMetallicSliderChanged));
+    metallicSlider->sliderChanged.Connect(this,&PBRMaterials::HandleMetallicSliderChanged);
     metallicSlider->SetValue(0.5f);
 
     Slider* ambientSlider = ui->GetRoot()->CreateChild<Slider>();
@@ -178,27 +178,24 @@ void PBRMaterials::CreateUI()
     ambientSlider->SetPosition(50, 150);
     ambientSlider->SetSize(300, 20);
     ambientSlider->SetRange(10.0f); // 0 - 10 range
-    SubscribeToEvent(ambientSlider, E_SLIDERCHANGED, URHO3D_HANDLER(PBRMaterials, HandleAmbientSliderChanged));
+    ambientSlider->sliderChanged.Connect(this,&PBRMaterials::HandleAmbientSliderChanged);
     ambientSlider->SetValue(zone_->GetAmbientColor().a_);
 }
 
-void PBRMaterials::HandleRoughnessSliderChanged(StringHash eventType, VariantMap& eventData)
+void PBRMaterials::HandleRoughnessSliderChanged(UIElement *,float newValue)
 {
-    float newValue = eventData[SliderChanged::P_VALUE].GetFloat();
     dynamicMaterial_->SetShaderParameter("Roughness", newValue);
     roughnessLabel_->SetText("Roughness: " + QString::number(newValue));
 }
 
-void PBRMaterials::HandleMetallicSliderChanged(StringHash eventType, VariantMap& eventData)
+void PBRMaterials::HandleMetallicSliderChanged(UIElement *, float newValue)
 {
-    float newValue = eventData[SliderChanged::P_VALUE].GetFloat();
     dynamicMaterial_->SetShaderParameter("Metallic", newValue);
     metallicLabel_->SetText("Metallic: " + QString::number(newValue));
 }
 
-void PBRMaterials::HandleAmbientSliderChanged(StringHash eventType, VariantMap& eventData)
+void PBRMaterials::HandleAmbientSliderChanged(UIElement *, float newValue)
 {
-    float newValue = eventData[SliderChanged::P_VALUE].GetFloat();
     Color col = Color(0.0, 0.0, 0.0, newValue);
     zone_->SetAmbientColor(col);
     ambientLabel_->SetText("Ambient HDR Scale: " + QString::number(zone_->GetAmbientColor().a_));
@@ -206,13 +203,13 @@ void PBRMaterials::HandleAmbientSliderChanged(StringHash eventType, VariantMap& 
 
 void PBRMaterials::SetupViewport()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    Renderer* renderer = GetSubsystem<Renderer>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     renderer->SetHDRRendering(true);
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 
     // Add post-processing effects appropriate with the example scene
@@ -226,14 +223,14 @@ void PBRMaterials::SetupViewport()
 void PBRMaterials::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for camera motion
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(PBRMaterials, HandleUpdate));
+    g_coreSignals.update.Connect(this,&PBRMaterials::HandleUpdate);
 }
 
 void PBRMaterials::MoveCamera(float timeStep)
 {
     // Right mouse button controls mouse cursor visibility: hide when pressed
-    UI* ui = GetSubsystem<UI>();
-    Input* input = GetSubsystem<Input>();
+    UI* ui = m_context->m_UISystem.get();
+    Input* input = m_context->m_InputSystem.get();
     ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MOUSEB_RIGHT));
 
     // Do not move if the UI has a focused element
@@ -269,13 +266,8 @@ void PBRMaterials::MoveCamera(float timeStep)
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 }
 
-void PBRMaterials::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void PBRMaterials::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }

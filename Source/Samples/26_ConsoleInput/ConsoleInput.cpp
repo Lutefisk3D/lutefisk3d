@@ -55,7 +55,7 @@ QString urhoThreatLevels[] = {
 };
 
 ConsoleInput::ConsoleInput(Context* context) :
-    Sample(context)
+    Sample("ConsoleInput",context)
 {
 }
 
@@ -65,8 +65,8 @@ void ConsoleInput::Start()
     Sample::Start();
 
     // Subscribe to console commands and the frame update
-    SubscribeToEvent(E_CONSOLECOMMAND, URHO3D_HANDLER(ConsoleInput, HandleConsoleCommand));
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(ConsoleInput, HandleUpdate));
+    g_consoleSignals.consoleCommand.Connect(this,&ConsoleInput::HandleConsoleCommand);
+    g_coreSignals.update.Connect(this,&ConsoleInput::HandleUpdate);
 
     // Subscribe key down event
     SubscribeToEvent(E_KEYDOWN, URHO3D_HANDLER(ConsoleInput, HandleEscKeyDown));
@@ -76,15 +76,15 @@ void ConsoleInput::Start()
 
     // Show the console by default, make it large. Console will show the text edit field when there is at least one
     // subscriber for the console command event
-    Console* console = GetSubsystem<Console>();
-    console->SetNumRows(GetSubsystem<Graphics>()->GetHeight() / 16);
+    Console* console = m_context->m_GetSubsystem<Console>();
+    console->SetNumRows(m_context->m_Graphics.get()->GetHeight() / 16);
     console->SetNumBufferedRows(2 * console->GetNumRows());
-    console->SetCommandInterpreter(GetTypeName());
+    console->SetCommandInterpreter("ConsoleInput");
     console->SetVisible(true);
     console->GetCloseButton()->SetVisible(false);
 
     // Show OS mouse cursor
-    GetSubsystem<Input>()->SetMouseVisible(true);
+    m_context->m_InputSystem.get()->SetMouseVisible(true);
 
     // Open the operating system console window (for stdin / stdout) if not open yet
     OpenConsoleWindow();
@@ -96,14 +96,13 @@ void ConsoleInput::Start()
     SetRandomSeed(Time::GetSystemTime());
 }
 
-void ConsoleInput::HandleConsoleCommand(StringHash eventType, VariantMap& eventData)
+void ConsoleInput::HandleConsoleCommand(const QString &command,const QString &id)
 {
-    using namespace ConsoleCommand;
-    if (eventData[P_ID].GetString() == GetTypeName())
-        HandleInput(eventData[P_COMMAND].GetString());
+    if (id == "ConsoleInput")
+        HandleInput(command);
 }
 
-void ConsoleInput::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void ConsoleInput::HandleUpdate(float timeStep)
 {
     // Check if there is input from stdin
     QString input = GetConsoleInput();

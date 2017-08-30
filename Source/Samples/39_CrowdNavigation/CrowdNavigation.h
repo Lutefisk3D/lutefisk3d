@@ -48,8 +48,6 @@ class Scene;
 ///     - Using agents to simulate moving obstacles
 class CrowdNavigation : public Sample
 {
-    URHO3D_OBJECT(CrowdNavigation,Sample)
-
 public:
     /// Construct.
     CrowdNavigation(Context* context);
@@ -83,9 +81,9 @@ private:
     /// Utility function to raycast to the cursor position. Return true if hit.
     bool Raycast(float maxDistance, Vector3& hitPos, Drawable*& hitDrawable);
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Handle the post-render update event.
-    void HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandlePostRenderUpdate(float);
     /// Handle problems with crowd agent placement.
     void HandleCrowdAgentFailure(StringHash eventType, VariantMap& eventData);
     /// Handle crowd agent reposition.

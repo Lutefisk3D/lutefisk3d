@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Audio/AudioDefs.h"
+#include "Lutefisk3D/Audio/AudioEvents.h"
 #include "Lutefisk3D/Scene/Component.h"
 
 namespace Urho3D
@@ -38,7 +39,7 @@ static const int STREAM_BUFFER_LENGTH = 100;
 /// %Sound source component with stereo position.
 /// A sound source needs to be created to a node to be considered "enabled" and be able to play,
 /// however that node does not need to belong to a scene.
-class LUTEFISK3D_EXPORT SoundSource : public Component
+class LUTEFISK3D_EXPORT SoundSource : public Component, public SoundSignals
 {
     URHO3D_OBJECT(SoundSource,Component)
 

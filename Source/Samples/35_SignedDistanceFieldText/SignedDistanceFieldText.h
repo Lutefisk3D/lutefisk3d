@@ -40,7 +40,7 @@ class Scene;
 ///     - Handling keyboard and mouse input to move a freelook camera
 class SignedDistanceFieldText : public Sample
 {
-    URHO3D_OBJECT(SignedDistanceFieldText,Sample);
+    
 
 public:
     /// Construct.
@@ -61,5 +61,5 @@ private:
     /// Subscribe to application-wide logic update events.
     void SubscribeToEvents();
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
 };

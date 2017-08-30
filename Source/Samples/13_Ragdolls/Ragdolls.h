@@ -39,8 +39,6 @@ class Scene;
 ///     - Using rolling friction to stop rolling objects from moving infinitely
 class Ragdolls : public Sample
 {
-    URHO3D_OBJECT(Ragdolls,Sample)
-
 public:
     /// Construct.
     Ragdolls(Context* context);
@@ -62,9 +60,9 @@ private:
     /// Spawn a physics object from the camera position.
     void SpawnObject();
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Handle the post-render update event.
-    void HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandlePostRenderUpdate(float);
 
     /// Flag for drawing debug geometry.
     bool drawDebug_;

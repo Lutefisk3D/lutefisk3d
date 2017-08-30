@@ -39,8 +39,6 @@ class Scene;
 ///     - Creating a Model resource and its buffer data from scratch
 class DynamicGeometry : public Sample
 {
-    URHO3D_OBJECT(DynamicGeometry,Sample)
-
 public:
     /// Construct.
     DynamicGeometry(Context* context);
@@ -62,7 +60,7 @@ private:
     /// Animate the vertex data of the objects.
     void AnimateObjects(float timeStep);
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
 
     /// Cloned models' vertex buffers that we will animate.
     std::vector<SharedPtr<VertexBuffer> > animatingBuffers_;

@@ -54,7 +54,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(CharacterDemo)
 
 CharacterDemo::CharacterDemo(Context* context) :
-    Sample(context),
+    Sample("CharacterDemo",context),
     firstPerson_(false)
 {
     // Register factory and attributes for the Character component so it can be created via CreateComponent, and loaded / saved
@@ -70,7 +70,7 @@ void CharacterDemo::Start()
     // Execute base class startup
     Sample::Start();
     if (touchEnabled_)
-        touch_ = new Touch(context_, TOUCH_SENSITIVITY);
+        touch_ = new Touch(m_context, TOUCH_SENSITIVITY);
 
     // Create static scene content
     CreateScene();
@@ -87,9 +87,9 @@ void CharacterDemo::Start()
 
 void CharacterDemo::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create scene subsystem components
     scene_->CreateComponent<Octree>();
@@ -97,10 +97,10 @@ void CharacterDemo::CreateScene()
 
     // Create camera and define viewport. We will be doing load / save, so it's convenient to create the camera outside the scene,
     // so that it won't be destroyed and recreated, and we don't have to redefine the viewport on load
-    cameraNode_ = new Node(context_);
+    cameraNode_ = new Node(m_context);
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetFarClip(300.0f);
-    GetSubsystem<Renderer>()->SetViewport(0, new Viewport(context_, scene_, camera));
+    m_context->m_Renderer.get()->SetViewport(0, new Viewport(m_context, scene_, camera));
 
     // Create static scene content. First create a zone for ambient lighting and fog control
     Node* zoneNode = scene_->CreateChild("Zone");
@@ -181,7 +181,7 @@ void CharacterDemo::CreateScene()
 
 void CharacterDemo::CreateCharacter()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
     Node* objectNode = scene_->CreateChild("Jack");
     objectNode->SetPosition(Vector3(0.0f, 1.0f, 0.0f));
@@ -220,8 +220,8 @@ void CharacterDemo::CreateCharacter()
 
 void CharacterDemo::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -243,20 +243,20 @@ void CharacterDemo::CreateInstructions()
 void CharacterDemo::SubscribeToEvents()
 {
     // Subscribe to Update event for setting the character controls before physics simulation
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(CharacterDemo, HandleUpdate));
+    g_coreSignals.update.Connect(this,&CharacterDemo::HandleUpdate);
 
     // Subscribe to PostUpdate event for updating the camera position after physics simulation
-    SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(CharacterDemo, HandlePostUpdate));
+
+    g_coreSignals.postUpdate.Connect(this,&CharacterDemo::HandlePostUpdate);
 
     // Unsubscribe the SceneUpdate event from base class as the camera node is being controlled in HandlePostUpdate() in this sample
-    UnsubscribeFromEvent(E_SCENEUPDATE);
+    g_sceneSignals.sceneUpdate.Disconnect(this);
 }
 
-void CharacterDemo::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void CharacterDemo::HandleUpdate(float timeStep)
 {
-    using namespace Update;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     if (character_)
     {
@@ -268,7 +268,7 @@ void CharacterDemo::HandleUpdate(StringHash eventType, VariantMap& eventData)
             touch_->UpdateTouches(character_->controls_);
 
         // Update controls using keys
-        UI* ui = GetSubsystem<UI>();
+        UI* ui = m_context->m_UISystem.get();
         if (!ui->GetFocusElement())
         {
             if (!touch_ || !touch_->useGyroscope_)
@@ -292,7 +292,7 @@ void CharacterDemo::HandleUpdate(StringHash eventType, VariantMap& eventData)
                         if (!camera)
                             return;
 
-                        Graphics* graphics = GetSubsystem<Graphics>();
+                        Graphics* graphics = m_context->m_Graphics.get();
                         character_->controls_.yaw_ += TOUCH_SENSITIVITY * camera->GetFov() / graphics->GetHeight() * state->delta_.x_;
                         character_->controls_.pitch_ += TOUCH_SENSITIVITY * camera->GetFov() / graphics->GetHeight() * state->delta_.y_;
                     }
@@ -317,12 +317,12 @@ void CharacterDemo::HandleUpdate(StringHash eventType, VariantMap& eventData)
             // Check for loading / saving the scene
             if (input->GetKeyPress(KEY_F5))
             {
-                File saveFile(context_, GetSubsystem<FileSystem>()->GetProgramDir() + "Data/Scenes/CharacterDemo.xml", FILE_WRITE);
+                File saveFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/CharacterDemo.xml", FILE_WRITE);
                 scene_->SaveXML(saveFile);
             }
             if (input->GetKeyPress(KEY_F7))
             {
-                File loadFile(context_, GetSubsystem<FileSystem>()->GetProgramDir() + "Data/Scenes/CharacterDemo.xml", FILE_READ);
+                File loadFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/CharacterDemo.xml", FILE_READ);
                 scene_->LoadXML(loadFile);
                 // After loading we have to reacquire the weak pointer to the Character component, as it has been recreated
                 // Simply find the character's scene node by name as there's only one of them
@@ -337,7 +337,7 @@ void CharacterDemo::HandleUpdate(StringHash eventType, VariantMap& eventData)
     }
 }
 
-void CharacterDemo::HandlePostUpdate(StringHash eventType, VariantMap& eventData)
+void CharacterDemo::HandlePostUpdate(float ts)
 {
     if (!character_)
         return;

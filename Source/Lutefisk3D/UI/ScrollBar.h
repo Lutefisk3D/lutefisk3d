@@ -117,9 +117,9 @@ private:
     /// Handle forward button pressed.
     void HandleForwardButtonPressed(UIElement *);
     /// Handle slider movement.
-    void HandleSliderChanged(StringHash eventType, VariantMap& eventData);
+    void HandleSliderChanged(UIElement *, float);
     /// Handle slider touch and click on "paging" area.
-    void HandleSliderPaged(StringHash eventType, VariantMap& eventData);
+    void HandleSliderPaged(UIElement *, int offset, bool);
 };
 
 }

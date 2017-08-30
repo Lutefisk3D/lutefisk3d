@@ -167,7 +167,6 @@ void LogicComponent::UpdateEventSubscription()
 
 void LogicComponent::HandleSceneUpdate(Scene *s,float ts)
 {
-    assert(s==GetScene());
     // Execute user-defined delayed start function before first update
     if (!delayedStartCalled_)
     {

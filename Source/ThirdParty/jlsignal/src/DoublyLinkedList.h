@@ -120,7 +120,7 @@ public:
 private:
     Node* CreateNode()
     {
-        Node* pNode = (Node*)m_pNodeAllocator->Alloc( sizeof(Node) );
+        Node* pNode = new(m_pNodeAllocator->Alloc( sizeof(Node) ))Node;
         
         if ( ! pNode )
         {

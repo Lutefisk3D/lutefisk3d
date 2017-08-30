@@ -38,7 +38,6 @@ class Scene;
 ///     - Creating rendertarget texture and material programmatically
 class RenderToTexture : public Sample
 {
-    URHO3D_OBJECT(RenderToTexture,Sample);
 
 public:
     /// Construct.
@@ -58,8 +57,6 @@ private:
     void SubscribeToEvents();
     /// Read input and moves the camera.
     void MoveCamera(float timeStep);
-    /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
 
     /// Scene that is rendered to a texture.
     SharedPtr<Scene> rttScene_;

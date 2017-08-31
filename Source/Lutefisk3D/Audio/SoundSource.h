@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Audio/AudioDefs.h"
+#include "Lutefisk3D/Audio/AudioEvents.h"
 #include "Lutefisk3D/Scene/Component.h"
 
 namespace Urho3D
@@ -35,10 +36,12 @@ class SoundStream;
 /// Compressed audio decode buffer length in milliseconds.
 static const int STREAM_BUFFER_LENGTH = 100;
 
-/// %Sound source component with stereo position. A sound source needs to be created to a node to be considered "enabled" and be able to play, however that node does not need to belong to a scene.
-class URHO3D_API SoundSource : public Component
+/// %Sound source component with stereo position.
+/// A sound source needs to be created to a node to be considered "enabled" and be able to play,
+/// however that node does not need to belong to a scene.
+class LUTEFISK3D_EXPORT SoundSource : public Component, public SoundSignals
 {
-    URHO3D_OBJECT(SoundSource,Component);
+    URHO3D_OBJECT(SoundSource,Component)
 
 public:
     /// Construct.
@@ -48,6 +51,8 @@ public:
     /// Register object factory.
     static void RegisterObject(Context* context);
 
+    /// Seek to time.
+    void Seek(float seekTime);
     /// Play a sound.
     void Play(Sound* sound);
     /// Play a sound with specified frequency.

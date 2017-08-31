@@ -40,7 +40,7 @@ class Scene;
 ///     - Setting up a second camera to render reflections on the water surface
 class Water : public Sample
 {
-    URHO3D_OBJECT(Water,Sample);
+    
 
 public:
     /// Construct.
@@ -61,7 +61,7 @@ private:
     /// Read input and moves the camera.
     void MoveCamera(float timeStep);
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
 
     /// Reflection camera scene node.
     SharedPtr<Node> reflectionCameraNode_;

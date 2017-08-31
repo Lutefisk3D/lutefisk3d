@@ -25,7 +25,7 @@
 #include "Lutefisk3D/Scene/Component.h"         // for Component
 #include "Lutefisk3D/Core/Object.h"             // for VariantMap
 #include "Lutefisk3D/Core/Variant.h"            // for ResourceRef
-#include "Lutefisk3D/Core/Lutefisk3D.h"         // for URHO3D_API
+#include "Lutefisk3D/Core/Lutefisk3D.h"         // for LUTEFISK3D_EXPORT
 #include "Lutefisk3D/Container/RefCounted.h"    // for RefCounted
 #include "Lutefisk3D/Container/Ptr.h"           // for SharedPtr, Wea...
 #include "Lutefisk3D/Container/ArrayPtr.h"      // for SharedArrayPtr
@@ -135,7 +135,7 @@ struct HeightfieldData : public CollisionGeometryData
 };
 
 /// Physics collision shape component.
-class URHO3D_API CollisionShape : public Component
+class LUTEFISK3D_EXPORT CollisionShape : public Component
 {
     URHO3D_OBJECT(CollisionShape,Component)
 
@@ -251,7 +251,7 @@ private:
     /// Update terrain collision shape from the terrain component.
     void HandleTerrainCreated(StringHash eventType, VariantMap& eventData);
     /// Update trimesh or convex shape after a model has reloaded itself.
-    void HandleModelReloadFinished(StringHash eventType, VariantMap& eventData);
+    void HandleModelReloadFinished();
 
     /// Physics world.
     WeakPtr<PhysicsWorld> physicsWorld_;

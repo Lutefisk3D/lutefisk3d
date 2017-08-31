@@ -30,7 +30,7 @@ namespace Urho3D
 {
 
 /// %Component that describes global rendering properties.
-class URHO3D_API Zone : public Drawable
+class LUTEFISK3D_EXPORT Zone : public Drawable
 {
     URHO3D_OBJECT(Zone,Drawable)
 

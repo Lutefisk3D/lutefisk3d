@@ -29,6 +29,7 @@
 #include "Lutefisk3D/Core/Profiler.h"
 
 #include <QBuffer>
+#include <QFileInfo>
 #include <cstdlib>
 #include <cstring>
 #include <QtGui/QImage>
@@ -233,7 +234,7 @@ bool CompressedLevel::Decompress(unsigned char* dest)
         return false;
     }
 }
-
+/// Construct empty.
 Image::Image(Context* context) :
     Resource(context),
     width_(0),
@@ -251,7 +252,7 @@ Image::Image(Context* context) :
 Image::~Image()
 {
 }
-
+/// Register object factory.
 void Image::RegisterObject(Context* context)
 {
     context->RegisterFactory<Image>();
@@ -268,6 +269,7 @@ void Image::RegisterObject(Context* context)
     ++l; \
             }
 
+/// Load resource from stream. May be called from a worker thread. Return true if successful.
 bool Image::BeginLoad(Deserializer& source)
 {
     // Check for DDS, KTX or PVR compressed format
@@ -436,7 +438,7 @@ bool Image::BeginLoad(Deserializer& source)
         // If uncompressed DDS, convert the data to 8bit RGBA as the texture classes can not currently use eg. RGB565 format
         if (compressedFormat_ == CF_RGBA)
         {
-            URHO3D_PROFILE(ConvertDDSToRGBA);
+            URHO3D_PROFILE_CTX(context_,ConvertDDSToRGBA);
 
             currentImage = this;
 
@@ -744,10 +746,15 @@ bool Image::BeginLoad(Deserializer& source)
 #undef ADJUSTSHIFT
     return true;
 }
-
+///
+/// \brief Save the image to a stream.
+/// Regardless of original format, the image is saved as png. Compressed image data is not supported.
+/// \param dest - target stream
+/// \return true if successful.
+///
 bool Image::Save(Serializer& dest) const
 {
-    URHO3D_PROFILE(SaveImage);
+    URHO3D_PROFILE_CTX(context_,SaveImage);
 
     if (IsCompressed())
     {
@@ -782,12 +789,27 @@ bool Image::Save(Serializer& dest) const
     return success;
 }
 
-
+///
+/// \brief Set 2D size and number of color components.
+/// Old image data will be destroyed and new data is undefined.
+/// \param width
+/// \param height
+/// \param components
+/// \return true if successful.
+///
 bool Image::SetSize(int width, int height, unsigned components)
 {
     return SetSize(width, height, 1, components);
 }
-
+///
+/// \brief Set 3D size and number of color components.
+/// Old image data will be destroyed and new data is undefined.
+/// \param width
+/// \param height
+/// \param depth
+/// \param components
+/// \return true if successful.
+///
 bool Image::SetSize(int width, int height, int depth, unsigned components)
 {
     if (width == width_ && height == height_ && depth == depth_ && components == components_)
@@ -814,22 +836,22 @@ bool Image::SetSize(int width, int height, int depth, unsigned components)
     SetMemoryUse(width * height * depth * components);
     return true;
 }
-
+/// Set a 2D pixel.
 void Image::SetPixel(int x, int y, const Color& color)
 {
     SetPixelInt(x, y, 0, color.ToUInt());
 }
-
+/// Set a 3D pixel.
 void Image::SetPixel(int x, int y, int z, const Color& color)
 {
     SetPixelInt(x, y, z, color.ToUInt());
 }
-
+/// Set a 2D pixel with an integer color. R component is in the 8 lowest bits.
 void Image::SetPixelInt(int x, int y, unsigned uintColor)
 {
     SetPixelInt(x, y, 0, uintColor);
 }
-
+/// Set a 3D pixel with an integer color. R component is in the 8 lowest bits.
 void Image::SetPixelInt(int x, int y, int z, unsigned uintColor)
 {
     if (!data_ || x < 0 || x >= width_ || y < 0 || y >= height_ || z < 0 || z >= depth_ || IsCompressed())
@@ -854,7 +876,7 @@ void Image::SetPixelInt(int x, int y, int z, unsigned uintColor)
         break;
     }
 }
-
+/// Set new image data.
 void Image::SetData(const unsigned char* pixelData)
 {
     if (!data_)
@@ -869,7 +891,7 @@ void Image::SetData(const unsigned char* pixelData)
     memcpy(data_.Get(), pixelData, width_ * height_ * depth_ * components_);
     nextLevel_.Reset();
 }
-
+/// Load as color LUT. Return true if successful.
 bool Image::LoadColorLUT(Deserializer& source)
 {
     QString fileID = source.ReadFileID();
@@ -920,7 +942,10 @@ bool Image::LoadColorLUT(Deserializer& source)
 
     return true;
 }
-
+///
+/// \brief Flip image horizontally.
+/// \return true if successful.
+///
 bool Image::FlipHorizontal()
 {
     if (!data_)
@@ -988,6 +1013,10 @@ bool Image::FlipHorizontal()
     return true;
 }
 
+///
+/// \brief Flip image vertically.
+/// \return Return true if successful.
+///
 bool Image::FlipVertical()
 {
     if (!data_)
@@ -1047,10 +1076,15 @@ bool Image::FlipVertical()
 
     return true;
 }
-
+///
+/// \brief Resize image by bilinear resampling.
+/// \param width
+/// \param height
+/// \return Return true if successful.
+///
 bool Image::Resize(int width, int height)
 {
-    URHO3D_PROFILE(ResizeImage);
+    URHO3D_PROFILE_CTX(context_,ResizeImage);
 
     if (IsCompressed())
     {
@@ -1104,15 +1138,15 @@ bool Image::Resize(int width, int height)
     SetMemoryUse(width * height * depth_ * components_);
     return true;
 }
-
+/// Clear the image with a color.
 void Image::Clear(const Color& color)
 {
     ClearInt(color.ToUInt());
 }
-
+/// Clear the image with an integer color. R component is in the 8 lowest bits.
 void Image::ClearInt(unsigned uintColor)
 {
-    URHO3D_PROFILE(ClearImage);
+    URHO3D_PROFILE_CTX(context_,ClearImage);
 
     if (!data_)
         return;
@@ -1127,6 +1161,7 @@ void Image::ClearInt(unsigned uintColor)
     for (unsigned i = 0; i < width_ * height_ * depth_ * components_; ++i)
         data_[i] = src[i % components_];
 }
+/// saves the image with given encoding - \a format is a name like "bmp" "png" etc.
 bool Image::saveImageCommon(const QString &fileName,const char *format,int quality) const {
     QImage::Format targetfmt = QImage::Format_Invalid;
     switch(components_) {
@@ -1145,11 +1180,12 @@ bool Image::saveImageCommon(const QString &fileName,const char *format,int quali
     }
     return false;
 }
+/// Save in BMP format. Return true if successful.
 bool Image::SaveBMP(const QString& fileName) const
 {
-    URHO3D_PROFILE(SaveImageBMP);
+    URHO3D_PROFILE_CTX(context_,SaveImageBMP);
 
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = context_->m_FileSystem.get();
     if (fileSystem && !fileSystem->CheckAccess(GetPath(fileName)))
     {
         URHO3D_LOGERROR("Access denied to " + fileName);
@@ -1163,12 +1199,12 @@ bool Image::SaveBMP(const QString& fileName) const
     }
     return saveImageCommon(fileName,"bmp");
 }
-
+/// Save in PNG format. Return true if successful.
 bool Image::SavePNG(const QString& fileName) const
 {
-    URHO3D_PROFILE(SaveImagePNG);
+    URHO3D_PROFILE_CTX(context_,SaveImagePNG);
 
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = context_->m_FileSystem.get();
     if (fileSystem && !fileSystem->CheckAccess(GetPath(fileName)))
     {
         URHO3D_LOGERROR("Access denied to " + fileName);
@@ -1183,11 +1219,12 @@ bool Image::SavePNG(const QString& fileName) const
 
     return saveImageCommon(fileName,"png");
 }
+/// Save in JPG format with compression quality. Return true if successful.
 bool Image::SaveJPG(const QString & fileName, int quality) const
 {
-    URHO3D_PROFILE(SaveImageJPG);
+    URHO3D_PROFILE_CTX(context_,SaveImageJPG);
 
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = context_->m_FileSystem.get();
     if (fileSystem && !fileSystem->CheckAccess(GetPath(fileName)))
     {
         URHO3D_LOGERROR("Access denied to " + fileName);
@@ -1203,11 +1240,12 @@ bool Image::SaveJPG(const QString & fileName, int quality) const
     return saveImageCommon(fileName,"jpg",quality);
 }
 
+/// Return a 2D pixel color.
 Color Image::GetPixel(int x, int y) const
 {
     return GetPixel(x, y, 0);
 }
-
+/// Return a 3D pixel color.
 Color Image::GetPixel(int x, int y, int z) const
 {
     if (!data_ || z < 0 || z >= depth_ || IsCompressed())
@@ -1237,12 +1275,12 @@ Color Image::GetPixel(int x, int y, int z) const
 
     return ret;
 }
-
+/// Return a 2D pixel integer color. R component is in the 8 lowest bits.
 unsigned Image::GetPixelInt(int x, int y) const
 {
     return GetPixelInt(x, y, 0);
 }
-
+/// Return a 3D pixel integer color. R component is in the 8 lowest bits.
 unsigned Image::GetPixelInt(int x, int y, int z) const
 {
     if (!data_ || z < 0 || z >= depth_ || IsCompressed())
@@ -1276,7 +1314,7 @@ unsigned Image::GetPixelInt(int x, int y, int z) const
 
     return ret;
 }
-
+/// Return a bilinearly sampled 2D pixel color. X and Y have the range 0-1.
 Color Image::GetPixelBilinear(float x, float y) const
 {
     x = Clamp(x * width_ - 0.5f, 0.0f, (float)(width_ - 1));
@@ -1291,7 +1329,7 @@ Color Image::GetPixelBilinear(float x, float y) const
     Color bottomColor = GetPixel(xI, yI + 1).Lerp(GetPixel(xI + 1, yI + 1), xF);
     return topColor.Lerp(bottomColor, yF);
 }
-
+/// Return a trilinearly sampled 3D pixel color. X, Y and Z have the range 0-1.
 Color Image::GetPixelTrilinear(float x, float y, float z) const
 {
     if (depth_ < 2)
@@ -1318,7 +1356,7 @@ Color Image::GetPixelTrilinear(float x, float y, float z) const
     Color colorFar = topColorFar.Lerp(bottomColorFar, yF);
     return colorNear.Lerp(colorFar, zF);
 }
-
+/// Return next mip level by bilinear filtering. Note that if the image is already 1x1x1, will keep returning an image of that size.
 SharedPtr<Image> Image::GetNextLevel() const
 {
     if (IsCompressed())
@@ -1335,7 +1373,7 @@ SharedPtr<Image> Image::GetNextLevel() const
     if (nextLevel_)
         return nextLevel_;
 
-    URHO3D_PROFILE(CalculateImageMipLevel);
+    URHO3D_PROFILE_CTX(context_,CalculateImageMipLevel);
 
     int widthOut = width_ / 2;
     int heightOut = height_ / 2;
@@ -1585,7 +1623,7 @@ SharedPtr<Image> Image::GetNextLevel() const
 
     return mipImage;
 }
-
+/// Return image converted to 4-component (RGBA) to circumvent modern rendering API's not supporting e.g. the luminance-alpha format.
 SharedPtr<Image> Image::ConvertToRGBA() const
 {
     if (IsCompressed())
@@ -1651,6 +1689,7 @@ SharedPtr<Image> Image::ConvertToRGBA() const
 
     return ret;
 }
+/// Return a compressed mip level.
 CompressedLevel Image::GetCompressedLevel(unsigned index) const
 {
     CompressedLevel level;
@@ -1788,7 +1827,12 @@ CompressedLevel Image::GetCompressedLevel(unsigned index) const
         }
     }
 }
-
+///
+/// \brief return subimage from the image by the defined rect or null if failed. You must free the subimage yourself.
+/// \note 3D images are not supported.
+/// \param rect - region of interest
+/// \return subimage from the image
+///
 Image* Image::GetSubimage(const IntRect& rect) const
 {
     if (!data_)
@@ -1896,7 +1940,13 @@ Image* Image::GetSubimage(const IntRect& rect) const
         return image;
     }
 }
-
+///
+/// \brief Return an SDL surface from the image, or null if failed.
+/// Only RGB images are supported.
+/// Specify rect to only return partial image. You must free the surface yourself.
+/// \param rect
+/// \return SDL surface from the image, or null if failed
+///
 SDL_Surface* Image::GetSDLSurface(const IntRect& rect) const
 {
     if (!data_)
@@ -1962,13 +2012,13 @@ SDL_Surface* Image::GetSDLSurface(const IntRect& rect) const
 
     return surface;
 }
-
+/// Precalculate the mip levels. Used by asynchronous texture loading.
 void Image::PrecalculateLevels()
 {
     if (!data_ || IsCompressed())
         return;
 
-    URHO3D_PROFILE(PrecalculateImageMipLevels);
+    URHO3D_PROFILE_CTX(context_,PrecalculateImageMipLevels);
 
     nextLevel_.Reset();
 
@@ -1984,14 +2034,44 @@ void Image::PrecalculateLevels()
     }
 }
 
+/// Clean up the mip levels.
+void Image::CleanupLevels()
+{
+    nextLevel_.Reset();
+}
+/// Get all stored mip levels starting from this.
+void Image::GetLevels(std::vector<Image*> & levels)
+{
+    levels.clear();
+
+    Image* image = this;
+    while (image)
+    {
+        levels.push_back(image);
+        image = image->nextLevel_;
+    }
+}
+/// Get all stored mip levels starting from this.
+void Image::GetLevels(std::vector<const Image*>& levels) const
+{
+    levels.clear();
+
+    const Image* image = this;
+    while (image)
+    {
+        levels.push_back(image);
+        image = image->nextLevel_;
+    }
+}
+/// Decode an image using QImage.
 unsigned char* Image::GetImageData(Deserializer& source, int& width, int& height, unsigned& components)
 {
     unsigned dataSize = source.GetSize();
 
     SharedArrayPtr<unsigned char> buffer(new unsigned char[dataSize]);
     source.Read(buffer.Get(), dataSize);
-
-    QImage img(QImage::fromData(buffer.Get(),dataSize));
+    QString srcname = QFileInfo(source.GetName()).suffix();
+    QImage img(QImage::fromData(buffer.Get(),dataSize,qPrintable(srcname.toUpper())));
     assert(img.width()>0 && img.height()>0);
     if(((img.depth()+7)/8)==4) {
         if(!img.hasAlphaChannel()) {
@@ -2013,7 +2093,7 @@ unsigned char* Image::GetImageData(Deserializer& source, int& width, int& height
     }
     return res;
 }
-
+/// Free an image file's pixel data.
 void Image::FreeImageData(unsigned char* pixelData)
 {
     delete [] pixelData;

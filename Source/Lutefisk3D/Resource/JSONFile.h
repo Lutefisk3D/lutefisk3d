@@ -30,7 +30,7 @@ namespace Urho3D
 {
 
 /// JSON document resource.
-class URHO3D_API JSONFile : public Resource
+class LUTEFISK3D_EXPORT JSONFile : public Resource
 {
     URHO3D_OBJECT(JSONFile,Resource);
 

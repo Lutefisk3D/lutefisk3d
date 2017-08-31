@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -126,11 +126,7 @@ bool BackgroundLoader::QueueResource(StringHash type, const QString& name, bool 
 
         if (sendEventOnFailure && Thread::IsMainThread())
         {
-            using namespace UnknownResourceType;
-
-            VariantMap& eventData = owner_->GetEventDataMap();
-            eventData[P_RESOURCETYPE] = type;
-            owner_->SendEvent(E_UNKNOWNRESOURCETYPE, eventData);
+            g_resourceSignals.unknownResourceType.Emit(type);
         }
 
         backgroundLoadQueue_.remove(key);
@@ -259,7 +255,7 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
 #ifdef LUTEFISK3D_PROFILING
         QString profileBlockName("Finish" + resource->GetTypeName());
 
-        Profiler* profiler = owner_->GetSubsystem<Profiler>();
+        Profiler* profiler = owner_->GetContext()->m_ProfilerSystem.get();
         if (profiler)
             profiler->BeginBlock(qPrintable(profileBlockName));
 #endif
@@ -275,27 +271,16 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
 
     if (!success && item.sendEventOnFailure_)
     {
-        using namespace LoadFailed;
-
-        VariantMap& eventData = owner_->GetEventDataMap();
-        eventData[P_RESOURCENAME] = resource->GetName();
-        owner_->SendEvent(E_LOADFAILED, eventData);
+        g_resourceSignals.loadFailed.Emit(resource->GetName());
     }
 
-    // Send event, either success or failure
-    {
-        using namespace ResourceBackgroundLoaded;
-
-        VariantMap& eventData = owner_->GetEventDataMap();
-        eventData[P_RESOURCENAME] = resource->GetName();
-        eventData[P_SUCCESS] = success;
-        eventData[P_RESOURCE] = resource;
-        owner_->SendEvent(E_RESOURCEBACKGROUNDLOADED, eventData);
-    }
-
-    // Store to the cache; use same mechanism as for manual resources
+    // Store to the cache just before sending the event; use same mechanism as for manual resources
     if (success || owner_->GetReturnFailedResources())
         owner_->AddManualResource(resource);
+
+    // Send event, either success or failure
+    g_resourceSignals.resourceBackgroundLoaded.Emit(resource->GetName(),success,resource);
+
 }
 
 }

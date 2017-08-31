@@ -31,7 +31,7 @@ class QString;
 namespace Urho3D
 {
 /// RGBA color.
-class URHO3D_API Color
+class LUTEFISK3D_EXPORT Color
 {
 public:
     /// Construct with default values (opaque white.)

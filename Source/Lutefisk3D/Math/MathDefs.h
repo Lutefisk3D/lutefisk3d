@@ -76,7 +76,7 @@ inline T Max(T lhs, T rhs) { return lhs > rhs ? lhs : rhs; }
 template<typename T>
 inline T Abs(T value) { return value >= T(0) ? value : -value; }
 /// Return the sign of a float (-1, 0 or 1.)
-inline float Sign(float value) { return value > 0.0f ? 1.0f : (value < 0.0f ? -1.0f : 0.0f); }
+inline int Sign(float value) { return (0 < value) - (value < 0); }
 /// Check whether a floating point value is NaN.
 /// Use a workaround for GCC, see https://github.com/urho3d/Urho3D/issues/655
 #ifndef __GNUC__
@@ -161,6 +161,15 @@ inline unsigned NextPowerOfTwo(unsigned value)
     return ++value;
 }
 
+/// Return log base two or the MSB position of the given value.
+inline unsigned LogBaseTwo(unsigned value)
+{
+    // http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious
+    unsigned ret = 0;
+    while (value >>= 1)     // Unroll for more speed...
+        ++ret;
+    return ret;
+}
 /// Count the number of set bits in a mask.
 inline unsigned CountSetBits(unsigned value)
 {
@@ -230,5 +239,5 @@ inline float HalfToFloat(unsigned short value)
 }
 
 /// Calculate both sine and cosine, with angle in degrees.
-URHO3D_API void SinCos(float angle, float& sin, float& cos);
+LUTEFISK3D_EXPORT void SinCos(float angle, float& sin, float& cos);
 }

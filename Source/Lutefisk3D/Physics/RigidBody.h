@@ -48,7 +48,7 @@ enum CollisionEventMode
 };
 
 /// Physics rigid body component.
-class URHO3D_API RigidBody : public Component, public btMotionState
+class LUTEFISK3D_EXPORT RigidBody : public Component, public btMotionState
 {
     URHO3D_OBJECT(RigidBody,Component);
 
@@ -246,9 +246,9 @@ private:
     /// Remove the rigid body from the physics world.
     void RemoveBodyFromWorld();
     /// Handle SmoothedTransform target position update.
-    void HandleTargetPosition(StringHash eventType, VariantMap& eventData);
+    void HandleTargetPosition();
     /// Handle SmoothedTransform target rotation update.
-    void HandleTargetRotation(StringHash eventType, VariantMap& eventData);
+    void HandleTargetRotation();
 
     /// Bullet rigid body.
     std::unique_ptr<btRigidBody> body_;

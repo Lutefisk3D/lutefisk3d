@@ -76,7 +76,7 @@ void SetItemHierarchyParent(UIElement* item, bool enable)
 /// Hierarchy container (used by ListView internally when in hierarchy mode).
 class HierarchyContainer : public UIElement
 {
-    URHO3D_OBJECT(HierarchyContainer, UIElement);
+    URHO3D_OBJECT(HierarchyContainer, UIElement)
 
 public:
     /// Construct.
@@ -85,16 +85,16 @@ public:
         listView_(listView),
         overlayContainer_(overlayContainer)
     {
-        SubscribeToEvent(this, E_LAYOUTUPDATED, URHO3D_HANDLER(HierarchyContainer, HandleLayoutUpdated));
+        layoutUpdated.Connect(this,&HierarchyContainer::HandleLayoutUpdated);
         SubscribeToEvent(overlayContainer->GetParent(), E_VIEWCHANGED, URHO3D_HANDLER(HierarchyContainer, HandleViewChanged));
-        SubscribeToEvent(E_UIMOUSECLICK, URHO3D_HANDLER(HierarchyContainer, HandleUIMouseClick));
+        g_uiSignals.mouseClickUI.Connect(this,&HierarchyContainer::HandleUIMouseClick);
     }
 
     /// Register object factory.
     static void RegisterObject(Context *context);
 
     /// Handle layout updated by adjusting the position of the overlays.
-    void HandleLayoutUpdated(StringHash eventType, VariantMap &eventData)
+    void HandleLayoutUpdated(UIElement *)
     {
         // Adjust the container size for child clipping effect
         overlayContainer_->SetSize(GetParent()->GetSize());
@@ -126,11 +126,8 @@ public:
     }
 
     /// Handle mouse click on overlays by toggling the expansion state of the corresponding item
-    void HandleUIMouseClick(StringHash eventType, VariantMap &eventData)
+    void HandleUIMouseClick(UIElement *overlay,int, int, int, unsigned, int)
     {
-        using namespace UIMouseClick;
-
-        UIElement *overlay = static_cast<UIElement *>(eventData[UIMouseClick::P_ELEMENT].GetPtr());
         if (overlay)
         {
             const std::vector<SharedPtr<UIElement>> &children(overlayContainer_->GetChildren());
@@ -181,10 +178,10 @@ ListView::ListView(Context* context) :
     // By default list view is set to non-hierarchy mode
     SetHierarchyMode(false);
 
-    SubscribeToEvent(E_UIMOUSEDOUBLECLICK, URHO3D_HANDLER(ListView, HandleUIMouseDoubleClick));
-    SubscribeToEvent(E_FOCUSCHANGED, URHO3D_HANDLER(ListView, HandleItemFocusChanged));
-    SubscribeToEvent(this, E_DEFOCUSED, URHO3D_HANDLER(ListView, HandleFocusChanged));
-    SubscribeToEvent(this, E_FOCUSED, URHO3D_HANDLER(ListView, HandleFocusChanged));
+    g_uiSignals.mouseDoubleClickUI.Connect(this,&ListView::HandleUIMouseDoubleClick);
+    g_uiSignals.focusChanged.Connect(this,&ListView::HandleItemFocusChanged);
+    defocused.Connect(this,&ListView::HandleFocusLost);
+    focused.Connect(this,&ListView::HandleFocusGained);
 
     UpdateUIClickSubscription();
 }
@@ -900,7 +897,7 @@ void ListView::CopySelectedItemsToClipboard() const
             selectedText.append(text->GetText()).append("\n");
     }
 
-    GetSubsystem<UI>()->SetClipboardText(selectedText);
+    context_->m_UISystem->SetClipboardText(selectedText);
 }
 
 bool ListView::IsSelected(unsigned index) const
@@ -995,17 +992,11 @@ void ListView::EnsureItemVisibility(UIElement* item)
     SetViewPosition(newView);
 }
 
-void ListView::HandleUIMouseClick(StringHash eventType, VariantMap& eventData)
+void ListView::HandleUIMouseClick(UIElement* element,int button, unsigned buttons, int qualifiers )
 {
     // Disregard the click end if a drag is going on
-    if (selectOnClickEnd_ && GetSubsystem<UI>()->IsDragging())
+    if (selectOnClickEnd_ && context_->m_UISystem->IsDragging())
         return;
-
-    int button = eventData[UIMouseClick::P_BUTTON].GetInt();
-    int buttons = eventData[UIMouseClick::P_BUTTONS].GetInt();
-    int qualifiers = eventData[UIMouseClick::P_QUALIFIERS].GetInt();
-
-    UIElement* element = static_cast<UIElement*>(eventData[UIMouseClick::P_ELEMENT].GetPtr());
 
     // Check if the clicked element belongs to the list
     unsigned i = FindItem(element);
@@ -1084,13 +1075,8 @@ void ListView::HandleUIMouseClick(StringHash eventType, VariantMap& eventData)
     SendEvent(E_ITEMCLICKED, clickEventData);
 }
 
-void ListView::HandleUIMouseDoubleClick(StringHash eventType, VariantMap& eventData)
+void ListView::HandleUIMouseDoubleClick(UIElement *element,int, int, int button, unsigned buttons, int qualifiers)
 {
-    int button = eventData[UIMouseClick::P_BUTTON].GetInt();
-    int buttons = eventData[UIMouseClick::P_BUTTONS].GetInt();
-    int qualifiers = eventData[UIMouseClick::P_QUALIFIERS].GetInt();
-
-    UIElement* element = static_cast<UIElement*>(eventData[UIMouseClick::P_ELEMENT].GetPtr());
     // Check if the clicked element belongs to the list
     unsigned i = FindItem(element);
     if (i >= GetNumItems())
@@ -1107,11 +1093,8 @@ void ListView::HandleUIMouseDoubleClick(StringHash eventType, VariantMap& eventD
 }
 
 
-void ListView::HandleItemFocusChanged(StringHash eventType, VariantMap& eventData)
+void ListView::HandleItemFocusChanged(UIElement *element,UIElement *)
 {
-    using namespace FocusChanged;
-
-    UIElement* element = static_cast<UIElement*>(eventData[P_ELEMENT].GetPtr());
     while (element)
     {
         // If the focused element or its parent is in the list, scroll the list to make the item visible
@@ -1125,20 +1108,37 @@ void ListView::HandleItemFocusChanged(StringHash eventType, VariantMap& eventDat
     }
 }
 
-void ListView::HandleFocusChanged(StringHash eventType, VariantMap& eventData)
-{
-    scrollPanel_->SetSelected(eventType == E_FOCUSED);
-    if (clearSelectionOnDefocus_ && eventType == E_DEFOCUSED)
+void ListView::HandleFocusLost(UIElement *el) {
+    scrollPanel_->SetSelected(false);
+    if (clearSelectionOnDefocus_)
         ClearSelection();
     else if (highlightMode_ == HM_FOCUS)
         UpdateSelectionEffect();
+
+}
+void ListView::HandleFocusGained(UIElement *,bool )
+{
+    scrollPanel_->SetSelected(true);
+    if (highlightMode_ == HM_FOCUS)
+        UpdateSelectionEffect();
+}
+void ListView::handleMouseClick(UIElement *e,int, int, int button, unsigned buttons, int qualifier)
+{
+    HandleUIMouseClick(e,button,buttons,qualifier);
+}
+void ListView::handleMouseClickEnd(UIElement *e,UIElement *,int, int, int button, unsigned buttons, int qualifier)
+{
+    HandleUIMouseClick(e,button,buttons,qualifier);
 }
 
 void ListView::UpdateUIClickSubscription()
 {
-    UnsubscribeFromEvent(E_UIMOUSECLICK);
-    UnsubscribeFromEvent(E_UIMOUSECLICKEND);
-    SubscribeToEvent(selectOnClickEnd_ ? E_UIMOUSECLICKEND : E_UIMOUSECLICK, URHO3D_HANDLER(ListView, HandleUIMouseClick));
+    g_uiSignals.mouseClickUI.Disconnect(this,&ListView::handleMouseClick);
+    g_uiSignals.mouseClickEndUI.Disconnect(this,&ListView::handleMouseClickEnd);
+    if(selectOnClickEnd_)
+        g_uiSignals.mouseClickEndUI.Connect(this,&ListView::handleMouseClickEnd);
+    else
+        g_uiSignals.mouseClickUI.Connect(this,&ListView::handleMouseClick);
 }
 
 }

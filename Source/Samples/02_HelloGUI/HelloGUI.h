@@ -42,24 +42,12 @@ class Window;
 ///     - Accessing available Events data (eventData)
 class HelloGUI : public Sample
 {
-    URHO3D_OBJECT(HelloGUI,Sample);
-
 public:
     /// Construct.
     HelloGUI(Context* context);
 
     /// Setup after engine initialization and before running the main loop.
     virtual void Start() override;
-
-protected:
-    /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
-    virtual QString GetScreenJoystickPatchString() const override { return
-        "<patch>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Hat0']]\">"
-        "        <attribute name=\"Is Visible\" value=\"false\" />"
-        "    </add>"
-        "</patch>";
-    }
 
 private:
     /// Create and initialize a Window control.
@@ -69,15 +57,15 @@ private:
     /// Create a draggable fish button.
     void CreateDraggableFish();
     /// Handle drag begin for the fish button.
-    void HandleDragBegin(StringHash eventType, VariantMap& eventData);
+    void HandleDragBegin(UIElement *, int, int, int elemX, int elemY, int, int);
     /// Handle drag move for the fish button.
-    void HandleDragMove(StringHash eventType, VariantMap& eventData);
+    void HandleDragMove(UIElement *draggedElement, int X, int Y, int, int, int elemX, int elemY, int, int);
     /// Handle drag end for the fish button.
-    void HandleDragEnd(StringHash eventType, VariantMap& eventData);
+    void HandleDragEnd(UIElement *, int, int, int, int, int, int);
     /// Handle any UI control being clicked.
-    void HandleControlClicked(StringHash eventType, VariantMap& eventData);
+    void HandleControlClicked(UIElement *clicked,int, int, int, unsigned, int);
     /// Handle close button pressed and released.
-    void HandleClosePressed(StringHash eventType, VariantMap& eventData);
+    void HandleClosePressed(UIElement *);
 
     /// The Window.
     SharedPtr<Window> window_;

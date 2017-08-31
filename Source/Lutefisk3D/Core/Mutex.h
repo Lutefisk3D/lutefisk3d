@@ -29,9 +29,7 @@ namespace Urho3D
 class Mutex
 {
 public:
-    /// Construct.
     Mutex();
-    /// Destruct.
     ~Mutex();
 
     /// Acquire the mutex. Block if already acquired.

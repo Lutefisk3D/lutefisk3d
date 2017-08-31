@@ -71,7 +71,7 @@ void SoundSynthesis::Start()
 void SoundSynthesis::CreateSound()
 {
     // Sound source needs a node so that it is considered enabled
-    node_ = new Node(context_);
+    node_ = new Node(m_context);
     SoundSource* source = node_->CreateComponent<SoundSource>();
 
     soundStream_ = new BufferedSoundStream();
@@ -114,8 +114,8 @@ void SoundSynthesis::UpdateSound()
 
 void SoundSynthesis::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     instructionText_ = ui->GetRoot()->CreateChild<Text>();
@@ -132,10 +132,10 @@ void SoundSynthesis::CreateInstructions()
 void SoundSynthesis::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(SoundSynthesis, HandleUpdate));
+    g_coreSignals.update.Connect(this,&SoundSynthesis::HandleUpdate);
 }
 
-void SoundSynthesis::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void SoundSynthesis::HandleUpdate(float timeStep)
 {
     using namespace Update;
 
@@ -143,7 +143,7 @@ void SoundSynthesis::HandleUpdate(StringHash eventType, VariantMap& eventData)
     float timeStep = eventData[P_TIMESTEP].GetFloat();
 
     // Use keys to control the filter constant
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
     if (input->GetKeyDown(KEY_UP))
         filter_ += timeStep * 0.5f;
     if (input->GetKeyDown(KEY_DOWN))

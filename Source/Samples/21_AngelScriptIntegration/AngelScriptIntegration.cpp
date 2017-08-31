@@ -52,7 +52,7 @@ AngelScriptIntegration::AngelScriptIntegration(Context* context) :
     Sample(context)
 {
     // Instantiate and register the AngelScript subsystem so that we can use the ScriptInstance component
-    context_->RegisterSubsystem(new Script(context_));
+    m_context->RegisterSubsystem(new Script(m_context));
 }
 
 void AngelScriptIntegration::Start()
@@ -77,7 +77,7 @@ void AngelScriptIntegration::CreateScene()
 {
     ResourceCache* cache = GetSubsystem<ResourceCache>();
     
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
     
     // Create the Octree component to the scene so that drawable objects can be rendered. Use default volume
     // (-1000, -1000, -1000) to (1000, 1000, 1000)
@@ -150,7 +150,7 @@ void AngelScriptIntegration::SetupViewport()
     Renderer* renderer = GetSubsystem<Renderer>();
     
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 

@@ -24,7 +24,7 @@
 #include "Lutefisk3D/Core/Lutefisk3D.h"
 namespace Urho3D
 {
-class URHO3D_API Condition
+class LUTEFISK3D_EXPORT Condition
 {
 public:
     Condition();

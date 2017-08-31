@@ -24,6 +24,7 @@
 
 #include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Container/DataHandle.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Graphics/Skeleton.h"
 #include "Lutefisk3D/Math/BoundingBox.h"
@@ -36,7 +37,8 @@ class Geometry;
 class IndexBuffer;
 class Graphics;
 class VertexBuffer;
-
+using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
+using IndexBufferHandle = DataHandle<IndexBuffer,20,20>;
 /// Vertex buffer morph data.
 struct VertexBufferMorph
 {
@@ -105,9 +107,9 @@ struct GeometryDesc
 };
 
 /// 3D model resource.
-class URHO3D_API Model : public Resource
+class LUTEFISK3D_EXPORT Model : public ResourceWithMetadata
 {
-    URHO3D_OBJECT(Model,Resource);
+    URHO3D_OBJECT(Model,ResourceWithMetadata)
 
 public:
     /// Construct.

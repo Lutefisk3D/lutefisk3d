@@ -27,12 +27,31 @@
 #include "Lutefisk3D/Core/Object.h"
 #include <QtCore/QSet>
 #include <QtCore/QString>
-
-
+#include <memory>
+#ifdef _MSC_VER
+#include <iso646.h>
+#endif
+namespace jl {
+class ScopedAllocator;
+}
 namespace Urho3D
 {
-
-class URHO3D_API EventReceiverGroup : public RefCounted
+#ifndef LUTEFISK3D_UILESS
+class UI;
+#else
+class UI {};
+#endif
+class Log;
+class FileSystem;
+class Input;
+class ResourceCache;
+class Graphics;
+class Time;
+class Profiler;
+class EventProfiler;
+class Renderer;
+class WorkQueue;
+class LUTEFISK3D_EXPORT EventReceiverGroup : public RefCounted
 {
 public:
     void BeginSendEvent();
@@ -46,13 +65,28 @@ private:
     bool     dirty_  = false;
 };
 
-class URHO3D_API Context : public RefCounted
+class LUTEFISK3D_EXPORT Context : public RefCounted
 {
     friend class Object;
     friend class Context_EventGuard;
 public:
     Context();
     ~Context();
+
+    std::unique_ptr<Log>           m_LogSystem;
+    std::unique_ptr<FileSystem>    m_FileSystem;
+    std::unique_ptr<Input>         m_InputSystem;
+    std::unique_ptr<ResourceCache> m_ResourceCache;
+    std::unique_ptr<Graphics>      m_Graphics;
+    std::unique_ptr<Renderer>      m_Renderer;
+    std::unique_ptr<Time>          m_TimeSystem;
+    std::unique_ptr<Profiler>      m_ProfilerSystem;
+    std::unique_ptr<EventProfiler> m_EventProfilerSystem;
+    std::unique_ptr<WorkQueue>     m_WorkQueueSystem;
+    std::unique_ptr<UI>            m_UISystem;
+
+    jl::ScopedAllocator *          m_signal_allocator; // Those point to static instances, no need to free them
+    jl::ScopedAllocator *          m_observer_allocator;
 
     template <class T> inline SharedPtr<T> CreateObject() { return StaticCast<T>(CreateObject(T::GetTypeStatic())); }
     SharedPtr<Object> CreateObject(StringHash objectType);
@@ -65,7 +99,6 @@ public:
     VariantMap& GetEventDataMap();
     bool RequireSDL(unsigned int sdlFlags);
     void ReleaseSDL();
-
 
     void CopyBaseAttributes(StringHash baseType, StringHash derivedType);
 
@@ -80,7 +113,7 @@ public:
     Object* GetSubsystem(StringHash type) const;
     const Variant &GetGlobalVar(StringHash key) const;
     const VariantMap& GetGlobalVars() const { return globalVars_; }
-    
+
     void SetGlobalVar(StringHash key, const Variant &value);
 
     const HashMap<StringHash, SharedPtr<Object> >& GetSubsystems() const { return subsystems_; }
@@ -92,7 +125,7 @@ public:
     const QString& GetTypeName(StringHash objectType) const;
 
     AttributeInfo* GetAttribute(StringHash objectType, const char* name);
-    template <class T> T* GetSubsystem() const;
+    template <class T> T* GetSubsystemT() const;
     template <class T> AttributeInfo* GetAttribute(const char* name);
 
     const std::vector<AttributeInfo>* GetAttributes(StringHash type) const
@@ -165,7 +198,8 @@ template <class T> void Context::RemoveSubsystem() { RemoveSubsystem(T::GetTypeS
 template <class T> void Context::RegisterAttribute(const AttributeInfo& attr) { RegisterAttribute(T::GetTypeStatic(), attr); }
 template <class T> void Context::RemoveAttribute(const char* name) { RemoveAttribute(T::GetTypeStatic(), name); }
 template <class T, class U> void Context::CopyBaseAttributes() { CopyBaseAttributes(T::GetTypeStatic(), U::GetTypeStatic()); }
-template <class T> T* Context::GetSubsystem() const { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }
+template <class T> T* Context::GetSubsystemT() const { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }
+//template <> FileSystem* Context::GetSubsystem<FileSystem>() const { return m_FileSystem.get(); }
 template <class T> AttributeInfo* Context::GetAttribute(const char* name) { return GetAttribute(T::GetTypeStatic(), name); }
 template <class T> void Context::UpdateAttributeDefaultValue(const char* name, const Variant& defaultValue) { UpdateAttributeDefaultValue(T::GetTypeStatic(), name, defaultValue); }
 

@@ -39,7 +39,7 @@ class Viewport;
 /// %UI element which renders a 3D scene.
 class View3D : public Window
 {
-    URHO3D_OBJECT(View3D,Window);
+    URHO3D_OBJECT(View3D,Window)
 
 public:
     /// Construct.
@@ -80,7 +80,7 @@ private:
     /// Reset scene.
     void ResetScene();
     /// Handle render surface update event. Queue the texture for update in case the View3D is visible and automatic update is enabled.
-    void HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleRenderSurfaceUpdate();
 
     /// Renderable texture.
     SharedPtr<Texture2D> renderTexture_;

@@ -32,7 +32,7 @@ namespace Urho3D
 class FileSystem;
 
 /// Watches a directory and its subdirectories for files being modified.
-class URHO3D_API FileWatcher : public Object, public Thread
+class LUTEFISK3D_EXPORT FileWatcher : public Object, public Thread
 {
     URHO3D_OBJECT(FileWatcher, Object)
 
@@ -63,7 +63,7 @@ public:
 
 private:
     /// Filesystem.
-    SharedPtr<FileSystem> fileSystem_;
+    FileSystem *fileSystem_;
     /// The path being watched.
     QString path_;
     /// Pending changes. These will be returned and removed from the list when their timer has exceeded the delay.

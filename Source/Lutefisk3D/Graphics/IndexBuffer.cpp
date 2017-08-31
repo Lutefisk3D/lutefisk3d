@@ -27,20 +27,22 @@
 #include "Graphics.h"
 #include "Lutefisk3D/IO/Log.h"
 
+#include "Lutefisk3D/Core/Context.h"
+
 namespace Urho3D
 {
+//IndexBufferManager g_indexBufferManager;
 
 IndexBuffer::IndexBuffer(Context* context, bool forceHeadless) :
-    Object(context),
-    GPUObject(forceHeadless ? (Graphics*)nullptr : GetSubsystem<Graphics>()),
+    GPUObject(forceHeadless ? (Graphics*)nullptr : context->m_Graphics.get()),
     indexCount_(0),
     indexSize_(0),
     lockState_(LOCK_NONE),
     lockStart_(0),
     lockCount_(0),
     lockScratchData_(nullptr),
-    shadowed_(false),
     dynamic_(false),
+    shadowed_(false),
     discardLock_(false)
 {
     // Force shadowing mode if graphics subsystem does not exist

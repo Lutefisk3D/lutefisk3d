@@ -23,100 +23,44 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
-
+#include "jlsignal/Signal.h"
 namespace Urho3D
 {
+class UIElement;
 
-/// Global mouse click in the UI. Sent by the UI subsystem.
-URHO3D_EVENT(E_UIMOUSECLICK, UIMouseClick)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_BUTTON, Button);                // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_QUALIFIERS, Qualifiers);        // int
-}
+struct UISignals {
+    /// Global mouse click in the UI. Sent by the UI subsystem.
+    jl::Signal<UIElement *,int, int, int, unsigned, int> mouseClickUI; //Element,x,y,Button,Buttons,Qualifiers
+    /// Global mouse click end in the UI. Sent by the UI subsystem.
+    //Element,BeginElement,x,y,Button,Buttons,Qualifiers
+    jl::Signal<UIElement *,UIElement *,int, int, int, unsigned, int> mouseClickEndUI;
+    /// Global mouse double click in the UI. Sent by the UI subsystem.
+    jl::Signal<UIElement *,int, int, int, unsigned, int> mouseDoubleClickUI; //Element,x,y,Button,Buttons,Qualifiers
 
-/// Global mouse click end in the UI. Sent by the UI subsystem.
-URHO3D_EVENT(E_UIMOUSECLICKEND, UIMouseClickEnd)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_BEGINELEMENT, BeginElement);    // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_BUTTON, Button);                // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_QUALIFIERS, Qualifiers);        // int
-}
+    /// Drag and drop finish.
+    jl::Signal<UIElement *,UIElement *,bool> dragDropFinish; // Source,Target,Accept
+    /// Drag and drop test.
+    jl::Signal<UIElement *,UIElement *,bool &> dragDropTest; // Source,Target,Accept
+    /// Focus element changed.
+    /// Since focus can be passed over - Element points to part that actually gets the focus
+    /// And ClickedElement is element that was actually 'clicked'/'activated'
+    jl::Signal<UIElement *,UIElement *> focusChanged; // Element ,ClickedElement
 
-/// Global mouse double click in the UI. Sent by the UI subsystem.
-URHO3D_EVENT(E_UIMOUSEDOUBLECLICK, UIMouseDoubleClick)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_BUTTON, Button);                // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_QUALIFIERS, Qualifiers);        // int
-}
+    /// A file was drag-dropped into the application window. Includes also coordinates and UI element if applicable
+    jl::Signal<const QString &,UIElement *,int,int,int,int> dropFileUI; //FileName,Element,X,Y,ElementX,ElementY
+    void init(jl::ScopedAllocator *allocator)
+    {
+        mouseClickUI.SetAllocator(allocator);
+        mouseClickEndUI.SetAllocator(allocator);
+        mouseDoubleClickUI.SetAllocator(allocator);
+        dragDropFinish.SetAllocator(allocator);
+        dragDropTest.SetAllocator(allocator);
+        focusChanged.SetAllocator(allocator);
+        dropFileUI.SetAllocator(allocator);
+    }
 
-/// Mouse click on a UI element. Parameters are same as in UIMouseClick event, but is sent by the element.
-URHO3D_EVENT(E_CLICK, Click)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_BUTTON, Button);                // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_QUALIFIERS, Qualifiers);        // int
-}
-
-/// Mouse click end on a UI element. Parameters are same as in UIMouseClickEnd event, but is sent by the element.
-URHO3D_EVENT(E_CLICKEND, ClickEnd)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_BEGINELEMENT, BeginElement);    // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_BUTTON, Button);                // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_QUALIFIERS, Qualifiers);        // int
-}
-
-/// Mouse double click on a UI element. Parameters are same as in UIMouseDoubleClick event, but is sent by the element.
-URHO3D_EVENT(E_DOUBLECLICK, DoubleClick)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_BUTTON, Button);                // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_QUALIFIERS, Qualifiers);        // int
-}
-
-/// Drag and drop test.
-URHO3D_EVENT(E_DRAGDROPTEST, DragDropTest)
-{
-    URHO3D_PARAM(P_SOURCE, Source);                // UIElement pointer
-    URHO3D_PARAM(P_TARGET, Target);                // UIElement pointer
-    URHO3D_PARAM(P_ACCEPT, Accept);                // bool
 };
-
-/// Drag and drop finish.
-URHO3D_EVENT(E_DRAGDROPFINISH, DragDropFinish)
-{
-    URHO3D_PARAM(P_SOURCE, Source);                // UIElement pointer
-    URHO3D_PARAM(P_TARGET, Target);                // UIElement pointer
-    URHO3D_PARAM(P_ACCEPT, Accept);                // bool
-};
-
-/// Focus element changed.
-URHO3D_EVENT(E_FOCUSCHANGED, FocusChanged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_CLICKEDELEMENT, ClickedElement); // UIElement pointer
-}
+extern LUTEFISK3D_EXPORT UISignals g_uiSignals;
 
 /// UI element name changed.
 URHO3D_EVENT(E_NAMECHANGED, NameChanged)
@@ -148,38 +92,53 @@ URHO3D_EVENT(E_VISIBLECHANGED, VisibleChanged)
     URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
     URHO3D_PARAM(P_VISIBLE, Visible);              // bool
 }
+struct UiElementSignals  {
 
-/// UI element focused.
-URHO3D_EVENT(E_FOCUSED, Focused)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_BYKEY, ByKey);                  // bool
-}
+    /// Mouse click on a UI element. Parameters are same as in UIMouseClick event, but is sent by the element.
+    jl::Signal<UIElement *,int, int, int, unsigned, int> click; //Element,x,y,Button,Buttons,Qualifiers
+    /// Mouse click end on a UI element. Parameters are same as in UIMouseClickEnd event, but is sent by the element.
+    //Element,BeginElement,x,y,Button,Buttons,Qualifiers
+    jl::Signal<UIElement *,UIElement *,int, int, int, unsigned, int> clickEnd;
+    /// Mouse double click on a UI element. Parameters are same as in UIMouseDoubleClick event, but is sent by the element.
+    jl::Signal<UIElement *,int, int, int, unsigned, int> doubleClick; //Element,x,y,Button,Buttons,Qualifiers
 
-/// UI element defocused.
-URHO3D_EVENT(E_DEFOCUSED, Defocused)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-}
+    /// UI element layout updated.
+    jl::Signal<UIElement *> layoutUpdated;
 
-/// UI element layout updated.
-URHO3D_EVENT(E_LAYOUTUPDATED, LayoutUpdated)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-}
+    /// UI element focused.
+    jl::Signal<UIElement *,bool> focused; //UIElement *focusedElement,bool byKey
+    /// UI element defocused.
+    jl::Signal<UIElement *> defocused; //UIElement *defocusedElement
 
-/// UI button pressed.
-URHO3D_EVENT(E_PRESSED, Pressed)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-}
+    /// Hovering on an UI element has started
+    jl::Signal<UIElement *,int,int,int,int> hoverBegin; // Element,int x,int y,int elemX,int elemY
+    /// Hovering on an UI element has ended
+    jl::Signal<UIElement *> hoverEnd; // Element
 
-/// UI button was pressed, then released.
-URHO3D_EVENT(E_RELEASED, Released)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-}
+    /// Drag behavior of a UI Element has started
+    // Element,int x,int y,int elemX,int elemY,int btns,int b_count
+    jl::Signal<UIElement *,int,int,int,int,int,int> dragBegin;
+    /// Drag behavior of a UI Element has finished
+    // UIElement *element,int x,int y,int elemX,int elemY,int btns,int b_count
+    jl::Signal<UIElement *,int,int,int,int,int,int> dragEnd;
+    /// Drag behavior of a UI Element when the input device has moved
+    // Element,int x,int y,int dx,int dy,int elemX,int elemY,int btns,int b_count
+    jl::Signal<UIElement *,int,int,int,int,int,int,int,int> dragMove;
+    /// Drag of a UI Element was canceled by pressing ESC
+    jl::Signal<UIElement *,int,int,int,int,int,int> dragCancel;
 
+};
+
+struct UIButtonSignals {
+    /// UI button pressed.
+    jl::Signal<UIElement *> pressed;
+    /// UI button was pressed, then released.
+    jl::Signal<UIElement *> released;
+};
+struct UIWindowSignals {
+    /// UI modal changed (currently only Window has modal flag).
+    jl::Signal<UIElement *,bool> modalChanged; // UIElement *,bool Modal
+};
 /// UI checkbox toggled.
 URHO3D_EVENT(E_TOGGLED, Toggled)
 {
@@ -187,20 +146,13 @@ URHO3D_EVENT(E_TOGGLED, Toggled)
     URHO3D_PARAM(P_STATE, State);                  // bool
 }
 
-/// UI slider value changed
-URHO3D_EVENT(E_SLIDERCHANGED, SliderChanged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_VALUE, Value);                  // float
-}
+struct UISliderSignals {
+    /// UI slider value changed
+    jl::Signal<UIElement *,float> sliderChanged; // UIElement *,float
+    /// UI slider being paged.
+    jl::Signal<UIElement *,int,bool> sliderPaged; // UIElement *,int offset,bool pressed
+};
 
-/// UI slider being paged.
-URHO3D_EVENT(E_SLIDERPAGED, SliderPaged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_OFFSET, Offset);                // int
-    URHO3D_PARAM(P_PRESSED, Pressed);              // bool
-}
 
 /// UI progressbar value changed
 URHO3D_EVENT(E_PROGRESSBARCHANGED, ProgressBarChanged)
@@ -223,13 +175,10 @@ URHO3D_EVENT(E_VIEWCHANGED, ViewChanged)
     URHO3D_PARAM(P_Y, Y);                          // int
 }
 
-/// UI modal changed (currently only Window has modal flag).
-URHO3D_EVENT(E_MODALCHANGED, ModalChanged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_MODAL, Modal);                  // bool
-}
-
+struct LineEditSignals {
+    /// Text editing finished (enter pressed on a LineEdit)
+    jl::Signal<UIElement *,const QString &,float> textFinished; // Element,Text,Value
+};
 /// Text entry into a LineEdit. The text can be modified in the event data.
 URHO3D_EVENT(E_TEXTENTRY, TextEntry)
 {
@@ -242,14 +191,6 @@ URHO3D_EVENT(E_TEXTCHANGED, TextChanged)
 {
     URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
     URHO3D_PARAM(P_TEXT, Text);                    // String
-}
-
-/// Text editing finished (enter pressed on a LineEdit)
-URHO3D_EVENT(E_TEXTFINISHED, TextFinished)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_TEXT, Text);                    // String
-    URHO3D_PARAM(P_VALUE, Value);                 // Float
 }
 
 /// Menu selected.
@@ -316,12 +257,10 @@ URHO3D_EVENT(E_FILESELECTED, FileSelected)
     URHO3D_PARAM(P_FILTER, Filter);                // String
     URHO3D_PARAM(P_OK, Ok);                        // bool
 }
-
-/// MessageBox acknowlegement.
-URHO3D_EVENT(E_MESSAGEACK, MessageACK)
-{
-    URHO3D_PARAM(P_OK, Ok);                        // bool
-}
+struct UIMessageBoxSignals {
+    /// MessageBox acknowlegement.
+    jl::Signal<bool> messageACK; // bool OK
+};
 
 /// A child element has been added to an element. Sent by the UI root element, or element-event-sender if set.
 URHO3D_EVENT(E_ELEMENTADDED, ElementAdded)
@@ -337,83 +276,6 @@ URHO3D_EVENT(E_ELEMENTREMOVED, ElementRemoved)
     URHO3D_PARAM(P_ROOT, Root);                    // UIElement pointer
     URHO3D_PARAM(P_PARENT, Parent);                // UIElement pointer
     URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-}
-
-/// Hovering on an UI element has started
-URHO3D_EVENT(E_HOVERBEGIN, HoverBegin)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_ELEMENTX, ElementX);            // int
-    URHO3D_PARAM(P_ELEMENTY, ElementY);            // int
-}
-
-/// Hovering on an UI element has ended
-URHO3D_EVENT(E_HOVEREND, HoverEnd)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-}
-
-/// Drag behavior of a UI Element has started
-URHO3D_EVENT(E_DRAGBEGIN, DragBegin)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_ELEMENTX, ElementX);            // int
-    URHO3D_PARAM(P_ELEMENTY, ElementY);            // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_NUMBUTTONS, NumButtons);        // int
-}
-
-/// Drag behavior of a UI Element when the input device has moved
-URHO3D_EVENT(E_DRAGMOVE, DragMove)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_DX, DX);                        // int
-    URHO3D_PARAM(P_DY, DY);                        // int
-    URHO3D_PARAM(P_ELEMENTX, ElementX);            // int
-    URHO3D_PARAM(P_ELEMENTY, ElementY);            // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_NUMBUTTONS, NumButtons);        // int
-}
-
-/// Drag behavior of a UI Element has finished
-URHO3D_EVENT(E_DRAGEND, DragEnd)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_ELEMENTX, ElementX);            // int
-    URHO3D_PARAM(P_ELEMENTY, ElementY);            // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_NUMBUTTONS, NumButtons);        // int
-}
-
-/// Drag of a UI Element was canceled by pressing ESC
-URHO3D_EVENT(E_DRAGCANCEL, DragCancel)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_ELEMENTX, ElementX);            // int
-    URHO3D_PARAM(P_ELEMENTY, ElementY);            // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_NUMBUTTONS, NumButtons);        // int
-}
-
-/// A file was drag-dropped into the application window. Includes also coordinates and UI element if applicable
-URHO3D_EVENT(E_UIDROPFILE, UIDropFile)
-{
-    URHO3D_PARAM(P_FILENAME, FileName);            // String
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_X, X);                          // int
-    URHO3D_PARAM(P_Y, Y);                          // int
-    URHO3D_PARAM(P_ELEMENTX, ElementX);            // int (only if element is non-null)
-    URHO3D_PARAM(P_ELEMENTY, ElementY);            // int (only if element is non-null)
 }
 
 }

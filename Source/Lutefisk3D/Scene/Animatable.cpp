@@ -162,7 +162,7 @@ bool Animatable::LoadJSON(const JSONValue& source, bool setInstanceDefault)
         float speed = value.Get("speed").GetFloat();
         SetAttributeAnimation(name, attributeAnimation, wrapMode, speed);
 
-        it++;
+        it++; //BUG: very likely - needs verification
     }
 
     return true;
@@ -288,8 +288,8 @@ void Animatable::SetObjectAnimation(ObjectAnimation* objectAnimation)
     if (objectAnimation_ != nullptr)
     {
         OnObjectAnimationRemoved(objectAnimation_);
-        UnsubscribeFromEvent(objectAnimation_, E_ATTRIBUTEANIMATIONADDED);
-        UnsubscribeFromEvent(objectAnimation_, E_ATTRIBUTEANIMATIONREMOVED);
+        objectAnimation_->attributeAnimationAdded.Disconnect(this,&Animatable::HandleAttributeAnimationAdded);
+        objectAnimation_->attributeAnimationRemoved.Disconnect(this,&Animatable::HandleAttributeAnimationAdded);
     }
 
     objectAnimation_ = objectAnimation;
@@ -297,8 +297,8 @@ void Animatable::SetObjectAnimation(ObjectAnimation* objectAnimation)
     if (objectAnimation_ != nullptr)
     {
         OnObjectAnimationAdded(objectAnimation_);
-        SubscribeToEvent(objectAnimation_, E_ATTRIBUTEANIMATIONADDED, URHO3D_HANDLER(Animatable, HandleAttributeAnimationAdded));
-        SubscribeToEvent(objectAnimation_, E_ATTRIBUTEANIMATIONREMOVED, URHO3D_HANDLER(Animatable, HandleAttributeAnimationRemoved));
+        objectAnimation_->attributeAnimationAdded.Connect(this,&Animatable::HandleAttributeAnimationAdded);
+        objectAnimation_->attributeAnimationRemoved.Connect(this,&Animatable::HandleAttributeAnimationAdded);
     }
 }
 
@@ -436,8 +436,7 @@ void Animatable::SetObjectAnimationAttr(const ResourceRef& value)
 {
     if (!value.name_.isEmpty())
     {
-        ResourceCache* cache = GetSubsystem<ResourceCache>();
-        SetObjectAnimation(cache->GetResource<ObjectAnimation>(value.name_));
+        SetObjectAnimation(context_->m_ResourceCache->GetResource<ObjectAnimation>(value.name_));
     }
 }
 
@@ -524,14 +523,11 @@ AttributeAnimationInfo* Animatable::GetAttributeAnimationInfo(const QString& nam
     return nullptr;
 }
 
-void Animatable::HandleAttributeAnimationAdded(StringHash eventType, VariantMap& eventData)
+void Animatable::HandleAttributeAnimationAdded(Object *anm,const QString &name)
 {
     if (objectAnimation_ == nullptr)
         return;
-
-    using namespace AttributeAnimationAdded;
-    const QString& name =eventData[P_ATTRIBUTEANIMATIONNAME].GetString();
-
+    assert(anm==objectAnimation_);
     ValueAnimationInfo* info = objectAnimation_->GetAttributeAnimationInfo(name);
     if (info == nullptr)
         return;
@@ -539,13 +535,11 @@ void Animatable::HandleAttributeAnimationAdded(StringHash eventType, VariantMap&
     SetObjectAttributeAnimation(name, info->GetAnimation(), info->GetWrapMode(), info->GetSpeed());
 }
 
-void Animatable::HandleAttributeAnimationRemoved(StringHash eventType, VariantMap& eventData)
+void Animatable::HandleAttributeAnimationRemoved(Object *anm,const QString &name)
 {
     if (objectAnimation_ == nullptr)
         return;
-
-    using namespace AttributeAnimationRemoved;
-    const QString& name = eventData[P_ATTRIBUTEANIMATIONNAME].GetString();
+    assert(anm==objectAnimation_);
 
     SetObjectAttributeAnimation(name, nullptr, WM_LOOP, 1.0f);
 }

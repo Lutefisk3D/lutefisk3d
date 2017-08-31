@@ -7,7 +7,6 @@ SET(BulletCollision_SRCS
 	BroadphaseCollision/btDbvt.cpp
 	BroadphaseCollision/btDbvtBroadphase.cpp
 	BroadphaseCollision/btDispatcher.cpp
-	BroadphaseCollision/btMultiSapBroadphase.cpp
 	BroadphaseCollision/btOverlappingPairCache.cpp
 	BroadphaseCollision/btQuantizedBvh.cpp
 	BroadphaseCollision/btSimpleBroadphase.cpp
@@ -110,7 +109,6 @@ SET(BroadphaseCollision_HDRS
 	BroadphaseCollision/btDbvt.h
 	BroadphaseCollision/btDbvtBroadphase.h
 	BroadphaseCollision/btDispatcher.h
-	BroadphaseCollision/btMultiSapBroadphase.h
 	BroadphaseCollision/btOverlappingPairCache.h
 	BroadphaseCollision/btOverlappingPairCallback.h
 	BroadphaseCollision/btQuantizedBvh.h
@@ -250,6 +248,7 @@ SET(BulletCollision_HDRS
 ADD_LIBRARY(BulletCollision ${BulletCollision_SRCS} ${BulletCollision_HDRS})
 SET_TARGET_PROPERTIES(BulletCollision PROPERTIES VERSION ${BULLET_VERSION})
 SET_TARGET_PROPERTIES(BulletCollision PROPERTIES SOVERSION ${BULLET_VERSION})
+set_property(TARGET BulletCollision PROPERTY POSITION_INDEPENDENT_CODE ON)
 IF (BUILD_SHARED_LIBS)
   TARGET_LINK_LIBRARIES(BulletCollision LinearMath)
 ENDIF (BUILD_SHARED_LIBS)

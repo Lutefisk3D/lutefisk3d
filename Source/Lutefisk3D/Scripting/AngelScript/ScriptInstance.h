@@ -54,7 +54,7 @@ enum ScriptInstanceMethod
 };
 
 /// %Script object component.
-class URHO3D_API ScriptInstance : public Component, public ScriptEventListener
+class LUTEFISK3D_EXPORT ScriptInstance : public Component, public ScriptEventListener
 {
     OBJECT(ScriptInstance);
 
@@ -196,16 +196,16 @@ private:
 };
 
 /// Return the Urho3D context of the active script context.
-URHO3D_API Context* GetScriptContext();
+LUTEFISK3D_EXPORT Context* GetScriptContext();
 /// Return the ScriptInstance of the active script context.
-URHO3D_API ScriptInstance* GetScriptContextInstance();
+LUTEFISK3D_EXPORT ScriptInstance* GetScriptContextInstance();
 /// Return the scene node of the active script context.
-URHO3D_API Node* GetScriptContextNode();
+LUTEFISK3D_EXPORT Node* GetScriptContextNode();
 /// Return the scene of the active script context.
-URHO3D_API Scene* GetScriptContextScene();
+LUTEFISK3D_EXPORT Scene* GetScriptContextScene();
 /// Return the event listener of the active script context.
-URHO3D_API ScriptEventListener* GetScriptContextEventListener();
+LUTEFISK3D_EXPORT ScriptEventListener* GetScriptContextEventListener();
 /// Return the event listener of the active script context as an Object pointer.
-URHO3D_API Object* GetScriptContextEventListenerObject();
+LUTEFISK3D_EXPORT Object* GetScriptContextEventListenerObject();
 
 }

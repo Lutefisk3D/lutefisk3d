@@ -22,6 +22,7 @@
 
 #include "SoundListener.h"
 #include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Scene/Node.h"
 
 namespace Urho3D
 {
@@ -29,7 +30,7 @@ namespace Urho3D
 extern const char* AUDIO_CATEGORY;
 
 SoundListener::SoundListener(Context* context) :
-    Component(context)
+    Serializable(context) //Component(context)
 {
 }
 
@@ -42,6 +43,15 @@ void SoundListener::RegisterObject(Context* context)
     context->RegisterFactory<SoundListener>(AUDIO_CATEGORY);
 
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
+}
+bool SoundListener::IsEnabledEffective() const
+{
+    return enabled_ && (attachedNode != nullptr) && attachedNode->IsEnabled();
+}
+
+Scene *SoundListener::GetScene() const
+{
+    return attachedNode ? attachedNode->GetScene() : nullptr;
 }
 
 }

@@ -46,7 +46,7 @@ using namespace Urho3D;
 URHO3D_DEFINE_APPLICATION_MAIN(AnimatingScene)
 
 AnimatingScene::AnimatingScene(Context* context) :
-    Sample(context)
+    Sample("AnimatingScene",context)
 {
     // Register an object factory for our custom Rotator component so that we can create them to scene nodes
     context->RegisterFactory<Rotator>();
@@ -75,9 +75,9 @@ void AnimatingScene::Start()
 
 void AnimatingScene::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create the Octree component to the scene so that drawable objects can be rendered. Use default volume
     // (-1000, -1000, -1000) to (1000, 1000, 1000)
@@ -130,8 +130,8 @@ void AnimatingScene::CreateScene()
 
 void AnimatingScene::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -146,26 +146,26 @@ void AnimatingScene::CreateInstructions()
 
 void AnimatingScene::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void AnimatingScene::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(AnimatingScene, HandleUpdate));
+    g_coreSignals.update.Connect(this,&AnimatingScene::HandleUpdate);
 }
 
 void AnimatingScene::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -192,12 +192,10 @@ void AnimatingScene::MoveCamera(float timeStep)
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 }
 
-void AnimatingScene::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void AnimatingScene::HandleUpdate(float timeStep)
 {
-    using namespace Update;
 
     // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
 
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);

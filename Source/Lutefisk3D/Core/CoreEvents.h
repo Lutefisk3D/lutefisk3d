@@ -21,46 +21,35 @@
 //
 
 #pragma once
-
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Core/Lutefisk3D.h"
+#include <jlsignal/Signal.h>
 
 namespace Urho3D
 {
 
-/// Frame begin event.
-URHO3D_EVENT(E_BEGINFRAME, BeginFrame)
+struct CoreSignals
 {
-    URHO3D_PARAM(P_FRAMENUMBER, FrameNumber);      // unsigned
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
-
-/// Application-wide logic update event.
-URHO3D_EVENT(E_UPDATE, Update)
-{
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
-
-/// Application-wide logic post-update event.
-URHO3D_EVENT(E_POSTUPDATE, PostUpdate)
-{
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
-
-/// Render update event.
-URHO3D_EVENT(E_RENDERUPDATE, RenderUpdate)
-{
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
-
-/// Post-render update event.
-URHO3D_EVENT(E_POSTRENDERUPDATE, PostRenderUpdate)
-{
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
-
-/// Frame end event.
-URHO3D_EVENT(E_ENDFRAME, EndFrame)
-{
-}
+    /// Application-wide logic update event.
+    jl::Signal<float> update; // float TimeStep
+    /// Application-wide logic post-update event.
+    jl::Signal<float> postUpdate; // float TimeStep
+    /// Render update event.
+    jl::Signal<float> renderUpdate; // float TimeStep
+    /// Post-render update event.
+    jl::Signal<float> postRenderUpdate; // float TimeStep
+    /// Frame end event.
+    jl::Signal<> endFrame;
+    /// Frame begin event.
+    jl::Signal<unsigned,float> beginFrame; //unsigned FrameNumber,float timeStep
+    void init(jl::ScopedAllocator *alloc) {
+        update.SetAllocator(alloc);
+        postUpdate.SetAllocator(alloc);
+        renderUpdate.SetAllocator(alloc);
+        postRenderUpdate.SetAllocator(alloc);
+        endFrame.SetAllocator(alloc);
+        beginFrame.SetAllocator(alloc);
+    }
+};
+extern LUTEFISK3D_EXPORT CoreSignals g_coreSignals;
 
 }

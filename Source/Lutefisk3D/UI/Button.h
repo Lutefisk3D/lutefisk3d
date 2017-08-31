@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// Pushbutton %UI element.
-class Button : public BorderImage
+class LUTEFISK3D_EXPORT Button : public BorderImage, public UIButtonSignals
 {
     URHO3D_OBJECT(Button,BorderImage);
 

@@ -47,7 +47,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(RenderToTexture)
 
 RenderToTexture::RenderToTexture(Context* context) :
-    Sample(context)
+    Sample("RenderToTexture",context)
 {
     // Register an object factory for our custom Rotator component so that we can create them to scene nodes
     context->RegisterFactory<Rotator>();
@@ -73,11 +73,11 @@ void RenderToTexture::Start()
 
 void RenderToTexture::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
     {
         // Create the scene which will be rendered to a texture
-        rttScene_ = new Scene(context_);
+        rttScene_ = new Scene(m_context);
 
         // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
         rttScene_->CreateComponent<Octree>();
@@ -123,7 +123,7 @@ void RenderToTexture::CreateScene()
 
     {
         // Create the scene in which we move around
-        scene_ = new Scene(context_);
+        scene_ = new Scene(m_context);
 
         // Create octree, use also default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
         scene_->CreateComponent<Octree>();
@@ -176,13 +176,13 @@ void RenderToTexture::CreateScene()
             screenObject->SetModel(cache->GetResource<Model>("Models/Plane.mdl"));
 
             // Create a renderable texture (1024x768, RGB format), enable bilinear filtering on it
-            SharedPtr<Texture2D> renderTexture(new Texture2D(context_));
+            SharedPtr<Texture2D> renderTexture(new Texture2D(m_context));
             renderTexture->SetSize(1024, 768, Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
             renderTexture->SetFilterMode(FILTER_BILINEAR);
 
             // Create a new material from scratch, use the diffuse unlit technique, assign the render texture
             // as its diffuse texture, then assign the material to the screen plane object
-            SharedPtr<Material> renderMaterial(new Material(context_));
+            SharedPtr<Material> renderMaterial(new Material(m_context));
             renderMaterial->SetTechnique(0, cache->GetResource<Technique>("Techniques/DiffUnlit.xml"));
             renderMaterial->SetTexture(TU_DIFFUSE, renderTexture);
             // Since the screen material is on top of the box model and may Z-fight, use negative depth bias
@@ -195,7 +195,7 @@ void RenderToTexture::CreateScene()
             // to the Renderer subsystem. By default the texture viewport will be updated when the texture is visible
             // in the main view
             RenderSurface* surface = renderTexture->GetRenderSurface();
-            SharedPtr<Viewport> rttViewport(new Viewport(context_, rttScene_, rttCameraNode_->GetComponent<Camera>()));
+            SharedPtr<Viewport> rttViewport(new Viewport(m_context, rttScene_, rttCameraNode_->GetComponent<Camera>()));
             surface->SetViewport(0, rttViewport);
         }
 
@@ -211,8 +211,8 @@ void RenderToTexture::CreateScene()
 
 void RenderToTexture::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -227,20 +227,20 @@ void RenderToTexture::CreateInstructions()
 
 void RenderToTexture::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void RenderToTexture::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -269,17 +269,7 @@ void RenderToTexture::MoveCamera(float timeStep)
 
 void RenderToTexture::SubscribeToEvents()
 {
+
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(RenderToTexture, HandleUpdate));
-}
-
-void RenderToTexture::HandleUpdate(StringHash eventType, VariantMap& eventData)
-{
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
-    // Move the camera, scale movement with time step
-    MoveCamera(timeStep);
+    g_coreSignals.update.Connect(this,&RenderToTexture::MoveCamera);
 }

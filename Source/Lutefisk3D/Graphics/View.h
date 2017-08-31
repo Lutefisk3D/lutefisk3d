@@ -25,7 +25,7 @@
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Graphics/Batch.h"
 #include "Lutefisk3D/Graphics/Light.h"
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Math/Polyhedron.h"
 #include "Lutefisk3D/Graphics/Zone.h"
 #include <array>
@@ -115,16 +115,15 @@ struct PerThreadSceneResult
 static const unsigned MAX_VIEWPORT_TEXTURES = 2;
 
 /// Internal structure for 3D rendering work. Created for each backbuffer and texture viewport, but not for shadow cameras.
-class URHO3D_API View : public Object
+class LUTEFISK3D_EXPORT View : public RefCounted
 {
     friend void CheckVisibilityWork(const WorkItem* item, unsigned threadIndex);
     friend void ProcessLightWork(const WorkItem* item, unsigned threadIndex);
     typedef HashMap<uint32_t, uint32_t> BatchQueueMap;
-    URHO3D_OBJECT(View, Object);
+public:
 
-    public:
-        /// Construct.
-        View(Context* context);
+    /// Construct.
+    View(Context* context);
     /// Destruct.
     virtual ~View() = default;
 
@@ -265,7 +264,7 @@ private:
     /// Helper function to get the render surface from a texture. 2D textures will always return the first face only.
     RenderSurface* GetRenderSurfaceFromTexture(Texture* texture, CubeMapFace face = FACE_POSITIVE_X);
     /// Send a view update or render related event through the Renderer subsystem. The parameters are the same for all of them.
-    void SendViewEvent(StringHash eventType);
+    void SendViewEvent(jl::Signal<View *,Texture *,RenderSurface *,Scene *,Camera *> &eventType);
     /// Return the drawable's zone, or camera zone if it has override mode enabled.
     Zone* GetZone(Drawable* drawable)
     {
@@ -295,9 +294,9 @@ private:
             hash += uintptr_t(light);
         return hash;
     }
-
+    Context *context_;
     /// Graphics subsystem.
-    WeakPtr<Graphics> graphics_;
+    Graphics *graphics_; // non-owning pointer
     /// Renderer subsystem.
     WeakPtr<Renderer> renderer_;
     /// Scene to use.
@@ -324,6 +323,8 @@ private:
     Texture* viewportTextures_[MAX_VIEWPORT_TEXTURES];
     /// Color rendertarget active for the current renderpath command.
     RenderSurface* currentRenderTarget_;
+    /// Last used custom depth render surface.
+    RenderSurface* lastCustomDepthSurface_;
     /// Texture containing the latest viewport texture.
     Texture* currentViewportTexture_;
     /// Dummy texture for D3D9 depth only rendering.

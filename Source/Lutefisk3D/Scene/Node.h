@@ -53,7 +53,7 @@ enum TransformSpace
 };
 
 /// Internal implementation structure for less performance-critical Node variables.
-struct URHO3D_API NodeImpl
+struct LUTEFISK3D_EXPORT NodeImpl
 {
     /// Nodes this node depends on for network updates.
     std::vector<Node*> dependencyNodes_;
@@ -69,9 +69,9 @@ struct URHO3D_API NodeImpl
     mutable VectorBuffer attrBuffer_;
 };
 /// %Scene node that may contain components and child nodes.
-class URHO3D_API Node : public Animatable
+class LUTEFISK3D_EXPORT Node : public Animatable
 {
-    URHO3D_OBJECT(Node,Animatable);
+    URHO3D_OBJECT(Node,Animatable)
 
     friend class Connection;
 
@@ -391,6 +391,9 @@ public:
         return worldTransform_.Scale();
     }
 
+    /// Return signed scale in world space. Utilized for Urho2D physics.
+    Vector3 GetSignedWorldScale() const;
+
     /// Return scale in world space (for Urho2D).
     Vector2 GetWorldScale2D() const
     {
@@ -440,7 +443,7 @@ public:
     /// Return child scene node by index.
     Node* GetChild(unsigned index) const;
     /// Return child scene node by name.
-    Node* GetChild(const QString& name, bool recursive = false) const;
+    Node* GetChild(const QStringRef& name, bool recursive = false) const;
     /// Return child scene node by name.
     Node* GetChild(const char* name, bool recursive = false) const;
     /// Return child scene node by name hash.
@@ -562,7 +565,7 @@ private:
     /// Remove a component from this node with the specified iterator.
     void RemoveComponent(std::vector<SharedPtr<Component> >::iterator i);
     /// Handle attribute animation update event.
-    void HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleAttributeAnimationUpdate(Scene *s,float ts);
 
     /// World-space transform matrix.
     mutable Matrix3x4 worldTransform_;
@@ -604,17 +607,38 @@ protected:
     VariantMap vars_;
 };
 
-template <class T> T* Node::CreateComponent(CreateMode mode, unsigned id) { return static_cast<T*>(CreateComponent(T::GetTypeStatic(), mode, id)); }
-template <class T> T* Node::GetOrCreateComponent(CreateMode mode, unsigned id) { return static_cast<T*>(GetOrCreateComponent(T::GetTypeStatic(), mode, id)); }
+template <class T> T* Node::CreateComponent(CreateMode mode, unsigned id)
+{
+    return static_cast<T*>(CreateComponent(T::GetTypeStatic(), mode, id));
+}
+template <class T> T* Node::GetOrCreateComponent(CreateMode mode, unsigned id)
+{
+    return static_cast<T*>(GetOrCreateComponent(T::GetTypeStatic(), mode, id));
+}
 template <class T> void Node::RemoveComponent() { RemoveComponent(T::GetTypeStatic()); }
 template <class T> void Node::RemoveComponents() { RemoveComponents(T::GetTypeStatic()); }
 
-template <class T> void Node::GetChildrenWithComponent(std::vector<Node*>& dest, bool recursive) const { GetChildrenWithComponent(dest, T::GetTypeStatic(), recursive); }
-template <class T> T* Node::GetComponent(bool recursive) const { return static_cast<T*>(GetComponent(T::GetTypeStatic(), recursive)); }
+template <class T> void Node::GetChildrenWithComponent(std::vector<Node*>& dest, bool recursive) const
+{
+    GetChildrenWithComponent(dest, T::GetTypeStatic(), recursive);
+}
+template <class T> T* Node::GetComponent(bool recursive) const
+{
+    return static_cast<T*>(GetComponent(T::GetTypeStatic(), recursive));
+}
 
-template <class T> T* Node::GetParentComponent(bool fullTraversal) const { return static_cast<T*>(GetParentComponent(T::GetTypeStatic(), fullTraversal)); }
-template <class T> void Node::GetComponents(std::vector<T*>& dest, bool recursive) const { GetComponents(reinterpret_cast<std::vector<Component*>&>(dest), T::GetTypeStatic(), recursive); }
-template <class T> bool Node::HasComponent() const { return HasComponent(T::GetTypeStatic()); }
+template <class T> T* Node::GetParentComponent(bool fullTraversal) const
+{
+    return static_cast<T*>(GetParentComponent(T::GetTypeStatic(), fullTraversal));
+}
+template <class T> void Node::GetComponents(std::vector<T*>& dest, bool recursive) const
+{
+    GetComponents(reinterpret_cast<std::vector<Component*>&>(dest), T::GetTypeStatic(), recursive);
+}
+template <class T> bool Node::HasComponent() const
+{
+    return HasComponent(T::GetTypeStatic());
+}
 
 template <class T> T* Node::GetDerivedComponent(bool recursive) const
 {

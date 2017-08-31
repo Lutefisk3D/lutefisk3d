@@ -316,8 +316,8 @@ Octree::Octree(Context* context) :
 
     // If the engine is running headless, subscribe to RenderUpdate events for manually updating the octree
     // to allow raycasts and animation update
-    if (!GetSubsystem<Graphics>())
-        SubscribeToEvent(E_RENDERUPDATE, URHO3D_HANDLER(Octree, HandleRenderUpdate));
+    if (!context_->m_Graphics)
+        g_coreSignals.renderUpdate.Connect(this,&Octree::HandleRenderUpdate);
 }
 
 Octree::~Octree()
@@ -350,7 +350,7 @@ void Octree::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 {
     if (debug)
     {
-        URHO3D_PROFILE(OctreeDrawDebug);
+        URHO3D_PROFILE_CTX(context_,OctreeDrawDebug);
 
         Octant::DrawDebugGeometry(debug, depthTest);
     }
@@ -358,7 +358,7 @@ void Octree::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 
 void Octree::SetSize(const BoundingBox& box, unsigned numLevels)
 {
-    URHO3D_PROFILE(ResizeOctree);
+    URHO3D_PROFILE_CTX(context_,ResizeOctree);
 
     // If drawables exist, they are temporarily moved to the root
     for (unsigned i = 0; i < NUM_OCTANTS; ++i)
@@ -380,12 +380,12 @@ void Octree::Update(const FrameInfo& frame)
     // Let drawables update themselves before reinsertion. This can be used for animation
     if (!drawableUpdates_.empty())
     {
-        URHO3D_PROFILE(UpdateDrawables);
+        URHO3D_PROFILE_CTX(context_,UpdateDrawables);
 
         // Perform updates in worker threads. Notify the scene that a threaded update is going on and components
         // (for example physics objects) should not perform non-threadsafe work when marked dirty
         Scene* scene = GetScene();
-        WorkQueue* queue = GetSubsystem<WorkQueue>();
+        WorkQueue* queue = context_->m_WorkQueueSystem.get();
         scene->BeginThreadedUpdate();
 
         int numWorkItems = queue->GetNumThreads() + 1; // Worker threads + main thread
@@ -420,7 +420,7 @@ void Octree::Update(const FrameInfo& frame)
         // If any drawables were inserted during threaded update, update them now from the main thread
         if (!threadedDrawableUpdates_.empty())
         {
-            URHO3D_PROFILE(UpdateDrawablesQueuedDuringUpdate);
+            URHO3D_PROFILE_CTX(context_,UpdateDrawablesQueuedDuringUpdate);
 
             for (Drawable* drawable : threadedDrawableUpdates_)
             {
@@ -438,19 +438,14 @@ void Octree::Update(const FrameInfo& frame)
     Scene* scene = GetScene();
     if (scene)
     {
-        using namespace SceneDrawableUpdateFinished;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_SCENE] = scene;
-        eventData[P_TIMESTEP] = frame.timeStep_;
-        scene->SendEvent(E_SCENEDRAWABLEUPDATEFINISHED, eventData);
+        scene->sceneDrawableUpdateFinished.Emit(scene,frame.timeStep_);
     }
 
     // Reinsert drawables that have been moved or resized, or that have been newly added to the octree and do not sit inside
     // the proper octant yet
     if (!drawableUpdates_.empty())
     {
-        URHO3D_PROFILE(ReinsertToOctree);
+        URHO3D_PROFILE_CTX(context_,ReinsertToOctree);
 
         for (Drawable* drawable : drawableUpdates_)
         {
@@ -509,7 +504,7 @@ void Octree::GetDrawables(OctreeQuery& query) const
 
 void Octree::Raycast(RayOctreeQuery& query) const
 {
-    URHO3D_PROFILE(Raycast);
+    URHO3D_PROFILE_CTX(context_,Raycast);
 
     query.result_.clear();
 
@@ -520,7 +515,7 @@ void Octree::Raycast(RayOctreeQuery& query) const
 
 void Octree::RaycastSingle(RayOctreeQuery& query) const
 {
-    URHO3D_PROFILE(Raycast);
+    URHO3D_PROFILE_CTX(context_,Raycast);
 
     query.result_.clear();
     rayQueryDrawables_.clear();
@@ -589,18 +584,16 @@ void Octree::DrawDebugGeometry(bool depthTest)
     DrawDebugGeometry(debug, depthTest);
 }
 
-void Octree::HandleRenderUpdate(StringHash eventType, VariantMap& eventData)
+void Octree::HandleRenderUpdate(float ts)
 {
     // When running in headless mode, update the Octree manually during the RenderUpdate event
     Scene* scene = GetScene();
     if (!scene || !scene->IsUpdateEnabled())
         return;
 
-    using namespace RenderUpdate;
-
     FrameInfo frame;
-    frame.frameNumber_ = GetSubsystem<Time>()->GetFrameNumber();
-    frame.timeStep_ = eventData[P_TIMESTEP].GetFloat();
+    frame.frameNumber_ = context_->m_TimeSystem->GetFrameNumber();
+    frame.timeStep_ = ts;
     frame.camera_ = nullptr;
 
     Update(frame);

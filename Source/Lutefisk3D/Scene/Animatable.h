@@ -55,7 +55,7 @@ private:
 };
 
 /// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an object animation to it.
-class URHO3D_API Animatable : public Serializable
+class LUTEFISK3D_EXPORT Animatable : public Serializable, public jl::SignalObserver
 {
     URHO3D_OBJECT(Animatable,Serializable)
 
@@ -133,9 +133,9 @@ protected:
     /// Return attribute animation info.
     AttributeAnimationInfo* GetAttributeAnimationInfo(const QString& name) const;
     /// Handle attribute animation added.
-    void HandleAttributeAnimationAdded(StringHash eventType, VariantMap& eventData);
+    void HandleAttributeAnimationAdded(Object *anm, const QString &name);
     /// Handle attribute animation removed.
-    void HandleAttributeAnimationRemoved(StringHash eventType, VariantMap& eventData);
+    void HandleAttributeAnimationRemoved(Object *anm, const QString &name);
 
     /// Animation enabled.
     bool animationEnabled_;

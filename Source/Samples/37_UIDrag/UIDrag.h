@@ -38,24 +38,12 @@ namespace Urho3D
 ///     - Working with GUI elements with specific tags.
 class UIDrag : public Sample
 {
-    URHO3D_OBJECT(UIDrag,Sample);
-
 public:
     /// Construct.
     UIDrag(Context* context);
 
     /// Setup after engine initialization and before running the main loop.
     virtual void Start() override;
-
-protected:
-    /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
-    virtual QString GetScreenJoystickPatchString() const override { return
-        "<patch>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Hat0']]\">"
-        "        <attribute name=\"Is Visible\" value=\"false\" />"
-        "    </add>"
-        "</patch>";
-    }
 
 private:
     /// Construct the GUI.
@@ -65,7 +53,7 @@ private:
     /// Subscribe to application-wide logic update events.
     void SubscribeToEvents();
 
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     void HandleDragBegin(StringHash eventType, VariantMap& eventData);
     void HandleDragMove(StringHash eventType, VariantMap& eventData);
     void HandleDragCancel(StringHash eventType, VariantMap& eventData);

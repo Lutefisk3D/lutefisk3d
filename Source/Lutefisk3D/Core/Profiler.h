@@ -26,12 +26,12 @@
 #include "Lutefisk3D/Core/Thread.h"
 #include "Lutefisk3D/Core/Timer.h"
 #include <limits>
-
+#include <vector>
 namespace Urho3D
 {
 
 /// Profiling data for one block in the profiling tree.
-class URHO3D_API ProfilerBlock
+class LUTEFISK3D_EXPORT ProfilerBlock
 {
 public:
     /// Construct with the specified parent block and name.
@@ -170,10 +170,8 @@ public:
 };
 
 /// Hierarchical performance profiler subsystem.
-class URHO3D_API Profiler : public Object
+class LUTEFISK3D_EXPORT Profiler : public RefCounted
 {
-    URHO3D_OBJECT(Profiler, Object);
-
 public:
     /// Construct.
     Profiler(Context* context);
@@ -229,7 +227,7 @@ protected:
 };
 
 /// Helper class for automatically beginning and ending a profiling block
-class URHO3D_API AutoProfileBlock
+class LUTEFISK3D_EXPORT AutoProfileBlock
 {
 public:
     /// Construct. Begin a profiling block with the specified name and optional call count.
@@ -253,7 +251,8 @@ private:
 };
 
 #ifdef LUTEFISK3D_PROFILING
-#define URHO3D_PROFILE(name) Urho3D::AutoProfileBlock profile_ ## name (GetSubsystem<Urho3D::Profiler>(), #name)
+#define URHO3D_PROFILE(name) Urho3D::AutoProfileBlock profile_ ## name (context_->m_ProfilerSystem.get(), #name)
+#define URHO3D_PROFILE_CTX(ctx,name) Urho3D::AutoProfileBlock profile_ ## name (ctx->m_ProfilerSystem.get(), #name)
 #else
 #define URHO3D_PROFILE(name)
 #endif

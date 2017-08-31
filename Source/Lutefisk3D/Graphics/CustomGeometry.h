@@ -47,7 +47,7 @@ struct CustomGeometryVertex
 class VertexBuffer;
 
 /// Custom geometry component.
-class URHO3D_API CustomGeometry : public Drawable
+class LUTEFISK3D_EXPORT CustomGeometry : public Drawable
 {
     URHO3D_OBJECT(CustomGeometry,Drawable);
 

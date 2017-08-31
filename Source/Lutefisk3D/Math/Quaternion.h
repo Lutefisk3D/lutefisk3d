@@ -31,7 +31,7 @@ namespace Urho3D
 {
 
 /// Rotation represented as a four-dimensional normalized vector.
-class URHO3D_API Quaternion
+class LUTEFISK3D_EXPORT Quaternion
 {
 public:
     /// Construct an identity quaternion.
@@ -420,6 +420,10 @@ public:
     float PitchAngle() const;
     /// Return roll angle in degrees.
     float RollAngle() const;
+    /// Return rotation axis.
+    Vector3 Axis() const;
+    /// Return rotation angle.
+    float Angle() const;
     /// Return the rotation matrix that corresponds to this quaternion.
     Matrix3 RotationMatrix() const;
     /// Spherical interpolation with another quaternion.

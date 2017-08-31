@@ -34,7 +34,7 @@ class Node;
 class TerrainPatch;
 
 /// Heightmap terrain component.
-class URHO3D_API Terrain : public Component
+class LUTEFISK3D_EXPORT Terrain : public Component
 {
     URHO3D_OBJECT(Terrain,Component)
 
@@ -132,6 +132,8 @@ public:
     Vector3 GetNormal(const Vector3& worldPosition) const;
     /// Convert world position to heightmap pixel position. Note that the internal height data representation is reversed vertically, but in the heightmap image north is at the top.
     IntVector2 WorldToHeightMap(const Vector3& worldPosition) const;
+    /// Convert heightmap pixel position to world position.
+    Vector3 HeightMapToWorld(const IntVector2& pixelPosition) const;
     /// Return north neighbor terrain.
     Terrain* GetNorthNeighbor() const { return north_; }
     
@@ -209,7 +211,7 @@ private:
     /// Set heightmap image and optionally recreate the geometry immediately. Return true if successful.
     bool SetHeightMapInternal(Image* image, bool recreateNow);
     /// Handle heightmap image reload finished.
-    void HandleHeightMapReloadFinished(StringHash eventType, VariantMap& eventData);
+    void HandleHeightMapReloadFinished();
     /// Handle neighbor terrain geometry being created. Update the edge patch neighbors as necessary.
     void HandleNeighborTerrainCreated(StringHash eventType, VariantMap& eventData);
     /// Update edge patch neighbors when neighbor terrain(s) change or are recreated.

@@ -26,8 +26,9 @@
 #include "Lutefisk3D/Scene/Node.h"
 #include "Lutefisk3D/Scene/SceneResolver.h"
 #include "Lutefisk3D/Resource/XMLElement.h"
+#include <jlsignal/SignalBase.h>
+#include "Lutefisk3D/Scene/SceneEvents.h"
 #include <QtCore/QSet>
-
 namespace Urho3D
 {
 class JSONFile;
@@ -78,7 +79,7 @@ struct AsyncProgress
 };
 
 /// Root scene node, represents the whole scene.
-class URHO3D_API Scene : public Node
+class LUTEFISK3D_EXPORT Scene : public Node, public SingularSceneSignals
 {
     URHO3D_OBJECT(Scene,Node);
 
@@ -234,9 +235,9 @@ public:
 
 private:
     /// Handle the logic update event to update the scene, if active.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float ts);
     /// Handle a background loaded resource completing.
-    void HandleResourceBackgroundLoaded(StringHash eventType, VariantMap& eventData);
+    void HandleResourceBackgroundLoaded(const QString &, bool, Resource *resource);
     /// Update asynchronous loading.
     void UpdateAsyncLoading();
     /// Finish asynchronous loading.
@@ -280,8 +281,6 @@ private:
     std::vector<Component*> delayedDirtyComponents_;
     /// Mutex for the delayed dirty notification queue.
     Mutex sceneMutex_;
-    /// Preallocated event data map for smoothing update events.
-    VariantMap smoothingData_;
     /// Next free non-local node ID.
     unsigned replicatedNodeID_;
     /// Next free non-local component ID.
@@ -310,7 +309,8 @@ private:
     bool threadedUpdate_;
 };
 
+
 /// Register Scene library objects.
-void URHO3D_API RegisterSceneLibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterSceneLibrary(Context* context);
 
 }

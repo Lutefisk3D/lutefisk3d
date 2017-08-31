@@ -47,7 +47,7 @@ static constexpr const unsigned MAX_LIGHT_SPLITS = 6;
 static constexpr const unsigned MAX_CASCADE_SPLITS = 4;
 
 /// Depth bias parameters. Used both by lights (for shadow mapping) and materials.
-struct URHO3D_API BiasParameters
+struct LUTEFISK3D_EXPORT BiasParameters
 {
     /// Construct undefined.
     BiasParameters()
@@ -74,7 +74,7 @@ struct URHO3D_API BiasParameters
 };
 
 /// Cascaded shadow map parameters.
-struct URHO3D_API CascadeParameters
+struct LUTEFISK3D_EXPORT CascadeParameters
 {
     /// Construct undefined.
     CascadeParameters()
@@ -114,7 +114,7 @@ struct URHO3D_API CascadeParameters
 };
 
 /// Shadow map focusing parameters.
-struct URHO3D_API FocusParameters
+struct LUTEFISK3D_EXPORT FocusParameters
 {
     /// Construct undefined.
     FocusParameters()
@@ -147,9 +147,9 @@ struct URHO3D_API FocusParameters
 };
 
 /// %Light component.
-class URHO3D_API Light : public Drawable
+class LUTEFISK3D_EXPORT Light : public Drawable
 {
-    URHO3D_OBJECT(Light,Drawable);
+    URHO3D_OBJECT(Light,Drawable)
 
 public:
     /// Construct.

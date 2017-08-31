@@ -23,15 +23,16 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Profiler.h"
-
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Core/EventNameRegistrar.h"
 namespace Urho3D
 {
 
-class URHO3D_API EventProfilerBlock : public ProfilerBlock
+class LUTEFISK3D_EXPORT EventProfilerBlock : public ProfilerBlock
 {
 public:
     EventProfilerBlock(EventProfilerBlock* parent, StringHash eventID) :
-        ProfilerBlock(parent, qPrintable(EventNameRegistrar::GetEventName(eventID))),
+        ProfilerBlock(parent, EventNameRegistrar::GetEventName(eventID)),
         eventID_(eventID)
     {
     }
@@ -54,10 +55,8 @@ public:
 };
 
 /// Hierarchical performance event profiler subsystem.
-class URHO3D_API EventProfiler : public Profiler
+class LUTEFISK3D_EXPORT EventProfiler : public Profiler
 {
-    URHO3D_OBJECT(EventProfiler, Profiler)
-
 public:
     /// Construct.
     EventProfiler(Context* context);

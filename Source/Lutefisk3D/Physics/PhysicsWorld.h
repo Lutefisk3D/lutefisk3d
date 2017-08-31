@@ -59,7 +59,7 @@ class XMLElement;
 struct CollisionGeometryData;
 
 /// Physics raycast hit.
-struct URHO3D_API PhysicsRaycastResult
+struct LUTEFISK3D_EXPORT PhysicsRaycastResult
 {
     /// Construct with defaults.
     PhysicsRaycastResult() :
@@ -129,7 +129,7 @@ struct PhysicsWorldConfig
 static const float DEFAULT_MAX_NETWORK_ANGULAR_VELOCITY = 100.0f;
 
 /// Physics simulation world component. Should be added only to the root scene node.
-class URHO3D_API PhysicsWorld : public Component, public btIDebugDraw
+class LUTEFISK3D_EXPORT PhysicsWorld : public Component, public btIDebugDraw
 {
     URHO3D_OBJECT(PhysicsWorld,Component);
 
@@ -269,7 +269,7 @@ protected:
 
 private:
     /// Handle the scene subsystem update event, step simulation here.
-    void HandleSceneSubsystemUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleSceneSubsystemUpdate(Scene *, float ts);
     /// Trigger update before each physics simulation step.
     void PreStep(float timeStep);
     /// Trigger update after each physics simulation step.
@@ -338,6 +338,6 @@ private:
 };
 
 /// Register Physics library objects.
-void URHO3D_API RegisterPhysicsLibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterPhysicsLibrary(Context* context);
 
 }

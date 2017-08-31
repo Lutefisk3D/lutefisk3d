@@ -11,6 +11,7 @@ SET(LinearMath_SRCS
 	btPolarDecomposition.cpp
 	btQuickprof.cpp
 	btSerializer.cpp
+    btThreads.cpp
 	btVector3.cpp
 )
 
@@ -38,12 +39,14 @@ SET(LinearMath_HDRS
 	btScalar.h
 	btSerializer.h
 	btStackAlloc.h
+    btThreads.h
 	btTransform.h
 	btTransformUtil.h
 	btVector3.h
 )
 
 ADD_LIBRARY(LinearMath ${LinearMath_SRCS} ${LinearMath_HDRS})
+set_property(TARGET LinearMath PROPERTY POSITION_INDEPENDENT_CODE ON)
 SET_TARGET_PROPERTIES(LinearMath PROPERTIES VERSION ${BULLET_VERSION})
 SET_TARGET_PROPERTIES(LinearMath PROPERTIES SOVERSION ${BULLET_VERSION})
 

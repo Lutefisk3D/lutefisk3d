@@ -51,7 +51,7 @@ static const unsigned AM_FILEREADONLY = 0x81;
 class Serializable;
 
 /// Abstract base class for invoking attribute accessors.
-class URHO3D_API AttributeAccessor : public RefCounted
+class LUTEFISK3D_EXPORT AttributeAccessor : public RefCounted
 {
 public:
     /// Get the attribute.

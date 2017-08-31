@@ -33,7 +33,6 @@ static const int LINE_MAX_LENGTH = 256;
 static const int NAME_MAX_LENGTH = 30;
 
 Profiler::Profiler(Context* context) :
-    Object(context),
     current_(nullptr),
     root_(nullptr),
     intervalFrames_(0)
@@ -118,7 +117,7 @@ void Profiler::PrintData(ProfilerBlock* block, QString& output, unsigned depth, 
             float frame = block->intervalTime_ / (intervalFrames_ ? intervalFrames_ : 1) / 1000.0f;
             float all = block->intervalTime_ / 1000.0f;
 
-            sprintf(line, "%s %5u %8.3f %8.3f %8.3f %9.3f\n", indentedName, Min(block->intervalCount_, 99999U),
+            sprintf(line, "%s %5u %8.3f %8.3f %8.3f %9.3f\n", indentedName, std::min(block->intervalCount_, 99999U),
                     avg, max, frame, all);
         }
         else
@@ -131,8 +130,8 @@ void Profiler::PrintData(ProfilerBlock* block, QString& output, unsigned depth, 
             float totalMax = block->totalMaxTime_ / 1000.0f;
             float totalAll = block->totalTime_ / 1000.0f;
 
-            sprintf(line, "%s %5u %8.3f %8.3f %9.3f  %7u %9.3f %9.3f %11.3f\n", indentedName, Min(block->frameCount_, 99999U),
-                    avg, max, all, Min(block->totalCount_, 99999U), totalAvg, totalMax, totalAll);
+            sprintf(line, "%s %5u %8.3f %8.3f %9.3f  %7u %9.3f %9.3f %11.3f\n", indentedName, std::min(block->frameCount_, 99999U),
+                    avg, max, all,std::min(block->totalCount_, 99999U), totalAvg, totalMax, totalAll);
         }
 
         output += QString(line);

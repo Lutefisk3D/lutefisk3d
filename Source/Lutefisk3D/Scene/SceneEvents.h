@@ -21,192 +21,129 @@
 //
 
 #pragma once
+#include "Lutefisk3D/Core/Lutefisk3D.h"
+#include <jlsignal/Signal.h>
 
-#include "Lutefisk3D/Core/Object.h"
-
+class QString;
 namespace Urho3D
 {
-
-/// Variable timestep scene update.
-URHO3D_EVENT(E_SCENEUPDATE, SceneUpdate)
+class Object;
+class Scene;
+class Node;
+class Component;
+class Serializable;
+class Variant;
+struct LUTEFISK3D_EXPORT SceneSignals
 {
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
+    /// Variable timestep scene update.
+    jl::Signal<Scene *,float> sceneUpdate; //Scene *scene,float TimeStep
+    /// A network attribute update from the server has been intercepted.
+    /// Scene *scene,TimeStamp(0-255),Index,Name,Value
+    jl::Signal<Serializable*,uint8_t,unsigned,const QString &,Variant> interceptNetworkUpdate;
+    /// A serializable's temporary state has changed.
+    jl::Signal<Serializable*> temporaryChanged;
+    void init(jl::ScopedAllocator *allocator)
+    {
+        sceneUpdate.SetAllocator(allocator);
+        interceptNetworkUpdate.SetAllocator(allocator);
+        temporaryChanged.SetAllocator(allocator);
+    }
+};
+extern LUTEFISK3D_EXPORT SceneSignals g_sceneSignals;
 
-/// Scene subsystem update.
-URHO3D_EVENT(E_SCENESUBSYSTEMUPDATE, SceneSubsystemUpdate)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
+struct SingularSceneSignals {
+    /// Scene drawable update finished. Custom animation (eg. IK) can be done at this point.
+    jl::Signal<Scene *,float> sceneDrawableUpdateFinished; //Scene *scene,float TimeStep
+    /// Variable timestep scene post-update.
+    jl::Signal<Scene *,float> scenePostUpdate; //Scene *scene,float TimeStep
+    /// Scene subsystem update.
+    jl::Signal<Scene *,float> sceneSubsystemUpdate; //Scene *scene,float TimeStep
+    /// Scene transform smoothing update.
+    jl::Signal<float,float> updateSmoothing; //Constant, SquaredSnapThreshold
 
-/// Scene transform smoothing update.
-URHO3D_EVENT(E_UPDATESMOOTHING, UpdateSmoothing)
-{
-    URHO3D_PARAM(P_CONSTANT, Constant);            // float
-    URHO3D_PARAM(P_SQUAREDSNAPTHRESHOLD, SquaredSnapThreshold);  // float
-}
+    /// A node's name has changed.
+    jl::Signal<Scene *,Node *> nodeNameChagned; //Scene *scene,Node *
+    ///// A node's tag has been added.
+    jl::Signal<Scene *,Node *,const QString &> nodeTagAdded; //Scene *scene,Node *,const QString &tag
+    ///// A node's tag has been added.
+    jl::Signal<Scene *,Node *,const QString &> nodeTagRemoved; //Scene *scene,Node *,const QString &tag
+    ///// A child node is about to be removed from a parent node. Note that individual component removal events will not be sent.
+    jl::Signal<Scene *,Node *,Node *> nodeRemoved; //scene,parent,node
+    ///// A child node has been added to a parent node.
+    jl::Signal<Scene *,Node *,Node *> nodeAdded; //scene,parent,node
+    ///// A node (and its children and components) has been cloned.
+    jl::Signal<Scene *,Node *,Node *> nodeCloned; //scene,Node,CloneNode
 
-/// Scene drawable update finished. Custom animation (eg. IK) can be done at this point.
-URHO3D_EVENT(E_SCENEDRAWABLEUPDATEFINISHED, SceneDrawableUpdateFinished)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
+    ///// A component has been cloned.
+    jl::Signal<Scene *,Component *,Component *> componentCloned; //scene,component,it's clone
+    ///// A component has been created to a node.
+    jl::Signal<Scene *,Node *,Component *> componentAdded;
+    ///// A component is about to be removed from a node.
+    jl::Signal<Scene *,Node *,Component *> componentRemoved;
+    ///// A component's enabled state has changed.
+    jl::Signal<Scene *,Node *,Component *> componentEnabledChanged;
 
-/// SmoothedTransform target position changed.
-URHO3D_EVENT(E_TARGETPOSITION, TargetPositionChanged)
-{
-}
+    ///// A node's enabled state has changed.
+    jl::Signal<Scene *,Node *> nodeEnabledChanged; //Scene *scene,Node *
 
-/// SmoothedTransform target position changed.
-URHO3D_EVENT(E_TARGETROTATION, TargetRotationChanged)
-{
-}
+    ///// Scene attribute animation update.
+    jl::Signal<Scene *,float> attributeAnimationUpdate; // Scene,TimeStep
 
-/// Scene attribute animation update.
-URHO3D_EVENT(E_ATTRIBUTEANIMATIONUPDATE, AttributeAnimationUpdate)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
-
-/// Attribute animation added to object animation.
-URHO3D_EVENT(E_ATTRIBUTEANIMATIONADDED, AttributeAnimationAdded)
-{
-    URHO3D_PARAM(P_OBJECTANIMATION, ObjectAnimation);               // Object animation pointer
-    URHO3D_PARAM(P_ATTRIBUTEANIMATIONNAME, AttributeAnimationName); // String
-}
-
-/// Attribute animation removed from object animation.
-URHO3D_EVENT(E_ATTRIBUTEANIMATIONREMOVED, AttributeAnimationRemoved)
-{
-    URHO3D_PARAM(P_OBJECTANIMATION, ObjectAnimation);               // Object animation pointer
-    URHO3D_PARAM(P_ATTRIBUTEANIMATIONNAME, AttributeAnimationName); // String
-}
-
-/// Variable timestep scene post-update.
-URHO3D_EVENT(E_SCENEPOSTUPDATE, ScenePostUpdate)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
-
-/// Asynchronous scene loading progress.
-URHO3D_EVENT(E_ASYNCLOADPROGRESS, AsyncLoadProgress)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_PROGRESS, Progress);            // float
-    URHO3D_PARAM(P_LOADEDNODES, LoadedNodes);      // int
-    URHO3D_PARAM(P_TOTALNODES, TotalNodes);        // int
-    URHO3D_PARAM(P_LOADEDRESOURCES, LoadedResources); // int
-    URHO3D_PARAM(P_TOTALRESOURCES, TotalResources);   // int
+    /// Asynchronous scene loading progress.
+    /// Scene,Progress,LoadedNodes,TotalNodes,LoadedResources,TotalResources
+    jl::Signal<Scene *,float,int,int,int,int> asyncLoadProgress;
+    ///// Asynchronous scene loading finished.
+    jl::Signal<Scene *> asyncLoadFinished;
+};
+struct ObjectAnimationSignals {
+    ///// Attribute animation added to object animation.
+    jl::Signal<Object *,const QString &> attributeAnimationAdded; // ObjectAnimation,AttributeAnimationName
+    ///// Attribute animation removed from object animation.
+    jl::Signal<Object *,const QString &> attributeAnimationRemoved; // ObjectAnimation,AttributeAnimationName
 };
 
-/// Asynchronous scene loading finished.
-URHO3D_EVENT(E_ASYNCLOADFINISHED, AsyncLoadFinished)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
+struct SmoothedTransformSignals {
+    /// SmoothedTransform target position changed.
+    jl::Signal<> targetPositionChanged;
+    /// SmoothedTransform target position changed.
+    jl::Signal<> targetRotationChanged;
 };
 
-/// A child node has been added to a parent node.
-URHO3D_EVENT(E_NODEADDED, NodeAdded)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_PARENT, Parent);                // Node pointer
-    URHO3D_PARAM(P_NODE, Node);                    // Node pointer
-}
+//URHO3D_EVENT(E_SCENEDRAWABLEUPDATEFINISHED, SceneDrawableUpdateFinished)
+//{
+//    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
+//    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
+//}
 
-/// A child node is about to be removed from a parent node. Note that individual component removal events will not be sent.
-URHO3D_EVENT(E_NODEREMOVED, NodeRemoved)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_PARENT, Parent);                // Node pointer
-    URHO3D_PARAM(P_NODE, Node);                    // Node pointer
-}
+///// A node's name has changed.
+//URHO3D_EVENT(E_NODENAMECHANGED, NodeNameChanged)
+//{
+//    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
+//    URHO3D_PARAM(P_NODE, Node);                    // Node pointer
+//}
 
-/// A component has been created to a node.
-URHO3D_EVENT(E_COMPONENTADDED, ComponentAdded)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_NODE, Node);                    // Node pointer
-    URHO3D_PARAM(P_COMPONENT, Component);          // Component pointer
-}
+///// A node's tag has been removed.
+//URHO3D_EVENT(E_NODETAGREMOVED, NodeTagRemoved)
+//{
+//    URHO3D_PARAM(P_SCENE, Scene);					// Scene pointer
+//    URHO3D_PARAM(P_NODE, Node);						// Node pointer
+//    URHO3D_PARAM(P_TAG, Tag);						// String tag
+//}
 
-/// A component is about to be removed from a node.
-URHO3D_EVENT(E_COMPONENTREMOVED, ComponentRemoved)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_NODE, Node);                    // Node pointer
-    URHO3D_PARAM(P_COMPONENT, Component);          // Component pointer
-}
 
-/// A node's name has changed.
-URHO3D_EVENT(E_NODENAMECHANGED, NodeNameChanged)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_NODE, Node);                    // Node pointer
-}
+///// A serializable's temporary state has changed.
+//URHO3D_EVENT(E_TEMPORARYCHANGED, TemporaryChanged)
+//{
+//    URHO3D_PARAM(P_SERIALIZABLE, Serializable);    // Serializable pointer
+//}
 
-/// A node's enabled state has changed.
-URHO3D_EVENT(E_NODEENABLEDCHANGED, NodeEnabledChanged)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_NODE, Node);                    // Node pointer
-}
-
-/// A node's tag has been added.
-URHO3D_EVENT(E_NODETAGADDED, NodeTagAdded)
-{
-    URHO3D_PARAM(P_SCENE, Scene);					// Scene pointer
-    URHO3D_PARAM(P_NODE, Node);						// Node pointer
-    URHO3D_PARAM(P_TAG, Tag);						// String tag
-}
-
-/// A node's tag has been removed.
-URHO3D_EVENT(E_NODETAGREMOVED, NodeTagRemoved)
-{
-    URHO3D_PARAM(P_SCENE, Scene);					// Scene pointer
-    URHO3D_PARAM(P_NODE, Node);						// Node pointer
-    URHO3D_PARAM(P_TAG, Tag);						// String tag
-}
-
-/// A component's enabled state has changed.
-URHO3D_EVENT(E_COMPONENTENABLEDCHANGED, ComponentEnabledChanged)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_NODE, Node);                    // Node pointer
-    URHO3D_PARAM(P_COMPONENT, Component);          // Component pointer
-}
-
-/// A serializable's temporary state has changed.
-URHO3D_EVENT(E_TEMPORARYCHANGED, TemporaryChanged)
-{
-    URHO3D_PARAM(P_SERIALIZABLE, Serializable);    // Serializable pointer
-}
-/// A node (and its children and components) has been cloned.
-URHO3D_EVENT(E_NODECLONED, NodeCloned)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_NODE, Node);                    // Node pointer
-    URHO3D_PARAM(P_CLONENODE, CloneNode);          // Node pointer
-}
-
-/// A component has been cloned.
-URHO3D_EVENT(E_COMPONENTCLONED, ComponentCloned)
-{
-    URHO3D_PARAM(P_SCENE, Scene);                  // Scene pointer
-    URHO3D_PARAM(P_COMPONENT, Component);          // Component pointer
-    URHO3D_PARAM(P_CLONECOMPONENT, CloneComponent); // Component pointer
-}
-/// A network attribute update from the server has been intercepted.
-URHO3D_EVENT(E_INTERCEPTNETWORKUPDATE, InterceptNetworkUpdate)
-{
-    URHO3D_PARAM(P_SERIALIZABLE, Serializable);    // Serializable pointer
-    URHO3D_PARAM(P_TIMESTAMP, TimeStamp);          // unsigned (0-255)
-    URHO3D_PARAM(P_INDEX, Index);                  // unsigned
-    URHO3D_PARAM(P_NAME, Name);                    // String
-    URHO3D_PARAM(P_VALUE, Value);                  // Variant
-}
+///// A network attribute update from the server has been intercepted.
+//URHO3D_EVENT(E_INTERCEPTNETWORKUPDATE, InterceptNetworkUpdate)
+//{
+//    URHO3D_PARAM(P_SERIALIZABLE, Serializable);    // Serializable pointer
+//    URHO3D_PARAM(P_TIMESTAMP, TimeStamp);          // unsigned (0-255)
+//    URHO3D_PARAM(P_INDEX, Index);                  // unsigned
+//    URHO3D_PARAM(P_NAME, Name);                    // String
+//    URHO3D_PARAM(P_VALUE, Value);                  // Variant
+//}
 }

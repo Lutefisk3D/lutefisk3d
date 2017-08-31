@@ -44,7 +44,7 @@ class XPathQuery;
 class XPathResultSet;
 
 /// Element in an XML file.
-class URHO3D_API XMLElement
+class LUTEFISK3D_EXPORT XMLElement
 {
 public:
     /// Construct null element.
@@ -289,7 +289,7 @@ private:
 };
 
 /// XPath query result set.
-class URHO3D_API XPathResultSet
+class LUTEFISK3D_EXPORT XPathResultSet
 {
 public:
     /// Construct empty result set.
@@ -323,7 +323,7 @@ private:
 };
 
 /// XPath query.
-class URHO3D_API XPathQuery
+class LUTEFISK3D_EXPORT XPathQuery
 {
 public:
     /// Construct empty.

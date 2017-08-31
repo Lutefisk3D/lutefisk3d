@@ -71,9 +71,9 @@ void AnimationController::OnSetEnabled()
     if (scene)
     {
         if (IsEnabledEffective())
-            SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(AnimationController, HandleScenePostUpdate));
+            scene->scenePostUpdate.Connect(this,&AnimationController::HandleScenePostUpdate);
         else
-            UnsubscribeFromEvent(scene, E_SCENEPOSTUPDATE);
+            scene->scenePostUpdate.Disconnect(this,&AnimationController::HandleScenePostUpdate);
     }
 }
 
@@ -151,7 +151,7 @@ bool AnimationController::Play(const QString& name, unsigned char layer, bool lo
 {
     // Get the animation resource first to be able to get the canonical resource name
     // (avoids potential adding of duplicate animations)
-    Animation* newAnimation = GetSubsystem<ResourceCache>()->GetResource<Animation>(name);
+    Animation* newAnimation = context_->m_ResourceCache->GetResource<Animation>(name);
     if (!newAnimation)
         return false;
     // Check if already exists
@@ -187,7 +187,7 @@ bool AnimationController::Play(const QString& name, unsigned char layer, bool lo
 bool AnimationController::PlayExclusive(const QString& name, unsigned char layer, bool looped, float fadeTime)
 {
     bool success = Play(name, layer, looped, fadeTime);
-    
+
     // Fade other animations only if successfully started the new one
     if (success)
          FadeOthers(name, 0.0f, fadeTime);
@@ -616,7 +616,7 @@ void AnimationController::SetNetAnimationsAttr(const std::vector<unsigned char>&
         AnimationState* state = GetAnimationState(animHash);
         if (!state)
         {
-            Animation* newAnimation = GetSubsystem<ResourceCache>()->GetResource<Animation>(animName);
+            Animation* newAnimation = context_->m_ResourceCache->GetResource<Animation>(animName);
             state = AddAnimationState(newAnimation);
             if (!state)
             {
@@ -698,7 +698,7 @@ void AnimationController::SetNetAnimationsAttr(const std::vector<unsigned char>&
 
 void AnimationController::SetNodeAnimationStatesAttr(const VariantVector& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     nodeAnimationStates_.clear();
     unsigned index = 0;
     unsigned numStates = index < value.size() ? value[index++].GetUInt() : 0;
@@ -825,10 +825,11 @@ VariantVector AnimationController::GetNodeAnimationStatesAttr() const
 
 void AnimationController::OnSceneSet(Scene* scene)
 {
+    //TODO: disconnect from previous scene events?
     if (scene && IsEnabledEffective())
-        SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(AnimationController, HandleScenePostUpdate));
+        scene->scenePostUpdate.Connect(this,&AnimationController::HandleScenePostUpdate);
     else if (!scene)
-        UnsubscribeFromEvent(E_SCENEPOSTUPDATE);
+        scene->scenePostUpdate.Disconnect(this,&AnimationController::HandleScenePostUpdate);
 }
 
 AnimationState* AnimationController::AddAnimationState(Animation* animation)
@@ -890,11 +891,9 @@ void AnimationController::FindAnimation(const QString& name, unsigned& index, An
     }
 }
 
-void AnimationController::HandleScenePostUpdate(StringHash eventType, VariantMap& eventData)
+void AnimationController::HandleScenePostUpdate(Scene *,float ts)
 {
-    using namespace ScenePostUpdate;
-
-    Update(eventData[P_TIMESTEP].GetFloat());
+    Update(ts);
 }
 
 }

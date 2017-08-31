@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// %Controls sent over the network.
-class URHO3D_API Controls
+class LUTEFISK3D_EXPORT Controls
 {
 public:
     /// Construct.

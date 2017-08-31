@@ -51,7 +51,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(PhysicsStressTest)
 
 PhysicsStressTest::PhysicsStressTest(Context* context) :
-    Sample(context),
+    Sample("PhysicsStressTest",context),
     drawDebug_(false)
 {
 }
@@ -76,9 +76,9 @@ void PhysicsStressTest::Start()
 
 void PhysicsStressTest::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
     // Create a physics simulation world with default parameters, which will update at 60fps. Like the Octree must
@@ -168,7 +168,7 @@ void PhysicsStressTest::CreateScene()
 
     // Create the camera. Limit far clip distance to match the fog. Note: now we actually create the camera node outside
     // the scene, because we want it to be unaffected by scene load / save
-    cameraNode_ = new Node(context_);
+    cameraNode_ = new Node(m_context);
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetFarClip(300.0f);
 
@@ -178,8 +178,8 @@ void PhysicsStressTest::CreateScene()
 
 void PhysicsStressTest::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -201,30 +201,30 @@ void PhysicsStressTest::CreateInstructions()
 
 void PhysicsStressTest::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void PhysicsStressTest::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(PhysicsStressTest, HandleUpdate));
+    g_coreSignals.update.Connect(this,&PhysicsStressTest::HandleUpdate);
 
     // Subscribe HandlePostRenderUpdate() function for processing the post-render update event, during which we request
     // debug geometry
-    SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(PhysicsStressTest, HandlePostRenderUpdate));
+    g_coreSignals.postRenderUpdate.Connect(this,&PhysicsStressTest::HandlePostRenderUpdate);
 }
 
 void PhysicsStressTest::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -257,12 +257,12 @@ void PhysicsStressTest::MoveCamera(float timeStep)
     // Check for loading / saving the scene
     if (input->GetKeyPress(KEY_F5))
     {
-        File saveFile(context_, GetSubsystem<FileSystem>()->GetProgramDir() + "Data/Scenes/PhysicsStressTest.xml", FILE_WRITE);
+        File saveFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/PhysicsStressTest.xml", FILE_WRITE);
         scene_->SaveXML(saveFile);
     }
     if (input->GetKeyPress(KEY_F7))
     {
-        File loadFile(context_, GetSubsystem<FileSystem>()->GetProgramDir() + "Data/Scenes/PhysicsStressTest.xml", FILE_READ);
+        File loadFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/PhysicsStressTest.xml", FILE_READ);
         scene_->LoadXML(loadFile);
     }
 
@@ -273,7 +273,7 @@ void PhysicsStressTest::MoveCamera(float timeStep)
 
 void PhysicsStressTest::SpawnObject()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
     // Create a smaller box at camera position
     Node* boxNode = scene_->CreateChild("SmallBox");
@@ -299,18 +299,13 @@ void PhysicsStressTest::SpawnObject()
     body->SetLinearVelocity(cameraNode_->GetRotation() * Vector3(0.0f, 0.25f, 1.0f) * OBJECT_VELOCITY);
 }
 
-void PhysicsStressTest::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void PhysicsStressTest::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }
 
-void PhysicsStressTest::HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData)
+void PhysicsStressTest::HandlePostRenderUpdate(float)
 {
     // If draw debug mode is enabled, draw physics debug geometry. Use depth test to make the result easier to interpret
     if (drawDebug_)

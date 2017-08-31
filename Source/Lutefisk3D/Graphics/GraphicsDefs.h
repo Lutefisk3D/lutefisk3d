@@ -69,6 +69,7 @@ enum BlendMode
     BLEND_INVDESTALPHA,
     BLEND_SUBTRACT,
     BLEND_SUBTRACTALPHA,
+    BLEND_ZEROINVSRC, // SRC_ZERO,ONE_MINUS_SRC_COLOR
     MAX_BLENDMODES
 };
 
@@ -170,7 +171,7 @@ enum VertexElementSemantic
 };
 
 /// Vertex element description for arbitrary vertex declarations.
-struct URHO3D_API VertexElement
+struct LUTEFISK3D_EXPORT VertexElement
 {
     /// Default-construct.
     VertexElement() :
@@ -209,10 +210,10 @@ struct URHO3D_API VertexElement
     unsigned offset_;
 };
 /// Sizes of vertex element types.
-extern URHO3D_API const unsigned ELEMENT_TYPESIZES[];
+extern LUTEFISK3D_EXPORT const unsigned ELEMENT_TYPESIZES[];
 
 /// Vertex element definitions for the legacy elements.
-extern URHO3D_API const VertexElement LEGACY_VERTEXELEMENTS[];
+extern LUTEFISK3D_EXPORT const VertexElement LEGACY_VERTEXELEMENTS[];
 
 /// Texture filtering mode.
 enum TextureFilterMode
@@ -352,64 +353,64 @@ enum ShadowQuality
 };
 
 // Inbuilt shader parameters.
-extern URHO3D_API const StringHash VSP_AMBIENTSTARTCOLOR;
-extern URHO3D_API const StringHash VSP_AMBIENTENDCOLOR;
-extern URHO3D_API const StringHash VSP_BILLBOARDROT;
-extern URHO3D_API const StringHash VSP_CAMERAPOS;
-extern URHO3D_API const StringHash VSP_CLIPPLANE;
-extern URHO3D_API const StringHash VSP_NEARCLIP;
-extern URHO3D_API const StringHash VSP_FARCLIP;
-extern URHO3D_API const StringHash VSP_DEPTHMODE;
-extern URHO3D_API const StringHash VSP_DELTATIME;
-extern URHO3D_API const StringHash VSP_ELAPSEDTIME;
-extern URHO3D_API const StringHash VSP_FRUSTUMSIZE;
-extern URHO3D_API const StringHash VSP_GBUFFEROFFSETS;
-extern URHO3D_API const StringHash VSP_LIGHTDIR;
-extern URHO3D_API const StringHash VSP_LIGHTPOS;
-extern URHO3D_API const StringHash VSP_NORMALOFFSETSCALE;
-extern URHO3D_API const StringHash VSP_MODEL;
-extern URHO3D_API const StringHash VSP_VIEW;
-extern URHO3D_API const StringHash VSP_VIEWINV;
-extern URHO3D_API const StringHash VSP_VIEWPROJ;
-extern URHO3D_API const StringHash VSP_UOFFSET;
-extern URHO3D_API const StringHash VSP_VOFFSET;
-extern URHO3D_API const StringHash VSP_ZONE;
-extern URHO3D_API const StringHash VSP_LIGHTMATRICES;
-extern URHO3D_API const StringHash VSP_SKINMATRICES;
-extern URHO3D_API const StringHash VSP_VERTEXLIGHTS;
-extern URHO3D_API const StringHash PSP_AMBIENTCOLOR;
-extern URHO3D_API const StringHash PSP_CAMERAPOS;
-extern URHO3D_API const StringHash PSP_DELTATIME;
-extern URHO3D_API const StringHash PSP_DEPTHRECONSTRUCT;
-extern URHO3D_API const StringHash PSP_ELAPSEDTIME;
-extern URHO3D_API const StringHash PSP_FOGCOLOR;
-extern URHO3D_API const StringHash PSP_FOGPARAMS;
-extern URHO3D_API const StringHash PSP_GBUFFERINVSIZE;
-extern URHO3D_API const StringHash PSP_LIGHTCOLOR;
-extern URHO3D_API const StringHash PSP_LIGHTDIR;
-extern URHO3D_API const StringHash PSP_LIGHTPOS;
-extern URHO3D_API const StringHash PSP_NORMALOFFSETSCALE;
-extern URHO3D_API const StringHash PSP_MATDIFFCOLOR;
-extern URHO3D_API const StringHash PSP_MATEMISSIVECOLOR;
-extern URHO3D_API const StringHash PSP_MATENVMAPCOLOR;
-extern URHO3D_API const StringHash PSP_MATSPECCOLOR;
-extern URHO3D_API const StringHash PSP_NEARCLIP;
-extern URHO3D_API const StringHash PSP_FARCLIP;
-extern URHO3D_API const StringHash PSP_SHADOWCUBEADJUST;
-extern URHO3D_API const StringHash PSP_SHADOWDEPTHFADE;
-extern URHO3D_API const StringHash PSP_SHADOWINTENSITY;
-extern URHO3D_API const StringHash PSP_SHADOWMAPINVSIZE;
-extern URHO3D_API const StringHash PSP_SHADOWSPLITS;
-extern URHO3D_API const StringHash PSP_LIGHTMATRICES;
-extern URHO3D_API const StringHash PSP_VSMSHADOWPARAMS;
-extern URHO3D_API const StringHash PSP_ROUGHNESS;
-extern URHO3D_API const StringHash PSP_METALLIC;
-extern URHO3D_API const StringHash PSP_LIGHTRAD;
-extern URHO3D_API const StringHash PSP_LIGHTLENGTH;
-extern URHO3D_API const StringHash PSP_ZONEMIN;
-extern URHO3D_API const StringHash PSP_ZONEMAX;
+extern LUTEFISK3D_EXPORT const StringHash VSP_AMBIENTSTARTCOLOR;
+extern LUTEFISK3D_EXPORT const StringHash VSP_AMBIENTENDCOLOR;
+extern LUTEFISK3D_EXPORT const StringHash VSP_BILLBOARDROT;
+extern LUTEFISK3D_EXPORT const StringHash VSP_CAMERAPOS;
+extern LUTEFISK3D_EXPORT const StringHash VSP_CLIPPLANE;
+extern LUTEFISK3D_EXPORT const StringHash VSP_NEARCLIP;
+extern LUTEFISK3D_EXPORT const StringHash VSP_FARCLIP;
+extern LUTEFISK3D_EXPORT const StringHash VSP_DEPTHMODE;
+extern LUTEFISK3D_EXPORT const StringHash VSP_DELTATIME;
+extern LUTEFISK3D_EXPORT const StringHash VSP_ELAPSEDTIME;
+extern LUTEFISK3D_EXPORT const StringHash VSP_FRUSTUMSIZE;
+extern LUTEFISK3D_EXPORT const StringHash VSP_GBUFFEROFFSETS;
+extern LUTEFISK3D_EXPORT const StringHash VSP_LIGHTDIR;
+extern LUTEFISK3D_EXPORT const StringHash VSP_LIGHTPOS;
+extern LUTEFISK3D_EXPORT const StringHash VSP_NORMALOFFSETSCALE;
+extern LUTEFISK3D_EXPORT const StringHash VSP_MODEL;
+extern LUTEFISK3D_EXPORT const StringHash VSP_VIEW;
+extern LUTEFISK3D_EXPORT const StringHash VSP_VIEWINV;
+extern LUTEFISK3D_EXPORT const StringHash VSP_VIEWPROJ;
+extern LUTEFISK3D_EXPORT const StringHash VSP_UOFFSET;
+extern LUTEFISK3D_EXPORT const StringHash VSP_VOFFSET;
+extern LUTEFISK3D_EXPORT const StringHash VSP_ZONE;
+extern LUTEFISK3D_EXPORT const StringHash VSP_LIGHTMATRICES;
+extern LUTEFISK3D_EXPORT const StringHash VSP_SKINMATRICES;
+extern LUTEFISK3D_EXPORT const StringHash VSP_VERTEXLIGHTS;
+extern LUTEFISK3D_EXPORT const StringHash PSP_AMBIENTCOLOR;
+extern LUTEFISK3D_EXPORT const StringHash PSP_CAMERAPOS;
+extern LUTEFISK3D_EXPORT const StringHash PSP_DELTATIME;
+extern LUTEFISK3D_EXPORT const StringHash PSP_DEPTHRECONSTRUCT;
+extern LUTEFISK3D_EXPORT const StringHash PSP_ELAPSEDTIME;
+extern LUTEFISK3D_EXPORT const StringHash PSP_FOGCOLOR;
+extern LUTEFISK3D_EXPORT const StringHash PSP_FOGPARAMS;
+extern LUTEFISK3D_EXPORT const StringHash PSP_GBUFFERINVSIZE;
+extern LUTEFISK3D_EXPORT const StringHash PSP_LIGHTCOLOR;
+extern LUTEFISK3D_EXPORT const StringHash PSP_LIGHTDIR;
+extern LUTEFISK3D_EXPORT const StringHash PSP_LIGHTPOS;
+extern LUTEFISK3D_EXPORT const StringHash PSP_NORMALOFFSETSCALE;
+extern LUTEFISK3D_EXPORT const StringHash PSP_MATDIFFCOLOR;
+extern LUTEFISK3D_EXPORT const StringHash PSP_MATEMISSIVECOLOR;
+extern LUTEFISK3D_EXPORT const StringHash PSP_MATENVMAPCOLOR;
+extern LUTEFISK3D_EXPORT const StringHash PSP_MATSPECCOLOR;
+extern LUTEFISK3D_EXPORT const StringHash PSP_NEARCLIP;
+extern LUTEFISK3D_EXPORT const StringHash PSP_FARCLIP;
+extern LUTEFISK3D_EXPORT const StringHash PSP_SHADOWCUBEADJUST;
+extern LUTEFISK3D_EXPORT const StringHash PSP_SHADOWDEPTHFADE;
+extern LUTEFISK3D_EXPORT const StringHash PSP_SHADOWINTENSITY;
+extern LUTEFISK3D_EXPORT const StringHash PSP_SHADOWMAPINVSIZE;
+extern LUTEFISK3D_EXPORT const StringHash PSP_SHADOWSPLITS;
+extern LUTEFISK3D_EXPORT const StringHash PSP_LIGHTMATRICES;
+extern LUTEFISK3D_EXPORT const StringHash PSP_VSMSHADOWPARAMS;
+extern LUTEFISK3D_EXPORT const StringHash PSP_ROUGHNESS;
+extern LUTEFISK3D_EXPORT const StringHash PSP_METALLIC;
+extern LUTEFISK3D_EXPORT const StringHash PSP_LIGHTRAD;
+extern LUTEFISK3D_EXPORT const StringHash PSP_LIGHTLENGTH;
+extern LUTEFISK3D_EXPORT const StringHash PSP_ZONEMIN;
+extern LUTEFISK3D_EXPORT const StringHash PSP_ZONEMAX;
 // Scale calculation from bounding box diagonal.
-extern URHO3D_API const Vector3 DOT_SCALE;
+extern LUTEFISK3D_EXPORT const Vector3 DOT_SCALE;
 
 static const int QUALITY_LOW = 0;
 static const int QUALITY_MEDIUM = 1;

@@ -171,6 +171,7 @@ Geometry* Drawable::GetLodGeometry(unsigned batchIndex, unsigned level)
         return nullptr;
 }
 
+/// Draw to occlusion buffer. Return true if did not run out of triangles.
 bool Drawable::DrawOcclusion(OcclusionBuffer* buffer)
 {
     return true;
@@ -278,13 +279,13 @@ bool Drawable::IsInView() const
 {
     // Note: in headless mode there is no renderer subsystem and no view frustum tests are performed, so return
     // always false in that case
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = context_->m_Renderer.get();
     return renderer && viewFrameNumber_ == renderer->GetFrameInfo().frameNumber_ && !viewCameras_.empty();
 }
 
 bool Drawable::IsInView(Camera* camera) const
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = context_->m_Renderer.get();
     return renderer && viewFrameNumber_ == renderer->GetFrameInfo().frameNumber_ && (!camera || viewCameras_.contains(camera));
 }
 

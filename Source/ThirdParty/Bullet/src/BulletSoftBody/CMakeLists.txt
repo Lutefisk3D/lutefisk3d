@@ -15,6 +15,7 @@ SET(BulletSoftBody_SRCS
 	btSoftRigidDynamicsWorld.cpp
 	btSoftSoftCollisionAlgorithm.cpp
 	btDefaultSoftBodySolver.cpp
+    btSoftMultiBodyDynamicsWorld.cpp
 
 )
 
@@ -33,11 +34,13 @@ SET(BulletSoftBody_HDRS
 	btDefaultSoftBodySolver.h
 
 	btSoftBodySolverVertexBuffer.h
+    btSoftMultiBodyDynamicsWorld.h
 )
 
 
 
 ADD_LIBRARY(BulletSoftBody  ${BulletSoftBody_SRCS} ${BulletSoftBody_HDRS})
+set_property(TARGET BulletSoftBody PROPERTY POSITION_INDEPENDENT_CODE ON)
 SET_TARGET_PROPERTIES(BulletSoftBody PROPERTIES VERSION ${BULLET_VERSION})
 SET_TARGET_PROPERTIES(BulletSoftBody PROPERTIES SOVERSION ${BULLET_VERSION})
 IF (BUILD_SHARED_LIBS)

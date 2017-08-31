@@ -24,6 +24,7 @@
 
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
+#include "jlsignal/SignalBase.h"
 #include <list>
 
 namespace Urho3D
@@ -53,7 +54,7 @@ struct StoredLogMessage
     }
 
     /// Construct with parameters.
-    StoredLogMessage(const QString& message, int level, bool error) :
+    StoredLogMessage(const QString& message, LogLevels level, bool error) :
         message_(message),
         level_(level),
         error_(error)
@@ -63,19 +64,16 @@ struct StoredLogMessage
     /// Message text.
     QString message_;
     /// Message level. -1 for raw messages.
-    int level_;
+    LogLevels level_;
     /// Error flag for raw messages.
     bool error_;
 };
 
 /// Logging subsystem.
-class URHO3D_API Log : public Object
+class LUTEFISK3D_EXPORT Log : public jl::SignalObserver
 {
-    URHO3D_OBJECT(Log, Object);
-
 public:
-    /// Construct.
-    Log(Context* context);
+    Log(Context *ctx);
     /// Destruct. Close the log file if open.
     virtual ~Log();
 
@@ -100,14 +98,15 @@ public:
     bool IsQuiet() const { return quiet_; }
 
     /// Write to the log. If logging level is higher than the level of the message, the message is ignored.
-    static void Write(int level, const QString& message);
+    static void Write(LogLevels level, const QString& message);
     /// Write raw output to the log.
     static void WriteRaw(const QString& message, bool error = false);
-
 private:
     /// Handle end of frame. Process the threaded log messages.
-    void HandleEndFrame(StringHash eventType, VariantMap& eventData);
+    void HandleEndFrame();
 
+    /// Current context this logger is bound to.
+    Context *m_context;
     /// Mutex for threaded operation.
     Mutex logMutex_;
     /// Log messages from other threads.
@@ -125,7 +124,7 @@ private:
     /// Quiet mode flag.
     bool quiet_;
 };
-
+extern unsigned logLevelNameToIndex(const QString &name);
 #ifdef LUTEFISK3D_LOGGING
 #define URHO3D_LOGDEBUG(message) Urho3D::Log::Write(Urho3D::LOG_DEBUG, message)
 #define URHO3D_LOGINFO(message) Urho3D::Log::Write(Urho3D::LOG_INFO, message)

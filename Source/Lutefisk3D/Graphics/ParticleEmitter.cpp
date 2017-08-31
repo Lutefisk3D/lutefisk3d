@@ -88,9 +88,9 @@ void ParticleEmitter::OnSetEnabled()
     if (scene)
     {
         if (IsEnabledEffective())
-            SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(ParticleEmitter, HandleScenePostUpdate));
+            scene->scenePostUpdate.Connect(this,&ParticleEmitter::HandleScenePostUpdate);
         else
-            UnsubscribeFromEvent(scene, E_SCENEPOSTUPDATE);
+            scene->scenePostUpdate.Disconnect(this,&ParticleEmitter::HandleScenePostUpdate);
     }
 }
 
@@ -265,12 +265,12 @@ void ParticleEmitter::SetEffect(ParticleEffect* effect)
 
     // Unsubscribe from the reload event of previous effect (if any), then subscribe to the new
     if (effect_)
-        UnsubscribeFromEvent(effect_, E_RELOADFINISHED);
+        effect_->reloadFinished.Disconnect(this,&ParticleEmitter::HandleEffectReloadFinished);
 
     effect_ = effect;
 
     if (effect_)
-        SubscribeToEvent(effect_, E_RELOADFINISHED, URHO3D_HANDLER(ParticleEmitter, HandleEffectReloadFinished));
+        effect_->reloadFinished.Connect(this,&ParticleEmitter::HandleEffectReloadFinished);
 
     ApplyEffect();
     MarkNetworkUpdate();
@@ -346,7 +346,7 @@ void ParticleEmitter::ApplyEffect()
 
 void ParticleEmitter::SetEffectAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     SetEffect(cache->GetResource<ParticleEffect>(value.name_));
 }
 
@@ -427,11 +427,10 @@ VariantVector ParticleEmitter::GetParticleBillboardsAttr() const
 void ParticleEmitter::OnSceneSet(Scene* scene)
 {
     BillboardSet::OnSceneSet(scene);
-
     if (scene && IsEnabledEffective())
-        SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(ParticleEmitter, HandleScenePostUpdate));
+        scene->scenePostUpdate.Connect(this,&ParticleEmitter::HandleScenePostUpdate);
     else if (!scene)
-        UnsubscribeFromEvent(E_SCENEPOSTUPDATE);
+        scene->scenePostUpdate.Disconnect(this,&ParticleEmitter::HandleScenePostUpdate);
 }
 
 bool ParticleEmitter::EmitNewParticle()
@@ -533,12 +532,10 @@ bool ParticleEmitter::CheckActiveParticles() const
 
     return false;
 }
-void ParticleEmitter::HandleScenePostUpdate(StringHash eventType, VariantMap& eventData)
+void ParticleEmitter::HandleScenePostUpdate(Scene *,float ts)
 {
     // Store scene's timestep and use it instead of global timestep, as time scale may be other than 1
-    using namespace ScenePostUpdate;
-
-    lastTimeStep_ = eventData[P_TIMESTEP].GetFloat();
+    lastTimeStep_ = ts;
 
     // If no invisible update, check that the billboardset is in view (framenumber has changed)
     if ((effect_ && effect_->GetUpdateInvisible()) || viewFrameNumber_ != lastUpdateFrameNumber_)
@@ -570,7 +567,7 @@ void ParticleEmitter::HandleScenePostUpdate(StringHash eventType, VariantMap& ev
     }
 }
 
-void ParticleEmitter::HandleEffectReloadFinished(StringHash eventType, VariantMap& eventData)
+void ParticleEmitter::HandleEffectReloadFinished()
 {
     // When particle effect file is live-edited, remove existing particles and reapply the effect parameters
     Reset();

@@ -23,6 +23,7 @@
 #include "Lutefisk3D/Core/CoreEvents.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Core/ProcessUtils.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Core/Thread.h"
 #include "Lutefisk3D/Core/Timer.h"
@@ -61,7 +62,7 @@ private:
 };
 
 WorkQueue::WorkQueue(Context* context) :
-    Object(context),
+    m_context(context),
     shutDown_(false),
     pausing_(false),
     paused_(false),
@@ -70,7 +71,7 @@ WorkQueue::WorkQueue(Context* context) :
     lastSize_(0),
     maxNonThreadedWorkMs_(5)
 {
-    SubscribeToEvent(E_BEGINFRAME, URHO3D_HANDLER(WorkQueue, HandleBeginFrame));
+    g_coreSignals.beginFrame.Connect(this,&WorkQueue::HandleBeginFrame);
 }
 
 WorkQueue::~WorkQueue()
@@ -328,13 +329,7 @@ void WorkQueue::PurgeCompleted(unsigned priority)
         if (workitem->completed_ && workitem->priority_ >= priority)
         {
             if (workitem->sendEvent_)
-            {
-                using namespace WorkItemCompleted;
-
-                VariantMap& eventData = GetEventDataMap();
-                eventData[P_ITEM] = i->Get();
-                SendEvent(E_WORKITEMCOMPLETED, eventData);
-            }
+                workItemCompleted.Emit(i->Get());
 
             ReturnToPool(workitem);
 
@@ -377,12 +372,12 @@ void WorkQueue::ReturnToPool(SharedPtr<WorkItem>& item)
         poolItems_.push_back(item);
     }
 }
-void WorkQueue::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
+void WorkQueue::HandleBeginFrame(unsigned,float)
 {
     // If no worker threads, complete low-priority work here
     if (threads_.empty() && !queue_.empty())
     {
-        URHO3D_PROFILE(CompleteWorkNonthreaded);
+        URHO3D_PROFILE_CTX(m_context,CompleteWorkNonthreaded);
 
         HiresTimer timer;
 

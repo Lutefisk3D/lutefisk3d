@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008-2016 the Urho3D project.
+# Copyright (c) 2008-2017 the Urho3D project.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -145,7 +145,7 @@ set(BOX2D_General_HDRS
 )
 
 # Define source files
-file (GLOB CPP_FILES 
+file (GLOB CPP_FILES
     ${BOX2D_Collision_SRCS}
     ${BOX2D_Shapes_SRCS}
     ${BOX2D_Common_SRCS}
@@ -154,7 +154,7 @@ file (GLOB CPP_FILES
     ${BOX2D_Joints_SRCS}
     ${BOX2D_Rope_SRCS})
 
-file (GLOB H_FILES 
+file (GLOB H_FILES
     ${BOX2D_Collision_HDRS}
     ${BOX2D_Shapes_HDRS}
     ${BOX2D_Common_HDRS}
@@ -177,9 +177,6 @@ source_group(Dynamics\\Joints FILES ${BOX2D_Joints_SRCS} ${BOX2D_Joints_HDRS})
 source_group(Include FILES ${BOX2D_General_HDRS})
 source_group(Rope FILES ${BOX2D_Rope_SRCS} ${BOX2D_Rope_HDRS})
 
-add_library(Box2D OBJECT ${SOURCE_FILES} ${INCLUDES})
-install (FILES ${H_FILES} DESTINATION include/ThirdParty/Box2D)
-
-######################### Add component to the project's list
-list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:Box2D>)
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)
+add_library(Box2D STATIC ${SOURCE_FILES} ${INCLUDES})
+#install (FILES ${H_FILES} DESTINATION include/ThirdParty/Box2D)
+set_property(TARGET Box2D PROPERTY POSITION_INDEPENDENT_CODE ON)

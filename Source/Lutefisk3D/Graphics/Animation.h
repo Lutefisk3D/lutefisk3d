@@ -52,7 +52,7 @@ struct AnimationKeyFrame
 };
 
 /// Skeletal animation track, stores keyframes of a single bone.
-struct URHO3D_API AnimationTrack
+struct LUTEFISK3D_EXPORT AnimationTrack
 {
     /// Construct.
     AnimationTrack() :
@@ -108,9 +108,9 @@ static const unsigned char CHANNEL_ROTATION = 0x2;
 static const unsigned char CHANNEL_SCALE = 0x4;
 
 /// Skeletal animation resource.
-class URHO3D_API Animation : public Resource
+class LUTEFISK3D_EXPORT Animation : public ResourceWithMetadata
 {
-    URHO3D_OBJECT(Animation,Resource)
+    URHO3D_OBJECT(Animation,ResourceWithMetadata)
 
 public:
     /// Construct.

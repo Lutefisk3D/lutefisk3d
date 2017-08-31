@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -302,9 +302,11 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
     if (group)
     {
         EventReceiverGroup_Guard event_guard(*group);
-
-        for (Object* receiver : group->receivers_)
+        //Prevent sending events for subscribers added during event handling.
+        const size_t receiver_count = group->receivers_.size();
+        for (size_t i = 0; i < receiver_count; ++i)
         {
+            Object* receiver = group->receivers_[i];
             // Holes may exist if receivers removed during send
             if (!receiver)
                 continue;
@@ -328,8 +330,11 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
         EventReceiverGroup_Guard event_guard(*group);
         if (processed.isEmpty())
         {
-            for (Object* receiver : group->receivers_)
-            {
+        //Prevent sending events for subscribers added during event handling.
+        const size_t receiver_count = group->receivers_.size();
+        for (size_t i = 0; i < receiver_count; ++i)
+        {
+            Object* receiver = group->receivers_[i];
                 if (!receiver)
                     continue;
 
@@ -344,9 +349,12 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
         }
         else
         {
+            //Prevent sending events for subscribers added during event handling.
+            const size_t receiver_count = group->receivers_.size();
             // If there were specific receivers, check that the event is not sent doubly to them
-            for (Object* receiver : group->receivers_)
+            for (size_t i = 0; i < receiver_count; ++i)
             {
+                Object* receiver = group->receivers_[i];
                 if (!receiver || processed.contains(receiver))
                     continue;
 
@@ -485,23 +493,4 @@ void Object::RemoveEventSender(Object* sender)
             ++handler;
         }
     }
-}
-
-Urho3D::StringHash EventNameRegistrar::RegisterEventName(const char* eventName)
-{
-    StringHash id(eventName);
-    GetEventNameMap()[id] = eventName;
-    return id;
-}
-
-const QString& EventNameRegistrar::GetEventName(StringHash eventID)
-{
-    auto it = GetEventNameMap().find(eventID);
-    return  it != GetEventNameMap().end() ? MAP_VALUE(it) : s_dummy;
-}
-
-HashMap<StringHash, QString>& EventNameRegistrar::GetEventNameMap()
-{
-    static HashMap<StringHash, QString> eventNames_;
-    return eventNames_;
 }

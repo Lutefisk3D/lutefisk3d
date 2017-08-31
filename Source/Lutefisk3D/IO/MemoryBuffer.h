@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// Memory area that can be read and written to as a stream.
-class URHO3D_API MemoryBuffer : public AbstractFile
+class LUTEFISK3D_EXPORT MemoryBuffer : public AbstractFile
 {
 public:
     /// Construct with a pointer and size.
@@ -42,7 +42,7 @@ public:
 
     /// Read bytes from the memory area. Return number of bytes actually read.
     virtual unsigned Read(void* dest, unsigned size);
-    /// Set position from the beginning of the memory area.
+    /// Set position from the beginning of the memory area. Return actual new position.
     virtual unsigned Seek(unsigned position);
     /// Write bytes to the memory area.
     virtual unsigned Write(const void* data, unsigned size);

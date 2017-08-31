@@ -47,7 +47,7 @@ FontFaceBitmap::~FontFaceBitmap()
 {
 }
 
-bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, int pointSize)
+bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, float pointSize)
 {
     Context* context = font_->GetContext();
 
@@ -82,7 +82,7 @@ bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, 
     unsigned pages = commonElem.GetUInt("pages");
     textures_.reserve(pages);
 
-    ResourceCache* resourceCache = font_->GetSubsystem<ResourceCache>();
+    ResourceCache* resourceCache = font_->GetContext()->m_ResourceCache.get();
     QString fontPath = GetPath(font_->GetName());
     unsigned totalTextureSize = 0;
 
@@ -130,13 +130,13 @@ bool FontFaceBitmap::Load(const unsigned char* fontData, unsigned fontDataSize, 
         int id = charElem.GetInt("id");
 
         FontGlyph glyph;
-        glyph.x_ = charElem.GetInt("x");
-        glyph.y_ = charElem.GetInt("y");
-        glyph.width_ = charElem.GetInt("width");
-        glyph.height_ = charElem.GetInt("height");
-        glyph.offsetX_ = charElem.GetInt("xoffset");
-        glyph.offsetY_ = charElem.GetInt("yoffset");
-        glyph.advanceX_ = charElem.GetInt("xadvance");
+        glyph.x_ = (short)charElem.GetInt("x");
+        glyph.y_ = (short)charElem.GetInt("y");
+        glyph.width_ = glyph.texWidth_ = (short)charElem.GetInt("width");
+        glyph.height_ = glyph.texHeight_ = (short)charElem.GetInt("height");
+        glyph.offsetX_ = (short)charElem.GetInt("xoffset");
+        glyph.offsetY_ = (short)charElem.GetInt("yoffset");
+        glyph.advanceX_ = (short)charElem.GetInt("xadvance");
         glyph.page_ = charElem.GetUInt("page");
 
         glyphMapping_[id] = glyph;
@@ -185,7 +185,7 @@ bool FontFaceBitmap::Load(FontFace* fontFace, bool usedGlyphs)
     rowHeight_ = fontFace->rowHeight_;
 
     int numPages = 1;
-    int maxTextureSize = font_->GetSubsystem<UI>()->GetMaxFontTextureSize();
+    int maxTextureSize = font_->GetContext()->m_UISystem->GetMaxFontTextureSize();
     AreaAllocator allocator(FONT_TEXTURE_MIN_SIZE, FONT_TEXTURE_MIN_SIZE, maxTextureSize, maxTextureSize);
 
     for (auto i = fontFace->glyphMapping_.begin(), fin=fontFace->glyphMapping_.end(); i!=fin; ++i)
@@ -250,7 +250,7 @@ bool FontFaceBitmap::Load(FontFace* fontFace, bool usedGlyphs)
     for (unsigned i = 0; i < newImages.size(); ++i)
         textures_[i] = LoadFaceTexture(newImages[i]);
 
-    for (HashMap<unsigned, short>::const_iterator i = fontFace->kerningMapping_.begin(); i != fontFace->kerningMapping_.end(); ++i)
+    for (auto i = fontFace->kerningMapping_.cbegin(); i != fontFace->kerningMapping_.cend(); ++i)
     {
         unsigned first = (MAP_KEY(i)) >> 16;
         unsigned second = (MAP_KEY(i)) & 0xffff;
@@ -354,15 +354,14 @@ unsigned FontFaceBitmap::ConvertFormatToNumComponents(gl::GLenum format)
 
 SharedPtr<Image> FontFaceBitmap::SaveFaceTexture(Texture2D* texture)
 {
-    Image* image = new Image(font_->GetContext());
+    SharedPtr<Image> image(new Image(font_->GetContext()));
     image->SetSize(texture->GetWidth(), texture->GetHeight(), ConvertFormatToNumComponents(texture->GetFormat()));
     if (!texture->GetData(0, image->GetData()))
     {
-        delete image;
         URHO3D_LOGERROR("Could not save texture to image resource");
         return SharedPtr<Image>();
     }
-    return SharedPtr<Image>(image);
+    return image;
 }
 
 bool FontFaceBitmap::SaveFaceTexture(Texture2D* texture, const QString& fileName)

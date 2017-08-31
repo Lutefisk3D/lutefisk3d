@@ -29,7 +29,7 @@ namespace Urho3D
 {
 
 /// Tooltip %UI element.
-class ToolTip : public UIElement
+class LUTEFISK3D_EXPORT ToolTip : public UIElement
 {
     URHO3D_OBJECT(ToolTip,UIElement)
 

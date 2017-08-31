@@ -37,7 +37,7 @@
 #include "Lutefisk3D/Core/WorkQueue.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Core/StringUtils.h"
-
+#include <QtCore/QString>
 namespace Urho3D
 {
 
@@ -64,7 +64,7 @@ static const char* checkDirs[] =
 static const SharedPtr<Resource> noResource;
 
 ResourceCache::ResourceCache(Context* context) :
-    Object(context),
+    m_context(context),
     autoReloadResources_(false),
     returnFailedResources_(false),
     searchPackagesFirst_(true),
@@ -72,13 +72,13 @@ ResourceCache::ResourceCache(Context* context) :
     finishBackgroundResourcesMs_(5)
 {
     // Register Resource library object factories
-    RegisterResourceLibrary(context_);
+    RegisterResourceLibrary(m_context);
 
     // Create resource background loader. Its thread will start on the first background request
     backgroundLoader_ = new BackgroundLoader(this);
 
     // Subscribe BeginFrame for handling directory watchers and background loaded resource finalization
-    SubscribeToEvent(E_BEGINFRAME, URHO3D_HANDLER(ResourceCache, HandleBeginFrame));
+    g_coreSignals.beginFrame.Connect(this,&ResourceCache::HandleBeginFrame);
 }
 
 ResourceCache::~ResourceCache()
@@ -86,12 +86,12 @@ ResourceCache::~ResourceCache()
     // Shut down the background loader first
     backgroundLoader_.Reset();
 }
-
+/// Add a resource load directory. Optional priority parameter which will control search order.
 bool ResourceCache::AddResourceDir(const QString& pathName, unsigned priority)
 {
     MutexLock lock(resourceMutex_);
 
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = m_context->m_FileSystem.get();
     if (!fileSystem || !fileSystem->DirExists(pathName))
     {
         URHO3D_LOGERROR("Could not open directory " + pathName);
@@ -116,7 +116,7 @@ bool ResourceCache::AddResourceDir(const QString& pathName, unsigned priority)
     // If resource auto-reloading active, create a file watcher for the directory
     if (autoReloadResources_)
     {
-        SharedPtr<FileWatcher> watcher(new FileWatcher(context_));
+        SharedPtr<FileWatcher> watcher(new FileWatcher(m_context));
         watcher->StartWatching(fixedPath, true);
         fileWatchers_.push_back(watcher);
     }
@@ -124,7 +124,7 @@ bool ResourceCache::AddResourceDir(const QString& pathName, unsigned priority)
     URHO3D_LOGINFO("Added resource path " + fixedPath);
     return true;
 }
-
+/// Add a package file for loading resources from. Optional priority parameter which will control search order.
 bool ResourceCache::AddPackageFile(PackageFile* package, unsigned priority)
 {
     MutexLock lock(resourceMutex_);
@@ -144,13 +144,13 @@ bool ResourceCache::AddPackageFile(PackageFile* package, unsigned priority)
     URHO3D_LOGINFO("Added resource package " + package->GetName());
     return true;
 }
-
+/// Add a package file for loading resources from by name. Optional priority parameter which will control search order.
 bool ResourceCache::AddPackageFile(const QString& fileName, unsigned priority)
 {
-    SharedPtr<PackageFile> package(new PackageFile(context_));
+    SharedPtr<PackageFile> package(new PackageFile(m_context));
     return package->Open(fileName) && AddPackageFile(package);
 }
-
+/// Add a manually created resource. Must be uniquely named within its type.
 bool ResourceCache::AddManualResource(Resource* resource)
 {
     if (!resource)
@@ -171,7 +171,7 @@ bool ResourceCache::AddManualResource(Resource* resource)
     UpdateResourceGroup(resource->GetType());
     return true;
 }
-
+/// Remove a resource load directory.
 void ResourceCache::RemoveResourceDir(const QString& pathName)
 {
     MutexLock lock(resourceMutex_);
@@ -198,7 +198,7 @@ void ResourceCache::RemoveResourceDir(const QString& pathName)
         }
     }
 }
-
+/// Remove a package file. Optionally release the resources loaded from it.
 void ResourceCache::RemovePackageFile(PackageFile* package, bool releaseResources, bool forceRelease)
 {
     MutexLock lock(resourceMutex_);
@@ -215,7 +215,7 @@ void ResourceCache::RemovePackageFile(PackageFile* package, bool releaseResource
         }
     }
 }
-
+/// Remove a package file by name. Optionally release the resources loaded from it.
 void ResourceCache::RemovePackageFile(const QString& fileName, bool releaseResources, bool forceRelease)
 {
     MutexLock lock(resourceMutex_);
@@ -235,7 +235,7 @@ void ResourceCache::RemovePackageFile(const QString& fileName, bool releaseResou
         }
     }
 }
-
+/// Release a resource by name.
 void ResourceCache::ReleaseResource(StringHash type, const QString& name, bool force)
 {
     StringHash nameHash(name);
@@ -250,7 +250,7 @@ void ResourceCache::ReleaseResource(StringHash type, const QString& name, bool f
         UpdateResourceGroup(type);
     }
 }
-
+/// Release all resources of a specific type.
 void ResourceCache::ReleaseResources(StringHash type, bool force)
 {
     bool released = false;
@@ -275,7 +275,7 @@ void ResourceCache::ReleaseResources(StringHash type, bool force)
     if (released)
         UpdateResourceGroup(type);
 }
-
+/// Release resources of a specific type and partial name.
 void ResourceCache::ReleaseResources(StringHash type, const QString& partialName, bool force)
 {
     bool released = false;
@@ -304,7 +304,7 @@ void ResourceCache::ReleaseResources(StringHash type, const QString& partialName
     if (released)
         UpdateResourceGroup(type);
 }
-
+/// Release resources of all types by partial name.
 void ResourceCache::ReleaseResources(const QString& partialName, bool force)
 {
     // Some resources refer to others, like materials to textures. Release twice to ensure these get released.
@@ -337,7 +337,7 @@ void ResourceCache::ReleaseResources(const QString& partialName, bool force)
         }
     }
 }
-
+/// Release all resources. When called with the force flag false, releases all currently unused resources.
 void ResourceCache::ReleaseAllResources(bool force)
 {
     unsigned repeat = force ? 1 : 2;
@@ -366,13 +366,13 @@ void ResourceCache::ReleaseAllResources(bool force)
         }
     }
 }
-
+/// Reload a resource. Return true on success. The resource will not be removed from the cache in case of failure.
 bool ResourceCache::ReloadResource(Resource* resource)
 {
     if (!resource)
         return false;
 
-    resource->SendEvent(E_RELOADSTARTED);
+    resource->reloadStarted.Emit();
 
     bool success = false;
     SharedPtr<File> file = GetFile(resource->GetName());
@@ -383,16 +383,16 @@ bool ResourceCache::ReloadResource(Resource* resource)
     {
         resource->ResetUseTimer();
         UpdateResourceGroup(resource->GetType());
-        resource->SendEvent(E_RELOADFINISHED);
+        resource->reloadFinished.Emit();
         return true;
     }
 
     // If reloading failed, do not remove the resource from cache, to allow for a new live edit to
     // attempt loading again
-    resource->SendEvent(E_RELOADFAILED);
+    resource->reloadFailed.Emit();
     return false;
 }
-
+/// Reload a resource based on filename. Causes also reload of dependent resources if necessary.
 void ResourceCache::ReloadResourceWithDependencies(const QString& fileName)
 {
     StringHash fileNameHash(fileName);
@@ -430,12 +430,12 @@ void ResourceCache::ReloadResourceWithDependencies(const QString& fileName)
         }
     }
 }
-
+/// Set memory budget for a specific resource type, default 0 is unlimited.
 void ResourceCache::SetMemoryBudget(StringHash type, uint64_t budget)
 {
     resourceGroups_[type].memoryBudget_ = budget;
 }
-
+/// Enable or disable automatic reloading of resources as files are modified. Default false.
 void ResourceCache::SetAutoReloadResources(bool enable)
 {
     if (enable != autoReloadResources_)
@@ -444,7 +444,7 @@ void ResourceCache::SetAutoReloadResources(bool enable)
         {
             for (unsigned i = 0; i < resourceDirs_.size(); ++i)
             {
-                SharedPtr<FileWatcher> watcher(new FileWatcher(context_));
+                SharedPtr<FileWatcher> watcher(new FileWatcher(m_context));
                 watcher->StartWatching(resourceDirs_[i], true);
                 fileWatchers_.push_back(watcher);
             }
@@ -455,6 +455,7 @@ void ResourceCache::SetAutoReloadResources(bool enable)
         autoReloadResources_ = enable;
     }
 }
+/// Add a resource router object. By default there is none, so the routing process is skipped.
 void ResourceCache::AddResourceRouter(ResourceRouter* router, bool addAsFirst)
 {
     // Check for duplicate
@@ -469,7 +470,7 @@ void ResourceCache::AddResourceRouter(ResourceRouter* router, bool addAsFirst)
     else
         resourceRouters_.push_back(SharedPtr<ResourceRouter>(router));
 }
-
+/// Remove a resource router object.
 void ResourceCache::RemoveResourceRouter(ResourceRouter* router)
 {
     for (auto iter = resourceRouters_.begin(),fin=resourceRouters_.end(); iter!=fin; ++iter)
@@ -482,7 +483,14 @@ void ResourceCache::RemoveResourceRouter(ResourceRouter* router)
     }
 }
 
-
+///
+/// \brief Open and return a file from the resource load paths or from inside a package file.
+/// If not found, use a fallback search with absolute path.
+/// Return null if fails. Can be called from outside the main thread.
+/// \param nameIn
+/// \param sendEventOnFailure
+/// \return
+///
 SharedPtr<File> ResourceCache::GetFile(const QString& nameIn, bool sendEventOnFailure)
 {
     MutexLock lock(resourceMutex_);
@@ -526,17 +534,13 @@ SharedPtr<File> ResourceCache::GetFile(const QString& nameIn, bool sendEventOnFa
 
         if (Thread::IsMainThread())
         {
-            using namespace ResourceNotFound;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_RESOURCENAME] = name.length() ? name : nameIn;
-            SendEvent(E_RESOURCENOTFOUND, eventData);
+            g_resourceSignals.resourceNotFound.Emit(name.isEmpty()? nameIn:name);
         }
     }
 
     return SharedPtr<File>();
 }
-
+/// Return an already loaded resource of specific type & name, or null if not found. Will not load if does not exist.
 Resource* ResourceCache::GetExistingResource(StringHash type, const QString& nameIn)
 {
     QString name = SanitateResourceName(nameIn);
@@ -556,6 +560,15 @@ Resource* ResourceCache::GetExistingResource(StringHash type, const QString& nam
     const SharedPtr<Resource>& existing = FindResource(type, nameHash);
     return existing;
 }
+///
+/// \brief Return a resource by type and name. Load if not loaded yet.
+/// Return null if not found or if fails, unless SetReturnFailedResources(true) has been called.
+/// Can be called only from the main thread.
+/// \param type - resource type
+/// \param nameIn - resource location/name
+/// \param sendEventOnFailure
+/// \return
+///
 Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, bool sendEventOnFailure)
 {
     QString name = SanitateResourceName(nameIn);
@@ -581,18 +594,14 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
 
     SharedPtr<Resource> resource;
     // Make sure the pointer is non-null and is a Resource subclass
-    resource = DynamicCast<Resource>(context_->CreateObject(type));
+    resource = DynamicCast<Resource>(m_context->CreateObject(type));
     if (!resource)
     {
         URHO3D_LOGERROR(QString("Could not load unknown resource type ") + type.ToString());
 
         if (sendEventOnFailure)
         {
-            using namespace UnknownResourceType;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_RESOURCETYPE] = type;
-            SendEvent(E_UNKNOWNRESOURCETYPE, eventData);
+            g_resourceSignals.unknownResourceType.Emit(type);
         }
 
         return nullptr;
@@ -611,11 +620,7 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
         // Error should already been logged by corresponding resource descendant class
         if (sendEventOnFailure)
         {
-            using namespace LoadFailed;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_RESOURCENAME] = name;
-            SendEvent(E_LOADFAILED, eventData);
+            g_resourceSignals.loadFailed.Emit(name);
         }
 
         if (!returnFailedResources_)
@@ -629,7 +634,16 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
 
     return resource;
 }
-
+///
+/// \brief Background load a resource. An event will be sent when complete.
+/// Return true if successfully stored to the load queue, false if eg. already exists.
+/// Can be called from outside the main thread.
+/// \param type
+/// \param nameIn
+/// \param sendEventOnFailure
+/// \param caller
+/// \return
+///
 bool ResourceCache::BackgroundLoadResource(StringHash type, const QString& nameIn, bool sendEventOnFailure, Resource* caller)
 {
     // If empty name, fail immediately
@@ -644,7 +658,14 @@ bool ResourceCache::BackgroundLoadResource(StringHash type, const QString& nameI
 
     return backgroundLoader_->QueueResource(type, name, sendEventOnFailure, caller);
 }
-
+///
+/// \brief Load a resource without storing it in the resource cache.
+/// Can be called from outside the main thread if the resource itself is safe to load completely (it does not possess for example GPU data.)
+/// \param type
+/// \param nameIn
+/// \param sendEventOnFailure
+/// \return null if not found or if fails
+///
 SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QString& nameIn, bool sendEventOnFailure)
 {
     QString name = SanitateResourceName(nameIn);
@@ -655,18 +676,14 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QStrin
 
     SharedPtr<Resource> resource;
     // Make sure the pointer is non-null and is a Resource subclass
-    resource = DynamicCast<Resource>(context_->CreateObject(type));
+    resource = DynamicCast<Resource>(m_context->CreateObject(type));
     if (!resource)
     {
         URHO3D_LOGERROR("Could not load unknown resource type " + type.ToString());
 
         if (sendEventOnFailure)
         {
-            using namespace UnknownResourceType;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_RESOURCETYPE] = type;
-            SendEvent(E_UNKNOWNRESOURCETYPE, eventData);
+            g_resourceSignals.unknownResourceType.Emit(type);
         }
 
         return SharedPtr<Resource>();
@@ -685,11 +702,7 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QStrin
         // Error should already been logged by corresponding resource descendant class
         if (sendEventOnFailure)
         {
-            using namespace LoadFailed;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_RESOURCENAME] = name;
-            SendEvent(E_LOADFAILED, eventData);
+            g_resourceSignals.loadFailed.Emit(name);
         }
 
         return SharedPtr<Resource>();
@@ -697,12 +710,12 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QStrin
 
     return resource;
 }
-
+/// Return number of pending background-loaded resources.
 unsigned ResourceCache::GetNumBackgroundLoadResources() const
 {
     return backgroundLoader_->GetNumQueuedResources();
 }
-
+/// Return all loaded resources of a specific type.
 void ResourceCache::GetResources(std::vector<Resource*>& result, StringHash type) const
 {
     result.clear();
@@ -713,7 +726,8 @@ void ResourceCache::GetResources(std::vector<Resource*>& result, StringHash type
             result.push_back(ELEMENT_VALUE(elem));
     }
 }
-
+/// Return whether a file exists in the resource directories or package files. Does not check manually added
+/// in-memory resources.
 bool ResourceCache::Exists(const QString& nameIn) const
 {
     MutexLock lock(resourceMutex_);
@@ -736,7 +750,7 @@ bool ResourceCache::Exists(const QString& nameIn) const
             return true;
     }
 
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = m_context->m_FileSystem.get();
     for (unsigned i = 0; i < resourceDirs_.size(); ++i)
     {
         if (fileSystem->FileExists(resourceDirs_[i] + name))
@@ -746,19 +760,19 @@ bool ResourceCache::Exists(const QString& nameIn) const
     // Fallback using absolute path
     return fileSystem->FileExists(name);
 }
-
+/// Return memory budget for a resource type.
 uint64_t ResourceCache::GetMemoryBudget(StringHash type) const
 {
     HashMap<StringHash, ResourceGroup>::const_iterator i = resourceGroups_.find(type);
     return i != resourceGroups_.end() ? MAP_VALUE(i).memoryBudget_ : 0;
 }
-
+/// Return total memory use for a resource type.
 uint64_t ResourceCache::GetMemoryUse(StringHash type) const
 {
     HashMap<StringHash, ResourceGroup>::const_iterator i = resourceGroups_.find(type);
     return i != resourceGroups_.end() ? MAP_VALUE(i).memoryUse_ : 0;
 }
-
+/// Return total memory use for all resources.
 uint64_t ResourceCache::GetTotalMemoryUse() const
 {
     uint64_t total = 0;
@@ -766,11 +780,11 @@ uint64_t ResourceCache::GetTotalMemoryUse() const
         total += ELEMENT_VALUE(elem).memoryUse_;
     return total;
 }
-
+/// Return full absolute file name of resource if possible, or empty if not found.
 QString ResourceCache::GetResourceFileName(const QString& name) const
 {
 
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = m_context->m_FileSystem.get();
     for (unsigned i = 0; i < resourceDirs_.size(); ++i)
     {
         if (fileSystem->FileExists(resourceDirs_[i] + name))
@@ -795,7 +809,7 @@ QString ResourceCache::GetPreferredResourceDir(const QString& path) const
     bool pathHasKnownDirs = false;
     bool parentHasKnownDirs = false;
 
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = m_context->m_FileSystem.get();
 
     for (unsigned i = 0; checkDirs[i] != nullptr; ++i)
     {
@@ -832,7 +846,7 @@ QString ResourceCache::SanitateResourceName(const QString& nameIn) const
     name.replace("./", "");
 
     // If the path refers to one of the resource directories, normalize the resource name
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = m_context->m_FileSystem.get();
     if (resourceDirs_.size())
     {
         QString namePath = GetPath(name);
@@ -859,7 +873,7 @@ QString ResourceCache::SanitateResourceDirName(const QString& nameIn) const
 {
     QString fixedPath = AddTrailingSlash(nameIn);
     if (!IsAbsolutePath(fixedPath))
-        fixedPath = GetSubsystem<FileSystem>()->GetCurrentDir() + fixedPath;
+        fixedPath = m_context->m_FileSystem->GetCurrentDir() + fixedPath;
 
     // Sanitate away /./ construct
     fixedPath.replace("/./", "/");
@@ -933,7 +947,7 @@ QString ResourceCache::PrintMemoryUsage() const
         const QString memMaxString = GetFileSizeString(largest);
         const QString memBudgetString = GetFileSizeString(ELEMENT_VALUE(entry).memoryBudget_);
         const QString memTotalString = GetFileSizeString(ELEMENT_VALUE(entry).memoryUse_);
-        const QString resTypeName = context_->GetTypeName(ELEMENT_KEY(entry));
+        const QString resTypeName = m_context->GetTypeName(ELEMENT_KEY(entry));
 
         memset(outputLine, ' ', 256);
         outputLine[255] = 0;
@@ -961,6 +975,7 @@ QString ResourceCache::PrintMemoryUsage() const
 
     return output;
 }
+/// Find a resource.
 const SharedPtr<Resource>& ResourceCache::FindResource(StringHash type, StringHash nameHash)
 {
     MutexLock lock(resourceMutex_);
@@ -974,7 +989,7 @@ const SharedPtr<Resource>& ResourceCache::FindResource(StringHash type, StringHa
 
     return MAP_VALUE(j);
 }
-
+/// Find a resource by name only. Searches all type groups.
 const SharedPtr<Resource>& ResourceCache::FindResource(StringHash nameHash)
 {
     MutexLock lock(resourceMutex_);
@@ -988,7 +1003,7 @@ const SharedPtr<Resource>& ResourceCache::FindResource(StringHash nameHash)
 
     return noResource;
 }
-
+/// Release resources loaded from a package file.
 void ResourceCache::ReleasePackageResources(PackageFile* package, bool force)
 {
     QSet<StringHash> affectedGroups;
@@ -1017,7 +1032,7 @@ void ResourceCache::ReleasePackageResources(PackageFile* package, bool force)
     for (StringHash group : affectedGroups)
         UpdateResourceGroup(group);
 }
-
+/// Update a resource group. Recalculate memory use and release resources if over memory budget.
 void ResourceCache::UpdateResourceGroup(StringHash type)
 {
     HashMap<StringHash, ResourceGroup>::iterator i = resourceGroups_.find(type);
@@ -1056,8 +1071,8 @@ void ResourceCache::UpdateResourceGroup(StringHash type)
             break;
     }
 }
-
-void ResourceCache::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
+/// Handle begin frame event. Automatic resource reloads and the finalization of background loaded resources are processed here.
+void ResourceCache::HandleBeginFrame(unsigned FrameNumber,float timeStep)
 {
     for (unsigned i = 0; i < fileWatchers_.size(); ++i)
     {
@@ -1067,32 +1082,27 @@ void ResourceCache::HandleBeginFrame(StringHash eventType, VariantMap& eventData
             ReloadResourceWithDependencies(fileName);
 
             // Finally send a general file changed event even if the file was not a tracked resource
-            using namespace FileChanged;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_FILENAME] = fileWatchers_[i]->GetPath() + fileName;
-            eventData[P_RESOURCENAME] = fileName;
-            SendEvent(E_FILECHANGED, eventData);
+            g_resourceSignals.fileChanged.Emit(fileWatchers_[i]->GetPath() + fileName,fileName);
         }
     }
 
     // Check for background loaded resources that can be finished
     {
-        URHO3D_PROFILE(FinishBackgroundResources);
+        URHO3D_PROFILE_CTX(m_context,FinishBackgroundResources);
         backgroundLoader_->FinishResources(finishBackgroundResourcesMs_);
     }
 }
-
+/// Search FileSystem for file.
 File* ResourceCache::SearchResourceDirs(const QString& nameIn)
 {
-    FileSystem* fileSystem = GetSubsystem<FileSystem>();
+    FileSystem* fileSystem = m_context->m_FileSystem.get();
     for (unsigned i = 0; i < resourceDirs_.size(); ++i)
     {
         if (fileSystem->FileExists(resourceDirs_[i] + nameIn))
         {
             // Construct the file first with full path, then rename it to not contain the resource path,
             // so that the file's name can be used in further GetFile() calls (for example over the network)
-            File* file(new File(context_, resourceDirs_[i] + nameIn));
+            File* file(new File(m_context, resourceDirs_[i] + nameIn));
             file->SetName(nameIn);
             return file;
         }
@@ -1100,17 +1110,17 @@ File* ResourceCache::SearchResourceDirs(const QString& nameIn)
 
     // Fallback using absolute path
     if (fileSystem->FileExists(nameIn))
-        return new File(context_, nameIn);
+        return new File(m_context, nameIn);
 
     return nullptr;
 }
-
+/// Search resource packages for file.
 File* ResourceCache::SearchPackages(const QString& nameIn)
 {
     for (unsigned i = 0; i < packages_.size(); ++i)
     {
         if (packages_[i]->Exists(nameIn))
-            return new File(context_, packages_[i], nameIn);
+            return new File(m_context, packages_[i], nameIn);
     }
 
     return nullptr;

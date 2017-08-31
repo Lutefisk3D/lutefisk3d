@@ -23,22 +23,19 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
-//#include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Main.h"
+#include "jlsignal/Signal.h"
 
 namespace Urho3D
 {
 
 class Engine;
+enum LogLevels : int32_t;
 
-/// Base class for creating applications which initialize the Urho3D engine and run a main loop until exited.
-class URHO3D_API Application : public Object
+class LUTEFISK3D_EXPORT Application : public jl::SignalObserver
 {
-    URHO3D_OBJECT(Application,Object)
-
 public:
-    /// Construct. Parse default engine parameters from the command line, and create the engine in an uninitialized state.
-    Application(Context* context);
+    Application(const QString &appName,Context* context);
 
     /// Setup before engine initialization. This is a chance to eg. modify the engine parameters. Call ErrorExit() to terminate without initializing the engine. Called by Application.
     virtual void Setup() {}
@@ -54,8 +51,11 @@ public:
 
 protected:
     /// Handle log message.
-    void HandleLogMessage(StringHash eventType, VariantMap& eventData);
+    void HandleLogMessage(LogLevels level, const QString &message);
 
+    Context* m_context;
+    /// Application name.
+    QString m_appName;
     /// Urho3D engine.
     SharedPtr<Engine> engine_;
     /// Engine parameters map.
@@ -71,7 +71,7 @@ protected:
 int RunApplication() \
 { \
     Urho3D::SharedPtr<Urho3D::Context> context(new Urho3D::Context()); \
-    Urho3D::SharedPtr<className> application(new className(context)); \
+    std::unique_ptr<className> application(new className(context)); \
     return application->Run(); \
 } \
 URHO3D_DEFINE_MAIN(RunApplication());

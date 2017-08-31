@@ -122,7 +122,7 @@ void Vehicle::FixedUpdate(float timeStep)
 void Vehicle::Init()
 {
     // This function is called only from the main program when initially creating the vehicle, not on scene load
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
 
     StaticModel* hullObject = node_->CreateComponent<StaticModel>();
     hullBody_ = node_->CreateComponent<RigidBody>();
@@ -148,7 +148,7 @@ void Vehicle::Init()
 
 void Vehicle::InitWheel(const QString & name, const Vector3& offset, WeakPtr<Node>& wheelNode, unsigned& wheelNodeID)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
 
     // Note: do not parent the wheel to the hull scene node. Instead create it on the root level and let the physics
     // constraint keep it together

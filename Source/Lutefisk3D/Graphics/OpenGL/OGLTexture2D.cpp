@@ -53,7 +53,7 @@ void Texture2D::OnDeviceReset()
     if (!object_ || dataPending_)
     {
         // If has a resource file, reload through the resource cache. Otherwise just recreate.
-        ResourceCache* cache = GetSubsystem<ResourceCache>();
+        ResourceCache* cache = context_->m_ResourceCache.get();
         if (cache->Exists(GetName()))
             dataLost_ = !cache->ReloadResource(this);
 
@@ -101,7 +101,7 @@ void Texture2D::Release()
 
 bool Texture2D::SetData(unsigned level, int x, int y, int width, int height, const void* data)
 {
-    URHO3D_PROFILE(SetTextureData);
+    URHO3D_PROFILE_CTX(context_,SetTextureData);
 
     if (!object_ || !graphics_)
     {
@@ -178,7 +178,7 @@ bool Texture2D::SetData(Urho3D::Image *image, bool useAlpha)
     unsigned memoryUse = sizeof(Texture2D);
 
     int quality = QUALITY_HIGH;
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = context_->m_Renderer.get();
     if (renderer)
         quality = renderer->GetTextureQuality();
 
@@ -332,7 +332,7 @@ bool Texture2D::GetData(unsigned level, void* dest) const
         URHO3D_LOGERROR("Can not get data from multisampled texture without autoresolve");
         return false;
     }
-    
+
     if (resolveDirty_)
         graphics_->ResolveToTexture(const_cast<Texture2D*>(this));
 

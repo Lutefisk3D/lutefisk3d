@@ -224,7 +224,7 @@ void Material::RegisterObject(Context* context)
 bool Material::BeginLoad(Deserializer& source)
 {
     // In headless mode, do not actually load the material, just return success
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = context_->m_Graphics.get();
     if (!graphics)
         return true;
 
@@ -259,7 +259,7 @@ bool Material::BeginLoad(Deserializer& source)
 bool Material::EndLoad()
 {
     // In headless mode, do not actually load the material, just return success
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = context_->m_Graphics.get();
     if (!graphics)
         return true;
 
@@ -292,7 +292,7 @@ bool Material::BeginLoadXML(Deserializer& source)
         // and request them to also be loaded. Can not do anything else at this point
         if (GetAsyncLoadState() == ASYNC_LOADING)
         {
-            ResourceCache* cache = GetSubsystem<ResourceCache>();
+            ResourceCache* cache =context_->m_ResourceCache.get();
             XMLElement rootElem = loadXMLFile_->GetRoot();
             XMLElement techniqueElem = rootElem.GetChild("technique");
             while (techniqueElem)
@@ -348,7 +348,7 @@ bool Material::BeginLoadJSON(Deserializer& source)
         // and request them to also be loaded. Can not do anything else at this point
         if (GetAsyncLoadState() == ASYNC_LOADING)
         {
-            ResourceCache* cache = GetSubsystem<ResourceCache>();
+            ResourceCache* cache =context_->m_ResourceCache.get();
             const JSONValue& rootVal = loadJSONFile_->GetRoot();
 
             JSONArray techniqueArray = rootVal.Get("techniques").GetArray();
@@ -412,7 +412,7 @@ bool Material::Load(const XMLElement& source)
         return false;
     }
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     XMLElement shaderElem = source.GetChild("shader");
     if (shaderElem)
     {
@@ -555,7 +555,7 @@ bool Material::Load(const JSONValue& source)
         return false;
     }
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     const JSONValue& shaderVal = source.Get("shader");
     if (!shaderVal.IsNull())
     {
@@ -1102,8 +1102,8 @@ void Material::SetOcclusion(bool enable)
 
 void Material::SetScene(Scene* scene)
 {
-    UnsubscribeFromEvent(E_UPDATE);
-    UnsubscribeFromEvent(E_ATTRIBUTEANIMATIONUPDATE);
+    g_coreSignals.update.Disconnect(this,&Material::HandleAttributeGlobalAnimationUpdate);
+    scene->attributeAnimationUpdate.Disconnect(this,&Material::HandleAttributeAnimationUpdate);
     subscribed_ = false;
     scene_ = scene;
     UpdateEventSubscription();
@@ -1242,9 +1242,9 @@ void Material::ResetToDefaults()
     pixelShaderDefines_.clear();
 
     SetNumTechniques(1);
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = context_->m_Renderer.get();
     SetTechnique(0, renderer ? renderer->GetDefaultTechnique() :
-        GetSubsystem<ResourceCache>()->GetResource<Technique>("Techniques/NoTexture.xml"));
+        context_->m_ResourceCache->GetResource<Technique>("Techniques/NoTexture.xml"));
 
     textures_.clear();
 
@@ -1311,26 +1311,29 @@ ShaderParameterAnimationInfo* Material::GetShaderParameterAnimationInfo(const QS
 
 void Material::UpdateEventSubscription()
 {
+
     if (shaderParameterAnimationInfos_.size() && !subscribed_)
     {
         if (scene_)
-            SubscribeToEvent(scene_, E_ATTRIBUTEANIMATIONUPDATE, URHO3D_HANDLER(Material, HandleAttributeAnimationUpdate));
+            scene_->attributeAnimationUpdate.Connect(this,&Material::HandleAttributeAnimationUpdate);
         else
-            SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Material, HandleAttributeAnimationUpdate));
+            g_coreSignals.update.Connect(this,&Material::HandleAttributeGlobalAnimationUpdate);
         subscribed_ = true;
     }
     else if (subscribed_ && shaderParameterAnimationInfos_.empty())
     {
-        UnsubscribeFromEvent(E_UPDATE);
-        UnsubscribeFromEvent(E_ATTRIBUTEANIMATIONUPDATE);
+        g_coreSignals.update.Disconnect(this,&Material::HandleAttributeGlobalAnimationUpdate);
+        scene_->attributeAnimationUpdate.Disconnect(this,&Material::HandleAttributeAnimationUpdate);
         subscribed_ = false;
     }
 }
+void Material::HandleAttributeGlobalAnimationUpdate(float timeStep) {
 
-void Material::HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& eventData)
+}
+
+void Material::HandleAttributeAnimationUpdate(Scene*,float timeStep)
 {
     // Timestep parameter is same no matter what event is being listened to
-    float timeStep = eventData[Update::P_TIMESTEP].GetFloat();
     // Keep weak pointer to self to check for destruction caused by event handling
     WeakPtr<Object> self(this);
 

@@ -26,6 +26,7 @@
 #include "Lutefisk3D/Math/BoundingBox.h"
 #include "Lutefisk3D/Math/Matrix3x4.h"
 #include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Navigation/NavigationEvents.h"
 #include <QtCore/QSet>
 
 #ifdef DT_POLYREF64
@@ -74,7 +75,7 @@ enum NavigationPathPointFlag
     NAVPATHFLAG_OFF_MESH = 0x04
 };
 
-struct URHO3D_API NavigationPathPoint
+struct LUTEFISK3D_EXPORT NavigationPathPoint
 {
     /// World-space position of the path point.
     Vector3 position_;
@@ -85,7 +86,7 @@ struct URHO3D_API NavigationPathPoint
 };
 
 /// Navigation mesh component. Collects the navigation geometry from child nodes with the Navigable component and responds to path queries.
-class URHO3D_API NavigationMesh : public Component
+class LUTEFISK3D_EXPORT NavigationMesh : public Component, public NavigationMeshSignals
 {
     URHO3D_OBJECT(NavigationMesh,Component);
     friend class CrowdManager;
@@ -131,10 +132,28 @@ public:
     void SetPadding(const Vector3& padding);
     /// Set the cost of an area.
     void SetAreaCost(unsigned areaID, float cost);
+    /// Allocate the navigation mesh without building any tiles. Bounding box is not padded. Return true if successful.
+    virtual bool Allocate(const BoundingBox& boundingBox, unsigned maxTiles);
     /// Rebuild the navigation mesh. Return true if successful.
     virtual bool Build();
     /// Rebuild part of the navigation mesh contained by the world-space bounding box. Return true if successful.
     virtual bool Build(const BoundingBox& boundingBox);
+    /// Rebuild part of the navigation mesh in the rectangular area. Return true if successful.
+    virtual bool Build(const IntVector2& from, const IntVector2& to);
+    /// Return tile data.
+    virtual std::vector<unsigned char> GetTileData(const IntVector2& tile) const;
+    /// Add tile to navigation mesh.
+    virtual bool AddTile(const std::vector<unsigned char>& tileData);
+    /// Remove tile from navigation mesh.
+    virtual void RemoveTile(const IntVector2& tile);
+    /// Remove all tiles from navigation mesh.
+    virtual void RemoveAllTiles();
+    /// Return whether the navigation mesh has tile.
+    bool HasTile(const IntVector2& tile) const;
+    /// Return bounding box of the tile in the node space.
+    BoundingBox GetTileBoudningBox(const IntVector2& tile) const;
+    /// Return index of the tile at the position.
+    IntVector2 GetTileIndex(const Vector3& position) const;
     /// Find the nearest point on the navigation mesh to a given point. Extents specifies how far out from the specified point to check along each axis.
     Vector3 FindNearestPoint
         (const Vector3& point, const Vector3& extents = Vector3::ONE, const dtQueryFilter* filter = 0, dtPolyRef* nearestRef = 0);
@@ -226,6 +245,11 @@ public:
     /// Return whether to draw NavArea components.
     bool GetDrawNavAreas() const { return drawNavAreas_; }
 
+private:
+    /// Write tile data.
+    void WriteTile(Serializer& dest, int x, int z) const;
+    /// Read tile data to the navigation mesh.
+    bool ReadTile(Deserializer& source, bool silent);
 protected:
     /// Collect geometry from under Navigable components.
     void CollectGeometries(std::vector<NavigationGeometryInfo>& geometryList);
@@ -237,6 +261,8 @@ protected:
     void AddTriMeshGeometry(NavBuildData* build, Geometry* geometry, const Matrix3x4& transform);
     /// Build one tile of the navigation mesh. Return true if successful.
     virtual bool BuildTile(std::vector<NavigationGeometryInfo>& geometryList, int x, int z);
+    /// Build tiles in the rectangular area. Return number of built tiles.
+    unsigned BuildTiles(std::vector<NavigationGeometryInfo>& geometryList, const IntVector2& from, const IntVector2& to);
     /// Ensure that the navigation mesh query is initialized. Return true if successful.
     bool InitializeQuery();
     /// Release the navigation mesh and the query.
@@ -301,6 +327,6 @@ protected:
 };
 
 /// Register Navigation library objects.
-void URHO3D_API RegisterNavigationLibrary(Context* context);
+void LUTEFISK3D_EXPORT RegisterNavigationLibrary(Context* context);
 
 }

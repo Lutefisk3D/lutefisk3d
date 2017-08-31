@@ -70,7 +70,7 @@ void Urho2DSpriterAnimation::Start()
 
 void Urho2DSpriterAnimation::CreateScene()
 {
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
     scene_->CreateComponent<Octree>();
 
     // Create camera node
@@ -81,11 +81,11 @@ void Urho2DSpriterAnimation::CreateScene()
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetOrthographic(true);
 
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
     camera->SetZoom(1.5f * Min((float)graphics->GetWidth() / 1280.0f, (float)graphics->GetHeight() / 800.0f)); // Set zoom according to user's resolution to ensure full visibility (initial zoom (1.5) is set for full visibility at 1280x800 resolution)
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();  
+    ResourceCache* cache = m_context->m_ResourceCache.get();  
     AnimationSet2D* spriterAnimationSet = cache->GetResource<AnimationSet2D>("Urho2D/imp/imp.scml");
     if (!spriterAnimationSet)
         return;
@@ -98,8 +98,8 @@ void Urho2DSpriterAnimation::CreateScene()
 
 void Urho2DSpriterAnimation::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -115,20 +115,20 @@ void Urho2DSpriterAnimation::CreateInstructions()
 
 void Urho2DSpriterAnimation::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void Urho2DSpriterAnimation::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 4.0f;
@@ -159,7 +159,7 @@ void Urho2DSpriterAnimation::MoveCamera(float timeStep)
 void Urho2DSpriterAnimation::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Urho2DSpriterAnimation, HandleUpdate));
+    g_coreSignals.update.Connect(this,&Urho2DSpriterAnimation::HandleUpdate);
     SubscribeToEvent(E_MOUSEBUTTONDOWN, URHO3D_HANDLER(Urho2DSpriterAnimation, HandleMouseButtonDown));
 
 
@@ -167,7 +167,7 @@ void Urho2DSpriterAnimation::SubscribeToEvents()
     UnsubscribeFromEvent(E_SCENEUPDATE);
 }
 
-void Urho2DSpriterAnimation::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void Urho2DSpriterAnimation::HandleUpdate(float timeStep)
 {
     using namespace Update;
 

@@ -319,13 +319,7 @@ void Node::SetName(const QString& name)
         // Send change event
         if (scene_ != nullptr)
         {
-            using namespace NodeNameChanged;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_SCENE] = scene_;
-            eventData[P_NODE] = this;
-
-            scene_->SendEvent(E_NODENAMECHANGED, eventData);
+            scene_->nodeNameChagned.Emit(scene_, this);
         }
     }
 }
@@ -350,12 +344,7 @@ void Node::AddTag(const QString & tag)
     scene_->NodeTagAdded(this, tag);
 
     // Send event
-    using namespace NodeTagAdded;
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_SCENE] = scene_;
-    eventData[P_NODE] = this;
-    eventData[P_TAG] = tag;
-    scene_->SendEvent(E_NODETAGADDED, eventData);
+    scene_->nodeTagAdded.Emit(scene_,this,tag);
 
     // Sync
     MarkNetworkUpdate();
@@ -387,12 +376,7 @@ bool Node::RemoveTag(const QString & tag)
     {
         scene_->NodeTagRemoved(this, tag);
         // Send event
-        using namespace NodeTagRemoved;
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_SCENE] = scene_;
-        eventData[P_NODE] = this;
-        eventData[P_TAG] = tag;
-        scene_->SendEvent(E_NODETAGREMOVED, eventData);
+        scene_->nodeTagRemoved.Emit(scene_,this,tag);
     }
 
     // Sync
@@ -410,12 +394,7 @@ void Node::RemoveAllTags()
             scene_->NodeTagRemoved(this, impl_->tags_[i]);
 
             // Send event
-            using namespace NodeTagRemoved;
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_SCENE] = scene_;
-            eventData[P_NODE] = this;
-            eventData[P_TAG] = impl_->tags_[i];
-            scene_->SendEvent(E_NODETAGREMOVED, eventData);
+            scene_->nodeTagRemoved.Emit(scene_,this,impl_->tags_[i]);
         }
     }
 
@@ -802,14 +781,7 @@ void Node::AddChild(Node* node, unsigned index)
             if (scene_ != nullptr)
             {
                 // Otherwise do not remove from the scene during reparenting, just send the necessary change event
-                using namespace NodeRemoved;
-
-                VariantMap& eventData = GetEventDataMap();
-                eventData[P_SCENE] = scene_;
-                eventData[P_PARENT] = oldParent;
-                eventData[P_NODE] = node;
-
-                scene_->SendEvent(E_NODEREMOVED, eventData);
+                scene_->nodeRemoved.Emit(scene_,oldParent,node);
             }
             auto it = std::find(oldParent->children_.begin(),oldParent->children_.end(),nodeShared);
             if(it!=oldParent->children_.end())
@@ -832,14 +804,7 @@ void Node::AddChild(Node* node, unsigned index)
     // Send change event
     if (scene_ != nullptr)
     {
-        using namespace NodeAdded;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_SCENE] = scene_;
-        eventData[P_PARENT] = this;
-        eventData[P_NODE] = node;
-
-        scene_->SendEvent(E_NODEADDED, eventData);
+        scene_->nodeAdded.Emit(scene_,this,node);
     }
 }
 
@@ -964,10 +929,7 @@ Component* Node::CloneComponent(Component* component, CreateMode mode, unsigned 
         }
         cloneComponent->ApplyAttributes();
     }
-    {
-        using namespace ComponentCloned;
-        scene_->SendEvent(E_COMPONENTCLONED, P_SCENE,scene_,P_COMPONENT,component,P_CLONECOMPONENT,cloneComponent);
-    }
+    scene_->componentCloned.Emit(scene_,component,cloneComponent);
     return cloneComponent;
 }
 
@@ -1075,7 +1037,7 @@ Node* Node::Clone(CreateMode mode)
         return nullptr;
     }
 
-    URHO3D_PROFILE(CloneNode);
+    URHO3D_PROFILE_CTX(context_,CloneNode);
 
     SceneResolver resolver;
     Node* clone = CloneRecursive(parent_, resolver, mode);
@@ -1146,7 +1108,12 @@ void Node::RemoveListener(Component* component)
         }
     }
 }
-
+Vector3 Node::GetSignedWorldScale() const
+{
+    if (dirty_)
+        UpdateWorldTransform();
+    return worldTransform_.SignedScale(worldRotation_.RotationMatrix());
+}
 Vector3 Node::LocalToWorld(const Vector3& position) const
 {
     return GetWorldTransform() * position;
@@ -1260,7 +1227,7 @@ Node* Node::GetChild(unsigned index) const
     return index < children_.size() ? children_[index].Get() : nullptr;
 }
 
-Node* Node::GetChild(const QString& name, bool recursive) const
+Node* Node::GetChild(const QStringRef& name, bool recursive) const
 {
     return GetChild(StringHash(name), recursive);
 }
@@ -1800,14 +1767,7 @@ void Node::AddComponent(Component* component, unsigned id, CreateMode mode)
     // Send change event
     if (scene_ != nullptr)
     {
-        using namespace ComponentAdded;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_SCENE] = scene_;
-        eventData[P_NODE] = this;
-        eventData[P_COMPONENT] = component;
-
-        scene_->SendEvent(E_COMPONENTADDED, eventData);
+        scene_->componentAdded.Emit(scene_,this,component);
     }
 }
 
@@ -1847,13 +1807,13 @@ void Node::SetTransformSilent(const Vector3& position, const Quaternion& rotatio
 void Node::OnAttributeAnimationAdded()
 {
     if (attributeAnimationInfos_.size() == 1)
-        SubscribeToEvent(GetScene(), E_ATTRIBUTEANIMATIONUPDATE, URHO3D_HANDLER(Node, HandleAttributeAnimationUpdate));
+        GetScene()->attributeAnimationUpdate.Connect(this,&Node::HandleAttributeAnimationUpdate);
 }
 
 void Node::OnAttributeAnimationRemoved()
 {
     if (attributeAnimationInfos_.empty())
-        UnsubscribeFromEvent(GetScene(), E_ATTRIBUTEANIMATIONUPDATE);
+        GetScene()->attributeAnimationUpdate.Disconnect(this,&Node::HandleAttributeAnimationUpdate);
 }
 
 Animatable* Node::FindAttributeAnimationTarget(const QString& name, QString& outName)
@@ -1874,9 +1834,16 @@ Animatable* Node::FindAttributeAnimationTarget(const QString& name, QString& out
     {
         if (!names[i].startsWith('#'))
             break;
-
-        unsigned index = names[i].mid(1, names[i].length() - 1).toUInt();
-        node = node->GetChild(index);
+        QStringRef nameref(names[i].midRef(1, names[i].length() - 1));
+        if(nameref[0].isDigit())
+        {
+            unsigned index = nameref.toUInt();
+            node = node->GetChild(index);
+        }
+        else
+        {
+            node = node->GetChild(nameref);
+        }
         if (node == nullptr)
         {
             URHO3D_LOGERROR("Could not find node by name " + name);
@@ -1960,13 +1927,7 @@ void Node::SetEnabled(bool enable, bool recursive, bool storeSelf)
         // Send change event
         if (scene_ != nullptr)
         {
-            using namespace NodeEnabledChanged;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_SCENE] = scene_;
-            eventData[P_NODE] = this;
-
-            scene_->SendEvent(E_NODEENABLEDCHANGED, eventData);
+            scene_->nodeEnabledChanged.Emit(scene_,this);
         }
 
         for (auto & elem : components_)
@@ -1976,14 +1937,7 @@ void Node::SetEnabled(bool enable, bool recursive, bool storeSelf)
             // Send change event for the component
             if (scene_ != nullptr)
             {
-                using namespace ComponentEnabledChanged;
-
-                VariantMap& eventData = GetEventDataMap();
-                eventData[P_SCENE] = scene_;
-                eventData[P_NODE] = this;
-                eventData[P_COMPONENT] = elem;
-
-                scene_->SendEvent(E_COMPONENTENABLEDCHANGED, eventData);
+                scene_->componentEnabledChanged.Emit(scene_,this,elem);
             }
         }
     }
@@ -2040,19 +1994,14 @@ void Node::UpdateWorldTransform() const
 
 void Node::RemoveChild(std::vector<SharedPtr<Node> >::iterator i)
 {
-    // Send change event. Do not send when already being destroyed
-    Node* child = *i;
-
+    // Keep a shared pointer to the child about to be removed, to make sure the erase from container completes first. Otherwise
+    // it would be possible that other child nodes get removed as part of the node's components' cleanup, causing a re-entrant
+    // erase and a crash
+    SharedPtr<Node> child(*i);
+    // Send change event. Do not send when this node is already being destroyed
     if (Refs() > 0 && (scene_ != nullptr))
     {
-        using namespace NodeRemoved;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_SCENE] = scene_;
-        eventData[P_PARENT] = this;
-        eventData[P_NODE] = child;
-
-        scene_->SendEvent(E_NODEREMOVED, eventData);
+        scene_->nodeRemoved.Emit(scene_,this,child);
     }
 
     child->parent_ = nullptr;
@@ -2151,10 +2100,7 @@ Node* Node::CloneRecursive(Node* parent, SceneResolver& resolver, CreateMode mod
 
         node->CloneRecursive(cloneNode, resolver, mode);
     }
-    {
-        using namespace NodeCloned;
-        scene_->SendEvent(E_NODECLONED, P_SCENE,scene_,P_NODE,this,P_CLONENODE,cloneNode);
-    }
+    scene_->nodeCloned.Emit(scene_,this,cloneNode);
     return cloneNode;
 }
 
@@ -2164,14 +2110,7 @@ void Node::RemoveComponent(std::vector<SharedPtr<Component> >::iterator i)
     // Send node change event. Do not send when already being destroyed
     if (Refs() > 0 && (scene_ != nullptr))
     {
-        using namespace ComponentRemoved;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_SCENE] = scene_;
-        eventData[P_NODE] = this;
-        eventData[P_COMPONENT] = (*i).Get();
-
-        scene_->SendEvent(E_COMPONENTREMOVED, eventData);
+        scene_->componentRemoved.Emit(scene_,this,(*i).Get());
     }
 
     RemoveListener(*i);
@@ -2182,11 +2121,9 @@ void Node::RemoveComponent(std::vector<SharedPtr<Component> >::iterator i)
 
 }
 
-void Node::HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& eventData)
+void Node::HandleAttributeAnimationUpdate(Scene*s,float ts)
 {
-    using namespace AttributeAnimationUpdate;
-
-    UpdateAttributeAnimations(eventData[P_TIMESTEP].GetFloat());
+    UpdateAttributeAnimations(ts);
 }
 
 }

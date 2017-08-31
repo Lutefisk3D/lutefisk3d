@@ -316,7 +316,7 @@ void CustomGeometry::DefineGeometry(unsigned index, PrimitiveType type, unsigned
 
 void CustomGeometry::Commit()
 {
-    URHO3D_PROFILE(CommitCustomGeometry);
+    URHO3D_PROFILE_CTX(context_,CommitCustomGeometry);
 
     unsigned totalVertices = 0;
     boundingBox_.Clear();
@@ -472,7 +472,7 @@ void CustomGeometry::SetGeometryDataAttr(const std::vector<unsigned char>& value
 
 void CustomGeometry::SetMaterialsAttr(const ResourceRefList& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     for (unsigned i = 0; i < value.names_.size(); ++i)
         SetMaterial(i, cache->GetResource<Material>(value.names_[i]));
 }

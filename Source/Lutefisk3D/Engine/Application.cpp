@@ -25,24 +25,35 @@
 #include "Lutefisk3D/IO/IOEvents.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Core/ProcessUtils.h"
-
+#include "jlsignal/StaticSignalConnectionAllocators.h"
 #include <exception>
 
+/**
+  \class Urho3D::Application
+  \brief Base class for creating applications which initialize the Urho3D engine and run a main loop until exited.
+*/
+namespace {
+enum { eMaxConnections = 25 };
+jl::StaticObserverConnectionAllocator< eMaxConnections > oObserverConnectionAllocator;
+}
 
-namespace Urho3D
-{
-
-Application::Application(Context* context) :
-    Object(context),
+using namespace Urho3D;
+/// Construct. Parse default engine parameters from the command line, and create the engine in an uninitialized state.
+Application::Application(const QString &appName, Context* context) :
+    m_context(context),
+    m_appName(appName),
     exitCode_(EXIT_SUCCESS)
 {
+    SetConnectionAllocator(&oObserverConnectionAllocator);
+
     engineParameters_ = Engine::ParseParameters(GetArguments());
 
     // Create the Engine, but do not initialize it yet. Subsystems except Graphics & Renderer are registered at this point
     engine_ = new Engine(context);
 
     // Subscribe to log messages so that can show errors if ErrorExit() is called with empty message
-    SubscribeToEvent(E_LOGMESSAGE, URHO3D_HANDLER(Application, HandleLogMessage));
+    g_LogSignals.logMessageSignal.Connect(this, &Application::HandleLogMessage);
+
 }
 
 int Application::Run()
@@ -72,7 +83,7 @@ int Application::Run()
     }
     catch (std::bad_alloc& e)
     {
-        ErrorDialog(GetTypeName(), "An out-of-memory error occurred. The application will now exit.");
+        ErrorDialog(m_appName, "An out-of-memory error occurred. The application will now exit.");
         return EXIT_FAILURE;
     }
 }
@@ -84,28 +95,23 @@ void Application::ErrorExit(const QString& message)
 
     if (message.isEmpty())
     {
-        ErrorDialog(GetTypeName(), startupErrors_.length() ? startupErrors_ :
+        ErrorDialog(m_appName, startupErrors_.length() ? startupErrors_ :
             "Application has been terminated due to unexpected error.");
     }
     else
-        ErrorDialog(GetTypeName(), message);
+        ErrorDialog(m_appName, message);
 }
 
-void Application::HandleLogMessage(StringHash eventType, VariantMap& eventData)
+void Application::HandleLogMessage(LogLevels level, const QString & message)
 {
-    using namespace LogMessage;
-
-    if (eventData[P_LEVEL].GetInt() == LOG_ERROR)
+    if (level == LOG_ERROR)
     {
         // Strip the timestamp if necessary
-        QString error = eventData[P_MESSAGE].GetString();
-        unsigned bracketPos = error.indexOf(']');
+        QString error = message;
+        int bracketPos = error.indexOf(']');
         if (bracketPos != -1)
             error = error.mid(bracketPos + 2);
 
         startupErrors_ += error + "\n";
     }
-}
-
-
 }

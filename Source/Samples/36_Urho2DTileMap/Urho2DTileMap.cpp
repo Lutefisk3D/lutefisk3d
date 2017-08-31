@@ -69,7 +69,7 @@ void Urho2DTileMap::Start()
 
 void Urho2DTileMap::CreateScene()
 {
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
     scene_->CreateComponent<Octree>();
 
     // Create camera node
@@ -80,11 +80,11 @@ void Urho2DTileMap::CreateScene()
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetOrthographic(true);
 
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
     camera->SetZoom(1.0f * Min((float)graphics->GetWidth() / 1280.0f, (float)graphics->GetHeight() / 800.0f)); // Set zoom according to user's resolution to ensure full visibility (initial zoom (1.0) is set for full visibility at 1280x800 resolution)
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
     // Get tmx file
     TmxFile2D* tmxFile = cache->GetResource<TmxFile2D>("Urho2D/isometric_grass_and_water.tmx");
     if (!tmxFile)
@@ -106,8 +106,8 @@ void Urho2DTileMap::CreateScene()
 
 void Urho2DTileMap::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -122,20 +122,20 @@ void Urho2DTileMap::CreateInstructions()
 
 void Urho2DTileMap::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void Urho2DTileMap::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 4.0f;
@@ -166,13 +166,13 @@ void Urho2DTileMap::MoveCamera(float timeStep)
 void Urho2DTileMap::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Urho2DTileMap, HandleUpdate));
+    g_coreSignals.update.Connect(this,&Urho2DTileMap::HandleUpdate);
 
     // Unsubscribe the SceneUpdate event from base class to prevent camera pitch and yaw in 2D sample
     UnsubscribeFromEvent(E_SCENEUPDATE);
 }
 
-void Urho2DTileMap::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void Urho2DTileMap::HandleUpdate(float timeStep)
 {
     using namespace Update;
 

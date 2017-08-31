@@ -24,12 +24,15 @@
 
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Core/Timer.h"
+#include "Lutefisk3D/Resource/JSONValue.h"
 #include "Lutefisk3D/Core/Variant.h"
+#include "Lutefisk3D/Resource/ResourceEvents.h"
 namespace Urho3D
 {
 
 class Deserializer;
 class Serializer;
+class XMLElement;
 
 /// Asynchronous loading state of a resource.
 enum AsyncLoadState
@@ -47,30 +50,22 @@ enum AsyncLoadState
 };
 
 /// Base class for resources.
-class URHO3D_API Resource : public Object
+class LUTEFISK3D_EXPORT Resource : public Object, public SingleResourceSignals
 {
-    URHO3D_OBJECT(Resource, Object);
+    URHO3D_OBJECT(Resource, Object)
 
 public:
     /// Construct.
     Resource(Context* context);
-
-    /// Load resource synchronously. Call both BeginLoad() & EndLoad() and return true if both succeeded.
     bool Load(Deserializer& source);
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
     virtual bool BeginLoad(Deserializer& source)=0;
-    /// Finish resource loading. Always called from the main thread. Return true if successful.
     virtual bool EndLoad();
-    /// Save resource. Return true if successful.
     virtual bool Save(Serializer& dest) const;
-
-    /// Set name.
     void SetName(const QString& name);
-    /// Set memory use in bytes, possibly approximate.
     void SetMemoryUse(unsigned size);
-    /// Reset last used timer.
     void ResetUseTimer();
-    /// Set the asynchronous loading state. Called by ResourceCache. Resources in the middle of asynchronous loading are not normally returned to user.
+
     void SetAsyncLoadState(AsyncLoadState newState);
 
     /// Return name.
@@ -85,18 +80,48 @@ public:
     AsyncLoadState GetAsyncLoadState() const { return asyncLoadState_; }
 
 private:
-    /// Name.
-    QString name_;
-    /// Name hash.
-    StringHash nameHash_;
-    /// Last used timer.
-    Timer useTimer_;
-    /// Memory use in bytes.
-    unsigned memoryUse_;
-    /// Asynchronous loading state.
-    AsyncLoadState asyncLoadState_;
+    QString        name_;           ///< Name.
+    StringHash     nameHash_;       ///< Name hash.
+    Timer          useTimer_;       ///< Last used timer.
+    unsigned       memoryUse_;      ///< Memory use in bytes.
+    AsyncLoadState asyncLoadState_; ///< Asynchronous loading state.
 };
+/// Base class for resources that support arbitrary metadata stored. Metadata serialization shall be implemented in derived classes.
+class LUTEFISK3D_EXPORT ResourceWithMetadata : public Resource
+{
+    URHO3D_OBJECT(ResourceWithMetadata, Resource)
 
+public:
+    /// Construct.
+    ResourceWithMetadata(Context* context) : Resource(context) {}
+
+    /// Add new metadata variable or overwrite old value.
+    void AddMetadata(const QString& name, const Variant& value);
+    /// Remove metadata variable.
+    void RemoveMetadata(const QString& name);
+    /// Remove all metadata variables.
+    void RemoveAllMetadata();
+    /// Return metadata variable.
+    const Variant& GetMetadata(const QString& name) const;
+    /// Return whether the resource has metadata.
+    bool HasMetadata() const;
+
+protected:
+    /// Load metadata from <metadata> children of XML element.
+    void LoadMetadataFromXML(const XMLElement& source);
+    /// Load metadata from JSON array.
+    void LoadMetadataFromJSON(const JSONArray& array);
+    /// Save as <metadata> children of XML element.
+    void SaveMetadataToXML(XMLElement& destination) const;
+    /// Copy metadata from another resource.
+    void CopyMetadata(const ResourceWithMetadata& source);
+
+private:
+    /// Animation metadata variables.
+    VariantMap metadata_;
+    /// Animation metadata keys.
+    QStringList metadataKeys_;
+};
 inline QString GetResourceName(Resource* resource)
 {
     return resource ? resource->GetName() : QString::null;

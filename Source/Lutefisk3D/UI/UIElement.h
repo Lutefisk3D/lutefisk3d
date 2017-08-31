@@ -26,6 +26,7 @@
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Scene/Animatable.h"
 #include "Lutefisk3D/UI/UIBatch.h"
+#include "Lutefisk3D/UI/UIEvents.h"
 
 namespace Urho3D
 {
@@ -112,7 +113,7 @@ class Cursor;
 class ResourceCache;
 
 /// Base class for %UI elements.
-class URHO3D_API UIElement : public Animatable
+class LUTEFISK3D_EXPORT UIElement : public Animatable, public UiElementSignals
 {
     URHO3D_OBJECT(UIElement,Animatable);
 
@@ -727,8 +728,6 @@ private:
     void Detach();
     /// Verify that child elements have proper alignment for layout mode.
     void VerifyChildAlignment();
-    /// Handle logic post-update event.
-    void HandlePostUpdate(StringHash eventType, VariantMap& eventData);
 
     /// Size.
     IntVector2 size_;

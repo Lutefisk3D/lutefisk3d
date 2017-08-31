@@ -26,12 +26,15 @@
 #include "Lutefisk3D/IO/Deserializer.h"
 #include "Lutefisk3D/Graphics/Geometry.h"
 #include "Lutefisk3D/Graphics/IndexBuffer.h"
-#include "Lutefisk3D/IO/Log.h"
-#include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Graphics/Graphics.h"
-#include "Lutefisk3D/IO/Serializer.h"
 #include "Lutefisk3D/Graphics/VertexBuffer.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/Serializer.h"
 #include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 #include <cstring>
 #include <vector>
@@ -60,7 +63,7 @@ unsigned LookupIndexBuffer(IndexBuffer* buffer, const std::vector<SharedPtr<Inde
 }
 
 Model::Model(Context* context) :
-    Resource(context)
+    ResourceWithMetadata(context)
 {
 }
 
@@ -134,7 +137,7 @@ bool Model::BeginLoad(Deserializer& source)
         if (async)
         {
             desc.data_ = new unsigned char[desc.dataSize_];
-            source.Read(desc.data_.Get(), desc.dataSize_);      
+            source.Read(desc.data_.Get(), desc.dataSize_);
         }
         else
         {
@@ -161,7 +164,6 @@ bool Model::BeginLoad(Deserializer& source)
         unsigned indexSize = source.ReadUInt();
 
         SharedPtr<IndexBuffer> buffer(new IndexBuffer(context_));
-
         // Prepare index buffer data to be uploaded during EndLoad()
         if (async)
         {
@@ -305,6 +307,12 @@ bool Model::BeginLoad(Deserializer& source)
     while (geometryCenters_.size() < geometries_.size())
         geometryCenters_.push_back(Vector3::ZERO);
     memoryUse += sizeof(Vector3) * geometries_.size();
+    // Read metadata
+    ResourceCache* cache = context_->m_ResourceCache.get();
+    QString xmlName = ReplaceExtension(GetName(), ".xml");
+    SharedPtr<XMLFile> file(cache->GetTempResource<XMLFile>(xmlName, false));
+    if (file)
+        LoadMetadataFromXML(file->GetRoot());
 
     SetMemoryUse(memoryUse);
     return true;
@@ -316,7 +324,7 @@ bool Model::EndLoad()
     for (unsigned i = 0; i < vertexBuffers_.size(); ++i)
     {
         VertexBuffer* buffer = vertexBuffers_[i];
-        VertexBufferDesc& desc = loadVBData_[i];
+        VertexBufferDesc & desc   = loadVBData_[i];
         if (desc.data_)
         {
             buffer->SetShadowed(true);
@@ -329,7 +337,7 @@ bool Model::EndLoad()
     for (unsigned i = 0; i < indexBuffers_.size(); ++i)
     {
         IndexBuffer* buffer = indexBuffers_[i];
-        IndexBufferDesc& desc = loadIBData_[i];
+        IndexBufferDesc & desc   = loadIBData_[i];
         if (desc.data_)
         {
             buffer->SetShadowed(true);
@@ -374,8 +382,8 @@ bool Model::Save(Serializer& dest) const
         for (unsigned j = 0; j < elements.size(); ++j)
         {
             unsigned elementDesc = ((unsigned)elements[j].type_) |
-                (((unsigned)elements[j].semantic_) << 8) |
-                (((unsigned)elements[j].index_) << 16);
+                    (((unsigned)elements[j].semantic_) << 8) |
+                    (((unsigned)elements[j].index_) << 16);
             dest.WriteUInt(elementDesc);
         }
         dest.WriteUInt(morphRangeStarts_[i]);
@@ -452,6 +460,24 @@ bool Model::Save(Serializer& dest) const
     // Write geometry centers
     for (unsigned i = 0; i < geometryCenters_.size(); ++i)
         dest.WriteVector3(geometryCenters_[i]);
+    // Write metadata
+    if (HasMetadata())
+    {
+        File* destFile = dynamic_cast<File*>(&dest);
+        if (destFile)
+        {
+            QString xmlName = ReplaceExtension(destFile->GetName(), ".xml");
+
+            SharedPtr<XMLFile> xml(new XMLFile(context_));
+            XMLElement rootElem = xml->CreateRoot("model");
+            SaveMetadataToXML(rootElem);
+
+            File xmlFile(context_, xmlName, FILE_WRITE);
+            xml->Save(xmlFile);
+        }
+        else
+            URHO3D_LOGWARNING("Can not save model metadata when not saving into a file");
+    }
 
     return true;
 }
@@ -674,7 +700,7 @@ SharedPtr<Model> Model::Clone(const QString& cloneName) const
                     cloneGeometry->SetVertexBuffer(k, vbMapping[origGeometry->GetVertexBuffer(k)]);
                 }
                 cloneGeometry->SetDrawRange(origGeometry->GetPrimitiveType(), origGeometry->GetIndexStart(),
-                    origGeometry->GetIndexCount(), origGeometry->GetVertexStart(), origGeometry->GetVertexCount(), false);
+                                            origGeometry->GetIndexCount(), origGeometry->GetVertexStart(), origGeometry->GetVertexCount(), false);
                 cloneGeometry->SetLodDistance(origGeometry->GetLodDistance());
             }
 

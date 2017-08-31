@@ -51,7 +51,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(Ragdolls)
 
 Ragdolls::Ragdolls(Context* context) :
-    Sample(context),
+    Sample("Ragdolls",context),
     drawDebug_(false)
 {
     // Register an object factory for our custom CreateRagdoll component so that we can create them to scene nodes
@@ -78,9 +78,9 @@ void Ragdolls::Start()
 
 void Ragdolls::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
     // Create a physics simulation world with default parameters, which will update at 60fps. Like the Octree must
@@ -163,7 +163,7 @@ void Ragdolls::CreateScene()
 
     // Create the camera. Limit far clip distance to match the fog. Note: now we actually create the camera node outside
     // the scene, because we want it to be unaffected by scene load / save
-    cameraNode_ = new Node(context_);
+    cameraNode_ = new Node(m_context);
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetFarClip(300.0f);
 
@@ -173,8 +173,8 @@ void Ragdolls::CreateScene()
 
 void Ragdolls::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -196,20 +196,20 @@ void Ragdolls::CreateInstructions()
 
 void Ragdolls::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void Ragdolls::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -242,12 +242,12 @@ void Ragdolls::MoveCamera(float timeStep)
     // Check for loading / saving the scene
     if (input->GetKeyPress(KEY_F5))
     {
-        File saveFile(context_, GetSubsystem<FileSystem>()->GetProgramDir() + "Data/Scenes/Ragdolls.xml", FILE_WRITE);
+        File saveFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/Ragdolls.xml", FILE_WRITE);
         scene_->SaveXML(saveFile);
     }
     if (input->GetKeyPress(KEY_F7))
     {
-        File loadFile(context_, GetSubsystem<FileSystem>()->GetProgramDir() + "Data/Scenes/Ragdolls.xml", FILE_READ);
+        File loadFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/Ragdolls.xml", FILE_READ);
         scene_->LoadXML(loadFile);
     }
 
@@ -258,7 +258,7 @@ void Ragdolls::MoveCamera(float timeStep)
 
 void Ragdolls::SpawnObject()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
     Node* boxNode = scene_->CreateChild("Sphere");
     boxNode->SetPosition(cameraNode_->GetPosition());
@@ -285,25 +285,20 @@ void Ragdolls::SpawnObject()
 void Ragdolls::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Ragdolls, HandleUpdate));
+    g_coreSignals.update.Connect(this,&Ragdolls::HandleUpdate);
 
     // Subscribe HandlePostRenderUpdate() function for processing the post-render update event, during which we request
     // debug geometry
-    SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(Ragdolls, HandlePostRenderUpdate));
+    g_coreSignals.postRenderUpdate.Connect(this,&Ragdolls::HandlePostRenderUpdate);
 }
 
-void Ragdolls::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void Ragdolls::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }
 
-void Ragdolls::HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData)
+void Ragdolls::HandlePostRenderUpdate(float)
 {
     // If draw debug mode is enabled, draw physics debug geometry. Use depth test to make the result easier to interpret
     if (drawDebug_)

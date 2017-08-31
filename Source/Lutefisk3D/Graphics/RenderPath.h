@@ -73,7 +73,7 @@ enum RenderTargetSizeMode
 };
 
 /// Rendertarget definition.
-struct URHO3D_API RenderTargetInfo
+struct LUTEFISK3D_EXPORT RenderTargetInfo
 {
     /// Construct.
     RenderTargetInfo() :
@@ -118,7 +118,7 @@ struct URHO3D_API RenderTargetInfo
 };
 
 /// Rendering path command.
-struct URHO3D_API RenderPathCommand
+struct LUTEFISK3D_EXPORT RenderPathCommand
 {
     /// Construct.
     RenderPathCommand() :
@@ -218,7 +218,7 @@ struct URHO3D_API RenderPathCommand
 };
 
 /// Rendering path definition. A sequence of commands (e.g. clear screen, draw objects with specific pass) that yields the scene rendering result.
-class URHO3D_API RenderPath : public RefCounted
+class LUTEFISK3D_EXPORT RenderPath : public RefCounted
 {
 public:
     /// Construct.

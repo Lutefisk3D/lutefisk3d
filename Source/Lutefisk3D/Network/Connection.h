@@ -103,7 +103,7 @@ enum ObserverPositionSendMode
 };
 
 /// %Connection to a remote network host.
-class URHO3D_API Connection : public Object
+class LUTEFISK3D_EXPORT Connection : public Object
 {
     URHO3D_OBJECT(Connection,Object);
 

@@ -49,7 +49,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(MultipleViewports)
 
 MultipleViewports::MultipleViewports(Context* context) :
-    Sample(context),
+    Sample("MultipleViewports",context),
     drawDebug_(false)
 {
 }
@@ -74,9 +74,9 @@ void MultipleViewports::Start()
 
 void MultipleViewports::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
     // Also create a DebugRenderer component so that we can draw debug geometry
@@ -161,8 +161,8 @@ void MultipleViewports::CreateScene()
 
 void MultipleViewports::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -183,20 +183,20 @@ void MultipleViewports::CreateInstructions()
 
 void MultipleViewports::SetupViewports()
 {
-    Graphics* graphics = GetSubsystem<Graphics>();
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Graphics* graphics = m_context->m_Graphics.get();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     renderer->SetNumViewports(2);
 
     // Set up the front camera viewport
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 
     // Clone the default render path so that we do not interfere with the other viewport, then add
     // bloom and FXAA post process effects to the front viewport. Render path commands can be tagged
     // for example with the effect name to allow easy toggling on and off. We start with the effects
     // disabled.
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
     SharedPtr<RenderPath> effectRenderPath = viewport->GetRenderPath()->Clone();
     effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/Bloom.xml"));
     effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/FXAA2.xml"));
@@ -208,7 +208,7 @@ void MultipleViewports::SetupViewports()
 
     // Set up the rear camera viewport on top of the front view ("rear view mirror")
     // The viewport index must be greater in that case, otherwise the view would be left behind
-    SharedPtr<Viewport> rearViewport(new Viewport(context_, scene_, rearCameraNode_->GetComponent<Camera>(),
+    SharedPtr<Viewport> rearViewport(new Viewport(m_context, scene_, rearCameraNode_->GetComponent<Camera>(),
         IntRect(graphics->GetWidth() * 2 / 3, 32, graphics->GetWidth() - 32, graphics->GetHeight() / 3)));
     renderer->SetViewport(1, rearViewport);
 }
@@ -216,20 +216,20 @@ void MultipleViewports::SetupViewports()
 void MultipleViewports::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() method for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(MultipleViewports, HandleUpdate));
+    g_coreSignals.update.Connect(this,&MultipleViewports::HandleUpdate);
 
     // Subscribe HandlePostRenderUpdate() method for processing the post-render update event, during which we request
     // debug geometry
-    SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(MultipleViewports, HandlePostRenderUpdate));
+    g_coreSignals.postUpdate.Connect(this,&MultipleViewports::HandlePostRenderUpdate);
 }
 
 void MultipleViewports::MoveCamera(float timeStep)
 {
      // Do not move if the UI has a focused element (the console)
-    if (GetSubsystem<UI>()->GetFocusElement())
+    if (m_context->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -256,7 +256,7 @@ void MultipleViewports::MoveCamera(float timeStep)
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 
     // Toggle post processing effects on the front viewport. Note that the rear viewport is unaffected
-    RenderPath* effectRenderPath = GetSubsystem<Renderer>()->GetViewport(0)->GetRenderPath();
+    RenderPath* effectRenderPath = m_context->m_Renderer.get()->GetViewport(0)->GetRenderPath();
     if (input->GetKeyPress('B'))
         effectRenderPath->ToggleEnabled("Bloom");
     if (input->GetKeyPress('F'))
@@ -267,21 +267,18 @@ void MultipleViewports::MoveCamera(float timeStep)
         drawDebug_ = !drawDebug_;
 }
 
-void MultipleViewports::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void MultipleViewports::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
     // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
 
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }
 
-void MultipleViewports::HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData)
+void MultipleViewports::HandlePostRenderUpdate(float ts)
 {
     // If draw debug mode is enabled, draw viewport debug geometry, which will show eg. drawable bounding boxes and skeleton
     // bones. Disable depth test so that we can see the effect of occlusion
     if (drawDebug_)
-        GetSubsystem<Renderer>()->DrawDebugGeometry(false);
+        m_context->m_Renderer.get()->DrawDebugGeometry(false);
 }

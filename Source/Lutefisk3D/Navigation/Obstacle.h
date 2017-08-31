@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ namespace Urho3D
 class DynamicNavigationMesh;
 
 /// Obstacle for dynamic navigation mesh.
-class URHO3D_API Obstacle : public Component
+class LUTEFISK3D_EXPORT Obstacle : public Component
 {
     URHO3D_OBJECT(Obstacle,Component)
     friend class DynamicNavigationMesh;
@@ -67,12 +67,13 @@ public:
 
 protected:
     /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node);
+    virtual void OnNodeSet(Node* node) override;
     /// Handle scene being assigned, identify our DynamicNavigationMesh.
     virtual void OnSceneSet(Scene* scene) override;
     /// Handle node transform being dirtied.
-    virtual void OnMarkedDirty(Node* node);
-
+    virtual void OnMarkedDirty(Node* node) override;
+    /// Handle navigation mesh tile added.
+    void HandleNavigationTileAdded(Node *,class NavigationMesh *,IntVector2);
 private:
     /// Radius of this obstacle.
     float radius_;

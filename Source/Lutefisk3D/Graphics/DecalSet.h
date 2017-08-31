@@ -103,7 +103,7 @@ struct Decal
 };
 
 /// %Decal renderer component.
-class URHO3D_API DecalSet : public Drawable
+class LUTEFISK3D_EXPORT DecalSet : public Drawable
 {
     URHO3D_OBJECT(DecalSet,Drawable);
 
@@ -201,7 +201,7 @@ private:
     /// Subscribe/unsubscribe from scene post-update as necessary.
     void UpdateEventSubscription(bool checkAllDecals);
     /// Handle scene post-update event.
-    void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleScenePostUpdate(Scene *, float ts);
 
     /// Geometry.
     SharedPtr<Geometry> geometry_;

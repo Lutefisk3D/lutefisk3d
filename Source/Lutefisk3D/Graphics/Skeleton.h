@@ -78,7 +78,7 @@ struct Bone
 };
 
 /// Hierarchical collection of bones.
-class URHO3D_API Skeleton
+class LUTEFISK3D_EXPORT Skeleton
 {
 public:
     /// Construct an empty skeleton.

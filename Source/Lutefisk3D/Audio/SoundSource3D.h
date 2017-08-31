@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ namespace Urho3D
 class Audio;
 
 /// %Sound source component with three-dimensional position.
-class URHO3D_API SoundSource3D : public SoundSource
+class LUTEFISK3D_EXPORT SoundSource3D : public SoundSource
 {
     URHO3D_OBJECT(SoundSource3D,SoundSource);
 

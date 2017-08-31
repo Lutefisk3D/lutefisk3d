@@ -21,28 +21,31 @@
 //
 
 #pragma once
-
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 #include "Lutefisk3D/Container/HashMap.h"
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/Str.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include <jlsignal/SignalBase.h>
 
-
+#include <QtCore/QString>
+#include <list>
 namespace Urho3D
 {
-
+class Context;
 class AsyncExecRequest;
 
-/// Return files.
-static const unsigned SCAN_FILES = 0x1;
-/// Return directories.
-static const unsigned SCAN_DIRS = 0x2;
-/// Return also hidden files.
-static const unsigned SCAN_HIDDEN = 0x4;
-
-/// Subsystem for file and directory operations and access control.
-class URHO3D_API FileSystem : public Object
+enum ScanFlags : uint32_t
 {
-    URHO3D_OBJECT(FileSystem,Object);
-
+    /// Return files.
+    SCAN_FILES = 0x1,
+    /// Return directories.
+    SCAN_DIRS = 0x2,
+    /// Return also hidden files.
+    SCAN_HIDDEN = 0x4,
+};
+/// Subsystem for file and directory operations and access control.
+class LUTEFISK3D_EXPORT FileSystem : public jl::SignalObserver
+{
 public:
     /// Construct.
     FileSystem(Context* context);
@@ -90,7 +93,7 @@ public:
     bool DirExists(const QString& pathName) const;
     /// Scan a directory for specified files.
     void ScanDir(QStringList& result, const QString& pathName, const QString& filter, unsigned flags, bool recursive) const;
-    /// Return the program's directory. If it does not contain the Urho3D default CoreData and Data directories, and the current working directory does, return the working directory instead.
+    /// Return the program's directory.
     QString GetProgramDir() const;
     /// Return the user documents directory.
     QString GetUserDocumentsDir() const;
@@ -99,14 +102,13 @@ public:
 
 private:
     /// Handle begin frame event to check for completed async executions.
-    void HandleBeginFrame(StringHash eventType, VariantMap& eventData);
+    void HandleBeginFrame(unsigned, float);
     /// Handle a console command event.
-    void HandleConsoleCommand(StringHash eventType, VariantMap& eventData);
+    void HandleConsoleCommand(const QString &cmd, const QString &id);
 
+    Context *m_context;
     /// Allowed directories.
     HashSet<QString> allowedPaths_;
-    /// Cached program directory.
-    mutable QString programDir_;
     /// Async execution queue.
     std::list<AsyncExecRequest*> asyncExecQueue_;
     /// Next async execution ID.
@@ -116,30 +118,30 @@ private:
 };
 
 /// Split a full path to path, filename and extension. The extension will be converted to lowercase by default.
-URHO3D_API void SplitPath(const QString& fullPath, QString& pathName, QString& fileName, QString& extension, bool lowercaseExtension = true);
+LUTEFISK3D_EXPORT void SplitPath(const QString& fullPath, QString& pathName, QString& fileName, QString& extension, bool lowercaseExtension = true);
 /// Return the path from a full path.
-URHO3D_API QString GetPath(const QString& fullPath);
+LUTEFISK3D_EXPORT QString GetPath(const QString& fullPath);
 /// Return the filename from a full path.
-URHO3D_API QString GetFileName(const QString& fullPath);
+LUTEFISK3D_EXPORT QString GetFileName(const QString& fullPath);
 /// Return the extension from a full path, converted to lowercase by default.
-URHO3D_API QString GetExtension(const QString& fullPath, bool lowercaseExtension = true);
+LUTEFISK3D_EXPORT QString GetExtension(const QString& fullPath, bool lowercaseExtension = true);
 /// Return the filename and extension from a full path. The case of the extension is preserved by default, so that the file can be opened in case-sensitive operating systems.
-URHO3D_API QString GetFileNameAndExtension(const QString& fullPath, bool lowercaseExtension = false);
+LUTEFISK3D_EXPORT QString GetFileNameAndExtension(const QString& fullPath, bool lowercaseExtension = false);
 /// Replace the extension of a file name with another.
-URHO3D_API QString ReplaceExtension(const QString& fullPath, const QString& newExtension);
+LUTEFISK3D_EXPORT QString ReplaceExtension(const QString& fullPath, const QString& newExtension);
 /// Add a slash at the end of the path if missing and convert to internal format (use slashes.)
-URHO3D_API QString AddTrailingSlash(const QString& pathName);
+LUTEFISK3D_EXPORT QString AddTrailingSlash(const QString& pathName);
 /// Remove the slash from the end of a path if exists and convert to internal format (use slashes.)
-URHO3D_API QString RemoveTrailingSlash(const QString& pathName);
+LUTEFISK3D_EXPORT QString RemoveTrailingSlash(const QString& pathName);
 /// Return the parent path, or the path itself if not available.
-URHO3D_API QString GetParentPath(const QString& pathName);
+LUTEFISK3D_EXPORT QString GetParentPath(const QString& pathName);
 /// Convert a path to internal format (use slashes.)
-URHO3D_API QString GetInternalPath(const QString& pathName);
+LUTEFISK3D_EXPORT QString GetInternalPath(const QString& pathName);
 /// Convert a path to the format required by the operating system.
-URHO3D_API QString GetNativePath(const QString& pathName);
+LUTEFISK3D_EXPORT QString GetNativePath(const QString& pathName);
 /// Convert a path to the format required by the operating system in wide characters.
 //WString GetWideNativePath(const String& pathName);
 /// Return whether a path is absolute.
-URHO3D_API bool IsAbsolutePath(const QString& pathName);
+LUTEFISK3D_EXPORT bool IsAbsolutePath(const QString& pathName);
 
 }

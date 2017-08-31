@@ -40,11 +40,8 @@ set(INCLUDES
     DetourStatus.h
 )
 
-add_library(Detour OBJECT ${SOURCE_FILES} ${INCLUDES})
-install (FILES ${INCLUDES} DESTINATION include/ThirdParty/Detour)
+add_library(Detour STATIC ${SOURCE_FILES} ${INCLUDES})
+#install (FILES ${INCLUDES} DESTINATION include/ThirdParty/Detour)
 add_dependencies(Detour Recast)
-
+set_property(TARGET Detour PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(Detour PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} )
-######################### Add component to the project's list
-list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:Detour>)
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)

@@ -26,14 +26,14 @@
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
 #include <QtCore/QSet>
-
+#include <jlsignal/SignalBase.h>
 //#include "Lutefisk3D/UI/Cursor.h"
 
 namespace Urho3D
 {
 
 /// %Input Mouse Modes.
-enum MouseMode
+enum MouseMode : uint8_t
 {
     MM_ABSOLUTE = 0,
     MM_RELATIVE,
@@ -122,10 +122,8 @@ struct JoystickState
 };
 
 /// %Input subsystem. Converts operating system window messages to input state and events.
-class URHO3D_API Input : public Object
+class LUTEFISK3D_EXPORT Input : public jl::SignalObserver
 {
-    URHO3D_OBJECT(Input,Object);
-
 public:
     /// Construct.
     Input(Context* context);
@@ -167,8 +165,6 @@ public:
     void ResetMouseMode();
     /// Show or hide on-screen keyboard on platforms that support it. When shown, keypresses from it are delivered as key events.
     void SetScreenKeyboardVisible(bool enable);
-    /// Set touch emulation by mouse. Only available on desktop platforms. When enabled, actual mouse events are no longer sent and the mouse cursor is forced visible.
-    void SetTouchEmulation(bool enable);
     /// Begin recording a touch gesture. Return true if successful. The E_GESTURERECORDED event (which contains the ID for the new gesture) will be sent when recording finishes.
     bool RecordGesture();
     /// Save all in-memory touch gestures. Return true if successful.
@@ -226,6 +222,8 @@ public:
     int GetMouseMoveY() const;
     /// Return mouse wheel movement since last frame.
     int GetMouseMoveWheel() const { return mouseMoveWheel_; }
+    /// Return input coordinate scaling. Should return non-unity on High DPI display.
+    Vector2 GetInputScale() const { return inputScale_; }
     /// Return number of active finger touches.
     unsigned GetNumTouches() const { return touches_.size(); }
     /// Return active finger touch by index.
@@ -298,9 +296,9 @@ private:
     /// Unsuppress mouse movement.
     void UnsuppressMouseMove();
     /// Handle screen mode event.
-    void HandleScreenMode(StringHash eventType, VariantMap& eventData);
+    void HandleScreenMode(int Width, int Height, bool Fullscreen, bool Borderless, bool Resizable, bool HighDPI, int Monitor, int RefreshRate);
     /// Handle frame start event.
-    void HandleBeginFrame(StringHash eventType, VariantMap& eventData);
+    void HandleBeginFrame(unsigned frameno, float ts);
     /// Handle touch events from the controls of screen joystick(s).
     void HandleScreenJoystickTouch(StringHash eventType, VariantMap& eventData);
     /// Handle SDL event.
@@ -311,6 +309,7 @@ private:
     /// Set SDL mouse mode absolute.
     void SetMouseModeAbsolute(SDL_bool enable);
 
+    Context *m_context;
     /// Graphics subsystem.
     WeakPtr<Graphics> graphics_;
     /// Key down state.
@@ -378,5 +377,4 @@ private:
     /// Initialized flag.
     bool initialized_;
 };
-
 }

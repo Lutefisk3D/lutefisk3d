@@ -89,7 +89,7 @@ struct CursorShapeInfo
 };
 
 /// Mouse cursor %UI element.
-class Cursor : public BorderImage
+class LUTEFISK3D_EXPORT Cursor : public BorderImage
 {
     URHO3D_OBJECT(Cursor,BorderImage);
 
@@ -128,7 +128,7 @@ public:
 
 protected:
     /// Handle operating system mouse cursor visibility change event.
-    void HandleMouseVisibleChanged(StringHash eventType, VariantMap& eventData);
+    void HandleMouseVisibleChanged(bool visible);
 
     /// Current shape definition.
     QString shape_;

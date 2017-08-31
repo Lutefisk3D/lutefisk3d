@@ -95,7 +95,7 @@ void SceneReplication::Start()
 
 void SceneReplication::CreateScene()
 {
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create scene content on the server only
     ResourceCache* cache = GetSubsystem<ResourceCache>();
@@ -165,7 +165,7 @@ void SceneReplication::CreateUI()
 
     // Create a Cursor UI element because we want to be able to hide and show it at will. When hidden, the mouse cursor will
     // control the camera, and when visible, it can interact with the login UI
-    SharedPtr<Cursor> cursor(new Cursor(context_));
+    SharedPtr<Cursor> cursor(new Cursor(m_context));
     cursor->SetStyleAuto(uiStyle);
     ui->SetCursor(cursor);
     // Set starting position of the cursor at the rendering window center
@@ -205,7 +205,7 @@ void SceneReplication::SetupViewport()
     Renderer* renderer = GetSubsystem<Renderer>();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 

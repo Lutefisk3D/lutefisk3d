@@ -28,13 +28,16 @@ namespace Urho3D
 {
 
 /// Base class for sound streams.
-class URHO3D_API SoundStream : public RefCounted
+class LUTEFISK3D_EXPORT SoundStream : public RefCounted
 {
 public:
     /// Construct.
     SoundStream();
     /// Destruct.
     ~SoundStream();
+
+    /// Seek to sample number
+    virtual bool Seek(unsigned int /*sample_number*/) { return false; }
 
     /// Produce sound data into destination. Return number of bytes produced. Called by SoundSource from the mixing thread.
     virtual unsigned GetData(signed char* dest, unsigned numBytes) = 0;

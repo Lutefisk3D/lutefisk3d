@@ -1,4 +1,51 @@
-add_subdirectory(cereal)
+include(ExternalProject)
+
+function(encode_lib_name basename)
+    if(UNIX)
+        set(${basename}_LIBRARY_SHARED lib${basename}.so PARENT_SCOPE)
+        set(${basename}_LIBRARY_SHARED_D lib${basename}.so PARENT_SCOPE)
+        set(${basename}_LIBRARY_STATIC lib${basename}.a PARENT_SCOPE)
+        set(${basename}_LIBRARY_STATIC_D lib${basename}.a PARENT_SCOPE)
+        set(${basename}_LIBRARY_IMP ${basename}.so PARENT_SCOPE)
+        set(${basename}_LIBRARY_IMP_D ${basename}.so PARENT_SCOPE)
+    elseif(MSVC)
+        set(${basename}_LIBRARY_SHARED ${basename}.dll PARENT_SCOPE)
+        set(${basename}_LIBRARY_SHARED_D ${basename}d.dll PARENT_SCOPE)
+        set(${basename}_LIBRARY_STATIC ${basename}.lib PARENT_SCOPE)
+        set(${basename}_LIBRARY_STATIC_D ${basename}d.lib PARENT_SCOPE)
+        set(${basename}_LIBRARY_IMP ${basename}.lib PARENT_SCOPE)
+        set(${basename}_LIBRARY_IMP_D ${basename}d.lib PARENT_SCOPE)
+    elseif(MINGW)
+        set(${basename}_LIBRARY_STATIC lib${basename}.a PARENT_SCOPE)
+        set(${basename}_LIBRARY_STATIC_D lib${basename}.a PARENT_SCOPE)
+        set(${basename}_LIBRARY_SHARED lib${basename}.dll PARENT_SCOPE)
+        set(${basename}_LIBRARY_SHARED_D lib${basename}.dll PARENT_SCOPE)
+        set(${basename}_LIBRARY_IMP lib${basename}.dll PARENT_SCOPE)
+        set(${basename}_LIBRARY_IMP_D lib${basename}.dll PARENT_SCOPE)
+    endif()
+endfunction()
+function(libname tgt basename)
+    encode_lib_name(${basename})
+    set(${tgt}_LIBRARY_STATIC ${ThirdParty_Install_Dir}/lib/${${basename}_LIBRARY_STATIC} PARENT_SCOPE)
+    set(${tgt}_LIBRARY_STATIC_D ${ThirdParty_Install_Dir}/lib/${${basename}_LIBRARY_STATIC_D} PARENT_SCOPE)
+    set(${tgt}_LIBRARY_SHARED ${ThirdParty_Install_Dir}/lib/${${basename}_LIBRARY_SHARED} PARENT_SCOPE)
+    set(${tgt}_LIBRARY_SHARED_D ${ThirdParty_Install_Dir}/lib/${${basename}_LIBRARY_SHARED_D} PARENT_SCOPE)
+    set(${tgt}_LIBRARY_IMP ${ThirdParty_Install_Dir}/lib/${${basename}_LIBRARY_IMP} PARENT_SCOPE)
+    set(${tgt}_LIBRARY_IMP_D ${ThirdParty_Install_Dir}/lib/${${basename}_LIBRARY_IMP_D} PARENT_SCOPE)
+endfunction()
+
+macro(set_shared_lib_properties basename)
+    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION ${ace_LIBRARY_SHARED} )
+    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION_DEBUG ${${basename}_LIBRARY_SHARED_D} )
+    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION_RELEASE ${${basename}_LIBRARY_SHARED} )
+    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_IMPLIB ${${basename}_LIBRARY_IMP} )
+    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_IMPLIB_RELEASE ${${basename}_LIBRARY_IMP} )
+    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_IMPLIB_DEBUG ${${basename}_LIBRARY_IMP_D} )
+endmacro()
+link_directories(${ThirdParty_Install_Dir}/lib)
+
+include(ExternalProject_CEREAL.cmake)
+add_subdirectory(jlsignal)
 #add_subdirectory(LibCpuId)
 add_subdirectory(PugiXml)
 add_subdirectory(LZ4)
@@ -22,7 +69,7 @@ if(NOT LUTEFISK3D_HEADLESS)
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/SDL
         UPDATE_COMMAND ""
-        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSDL_SHARED:BOOL=OFF -DRENDER_D3D:BOOL=OFF -DVIDEO_OPENGLES:BOOL=OFF -DSDL_FILESYSTEM:BOOL=ON -DVIDEO_WAYLAND:BOOL=OFF -DVIDEO_MIR:BOOL=OFF -DSDL_RENDERER:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSDL_SHARED:BOOL=OFF -DSDL_STATIC_PIC:BOOL=ON -DRENDER_D3D:BOOL=OFF -DVIDEO_OPENGLES:BOOL=OFF -DSDL_FILESYSTEM:BOOL=ON -DVIDEO_WAYLAND:BOOL=OFF -DVIDEO_MIR:BOOL=OFF -DSDL_RENDERER:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=${ThirdParty_Install_Dir} -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
         INSTALL_DIR ${ThirdParty_Install_Dir}/
         BUILD_BYPRODUCTS ${SDL2_BuiltFile}
     )
@@ -40,7 +87,7 @@ if(NOT LUTEFISK3D_HEADLESS)
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glbinding
         UPDATE_COMMAND ""
-        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_SHARED_LIBS:BOOL=OFF -DOPTION_BUILD_TESTS:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_SHARED_LIBS:BOOL=OFF -DOPTION_BUILD_TESTS:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=${ThirdParty_Install_Dir} -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
         INSTALL_DIR ${ThirdParty_Install_Dir}/
         BUILD_BYPRODUCTS ${GLBINDING_BuiltFile}
     )
@@ -74,7 +121,7 @@ if(NOT LUTEFISK3D_NETLESS)
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/kNet
         UPDATE_COMMAND ""
-        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH=${ThirdParty_Install_Dir} -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
         INSTALL_DIR ${ThirdParty_Install_Dir}/
         BUILD_BYPRODUCTS ${KNET_BuiltFile}
     )
@@ -98,11 +145,11 @@ if(NOT LUTEFISK3D_PHYSICLESS)
         list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libLinearMath.a)
         list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletCollision.a)
     elseif(MSVC)
-        set(BULLET_BuiltFile ${ThirdParty_Install_Dir}/lib/BulletCollision.lib)
-        set(BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletDynamics.lib)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletSoftBody.lib)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/LinearMath.lib)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletCollision.lib)
+        set(BULLET_BuiltFile ${ThirdParty_Install_Dir}/lib/BulletCollision_RelWithDebugInfo.lib)
+        set(BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletDynamics_RelWithDebugInfo.lib)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletSoftBody_RelWithDebugInfo.lib)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/LinearMath_RelWithDebugInfo.lib)
+        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletCollision_RelWithDebugInfo.lib)
     elseif(MINGW)
         set(BULLET_BuiltFile ${ThirdParty_Install_Dir}/lib/libBulletCollision_RelWithDebugInfo.a)
         set(BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletDynamics_RelWithDebugInfo.a)
@@ -116,7 +163,7 @@ if(NOT LUTEFISK3D_PHYSICLESS)
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Bullet
         UPDATE_COMMAND ""
-        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DINSTALL_LIBS:BOOL=ON
+        CMAKE_ARGS -DUSE_MSVC_RUNTIME_LIBRARY_DLL=TRUE -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH=${ThirdParty_Install_Dir} -DINSTALL_LIBS:BOOL=ON -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
         INSTALL_DIR ${ThirdParty_Install_Dir}/
         BUILD_BYPRODUCTS ${BULLET_BuiltFile} ${BULLET_AllLibs}
     )
@@ -127,5 +174,3 @@ if(NOT LUTEFISK3D_PHYSICLESS)
 
     add_subdirectory(StanHull)
 endif()
-
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)

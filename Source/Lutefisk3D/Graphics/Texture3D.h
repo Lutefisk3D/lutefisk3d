@@ -31,7 +31,7 @@ namespace Urho3D
 {
 
 /// 3D texture resource.
-class URHO3D_API Texture3D : public Texture
+class LUTEFISK3D_EXPORT Texture3D : public Texture
 {
     URHO3D_OBJECT(Texture3D, Texture);
 

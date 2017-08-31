@@ -34,7 +34,7 @@ class LuaScriptInstance;
 class Variant;
 
 /// Lua function.
-class URHO3D_API LuaFunction : public RefCounted
+class LUTEFISK3D_EXPORT LuaFunction : public RefCounted
 {
 public:
     /// Construct.

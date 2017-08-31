@@ -25,7 +25,7 @@
 #include "JSONFile.h"
 #include "ResourceEvents.h"
 #include "Lutefisk3D/IO/Log.h"
-
+#include "Lutefisk3D/Core/Context.h"
 namespace Urho3D
 {
 
@@ -99,8 +99,7 @@ void Localization::SetLanguage(int index)
     if (index != languageIndex_)
     {
         languageIndex_ = index;
-        VariantMap& eventData = GetEventDataMap();
-        SendEvent(E_CHANGELANGUAGE, eventData);
+        g_resourceSignals.changeLanguage.Emit();
     }
 }
 
@@ -192,7 +191,7 @@ void Localization::LoadJSON(const JSONValue& source)
 
 void Localization::LoadJSONFile(const QString& name)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
     JSONFile* jsonFile = cache->GetResource<JSONFile>(name);
     if (jsonFile)
         LoadJSON(jsonFile->GetRoot());

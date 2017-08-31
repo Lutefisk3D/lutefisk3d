@@ -31,7 +31,7 @@ class Button;
 class Slider;
 
 /// Scroll bar %UI element with forward and back buttons.
-class ScrollBar : public BorderImage
+class LUTEFISK3D_EXPORT ScrollBar : public BorderImage
 {
     URHO3D_OBJECT(ScrollBar,BorderImage);
 
@@ -113,13 +113,13 @@ protected:
 
 private:
     /// Handle back button pressed.
-    void HandleBackButtonPressed(StringHash eventType, VariantMap& eventData);
+    void HandleBackButtonPressed(UIElement *);
     /// Handle forward button pressed.
-    void HandleForwardButtonPressed(StringHash eventType, VariantMap& eventData);
+    void HandleForwardButtonPressed(UIElement *);
     /// Handle slider movement.
-    void HandleSliderChanged(StringHash eventType, VariantMap& eventData);
+    void HandleSliderChanged(UIElement *, float);
     /// Handle slider touch and click on "paging" area.
-    void HandleSliderPaged(StringHash eventType, VariantMap& eventData);
+    void HandleSliderPaged(UIElement *, int offset, bool);
 };
 
 }

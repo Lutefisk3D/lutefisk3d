@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -66,7 +66,7 @@ const FontGlyph* FontFace::GetGlyph(unsigned c)
         return nullptr;
 }
 
-short FontFace::GetKerning(unsigned c, unsigned d) const
+float FontFace::GetKerning(unsigned c, unsigned d) const
 {
     if (kerningMapping_.empty())
         return 0;
@@ -79,7 +79,7 @@ short FontFace::GetKerning(unsigned c, unsigned d) const
 
     unsigned value = (c << 16) + d;
 
-    HashMap<unsigned, short>::const_iterator i = kerningMapping_.find(value);
+    HashMap<unsigned, float>::const_iterator i = kerningMapping_.find(value);
     if (i != kerningMapping_.end())
         return MAP_VALUE(i);
 

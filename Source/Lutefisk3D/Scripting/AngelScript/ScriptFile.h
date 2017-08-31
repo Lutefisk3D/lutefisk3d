@@ -43,7 +43,7 @@ class ScriptInstance;
 class Variant;
 
 /// %Script file resource.
-class URHO3D_API ScriptFile : public Resource, public ScriptEventListener
+class LUTEFISK3D_EXPORT ScriptFile : public Resource, public ScriptEventListener
 {
     OBJECT(ScriptFile);
 
@@ -142,7 +142,7 @@ private:
 };
 
 /// Helper class for forwarding events to script objects that are not part of a scene.
-class URHO3D_API ScriptEventInvoker : public Object
+class LUTEFISK3D_EXPORT ScriptEventInvoker : public Object
 {
     OBJECT(ScriptEventInvoker);
 
@@ -169,6 +169,6 @@ private:
 };
 
 /// Get currently executing script file.
-URHO3D_API ScriptFile* GetScriptContextFile();
+LUTEFISK3D_EXPORT ScriptFile* GetScriptContextFile();
 
 }

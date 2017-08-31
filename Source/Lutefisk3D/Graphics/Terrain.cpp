@@ -553,7 +553,7 @@ TerrainPatch* Terrain::GetNeighborPatch(int x, int z) const
         return west_->GetPatch(x + west_->GetNumPatches().x_, z);
     else if (x >= numPatches_.x_ && east_)
         return east_->GetPatch(x - numPatches_.x_, z);
-    else 
+    else
         return GetPatch(x, z);
 }
 
@@ -635,6 +635,21 @@ IntVector2 Terrain::WorldToHeightMap(const Vector3& worldPosition) const
     xPos = Clamp(xPos, 0, numVertices_.x_ - 1);
     zPos = Clamp(zPos, 0, numVertices_.y_ - 1);
     return IntVector2(xPos, numVertices_.y_ - 1 - zPos);
+}
+
+Vector3 Terrain::HeightMapToWorld(const IntVector2& pixelPosition) const
+{
+    if (!node_)
+        return Vector3::ZERO;
+
+    IntVector2 pos(pixelPosition.x_, numVertices_.y_ - 1 - pixelPosition.y_);
+    float xPos = (float)(pos.x_ * spacing_.x_ + patchWorldOrigin_.x_);
+    float zPos = (float)(pos.y_ * spacing_.z_ + patchWorldOrigin_.y_);
+    Vector3 lPos(xPos, 0.0f, zPos);
+    Vector3 wPos = node_->GetWorldTransform() * lPos;
+    wPos.y_ = GetHeight(wPos);
+
+    return wPos;
 }
 
 void Terrain::CreatePatchGeometry(TerrainPatch* patch)
@@ -779,13 +794,13 @@ void Terrain::UpdatePatchLod(TerrainPatch* patch)
 
 void Terrain::SetMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     SetMaterial(cache->GetResource<Material>(value.name_));
 }
 
 void Terrain::SetHeightMapAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     Image* image = cache->GetResource<Image>(value.name_);
     SetHeightMapInternal(image, false);
 }
@@ -1412,9 +1427,9 @@ bool Terrain::SetHeightMapInternal(Image* image, bool recreateNow)
 
     // Unsubscribe from the reload event of previous image (if any), then subscribe to the new
     if (heightMap_)
-        UnsubscribeFromEvent(heightMap_, E_RELOADFINISHED);
+        heightMap_->reloadFinished.Disconnect(this,&Terrain::HandleHeightMapReloadFinished);
     if (image)
-        SubscribeToEvent(image, E_RELOADFINISHED, URHO3D_HANDLER(Terrain, HandleHeightMapReloadFinished));
+        image->reloadFinished.Connect(this,&Terrain::HandleHeightMapReloadFinished);
 
     heightMap_ = image;
 
@@ -1426,7 +1441,7 @@ bool Terrain::SetHeightMapInternal(Image* image, bool recreateNow)
     return true;
 }
 
-void Terrain::HandleHeightMapReloadFinished(StringHash eventType, VariantMap& eventData)
+void Terrain::HandleHeightMapReloadFinished()
 {
     CreateGeometry();
 }

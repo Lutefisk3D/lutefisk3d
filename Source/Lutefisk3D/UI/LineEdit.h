@@ -31,9 +31,9 @@ class Font;
 class Text;
 
 /// Single-line text editor %UI element.
-class URHO3D_API LineEdit : public BorderImage
+class LUTEFISK3D_EXPORT LineEdit : public BorderImage, public LineEditSignals
 {
-    URHO3D_OBJECT(LineEdit,BorderImage);
+    URHO3D_OBJECT(LineEdit,BorderImage)
 
 public:
     /// Construct.
@@ -143,11 +143,11 @@ protected:
 
 private:
     /// Handle being focused.
-    void HandleFocused(StringHash eventType, VariantMap& eventData);
+    void HandleFocused(UIElement *el, bool byKey);
     /// Handle being defocused.
-    void HandleDefocused(StringHash eventType, VariantMap& eventData);
+    void HandleDefocused(UIElement *);
     /// Handle the element layout having been updated.
-    void HandleLayoutUpdated(StringHash eventType, VariantMap& eventData);
+    void HandleLayoutUpdated(UIElement *);
 };
 
 }

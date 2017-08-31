@@ -37,7 +37,6 @@ class Sprite;
 }
 
 // All Urho3D classes reside in namespace Urho3D
-using namespace Urho3D;
 
 const float TOUCH_SENSITIVITY = 2.0f;
 
@@ -53,12 +52,9 @@ const float TOUCH_SENSITIVITY = 2.0f;
 ///    - Init touch input on mobile platform using screen joysticks (patched for each individual sample)
 class Sample : public Urho3D::Application
 {
-    // Enable type information.
-    URHO3D_OBJECT(Sample,Urho3D::Application)
-
 public:
     /// Construct.
-    Sample(Urho3D::Context* context);
+    Sample(const QString& sampleName,Urho3D::Context* context);
 
     /// Setup before engine initialization. Modifies the engine parameters.
     virtual void Setup() override;
@@ -68,10 +64,8 @@ public:
     virtual void Stop() override;
 
 protected:
-    /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
-    virtual QString GetScreenJoystickPatchString() const { return QString(); }
     /// Initialize mouse mode on non-web platform.
-    void InitMouseMode(MouseMode mode);
+    void InitMouseMode(Urho3D::MouseMode mode);
     /// Control logo visibility.
     void SetLogoVisible(bool enable);
 
@@ -88,7 +82,7 @@ protected:
     /// Flag to indicate whether touch input has been enabled.
     bool touchEnabled_;
     /// Mouse mode option to use in the sample.
-    MouseMode useMouseMode_;
+    Urho3D::MouseMode useMouseMode_;
 private:
     /// Create logo.
     void CreateLogo();
@@ -96,18 +90,14 @@ private:
     void SetWindowTitleAndIcon();
     /// Create console and debug HUD.
     void CreateConsoleAndDebugHud();
-    /// Handle request for mouse mode on web platform.
-    void HandleMouseModeRequest(StringHash eventType, VariantMap& eventData);
-    /// Handle request for mouse mode change on web platform.
-    void HandleMouseModeChange(StringHash eventType, VariantMap& eventData);
     /// Handle key down event to process key controls common to all samples.
-    void HandleKeyDown(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+    void HandleKeyDown(int key,int scancode,unsigned buttons,int qualifiers, bool repeat);
     /// Handle key up event to process key controls common to all samples.
-    void HandleKeyUp(StringHash eventType, VariantMap& eventData);
+    void HandleKeyUp(int key,int scancode,unsigned buttons,int qualifiers);
     /// Handle scene update event to control camera's pitch and yaw for all samples.
-    void HandleSceneUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+    void HandleSceneUpdate(Urho3D::Scene *scene,float timeStep);
     /// Handle touch begin event to initialize touch input on desktop platform.
-    void HandleTouchBegin(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+    void HandleTouchBegin(unsigned touchId,int x,int y,float pressure);
 
     /// Pause flag.
     bool paused_;

@@ -62,7 +62,6 @@ static const QString EP_TEXTURE_ANISOTROPY("TextureAnisotropy");
 static const QString EP_TEXTURE_FILTER_MODE("TextureFilterMode");
 static const QString EP_TEXTURE_QUALITY("TextureQuality");
 static const QString EP_TIME_OUT("TimeOut");
-static const QString EP_TOUCH_EMULATION("TouchEmulation");
 static const QString EP_TRIPLE_BUFFER("TripleBuffer");
 static const QString EP_VSYNC("VSync");
 static const QString EP_WINDOW_HEIGHT("WindowHeight");

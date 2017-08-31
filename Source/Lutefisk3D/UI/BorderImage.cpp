@@ -195,8 +195,7 @@ void BorderImage::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& 
 
 void BorderImage::SetTextureAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    SetTexture(cache->GetResource<Texture2D>(value.name_));
+    SetTexture(context_->m_ResourceCache->GetResource<Texture2D>(value.name_));
 }
 
 ResourceRef BorderImage::GetTextureAttr() const

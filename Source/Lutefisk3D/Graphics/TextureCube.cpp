@@ -78,7 +78,7 @@ void TextureCube::RegisterObject(Context* context)
 
 bool TextureCube::BeginLoad(Deserializer& source)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
 
     // In headless mode, do not actually load the texture, just return success
     if (!graphics_)
@@ -291,13 +291,14 @@ bool TextureCube::SetSize(int size, gl::GLenum format, TextureUsage usage, int m
     }
 
     if (usage == TEXTURE_RENDERTARGET)
-        SubscribeToEvent(E_RENDERSURFACEUPDATE, URHO3D_HANDLER(TextureCube, HandleRenderSurfaceUpdate));
+        g_graphicsSignals.renderSurfaceUpdate.Connect(this,&TextureCube::HandleRenderSurfaceUpdate);
     else
-        UnsubscribeFromEvent(E_RENDERSURFACEUPDATE);
+        g_graphicsSignals.renderSurfaceUpdate.Disconnect(this,&TextureCube::HandleRenderSurfaceUpdate);
 
     width_ = size;
     height_ = size;
     format_ = format;
+    depth_ = 1;
     multiSample_ = multiSample;
     autoResolve_ = multiSample > 1;
 
@@ -324,9 +325,9 @@ SharedPtr<Image> TextureCube::GetImage(CubeMapFace face) const
     return SharedPtr<Image>(rawImage);
 }
 
-void TextureCube::HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData)
+void TextureCube::HandleRenderSurfaceUpdate()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = context_->m_Renderer.get();
 
     for (auto & rs : renderSurfaces_)
     {

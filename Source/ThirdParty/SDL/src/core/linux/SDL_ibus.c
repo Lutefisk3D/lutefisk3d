@@ -680,5 +680,3 @@ SDL_IBus_PumpEvents(void)
 }
 
 #endif
-
-/* vi: set ts=4 sw=4 expandtab: */

@@ -29,6 +29,7 @@
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Core/CoreEvents.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Core/EventProfiler.h"
 
@@ -60,7 +61,7 @@ DebugHud::DebugHud(Context* context) :
     useRendererStats_(false),
     mode_(DEBUGHUD_SHOW_NONE)
 {
-    UI* ui = GetSubsystem<UI>();
+    UI* ui = context->m_UISystem.get();
     UIElement* uiRoot = ui->GetRoot();
 
     statsText_ = new Text(context_);
@@ -92,7 +93,7 @@ DebugHud::DebugHud(Context* context) :
     eventProfilerText_->SetVisible(false);
     uiRoot->AddChild(eventProfilerText_);
 
-    SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(DebugHud, HandlePostUpdate));
+    g_coreSignals.postUpdate.Connect(this,&DebugHud::HandlePostUpdate);
 }
 
 DebugHud::~DebugHud()
@@ -106,15 +107,15 @@ DebugHud::~DebugHud()
 
 void DebugHud::Update()
 {
-    Graphics* graphics = GetSubsystem<Graphics>();
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Graphics* graphics = context_->m_Graphics.get();
+    Renderer* renderer = context_->m_Renderer.get();
     if (!renderer || !graphics)
         return;
 
     // Ensure UI-elements are not detached
     if (!statsText_->GetParent())
     {
-        UI* ui = GetSubsystem<UI>();
+        UI* ui = context_->m_UISystem.get();
         UIElement* uiRoot = ui->GetRoot();
         uiRoot->AddChild(statsText_);
         uiRoot->AddChild(modeText_);
@@ -171,8 +172,8 @@ void DebugHud::Update()
         modeText_->SetText(mode);
     }
 
-    Profiler* profiler = GetSubsystem<Profiler>();
-    EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
+    Profiler* profiler = context_->m_ProfilerSystem.get();
+    EventProfiler* eventProfiler = context_->m_EventProfilerSystem.get();
     if (profiler)
     {
         if (profilerTimer_.GetMSec(false) >= profilerInterval_)
@@ -194,7 +195,7 @@ void DebugHud::Update()
         }
     }
     if (memoryText_->IsVisible())
-        memoryText_->SetText(GetSubsystem<ResourceCache>()->PrintMemoryUsage());
+        memoryText_->SetText(context_->m_ResourceCache->PrintMemoryUsage());
 }
 
 void DebugHud::SetDefaultStyle(XMLFile* style)
@@ -226,7 +227,7 @@ void DebugHud::SetMode(unsigned mode)
 
 #ifdef LUTEFISK3D_PROFILING
     // Event profiler is created on engine initialization if "EventProfiler" parameter is set
-    EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
+    EventProfiler* eventProfiler = context_->m_EventProfilerSystem.get();
     if (eventProfiler)
         EventProfiler::SetActive((mode & DEBUGHUD_SHOW_EVENTPROFILER) != 0);
 #endif
@@ -293,10 +294,8 @@ void DebugHud::ClearAppStats()
     appStats_.clear();
 }
 
-void DebugHud::HandlePostUpdate(StringHash eventType, VariantMap& eventData)
+void DebugHud::HandlePostUpdate(float ts)
 {
-    using namespace PostUpdate;
-
     Update();
 }
 

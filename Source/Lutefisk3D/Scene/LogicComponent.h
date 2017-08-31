@@ -37,7 +37,7 @@ static const unsigned char USE_FIXEDUPDATE = 0x4;
 static const unsigned char USE_FIXEDPOSTUPDATE = 0x8;
 
 /// Helper base class for user-defined game logic components that hooks up to update events and forwards them to virtual functions similar to ScriptInstance class.
-class URHO3D_API LogicComponent : public Component
+class LUTEFISK3D_EXPORT LogicComponent : public Component
 {
     URHO3D_OBJECT(LogicComponent,Component);
 
@@ -81,9 +81,9 @@ private:
     /// Subscribe/unsubscribe to update events based on current enabled state and update event mask.
     void UpdateEventSubscription();
     /// Handle scene update event.
-    void HandleSceneUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleSceneUpdate(Scene *, float ts);
     /// Handle scene post-update event.
-    void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleScenePostUpdate(Scene *s, float ts);
 #if defined(LUTEFISK3D_PHYSICS) || defined (LUTEFISK3D_2D)
     /// Handle physics pre-step event.
     void HandlePhysicsPreStep(StringHash eventType, VariantMap& eventData);

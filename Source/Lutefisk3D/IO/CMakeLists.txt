@@ -17,6 +17,7 @@ set(INCLUDES
 
     MemoryBuffer.h
     VectorBuffer.h
+    IOEvents.h
 )
 set(SOURCE
     Log.cpp
@@ -24,7 +25,6 @@ set(SOURCE
     Deserializer.cpp
 
     Compression.cpp
-
     File.cpp
     FileSystem.cpp
     FileWatcher.cpp
@@ -33,11 +33,14 @@ set(SOURCE
 
     MemoryBuffer.cpp
     VectorBuffer.cpp
+    IOEvents.cpp
 )
 
-add_library(Lutefisk3D_IO OBJECT ${SOURCE} ${INCLUDES})
+add_library(Lutefisk3D_IO OBJECT ${SOURCE} ${INCLUDES} )
 add_dependencies(Lutefisk3D_IO LZ4)
+SET(ThirdParty_requisites ${ThirdParty_requisites} LZ4 PARENT_SCOPE)
 
 target_include_directories(Lutefisk3D_IO PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_IO PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_IO PROPERTY POSITION_INDEPENDENT_CODE ON)
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/IO )

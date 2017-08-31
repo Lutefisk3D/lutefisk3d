@@ -28,7 +28,7 @@ namespace Urho3D
 {
 class JSONValue;
 /// Placeholder for allowing unregistered components to be loaded & saved along with scenes.
-class URHO3D_API UnknownComponent : public Component
+class LUTEFISK3D_EXPORT UnknownComponent : public Component
 {
 public:
     /// Construct.
@@ -50,9 +50,9 @@ public:
     /// Load from JSON data. Return true if successful.
     virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
     /// Save as binary data. Return true if successful.
-    virtual bool Save(Serializer& dest) const;
+    virtual bool Save(Serializer& dest) const override;
     /// Save as XML data. Return true if successful.
-    virtual bool SaveXML(XMLElement& dest) const;
+    virtual bool SaveXML(XMLElement& dest) const override;
     /// Save as JSON data. Return true if successful.
     virtual bool SaveJSON(JSONValue& dest) const override;
 

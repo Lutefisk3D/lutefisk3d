@@ -58,8 +58,7 @@ Audio::Audio(Context* context) :
 
     // Register Audio library object factories
     RegisterAudioLibrary(context_);
-
-    SubscribeToEvent(E_RENDERUPDATE, URHO3D_HANDLER(Audio, HandleRenderUpdate));
+    g_coreSignals.renderUpdate.Connect(this,&Audio::Update);
 }
 
 Audio::~Audio()
@@ -314,14 +313,6 @@ void Audio::MixOutput(void *dest, unsigned samples)
         samples -= workSamples;
         ((unsigned char*&)dest) += sampleSize_ * SAMPLE_SIZE_MUL * workSamples;
     }
-}
-
-/// Handle render update event.
-void Audio::HandleRenderUpdate(StringHash eventType, VariantMap& eventData)
-{
-    using namespace RenderUpdate;
-
-    Update(eventData[P_TIMESTEP].GetFloat());
 }
 
 /// Stop sound output and release the sound buffer.

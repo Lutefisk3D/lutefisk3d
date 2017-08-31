@@ -50,6 +50,7 @@
 
 #include "Lutefisk3D/Core/StringUtils.h"
 #include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/IO/FileSystem.h"
 #include "Lutefisk3D/IO/Log.h"
 
@@ -231,7 +232,7 @@ void Graphics::Minimize()
 
 void Graphics::BeginDumpShaders(const QString& fileName)
 {
-    shaderPrecache_ = new ShaderPrecache(context_, fileName);
+    shaderPrecache_ = new ShaderPrecache(m_context, fileName);
 }
 
 void Graphics::EndDumpShaders()
@@ -241,7 +242,7 @@ void Graphics::EndDumpShaders()
 
 void Graphics::PrecacheShaders(Deserializer& source)
 {
-    URHO3D_PROFILE(PrecacheShaders);
+    URHO3D_PROFILE_CTX(m_context,PrecacheShaders);
 
     ShaderPrecache::LoadShaders(this, source);
 }

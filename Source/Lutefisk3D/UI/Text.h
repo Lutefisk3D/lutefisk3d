@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 namespace Urho3D
 {
 
-static const int DEFAULT_FONT_SIZE = 12;
+static const float DEFAULT_FONT_SIZE = 12;
 
 class Font;
 class FontFace;
@@ -45,16 +45,16 @@ enum TextEffect
 struct CharLocation
 {
     /// Position.
-    IntVector2 position_;
+    Vector2 position_;
     /// Size.
-    IntVector2 size_;
+    Vector2 size_;
 };
 
 /// Glyph and its location within the text. Used when preparing text rendering.
 struct GlyphLocation
 {
     /// Construct.
-    GlyphLocation(int x, int y, const FontGlyph* glyph) :
+    GlyphLocation(float x, float y, const FontGlyph* glyph) :
         x_(x),
         y_(y),
         glyph_(glyph)
@@ -62,17 +62,17 @@ struct GlyphLocation
     }
 
     /// X coordinate.
-    int x_;
+    float x_;
     /// Y coordinate.
-    int y_;
+    float y_;
     /// Glyph.
     const FontGlyph* glyph_;
 };
 
 /// %Text %UI element.
-class Text : public UIElement
+class LUTEFISK3D_EXPORT Text : public UIElement
 {
-    URHO3D_OBJECT(Text,UIElement);
+    URHO3D_OBJECT(Text,UIElement)
 
     friend class Text3D;
 
@@ -94,11 +94,11 @@ public:
     virtual void OnIndentSet() override;
 
     /// Set font by looking from resource cache by name and font size. Return true if successful.
-    bool SetFont(const QString& fontName, int size = DEFAULT_FONT_SIZE);
+    bool SetFont(const QString& fontName, float size = DEFAULT_FONT_SIZE);
     /// Set font and font size. Return true if successful.
-    bool SetFont(Font* font, int size = DEFAULT_FONT_SIZE);
+    bool SetFont(Font* font, float size = DEFAULT_FONT_SIZE);
     /// Set font size only while retaining the existing font. Return true if successful.
-    bool SetFontSize(int size);
+    bool SetFontSize(float size);
     /// Set text. Text is assumed to be either ASCII or UTF8-encoded.
     void SetText(const QString& text);
     /// Set row alignment.
@@ -132,7 +132,7 @@ public:
     Font* GetFont() const { return font_; }
 
     /// Return font size.
-    int GetFontSize() const { return fontSize_; }
+    float GetFontSize() const { return fontSize_; }
 
     /// Return text.
     const QString& GetText() const { return text_; }
@@ -167,17 +167,17 @@ public:
     /// Return effect color.
     const Color& GetEffectColor() const { return effectColor_; }
     /// Return row height.
-    int GetRowHeight() const { return rowHeight_; }
+    float GetRowHeight() const { return rowHeight_; }
     /// Return number of rows.
     unsigned GetNumRows() const { return rowWidths_.size(); }
     /// Return number of characters.
     unsigned GetNumChars() const { return unicodeText_.size(); }
     /// Return width of row by index.
-    int GetRowWidth(unsigned index) const;
+    float GetRowWidth(unsigned index) const;
     /// Return position of character by index relative to the text element origin.
-    IntVector2 GetCharPosition(unsigned index);
+    Vector2 GetCharPosition(unsigned index);
     /// Return size of character by index.
-    IntVector2 GetCharSize(unsigned index);
+    Vector2 GetCharSize(unsigned index);
 
     /// Set text effect Z bias. Zero by default, adjusted only in 3D mode.
     void SetEffectDepthBias(float bias);
@@ -204,14 +204,14 @@ protected:
     /// Return row start X position.
     int GetRowStartPosition(unsigned rowIndex) const;
     /// Contruct batch.
-    void ConstructBatch(UIBatch& pageBatch, const std::vector<GlyphLocation>& pageGlyphLocation, int dx = 0, int dy = 0, Color* color = nullptr, float depthBias = 0.0f);
+    void ConstructBatch(UIBatch& pageBatch, const std::vector<GlyphLocation>& pageGlyphLocation, float dx = 0, float dy = 0, Color* color = nullptr, float depthBias = 0.0f);
 
     /// Font.
     SharedPtr<Font> font_;
     /// Current face.
     WeakPtr<FontFace> fontFace_;
     /// Font size.
-    int fontSize_;
+    float fontSize_;
     /// UTF-8 encoded text.
     QString text_;
     /// Row alignment.
@@ -243,7 +243,7 @@ protected:
     /// Text effect Z bias.
     float effectDepthBias_;
     /// Row height.
-    int rowHeight_;
+    float rowHeight_;
     /// Text as Unicode characters.
     std::vector<QChar> unicodeText_;
     /// Text modified into printed form.
@@ -251,7 +251,7 @@ protected:
     /// Mapping of printed form back to original char indices.
     std::vector<unsigned> printToText_;
     /// Row widths.
-    std::vector<int> rowWidths_;
+    std::vector<float> rowWidths_;
     /// Glyph locations per each texture in the font.
     std::vector<std::vector<GlyphLocation> > pageGlyphLocations_;
     /// Cached locations of each character in the text.
@@ -261,7 +261,7 @@ protected:
     /// Localization string id storage. Used when autoLocalizable flag is set.
     QString stringId_;
     /// Handle change Language.
-    void HandleChangeLanguage(StringHash eventType, VariantMap& eventData);
+    void HandleChangeLanguage();
     /// UTF8 to Unicode.
     void DecodeToUnicode();
 };

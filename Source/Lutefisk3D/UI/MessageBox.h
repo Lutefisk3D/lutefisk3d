@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/UI/UIEvents.h"
 
 namespace Urho3D
 {
@@ -33,9 +34,9 @@ class UIElement;
 class XMLFile;
 
 /// Message box dialog. Manages its lifetime automatically, so the application does not need to hold a reference to it, and shouldn't attempt to destroy it manually.
-class URHO3D_API MessageBox : public Object
+class LUTEFISK3D_EXPORT MessageBox : public Object,public UIMessageBoxSignals, public jl::SignalObserver
 {
-    URHO3D_OBJECT(MessageBox,Object);
+    URHO3D_OBJECT(MessageBox,Object)
 
 public:
     /// Construct. If layout file is not given, use the default message box layout. If style file is not given, use the default style file from root UI element.
@@ -59,7 +60,8 @@ public:
 
 private:
     /// Handle events that dismiss the message box.
-    void HandleMessageAcknowledged(StringHash eventType, VariantMap& eventData);
+    void HandleMessageAcknowledged(Urho3D::UIElement *elem);
+    void HandleModalChange(UIElement *, bool);
 
     /// UI element containing the whole UI layout. Typically it is a Window element type.
     UIElement* window_;

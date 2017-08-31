@@ -30,7 +30,9 @@ namespace Urho3D
 class Button;
 class Scene;
 class Slider;
-
+class UIElement;
+class SoundSource;
+class Sound;
 }
 
 /// Sound effects example
@@ -39,8 +41,6 @@ class Slider;
 ///     - Controlling sound and music master volume
 class SoundEffects : public Sample
 {
-    URHO3D_OBJECT(SoundEffects,Sample);
-
 public:
     /// Construct.
     SoundEffects(Context* context);
@@ -50,19 +50,6 @@ public:
     /// Setup after engine initialization and before running the main loop.
     virtual void Start() override;
 
-protected:
-    /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
-    virtual QString GetScreenJoystickPatchString() const override { return
-        "<patch>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Button2']]\">"
-        "        <attribute name=\"Is Visible\" value=\"false\" />"
-        "    </add>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Hat0']]\">"
-        "        <attribute name=\"Is Visible\" value=\"false\" />"
-        "    </add>"
-        "</patch>";
-    }
-
 private:
     /// Create the UI and subscribes to UI events.
     void CreateUI();
@@ -71,7 +58,7 @@ private:
     /// Create a horizontal slider with specified text above it.
     Slider* CreateSlider(int x, int y, int xSize, int ySize, const QString& text);
     /// Handle a sound effect button click.
-    void HandlePlaySound(StringHash eventType, VariantMap& eventData);
+    void HandlePlaySound(UIElement *);
     /// Handle "play music" button click.
     void HandlePlayMusic(StringHash eventType, VariantMap& eventData);
     /// Handle "stop music" button click.
@@ -81,7 +68,7 @@ private:
     /// Handle music volume slider change.
     void HandleMusicVolume(StringHash eventType, VariantMap& eventData);
     /// Handle sound effect finished.
-    void HandleSoundFinished(StringHash eventType, VariantMap& eventData);
+    void HandleSoundFinished(Node *soundNode, SoundSource *src, Sound *);
 };
 
 

@@ -21,15 +21,16 @@
 //
 
 #pragma once
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 
 #include <functional>
-#include "Lutefisk3D/Core/Lutefisk3D.h"
 class QString;
+class QStringRef;
 namespace Urho3D
 {
 
 /// 32-bit hash value for a string.
-class URHO3D_API StringHash
+class LUTEFISK3D_EXPORT StringHash
 {
 public:
     /// Construct with zero value.
@@ -56,6 +57,8 @@ public:
     StringHash(const char* str);
     /// Construct from a string case-insensitively.
     StringHash(const QString& str);
+    /// Construct from a QString ref case-insensitively.
+    StringHash(const QStringRef& str);
 
     /// Assign from another hash.
     StringHash& operator = (const StringHash& rhs)

@@ -27,9 +27,5 @@ set(INCLUDES
     hull.h
 )
 
-add_library(StanHull OBJECT ${SOURCE_FILES} ${INCLUDES})
-install (FILES ${INCLUDES} DESTINATION include/ThirdParty/StanHull)
-
-######################### Add component to the project's list
-list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:StanHull>)
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)
+add_library(StanHull STATIC ${SOURCE_FILES} ${INCLUDES})
+set_property(TARGET StanHull PROPERTY POSITION_INDEPENDENT_CODE ON)

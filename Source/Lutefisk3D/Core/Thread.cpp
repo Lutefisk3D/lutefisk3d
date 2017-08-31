@@ -32,14 +32,14 @@ namespace Urho3D
 {
 
 #ifdef _WIN32
-DWORD WINAPI ThreadFunctionStatic(void *data)
+static DWORD WINAPI ThreadFunctionStatic(void *data)
 {
     Thread *thread = static_cast<Thread *>(data);
     thread->ThreadFunction();
     return 0;
 }
 #else
-void *ThreadFunctionStatic(void *data)
+static void *ThreadFunctionStatic(void *data)
 {
     Thread *thread = static_cast<Thread *>(data);
     thread->ThreadFunction();
@@ -58,7 +58,7 @@ Thread::~Thread()
 {
     Stop();
 }
-
+/// Start running the thread. Return true if successful, or false if already running or if can not create the thread.
 bool Thread::Run()
 {
     // Check if already running
@@ -77,7 +77,7 @@ bool Thread::Run()
 #endif
     return handle_ != nullptr;
 }
-
+/// Set the running flag to false and wait for the thread to finish.
 void Thread::Stop()
 {
     // Check if already stopped
@@ -96,25 +96,24 @@ void Thread::Stop()
 #endif
     handle_ = nullptr;
 }
-
+/// Set thread priority. The thread must have been started first.
 void Thread::SetPriority(int priority)
 {
 #ifdef _WIN32
     if (handle_)
         SetThreadPriority((HANDLE)handle_, priority);
-#endif
-#if defined(__linux__)
+#elif defined(__linux__)
     pthread_t *thread = (pthread_t *)handle_;
     if (thread)
         pthread_setschedprio(*thread, priority);
 #endif
 }
-
+/// Set the current thread as the main thread.
 void Thread::SetMainThread()
 {
     mainThreadID = GetCurrentThreadID();
 }
-
+/// Return the current thread's ID.
 ThreadID Thread::GetCurrentThreadID()
 {
 #ifdef _WIN32
@@ -123,7 +122,7 @@ ThreadID Thread::GetCurrentThreadID()
     return pthread_self();
 #endif
 }
-
+/// Return whether is executing in the main thread.
 bool Thread::IsMainThread()
 {
     return GetCurrentThreadID() == mainThreadID;

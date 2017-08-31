@@ -23,12 +23,12 @@
 #include "Lutefisk3D/Graphics/Graphics.h"
 #include "Lutefisk3D/Graphics/Shader.h"
 #include "Lutefisk3D/Graphics/ShaderVariation.h"
-
+#include "Lutefisk3D/Core/Context.h"
 namespace Urho3D
 {
 
 ShaderVariation::ShaderVariation(Shader* owner, ShaderType type) :
-    GPUObject(owner->GetSubsystem<Graphics>()),
+    GPUObject(owner->GetContext()->m_Graphics.get()),
     owner_(owner),
     type_(type),
     elementHash_(0)

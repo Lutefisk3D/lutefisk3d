@@ -31,7 +31,7 @@ class BorderImage;
 class ScrollBar;
 
 /// Scrollable %UI element for showing a (possibly large) child element.
-class ScrollView : public UIElement
+class LUTEFISK3D_EXPORT ScrollView : public UIElement
 {
     URHO3D_OBJECT(ScrollView,UIElement);
 
@@ -185,7 +185,9 @@ private:
     /// Handle content element resized.
     void HandleElementResized(StringHash eventType, VariantMap& eventData);
     /// Handle touch move event for scrolling.
-    void HandleTouchMove(StringHash eventType, VariantMap& eventData);
+    void HandleTouchMove(unsigned, int, int, int _dX, int _dY, float);
+    void HandleTouchBegin(unsigned, int X, int Y, float);
+    void HandleTouchEnd(unsigned, int X, int Y);
     /// Handle the scroll smoothing.
     void ScrollSmooth(float timeStep);
 };

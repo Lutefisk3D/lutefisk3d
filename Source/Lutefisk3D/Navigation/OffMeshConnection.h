@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// A link between otherwise unconnected regions of the navigation mesh.
-class URHO3D_API OffMeshConnection : public Component
+class LUTEFISK3D_EXPORT OffMeshConnection : public Component
 {
     URHO3D_OBJECT(OffMeshConnection,Component);
 
@@ -41,11 +41,11 @@ public:
     static void RegisterObject(Context* context);
 
     /// Handle attribute write access.
-    virtual void OnSetAttribute(const AttributeInfo& attr, const Variant& src);
+    virtual void OnSetAttribute(const AttributeInfo& attr, const Variant& src) override;
     /// Apply attribute changes that can not be applied immediately. Called after scene load or a network update.
-    virtual void ApplyAttributes();
+    virtual void ApplyAttributes() override;
     /// Visualize the component as debug geometry.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest);
+    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
     /// Set endpoint node.
     void SetEndPoint(Node* node);

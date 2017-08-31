@@ -82,7 +82,7 @@ Cursor::Cursor(Context* context) :
         shapeInfos_[shapeNames[i]] = CursorShapeInfo(i);
 
     // Subscribe to OS mouse cursor visibility changes to be able to reapply the cursor shape
-    SubscribeToEvent(E_MOUSEVISIBLECHANGED, URHO3D_HANDLER(Cursor, HandleMouseVisibleChanged));
+    g_inputSignals.mouseVisibleChanged.Connect(this,&Cursor::HandleMouseVisibleChanged);
 }
 
 Cursor::~Cursor()
@@ -139,7 +139,7 @@ void Cursor::DefineShape(const QString& shape, Image* image, const IntRect& imag
     if (!image)
         return;
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
 
     if (!shapeInfos_.contains(shape))
         shapeInfos_[shape] = CursorShapeInfo();
@@ -229,7 +229,7 @@ void Cursor::SetShapesAttr(const VariantVector& value)
             IntRect imageRect = shapeVector[2].GetIntRect();
             IntVector2 hotSpot = shapeVector[3].GetIntVector2();
 
-            DefineShape(shape, GetSubsystem<ResourceCache>()->GetResource<Image>(ref.name_), imageRect, hotSpot);
+            DefineShape(shape, context_->m_ResourceCache->GetResource<Image>(ref.name_), imageRect, hotSpot);
         }
     }
 }
@@ -259,7 +259,7 @@ VariantVector Cursor::GetShapesAttr() const
 void Cursor::ApplyOSCursorShape()
 {
     // Mobile platforms do not support applying OS cursor shapes: comment out to avoid log error messages
-    if (!osShapeDirty_ || !GetSubsystem<Input>()->IsMouseVisible() || GetSubsystem<UI>()->GetCursor() != this)
+    if (!osShapeDirty_ || !context_->m_InputSystem->IsMouseVisible() || context_->m_UISystem->GetCursor() != this)
         return;
 
     CursorShapeInfo& info = shapeInfos_[shape_];
@@ -304,7 +304,7 @@ void Cursor::ApplyOSCursorShape()
     osShapeDirty_ = false;
 }
 
-void Cursor::HandleMouseVisibleChanged(StringHash eventType, VariantMap& eventData)
+void Cursor::HandleMouseVisibleChanged(bool visible)
 {
     ApplyOSCursorShape();
 }

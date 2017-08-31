@@ -103,7 +103,7 @@ void AnimationTrack::GetKeyFrameIndex(float time, unsigned& index) const
 }
 
 Animation::Animation(Context* context) :
-    Resource(context),
+    ResourceWithMetadata(context),
     length_(0.f)
 {
 }
@@ -160,24 +160,21 @@ bool Animation::BeginLoad(Deserializer& source)
     }
 
     // Optionally read triggers from an XML file
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     QString xmlName = ReplaceExtension(GetName(), ".xml");
 
     SharedPtr<XMLFile> file(cache->GetTempResource<XMLFile>(xmlName, false));
     if (file)
     {
         XMLElement rootElem = file->GetRoot();
-        XMLElement triggerElem = rootElem.GetChild("trigger");
-        while (triggerElem)
+        for (XMLElement triggerElem = rootElem.GetChild("trigger"); triggerElem; triggerElem = triggerElem.GetNext("trigger"))
         {
             if (triggerElem.HasAttribute("normalizedtime"))
                 AddTrigger(triggerElem.GetFloat("normalizedtime"), true, triggerElem.GetVariant());
             else if (triggerElem.HasAttribute("time"))
                 AddTrigger(triggerElem.GetFloat("time"), false, triggerElem.GetVariant());
-
-            triggerElem = triggerElem.GetNext("trigger");
         }
-
+        LoadMetadataFromXML(rootElem);
         memoryUse += triggers_.size() * sizeof(AnimationTriggerPoint);
         SetMemoryUse(memoryUse);
         return true;
@@ -190,7 +187,7 @@ bool Animation::BeginLoad(Deserializer& source)
     if (jsonFile)
     {
         const JSONValue& rootVal = jsonFile->GetRoot();
-        JSONArray triggerArray = rootVal.Get("triggers").GetArray();
+        const JSONArray &triggerArray(rootVal.Get("triggers").GetArray());
 
         for (unsigned i = 0; i < triggerArray.size(); i++)
         {
@@ -205,7 +202,8 @@ bool Animation::BeginLoad(Deserializer& source)
                     AddTrigger(timeVal.GetFloat(), false, triggerValue.GetVariant());
             }
         }
-
+        const JSONArray& metadataArray(rootVal.Get("metadata").GetArray());
+        LoadMetadataFromJSON(metadataArray);
         memoryUse += triggers_.size() * sizeof(AnimationTriggerPoint);
         SetMemoryUse(memoryUse);
         return true;
@@ -246,7 +244,7 @@ bool Animation::Save(Serializer& dest) const
     }
 
     // If triggers have been defined, write an XML file for them
-    if (triggers_.size())
+    if (!triggers_.empty() || HasMetadata())
     {
         File* destFile = dynamic_cast<File*>(&dest);
         if (destFile)
@@ -262,7 +260,7 @@ bool Animation::Save(Serializer& dest) const
                 triggerElem.SetFloat("time", triggers_[i].time_);
                 triggerElem.SetVariant(triggers_[i].data_);
             }
-
+            SaveMetadataToXML(rootElem);
             File xmlFile(context_, xmlName, FILE_WRITE);
             xml->Save(xmlFile);
         }
@@ -366,6 +364,7 @@ SharedPtr<Animation> Animation::Clone(const QString& cloneName) const
     ret->length_ = length_;
     ret->tracks_ = tracks_;
     ret->triggers_ = triggers_;
+    ret->CopyMetadata(*this);
     ret->SetMemoryUse(GetMemoryUse());
 
     return ret;

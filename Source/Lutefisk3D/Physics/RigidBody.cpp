@@ -19,18 +19,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "RigidBody.h"
 
-#include "Lutefisk3D/Physics/CollisionShape.h"
-#include "Lutefisk3D/Physics/Constraint.h"
+#include "CollisionShape.h"
+#include "Constraint.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/MemoryBuffer.h"
-#include "Lutefisk3D/Physics/PhysicsUtils.h"
-#include "Lutefisk3D/Physics/PhysicsWorld.h"
+#include "Lutefisk3D/IO/File.h"
+#include "PhysicsUtils.h"
+#include "PhysicsWorld.h"
 #include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/BackgroundLoader.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
-#include "Lutefisk3D/Resource/ResourceEvents.h"
-#include "Lutefisk3D/Physics/RigidBody.h"
 #include "Lutefisk3D/Scene/Scene.h"
 #include "Lutefisk3D/Scene/SceneEvents.h"
 #include "Lutefisk3D/Scene/SmoothedTransform.h"
@@ -776,6 +777,7 @@ void RigidBody::UpdateMass()
                 !ToQuaternion(childTransform.getRotation()).Equals(Quaternion::IDENTITY))
             useCompound = true;
     }
+    btCollisionShape* oldCollisionShape = body_->getCollisionShape();
     body_->setCollisionShape(useCompound ? shiftedCompoundShape_.get() : shiftedCompoundShape_->getChildShape(0));
 
     // If we have one shape and this is a triangle mesh, we use a custom material callback in order to adjust internal edges
@@ -802,6 +804,13 @@ void RigidBody::UpdateMass()
     {
         for (Constraint* elem : constraints_)
             elem->ApplyFrames();
+    }
+    // Readd body to world to reset Bullet collision cache if collision shape was changed (issue #2064)
+    if (inWorld_ && body_->getCollisionShape() != oldCollisionShape && physicsWorld_)
+    {
+        btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
+        world->removeRigidBody(body_.get());
+        world->addRigidBody(body_.get(), (short)collisionLayer_, (short)collisionMask_);
     }
 }
 
@@ -959,8 +968,8 @@ void RigidBody::AddBodyToWorld()
         smoothedTransform_ = GetComponent<SmoothedTransform>();
         if (smoothedTransform_)
         {
-            SubscribeToEvent(smoothedTransform_, E_TARGETPOSITION, URHO3D_HANDLER(RigidBody, HandleTargetPosition));
-            SubscribeToEvent(smoothedTransform_, E_TARGETROTATION, URHO3D_HANDLER(RigidBody, HandleTargetRotation));
+            smoothedTransform_->targetPositionChanged.Connect(this,&RigidBody::HandleTargetPosition);
+            smoothedTransform_->targetRotationChanged.Connect(this,&RigidBody::HandleTargetRotation);
         }
 
         // Check if CollisionShapes already exist in the node and add them to the compound shape.
@@ -1021,14 +1030,14 @@ void RigidBody::RemoveBodyFromWorld()
     }
 }
 
-void RigidBody::HandleTargetPosition(StringHash eventType, VariantMap& eventData)
+void RigidBody::HandleTargetPosition()
 {
     // Copy the smoothing target position to the rigid body
     if (!physicsWorld_ || !physicsWorld_->IsApplyingTransforms())
         SetPosition(static_cast<SmoothedTransform*>(GetEventSender())->GetTargetWorldPosition());
 }
 
-void RigidBody::HandleTargetRotation(StringHash eventType, VariantMap& eventData)
+void RigidBody::HandleTargetRotation()
 {
     // Copy the smoothing target rotation to the rigid body
     if (!physicsWorld_ || !physicsWorld_->IsApplyingTransforms())

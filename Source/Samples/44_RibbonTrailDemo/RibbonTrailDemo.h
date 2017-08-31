@@ -37,8 +37,6 @@ class AnimationController;
 /// This sample demonstrates how to use both trail types of RibbonTrail component.
 class RibbonTrailDemo : public Sample
 {
-    URHO3D_OBJECT(RibbonTrailDemo, Sample);
-
 public:
     /// Construct.
     RibbonTrailDemo(Context* context);
@@ -74,6 +72,6 @@ private:
     /// Subscribe to application-wide logic update events.
     void SubscribeToEvents();
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
 
 };

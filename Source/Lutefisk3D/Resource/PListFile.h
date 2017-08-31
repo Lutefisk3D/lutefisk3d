@@ -49,7 +49,7 @@ typedef std::vector<PListValue> PListValueVector;
 
 
 /// PList value.
-class URHO3D_API PListValue
+class LUTEFISK3D_EXPORT PListValue
 {
 public:
     /// Construct.
@@ -141,7 +141,7 @@ public:
 };
 
 /// Property list (plist).
-class URHO3D_API PListFile : public Resource
+class LUTEFISK3D_EXPORT PListFile : public Resource
 {
     URHO3D_OBJECT(PListFile,Resource)
 
@@ -154,7 +154,8 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source);
+    bool BeginLoad(Deserializer& source) override;
+    bool Save(Serializer& dest) const override;
 
     /// Return root.
     const PListValueMap& GetRoot() const { return root_; }

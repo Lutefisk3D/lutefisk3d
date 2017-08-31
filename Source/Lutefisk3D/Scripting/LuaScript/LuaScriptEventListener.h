@@ -28,7 +28,7 @@ namespace Urho3D
 {
 
 /// Lua script event listener.
-class URHO3D_API LuaScriptEventListener
+class LUTEFISK3D_EXPORT LuaScriptEventListener
 {
 public:
     /// Destruct.

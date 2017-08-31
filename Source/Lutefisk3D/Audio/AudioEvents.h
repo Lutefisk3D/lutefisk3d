@@ -23,16 +23,17 @@
 #pragma once
 
 #include "../Core/Object.h"
+#include "jlsignal/Signal.h"
 
 namespace Urho3D
 {
+class Node;
+class SoundSource;
+class Sound;
 
-/// Sound playback finished. Sent through the SoundSource's Node.
-URHO3D_EVENT(E_SOUNDFINISHED, SoundFinished)
-{
-    URHO3D_PARAM(P_NODE, Node);                     // Node pointer
-    URHO3D_PARAM(P_SOUNDSOURCE, SoundSource);       // SoundSource pointer
-    URHO3D_PARAM(P_SOUND, Sound);                   // Sound pointer
-}
+struct SoundSignals {
+    /// Sound playback finished. Sent through the SoundSource's Node.
+    jl::Signal<Node *,SoundSource *,SharedPtr<Sound>> soundFinished;
+};
 
 }

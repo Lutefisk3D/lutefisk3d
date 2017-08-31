@@ -35,7 +35,7 @@ class Drawable;
 class Node;
 
 /// Base class for octree queries.
-class URHO3D_API OctreeQuery
+class LUTEFISK3D_EXPORT OctreeQuery
 {
 public:
     /// Construct with query parameters.
@@ -71,7 +71,7 @@ private:
 };
 
 /// Point octree query.
-class URHO3D_API PointOctreeQuery : public OctreeQuery
+class LUTEFISK3D_EXPORT PointOctreeQuery : public OctreeQuery
 {
 public:
     /// Construct with point and query parameters.
@@ -92,7 +92,7 @@ public:
 };
 
 /// %Sphere octree query.
-class URHO3D_API SphereOctreeQuery : public OctreeQuery
+class LUTEFISK3D_EXPORT SphereOctreeQuery : public OctreeQuery
 {
 public:
     /// Construct with sphere and query parameters.
@@ -113,7 +113,7 @@ public:
 };
 
 /// Bounding box octree query.
-class URHO3D_API BoxOctreeQuery : public OctreeQuery
+class LUTEFISK3D_EXPORT BoxOctreeQuery : public OctreeQuery
 {
 public:
     /// Construct with bounding box and query parameters.
@@ -134,7 +134,7 @@ public:
 };
 
 /// %Frustum octree query.
-class URHO3D_API FrustumOctreeQuery : public OctreeQuery
+class LUTEFISK3D_EXPORT FrustumOctreeQuery : public OctreeQuery
 {
 public:
     /// Construct with frustum and query parameters.
@@ -155,7 +155,7 @@ public:
 };
 
 /// General octree query result. Used for Lua bindings only.
-struct URHO3D_API OctreeQueryResult
+struct LUTEFISK3D_EXPORT OctreeQueryResult
 {
     /// Construct with defaults.
     OctreeQueryResult() :
@@ -183,7 +183,7 @@ enum RayQueryLevel
 };
 
 /// Raycast result.
-struct URHO3D_API RayQueryResult
+struct LUTEFISK3D_EXPORT RayQueryResult
 {
     /// Test for inequality, added to prevent GCC from complaining.
     bool operator !=(const RayQueryResult& rhs) const
@@ -214,7 +214,7 @@ struct URHO3D_API RayQueryResult
 };
 
 /// Raycast octree query.
-class URHO3D_API RayOctreeQuery
+class LUTEFISK3D_EXPORT RayOctreeQuery
 {
 public:
     /// Construct with ray and query parameters.
@@ -249,7 +249,7 @@ private:
     RayOctreeQuery& operator = (const RayOctreeQuery& rhs);
 };
 
-class URHO3D_API AllContentOctreeQuery : public OctreeQuery
+class LUTEFISK3D_EXPORT AllContentOctreeQuery : public OctreeQuery
 {
 public:
     /// Construct.

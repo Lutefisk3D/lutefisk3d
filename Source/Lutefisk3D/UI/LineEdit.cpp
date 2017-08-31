@@ -58,10 +58,9 @@ LineEdit::LineEdit(Context* context) :
     cursor_ = CreateChild<BorderImage>("LE_Cursor");
     cursor_->SetInternal(true);
     cursor_->SetPriority(1); // Show over text
-
-    SubscribeToEvent(this, E_FOCUSED, URHO3D_HANDLER(LineEdit, HandleFocused));
-    SubscribeToEvent(this, E_DEFOCUSED, URHO3D_HANDLER(LineEdit, HandleDefocused));
-    SubscribeToEvent(this, E_LAYOUTUPDATED, URHO3D_HANDLER(LineEdit, HandleLayoutUpdated));
+    focused.Connect(this,&LineEdit::HandleFocused);
+    defocused.Connect(this,&LineEdit::HandleDefocused);
+    layoutUpdated.Connect(this,&LineEdit::HandleLayoutUpdated);
 }
 
 LineEdit::~LineEdit()
@@ -212,7 +211,7 @@ void LineEdit::OnKey(int key, int buttons, int qualifiers)
             unsigned length = text_->GetSelectionLength();
 
             if (text_->GetSelectionLength())
-                GetSubsystem<UI>()->SetClipboardText(line_.mid(start, length));
+                context_->m_UISystem->SetClipboardText(line_.mid(start, length));
 
             if (key == KEY_X && editable_)
             {
@@ -230,7 +229,7 @@ void LineEdit::OnKey(int key, int buttons, int qualifiers)
     case KEY_V:
         if (editable_ && textCopyable_ && qualifiers & QUAL_CTRL)
         {
-            const QString& clipBoard = GetSubsystem<UI>()->GetClipboardText();
+            const QString& clipBoard = context_->m_UISystem->GetClipboardText();
             if (!clipBoard.isEmpty())
             {
                 // Remove selected text first
@@ -398,15 +397,9 @@ void LineEdit::OnKey(int key, int buttons, int qualifiers)
     case KEY_KP_ENTER:
         {
             // If using the on-screen keyboard, defocus this element to hide it now
-            if (GetSubsystem<UI>()->GetUseScreenKeyboard() && HasFocus())
+            if (context_->m_UISystem->GetUseScreenKeyboard() && HasFocus())
                 SetFocus(false);
-
-            using namespace TextFinished;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_ELEMENT] = this;
-            eventData[P_TEXT] = line_;
-            SendEvent(E_TEXTFINISHED, eventData);
+            textFinished.Emit(this,line_,0.0f);
             return;
         }
     default: break;
@@ -625,28 +618,28 @@ unsigned LineEdit::GetCharIndex(const IntVector2& position)
     return M_MAX_UNSIGNED;
 }
 
-void LineEdit::HandleFocused(StringHash /*eventType*/, VariantMap& eventData)
+void LineEdit::HandleFocused(UIElement *el,bool byKey)
 {
-    if (eventData[Focused::P_BYKEY].GetBool())
+    if (byKey)
     {
         cursorPosition_ = line_.length();
         text_->SetSelection(0);
     }
     UpdateCursor();
 
-    if (GetSubsystem<UI>()->GetUseScreenKeyboard())
-        GetSubsystem<Input>()->SetScreenKeyboardVisible(true);
+    if (context_->m_UISystem->GetUseScreenKeyboard())
+        context_->m_InputSystem->SetScreenKeyboardVisible(true);
 }
 
-void LineEdit::HandleDefocused(StringHash eventType, VariantMap& eventData)
+void LineEdit::HandleDefocused(UIElement *)
 {
     text_->ClearSelection();
 
-    if (GetSubsystem<UI>()->GetUseScreenKeyboard())
-        GetSubsystem<Input>()->SetScreenKeyboardVisible(false);
+    if (context_->m_UISystem->GetUseScreenKeyboard())
+        context_->m_InputSystem->SetScreenKeyboardVisible(false);
 }
 
-void LineEdit::HandleLayoutUpdated(StringHash eventType, VariantMap& eventData)
+void LineEdit::HandleLayoutUpdated(UIElement *)
 {
     UpdateCursor();
 }

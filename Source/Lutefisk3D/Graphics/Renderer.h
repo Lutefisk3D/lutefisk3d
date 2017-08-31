@@ -28,6 +28,8 @@
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Graphics/Viewport.h"
 #include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/DataHandle.h"
+#include "jlsignal/SignalBase.h"
 #include <QtCore/QSet>
 namespace Urho3D
 {
@@ -43,6 +45,7 @@ class Graphics;
 class RenderPath;
 class RenderSurface;
 class ResourceCache;
+class Scene;
 class Skeleton;
 class OcclusionBuffer;
 class Technique;
@@ -52,6 +55,7 @@ class TextureCube;
 class View;
 class Zone;
 struct BatchQueue;
+using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 
 static const int SHADOW_MIN_PIXELS = 64;
 static const int INSTANCING_BUFFER_DEFAULT_SIZE = 1024;
@@ -169,12 +173,10 @@ enum DeferredLightPSVariation
 };
 
 /// High-level rendering subsystem. Manages drawing of 3D views.
-class URHO3D_API Renderer : public Object
+class LUTEFISK3D_EXPORT Renderer : public RefCounted, public jl::SignalObserver
 {
-    URHO3D_OBJECT(Renderer,Object);
-
 public:
-    typedef void(Object::*ShadowMapFilter)(View* view, Texture2D* shadowMap,float blurScale);
+    typedef void(RefCounted::*ShadowMapFilter)(View* view, Texture2D* shadowMap,float blurScale);
     /// Construct.
     Renderer(Context* context);
     /// Destruct.
@@ -215,7 +217,7 @@ public:
     /// Set VSM shadow map multisampling level. Default 1 (no multisampling.)
     void SetVSMMultiSample(int multiSample);
     /// Set post processing filter to the shadow map
-    void SetShadowMapFilter(Object* instance, ShadowMapFilter functionPtr);
+    void SetShadowMapFilter(RefCounted* instance, ShadowMapFilter functionPtr);
     /// Set reuse of shadow maps. Default is true. If disabled, also transparent geometry can be shadowed.
     void SetReuseShadowMaps(bool enable);
     /// Set maximum number of shadow maps created for one resolution. Only has effect if reuse of shadow maps is disabled.
@@ -252,6 +254,8 @@ public:
     unsigned GetNumViewports() const { return viewports_.size(); }
     /// Return backbuffer viewport by index.
     Viewport* GetViewport(unsigned index) const;
+    /// Return nth backbuffer viewport associated to a scene. Index 0 returns the first.
+    Viewport* GetViewportForScene(Scene* scene, unsigned index) const;
     /// Return default renderpath.
     RenderPath* GetDefaultRenderPath() const;
 
@@ -378,10 +382,6 @@ public:
     void SetCullMode(CullMode mode, const Urho3D::Camera *camera);
     /// Ensure sufficient size of the instancing vertex buffer. Return true if successful.
     bool ResizeInstancingBuffer(unsigned numInstances);
-    /// Save the screen buffer allocation status. Called by View.
-    void SaveScreenBufferAllocations();
-    /// Restore the screen buffer allocation status. Called by View.
-    void RestoreScreenBufferAllocations();
     /// Optimize a light by scissor rectangle.
     void OptimizeLightByScissor(Light* light, Camera* camera);
     /// Optimize a light by marking it to the stencil buffer and setting a stencil test.
@@ -425,12 +425,13 @@ private:
     /// Find variations for shadow shaders
     QString GetShadowVariations() const;
     /// Handle screen mode event.
-    void HandleScreenMode(StringHash eventType, VariantMap& eventData);
+    void HandleScreenMode(int, int, bool, bool, bool, bool, int, int);
     /// Handle render update event.
-    void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleRenderUpdate(float ts);
     /// Blur the shadow map.
     void BlurShadowMap(View* view, Texture2D* shadowMap, float blurScale);
 
+    Context *m_context;
     /// Graphics subsystem.
     WeakPtr<Graphics> graphics_;
     /// Default renderpath.
@@ -468,7 +469,7 @@ private:
     /// Shadow map allocations by resolution.
     HashMap<int, std::vector<Light*> > shadowMapAllocations_;
     /// Instance of shadow map filter
-    Object* shadowMapFilterInstance_;
+    RefCounted* shadowMapFilterInstance_;
     /// Function pointer of shadow map filter
     ShadowMapFilter shadowMapFilter_;
     /// Screen buffers by resolution and format.

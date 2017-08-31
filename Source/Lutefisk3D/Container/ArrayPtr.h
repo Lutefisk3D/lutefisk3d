@@ -26,7 +26,7 @@
 
 #include <cstddef>
 #include <cassert>
-
+#include <memory>
 namespace Urho3D
 {
 
@@ -47,6 +47,13 @@ public:
         refCount_(rhs.refCount_)
     {
         AddRef();
+    }
+    SharedArrayPtr(SharedArrayPtr<T>&& rhs) :
+        ptr_(std::move(rhs.ptr_)),
+        refCount_(std::move(rhs.refCount_))
+    {
+        rhs.ptr_=nullptr;
+        rhs.refCount_=nullptr;
     }
 
     /// Construct from a raw pointer.
@@ -76,7 +83,17 @@ public:
 
         return *this;
     }
+    SharedArrayPtr<T>& operator = (SharedArrayPtr<T>&& rhs)
+    {
+        if (ptr_ == rhs.ptr_)
+            return *this;
 
+        ptr_ = std::move(rhs.ptr_);
+        refCount_ = std::move(rhs.refCount_);
+        rhs.ptr_ = nullptr;
+        rhs.refCount_ = nullptr;
+        return *this;
+    }
     /// Assign from a raw pointer.
     SharedArrayPtr<T>& operator = (T* ptr)
     {

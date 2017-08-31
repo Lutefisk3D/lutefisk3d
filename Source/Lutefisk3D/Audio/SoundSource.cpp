@@ -141,6 +141,30 @@ void SoundSource::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Play Position", GetPositionAttr, SetPositionAttr, int, 0, AM_FILE);
 }
 
+void SoundSource::Seek(float seekTime)
+{
+    // ignore buffered sound stream
+    if (!audio_ || !sound_ || (soundStream_ && !sound_->IsCompressed()))
+        return;
+
+    // set to valid range
+    seekTime = Clamp(seekTime, 0.0f, sound_->GetLength());
+
+    if (!soundStream_)
+    {
+        // raw or wav format
+        SetPositionAttr((int)(seekTime * (sound_->GetSampleSize() * sound_->GetFrequency())));
+    }
+    else
+    {
+        // ogg format
+        if (soundStream_->Seek(unsigned(seekTime * soundStream_->GetFrequency())))
+        {
+            timePosition_ = seekTime;
+        }
+    }
+}
+
 void SoundSource::Play(Sound* sound)
 {
     if (!audio_)
@@ -319,13 +343,8 @@ void SoundSource::Update(float timeStep)
         // Make a weak pointer to self to check for destruction during event handling
         WeakPtr<SoundSource> self(this);
 
-        using namespace SoundFinished;
-
-        VariantMap& eventData = context_->GetEventDataMap();
-        eventData[P_NODE] = node_;
-        eventData[P_SOUNDSOURCE] = this;
-        eventData[P_SOUND] = sound_;
-        node_->SendEvent(E_SOUNDFINISHED, eventData);
+        soundFinished.Emit(node_,this,sound_);
+        //TODO: verify same semantics as original : node_->SendEvent(E_SOUNDFINISHED, eventData);
 
         if (self.Expired())
             return;
@@ -435,7 +454,7 @@ void SoundSource::UpdateMasterGain()
 
 void SoundSource::SetSoundAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
     Sound* newSound = cache->GetResource<Sound>(value.name_);
     if (IsPlaying())
         Play(newSound);

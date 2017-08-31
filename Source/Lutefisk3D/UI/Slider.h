@@ -28,9 +28,9 @@ namespace Urho3D
 {
 
 /// %Slider bar %UI element.
-class Slider : public BorderImage
+class LUTEFISK3D_EXPORT Slider : public BorderImage, public UISliderSignals
 {
-    URHO3D_OBJECT(Slider,BorderImage);
+    URHO3D_OBJECT(Slider,BorderImage)
 
 public:
     /// Construct.

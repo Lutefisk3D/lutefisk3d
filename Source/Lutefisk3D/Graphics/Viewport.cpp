@@ -30,6 +30,7 @@
 #include "Lutefisk3D/Scene/Scene.h"
 #include "View.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
+#include "Lutefisk3D/Core/Context.h"
 
 
 
@@ -64,6 +65,10 @@ Viewport::Viewport(Context* context, Scene* scene, Camera* camera, const IntRect
     SetRenderPath(renderPath);
 }
 
+Viewport::~Viewport()
+{
+}
+
 void Viewport::SetScene(Scene* scene)
 {
     scene_ = scene;
@@ -95,7 +100,7 @@ void Viewport::SetRenderPath(RenderPath* renderPath)
         renderPath_ = renderPath;
     else
     {
-        Renderer* renderer = GetSubsystem<Renderer>();
+        Renderer* renderer = context_->m_Renderer.get();
         if (renderer)
             renderPath_ = renderer->GetDefaultRenderPath();
     }
@@ -143,7 +148,7 @@ Ray Viewport::GetScreenRay(int x, int y) const
 
     if (rect_ == IntRect::ZERO)
     {
-        Graphics* graphics = GetSubsystem<Graphics>();
+        Graphics* graphics = context_->m_Graphics.get();
         screenX = (float)x / (float)graphics->GetWidth();
         screenY = (float)y / (float)graphics->GetHeight();
     }
@@ -168,7 +173,7 @@ IntVector2 Viewport::WorldToScreenPoint(const Vector3& worldPos) const
     if (rect_ == IntRect::ZERO)
     {
         /// \todo This is incorrect if the viewport is used on a texture rendertarget instead of the backbuffer, as it may have different dimensions.
-        Graphics* graphics = GetSubsystem<Graphics>();
+        Graphics* graphics = context_->m_Graphics.get();
         x = (int)(screenPoint.x_ * graphics->GetWidth());
         y = (int)(screenPoint.y_ * graphics->GetHeight());
     }
@@ -192,7 +197,7 @@ Vector3 Viewport::ScreenToWorldPoint(int x, int y, float depth) const
     if (rect_ == IntRect::ZERO)
     {
         /// \todo This is incorrect if the viewport is used on a texture rendertarget instead of the backbuffer, as it may have different dimensions.
-        Graphics* graphics = GetSubsystem<Graphics>();
+        Graphics* graphics = context_->m_Graphics.get();
         screenX = (float)x / (float)graphics->GetWidth();
         screenY = (float)y / (float)graphics->GetHeight();
     }

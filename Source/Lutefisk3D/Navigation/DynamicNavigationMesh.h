@@ -38,7 +38,7 @@ namespace Urho3D
 class OffMeshConnection;
 class Obstacle;
 
-class URHO3D_API DynamicNavigationMesh : public NavigationMesh
+class LUTEFISK3D_EXPORT DynamicNavigationMesh : public NavigationMesh
 {
     URHO3D_OBJECT(DynamicNavigationMesh,NavigationMesh)
     friend class Obstacle;
@@ -53,10 +53,24 @@ public:
     /// Register with engine context.
     static void RegisterObject(Context*);
 
+    /// Allocate the navigation mesh without building any tiles. Bounding box is not padded. Return true if successful.
+    virtual bool Allocate(const BoundingBox& boundingBox, unsigned maxTiles) override;
     /// Build/rebuild the entire navigation mesh.
     virtual bool Build() override;
     /// Build/rebuild a portion of the navigation mesh.
     virtual bool Build(const BoundingBox& boundingBox) override;
+    /// Rebuild part of the navigation mesh in the rectangular area. Return true if successful.
+    virtual bool Build(const IntVector2& from, const IntVector2& to) override;
+    /// Return tile data.
+    virtual std::vector<unsigned char> GetTileData(const IntVector2& tile) const override;
+    /// Return whether the Obstacle is touching the given tile.
+    bool IsObstacleInTile(Obstacle* obstacle, const IntVector2& tile) const;
+    /// Add tile to navigation mesh.
+    virtual bool AddTile(const std::vector<unsigned char>& tileData) override;
+    /// Remove tile from navigation mesh.
+    virtual void RemoveTile(const IntVector2& tile) override;
+    /// Remove all tiles from navigation mesh.
+    virtual void RemoveAllTiles() override;
     /// Visualize the component as debug geometry.
     virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
     /// Add debug geometry to the debug renderer.
@@ -87,7 +101,7 @@ protected:
     /// Subscribe to events when assigned to a scene.
     virtual void OnSceneSet(Scene* scene) override;
     /// Trigger the tile cache to make updates to the nav mesh if necessary.
-    void HandleSceneSubsystemUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleSceneSubsystemUpdate(Scene *, float ts);
 
     /// Used by Obstacle class to add itself to the tile cache, if 'silent' an event will not be raised.
     void AddObstacle(Obstacle* obstacle, bool silent = false);
@@ -97,13 +111,19 @@ protected:
     void RemoveObstacle(Obstacle*, bool silent = false);
 
     /// Build one tile of the navigation mesh. Return true if successful.
-    int BuildTile(std::vector<NavigationGeometryInfo>& geometryList, int x, int z, TileCacheData*);
+    int BuildTile(std::vector<NavigationGeometryInfo>& geometryList, int x, int z, TileCacheData*tiles);
+    /// Build tiles in the rectangular area. Return number of built tiles.
+    unsigned BuildTiles(std::vector<NavigationGeometryInfo>& geometryList, const IntVector2& from, const IntVector2& to);
     /// Off-mesh connections to be rebuilt in the mesh processor.
     std::vector<OffMeshConnection*> CollectOffMeshConnections(const BoundingBox& bounds);
     /// Release the navigation mesh, query, and tile cache.
     virtual void ReleaseNavigationMesh() override;
 
 private:
+    /// Write tiles data.
+    void WriteTiles(Serializer& dest, int x, int z) const;
+    /// Read tiles data to the navigation mesh.
+    bool ReadTiles(Deserializer& source, bool silent);
     /// Free the tile cache.
     void ReleaseTileCache();
 
@@ -121,6 +141,8 @@ private:
     unsigned maxLayers_;
     /// Debug draw Obstacles.
     bool drawObstacles_;
+    /// Queue of tiles to be built.
+    std::vector<IntVector2> tileQueue_;
 };
 
 }

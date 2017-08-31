@@ -30,8 +30,8 @@
 #include <Lutefisk3D/Input/Input.h>
 #include <Lutefisk3D/Input/InputEvents.h>
 #include <Lutefisk3D/Graphics/Octree.h>
-#include <Lutefisk3D/Urho2D/ParticleEmitter2D.h>
-#include <Lutefisk3D/Urho2D/ParticleEffect2D.h>
+#include <Lutefisk3D/2D/ParticleEmitter2D.h>
+#include <Lutefisk3D/2D/ParticleEffect2D.h>
 #include <Lutefisk3D/Graphics/Renderer.h>
 #include <Lutefisk3D/Resource/ResourceCache.h>
 #include <Lutefisk3D/Scene/Scene.h>
@@ -45,7 +45,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(Urho2DParticle)
 
 Urho2DParticle::Urho2DParticle(Context* context) :
-    Sample(context)
+    Sample("Urho2DParticle",context)
 {
 }
 
@@ -55,7 +55,7 @@ void Urho2DParticle::Start()
     Sample::Start();
 
     // Set mouse visibile
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
     input->SetMouseVisible(true);
 
     // Create the scene content
@@ -73,7 +73,7 @@ void Urho2DParticle::Start()
 
 void Urho2DParticle::CreateScene()
 {
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
     scene_->CreateComponent<Octree>();
 
     // Create camera node
@@ -84,11 +84,11 @@ void Urho2DParticle::CreateScene()
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetOrthographic(true);
 
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
     camera->SetZoom(1.2f * Min((float)graphics->GetWidth() / 1280.0f, (float)graphics->GetHeight() / 800.0f)); // Set zoom according to user's resolution to ensure full visibility (initial zoom (1.2) is set for full visibility at 1280x800 resolution)
 
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
     ParticleEffect2D* particleEffect = cache->GetResource<ParticleEffect2D>("Urho2D/sun.pex");
     if (!particleEffect)
         return;
@@ -108,8 +108,8 @@ void Urho2DParticle::CreateScene()
 
 void Urho2DParticle::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -124,10 +124,10 @@ void Urho2DParticle::CreateInstructions()
 
 void Urho2DParticle::SetupViewport()
 {
-    Renderer* renderer = GetSubsystem<Renderer>();
+    Renderer* renderer = m_context->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
@@ -148,7 +148,7 @@ void Urho2DParticle::HandleMouseMove(StringHash eventType, VariantMap& eventData
         using namespace MouseMove;
         float x = (float)eventData[P_X].GetInt();
         float y = (float)eventData[P_Y].GetInt();
-        Graphics* graphics = GetSubsystem<Graphics>();
+        Graphics* graphics = m_context->m_Graphics.get();
         Camera* camera = cameraNode_->GetComponent<Camera>();
         particleNode_->SetPosition(camera->ScreenToWorldPoint(Vector3(x / graphics->GetWidth(), y / graphics->GetHeight(), 10.0f)));
     }

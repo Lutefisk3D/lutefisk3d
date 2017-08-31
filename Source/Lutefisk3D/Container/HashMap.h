@@ -160,6 +160,7 @@ template <typename T,int N>
 class SmallMembershipSet {
     PODVectorN<T,N> members;
 public:
+    using iterator=typename PODVectorN<T,N>::iterator;
     bool contains(const T &v) const {
         for(const T & elem : members)
             if(v==elem)
@@ -167,6 +168,12 @@ public:
         return false;
     }
     /// Erase an element if found.
+    void remove(const T&v) {
+        members.remove(v);
+    }
+    iterator erase(iterator i ) {
+        return members.erase(i);
+    }
     void clear()
     {
         members.clear();
@@ -178,6 +185,8 @@ public:
     }
     bool empty() const { return members.empty(); }
     size_t size() const { return members.size(); }
+    typename PODVectorN<T,N>::iterator begin() { return members.begin(); }
+    typename PODVectorN<T,N>::iterator end() { return members.end(); }
 };
 #endif
 }

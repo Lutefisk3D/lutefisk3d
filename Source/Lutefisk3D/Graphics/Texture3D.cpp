@@ -55,7 +55,7 @@ void Texture3D::RegisterObject(Context* context)
 
 bool Texture3D::BeginLoad(Deserializer& source)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = context_->m_ResourceCache.get();
 
     // In headless mode, do not actually load the texture, just return success
     if (!graphics_)
@@ -112,7 +112,7 @@ bool Texture3D::BeginLoad(Deserializer& source)
         if (colorlutTexPath.isEmpty())
             name = texPath + name;
 
-        SharedPtr<File> file = GetSubsystem<ResourceCache>()->GetFile(name);
+        SharedPtr<File> file = context_->m_ResourceCache->GetFile(name);
         loadImage_ = new Image(context_);
         if (!loadImage_->LoadColorLUT(*(file.Get())))
         {

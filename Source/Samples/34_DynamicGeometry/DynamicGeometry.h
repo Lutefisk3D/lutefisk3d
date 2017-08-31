@@ -39,29 +39,12 @@ class Scene;
 ///     - Creating a Model resource and its buffer data from scratch
 class DynamicGeometry : public Sample
 {
-    URHO3D_OBJECT(DynamicGeometry,Sample);
-
 public:
     /// Construct.
     DynamicGeometry(Context* context);
 
     /// Setup after engine initialization and before running the main loop.
     virtual void Start() override;
-
-protected:
-    /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
-    virtual QString GetScreenJoystickPatchString() const override { return
-        "<patch>"
-        "    <remove sel=\"/element/element[./attribute[@name='Name' and @value='Button0']]/attribute[@name='Is Visible']\" />"
-        "    <replace sel=\"/element/element[./attribute[@name='Name' and @value='Button0']]/element[./attribute[@name='Name' and @value='Label']]/attribute[@name='Text']/@value\">Animation</replace>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Button0']]\">"
-        "        <element type=\"Text\">"
-        "            <attribute name=\"Name\" value=\"KeyBinding\" />"
-        "            <attribute name=\"Text\" value=\"SPACE\" />"
-        "        </element>"
-        "    </add>"
-        "</patch>";
-    }
 
 private:
     /// Construct the scene content.
@@ -77,7 +60,7 @@ private:
     /// Animate the vertex data of the objects.
     void AnimateObjects(float timeStep);
     /// Handle the logic update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
 
     /// Cloned models' vertex buffers that we will animate.
     std::vector<SharedPtr<VertexBuffer> > animatingBuffers_;

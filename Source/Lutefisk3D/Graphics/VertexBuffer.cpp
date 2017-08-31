@@ -25,21 +25,22 @@
 #include "Lutefisk3D/Graphics/Graphics.h"
 #include "Lutefisk3D/Graphics/VertexBuffer.h"
 #include "Lutefisk3D/Math/MathDefs.h"
+#include "Lutefisk3D/Core/Context.h"
 
 namespace Urho3D
 {
+//VertexBufferManager g_vertexBufferManager;
 
 VertexBuffer::VertexBuffer(Context* context, bool forceHeadless) :
-    Object(context),
-    GPUObject(forceHeadless ? (Graphics*)nullptr : GetSubsystem<Graphics>()),
+    GPUObject(forceHeadless ? (Graphics*)nullptr : context->m_Graphics.get()),
     vertexCount_(0),
     elementMask_(0),
     lockState_(LOCK_NONE),
     lockStart_(0),
     lockCount_(0),
     lockScratchData_(nullptr),
-    shadowed_(false),
     dynamic_(false),
+    shadowed_(false),
     discardLock_(false)
 {
     UpdateOffsets();
@@ -196,6 +197,17 @@ unsigned VertexBuffer::GetVertexSize(unsigned elementMask)
     }
 
     return size;
+}
+
+void VertexBuffer::UpdateOffsets(std::vector<VertexElement> & elements)
+{
+    unsigned elementOffset = 0;
+
+    for (VertexElement &el :  elements)
+    {
+        el.offset_ = elementOffset;
+        elementOffset += ELEMENT_TYPESIZES[el.type_];
+    }
 }
 
 }

@@ -300,7 +300,7 @@ bool DecalSet::AddDecal(Drawable* target, const Vector3& worldPosition, const Qu
     URHO3D_PROFILE(AddDecal);
 
     // Do not add decals in headless mode
-    if (!node_ || !GetSubsystem<Graphics>())
+    if (!node_ || !context_->m_Graphics)
         return false;
 
     if (!target || !target->GetNode())
@@ -513,7 +513,7 @@ Material* DecalSet::GetMaterial() const
 
 void DecalSet::SetMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache =context_->m_ResourceCache.get();
     SetMaterial(cache->GetResource<Material>(value.name_));
 }
 
@@ -1010,7 +1010,7 @@ void DecalSet::UpdateBuffers()
     unsigned newElementMask = skinned_ ? SKINNED_ELEMENT_MASK : STATIC_ELEMENT_MASK;
     unsigned newVBSize = optimizeBufferSize_ ? numVertices_ : maxVertices_;
     unsigned newIBSize = optimizeBufferSize_ ? numIndices_ : maxIndices_;
-    
+
     if (vertexBuffer_->GetElementMask() != newElementMask || vertexBuffer_->GetVertexCount() != newVBSize)
         vertexBuffer_->SetSize(newVBSize, newElementMask);
     if (indexBuffer_->GetIndexCount() != newIBSize)
@@ -1143,22 +1143,18 @@ void DecalSet::UpdateEventSubscription(bool checkAllDecals)
 
     if (enabled && !subscribed_)
     {
-        SubscribeToEvent(scene, E_SCENEPOSTUPDATE, URHO3D_HANDLER(DecalSet, HandleScenePostUpdate));
+        scene->scenePostUpdate.Connect(this,&DecalSet::HandleScenePostUpdate);
         subscribed_ = true;
     }
     else if (!enabled && subscribed_)
     {
-        UnsubscribeFromEvent(scene, E_SCENEPOSTUPDATE);
+        scene->scenePostUpdate.Disconnect(this,&DecalSet::HandleScenePostUpdate);
         subscribed_ = false;
     }
 }
 
-void DecalSet::HandleScenePostUpdate(StringHash eventType, VariantMap& eventData)
+void DecalSet::HandleScenePostUpdate(Scene *,float timeStep)
 {
-    using namespace ScenePostUpdate;
-
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     for (std::deque<Decal>::iterator i = decals_.begin(); i != decals_.end();)
     {
         i->timer_ += timeStep;

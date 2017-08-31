@@ -37,7 +37,7 @@ class IndexBuffer;
 class VertexBuffer;
 
 /// Trail is consisting of series of tails. Two connected points make a tail.
-struct URHO3D_API TrailPoint
+struct LUTEFISK3D_EXPORT TrailPoint
 {
     /// Position.
     Vector3 position_;
@@ -56,7 +56,7 @@ struct URHO3D_API TrailPoint
 };
 
 /// Drawable component that creates a tail.
-class URHO3D_API RibbonTrail : public Drawable
+class LUTEFISK3D_EXPORT RibbonTrail : public Drawable
 {
     URHO3D_OBJECT(RibbonTrail, Drawable)
 
@@ -178,7 +178,7 @@ protected:
 
 private:
     /// Handle scene post-update event.
-    void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleScenePostUpdate(Scene *, float ts);
 
     /// Resize RibbonTrail vertex and index buffers.
     void UpdateBufferSize();

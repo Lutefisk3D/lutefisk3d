@@ -21,62 +21,45 @@
 //
 
 #pragma once
+#include "Lutefisk3D/Core/Lutefisk3D.h"
+#include <jlsignal/Signal.h>
 
-#include "../Core/Object.h"
+class QString;
 
 namespace Urho3D
 {
-
-/// Resource reloading started.
-URHO3D_EVENT(E_RELOADSTARTED, ReloadStarted)
-{
-}
-
-/// Resource reloading finished successfully.
-URHO3D_EVENT(E_RELOADFINISHED, ReloadFinished)
-{
-}
-
-/// Resource reloading failed.
-URHO3D_EVENT(E_RELOADFAILED, ReloadFailed)
-{
-}
-
-/// Tracked file changed in the resource directories.
-URHO3D_EVENT(E_FILECHANGED, FileChanged)
-{
-    URHO3D_PARAM(P_FILENAME, FileName);                    // String
-    URHO3D_PARAM(P_RESOURCENAME, ResourceName);            // String
-}
-
-/// Resource loading failed.
-URHO3D_EVENT(E_LOADFAILED, LoadFailed)
-{
-    URHO3D_PARAM(P_RESOURCENAME, ResourceName);            // String
-}
-
-/// Resource not found.
-URHO3D_EVENT(E_RESOURCENOTFOUND, ResourceNotFound)
-{
-    URHO3D_PARAM(P_RESOURCENAME, ResourceName);            // String
-}
-
-/// Unknown resource type.
-URHO3D_EVENT(E_UNKNOWNRESOURCETYPE, UnknownResourceType)
-{
-    URHO3D_PARAM(P_RESOURCETYPE, ResourceType);            // StringHash
-}
-
-/// Resource background loading finished.
-URHO3D_EVENT(E_RESOURCEBACKGROUNDLOADED, ResourceBackgroundLoaded)
-{
-    URHO3D_PARAM(P_RESOURCENAME, ResourceName);            // String
-    URHO3D_PARAM(P_SUCCESS, Success);                      // bool
-    URHO3D_PARAM(P_RESOURCE, Resource);                    // Resource pointer
-}
-/// Language changed.
-URHO3D_EVENT(E_CHANGELANGUAGE, ChangeLanguage)
-{
-}
-
+class StringHash;
+class LUTEFISK3D_EXPORT Resource;
+struct LUTEFISK3D_EXPORT ResourceSignals {
+    /// Language changed.
+    jl::Signal<> changeLanguage;
+    /// Resource loading failed.
+    jl::Signal<const QString &> loadFailed; //const QString & ResourceName
+    /// Resource not found.
+    jl::Signal<const QString &> resourceNotFound; //const QString & ResourceName
+    /// Unknown resource type.
+    jl::Signal<StringHash> unknownResourceType; //StringHash resourceType
+    /// Resource background loading finished.
+    jl::Signal<const QString &,bool,Resource *> resourceBackgroundLoaded; //const QString &ResourceName, bool Success,Resource *
+    /// Tracked file changed in the resource directories.
+    jl::Signal<const QString &,const QString &> fileChanged; //const QString &fileName, const QString &ResourceName
+    void init(jl::ScopedAllocator *allocator)
+    {
+        changeLanguage.SetAllocator(allocator);
+        loadFailed.SetAllocator(allocator);
+        resourceNotFound.SetAllocator(allocator);
+        unknownResourceType.SetAllocator(allocator);
+        resourceBackgroundLoaded.SetAllocator(allocator);
+        fileChanged.SetAllocator(allocator);
+    }
+};
+struct SingleResourceSignals {
+    /// reloadStarted - Resource reloading started.
+    jl::Signal<> reloadStarted;
+    /// Resource reloading finished successfully.
+    jl::Signal<> reloadFinished;
+    /// Resource reloading failed.
+    jl::Signal<> reloadFailed;
+};
+extern ResourceSignals g_resourceSignals;
 }

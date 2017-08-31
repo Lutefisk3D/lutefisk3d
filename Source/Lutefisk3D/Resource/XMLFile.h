@@ -36,7 +36,7 @@ namespace Urho3D
 {
 
 /// XML document resource.
-class URHO3D_API XMLFile : public Resource
+class LUTEFISK3D_EXPORT XMLFile : public Resource
 {
     URHO3D_OBJECT(XMLFile,Resource)
 

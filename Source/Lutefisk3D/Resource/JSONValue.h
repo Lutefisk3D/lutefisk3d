@@ -69,7 +69,7 @@ typedef std::vector<JSONValue> JSONArray;
 typedef HashMap<QString, JSONValue> JSONObject;
 
 /// JSON value class.
-class URHO3D_API JSONValue
+class LUTEFISK3D_EXPORT JSONValue
 {
 public:
     /// Construct null value.

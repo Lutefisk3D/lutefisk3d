@@ -45,13 +45,12 @@ MessageBox::MessageBox(Context* context, const QString& messageString, const QSt
     // If layout file is not given, use the default message box layout
     if (!layoutFile)
     {
-        ResourceCache* cache = GetSubsystem<ResourceCache>();
-        layoutFile = cache->GetResource<XMLFile>("UI/MessageBox.xml");
+        layoutFile = context_->m_ResourceCache->GetResource<XMLFile>("UI/MessageBox.xml");
         if (!layoutFile)    // Error is already logged
             return;         // Note: windowless MessageBox should not be used!
     }
 
-    UI* ui = GetSubsystem<UI>();
+    UI* ui = context_->m_UISystem.get();
     UIElement* root = ui->GetRoot();
     {
         SharedPtr<UIElement> holder = ui->LoadLayout(layoutFile, styleFile);
@@ -73,10 +72,10 @@ MessageBox::MessageBox(Context* context, const QString& messageString, const QSt
     Window* window = dynamic_cast<Window*>(window_);
     if (window)
     {
-            const IntVector2& size = window->GetSize();
+        const IntVector2& size = window->GetSize();
         window->SetPosition((root->GetWidth() - size.x_) / 2, (root->GetHeight() - size.y_) / 2);
         window->SetModal(true);
-        SubscribeToEvent(window, E_MODALCHANGED, URHO3D_HANDLER(MessageBox, HandleMessageAcknowledged));
+        window->modalChanged.Connect(this,&MessageBox::HandleModalChange);
     }
 
     // Bind the buttons (if any in the loaded UI layout) to event handlers
@@ -84,14 +83,14 @@ MessageBox::MessageBox(Context* context, const QString& messageString, const QSt
     if (okButton_)
     {
         ui->SetFocusElement(okButton_);
-        SubscribeToEvent(okButton_, E_RELEASED, URHO3D_HANDLER(MessageBox, HandleMessageAcknowledged));
+        okButton_->released.Connect(this,&MessageBox::HandleMessageAcknowledged);
     }
     Button* cancelButton = window_->GetChildDynamicCast<Button>("CancelButton", true);
     if (cancelButton)
-        SubscribeToEvent(cancelButton, E_RELEASED, URHO3D_HANDLER(MessageBox, HandleMessageAcknowledged));
+        cancelButton->released.Connect(this,&MessageBox::HandleMessageAcknowledged);
     Button* closeButton = window_->GetChildDynamicCast<Button>("CloseButton", true);
     if (closeButton)
-        SubscribeToEvent(closeButton, E_RELEASED, URHO3D_HANDLER(MessageBox, HandleMessageAcknowledged));
+        closeButton->released.Connect(this,&MessageBox::HandleMessageAcknowledged);
 
     // Increase reference count to keep Self alive
     AddRef();
@@ -130,15 +129,14 @@ const QString& MessageBox::GetMessage() const
 {
     return messageText_ ? messageText_->GetText() : s_dummy;
 }
-
-void MessageBox::HandleMessageAcknowledged(StringHash eventType, VariantMap& eventData)
+void MessageBox::HandleModalChange(UIElement *,bool ) {
+    //TODO: this assumes any change in modality shoud ACK the dialog
+    messageACK.Emit(false);
+    ReleaseRef();
+}
+void MessageBox::HandleMessageAcknowledged(UIElement *elem)
 {
-    using namespace MessageACK;
-
-    VariantMap& newEventData = GetEventDataMap();
-    newEventData[P_OK] = eventData[Released::P_ELEMENT] == okButton_;
-    SendEvent(E_MESSAGEACK, newEventData);
-
+    messageACK.Emit(elem == okButton_);
     // Self destruct
     ReleaseRef();
 }

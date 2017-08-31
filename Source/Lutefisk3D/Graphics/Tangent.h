@@ -27,6 +27,6 @@ namespace Urho3D
 {
 
 /// Generate tangents to indexed geometry.
-URHO3D_API void GenerateTangents(void* vertexData, unsigned vertexSize, const void* indexData, unsigned indexSize, unsigned indexStart, unsigned indexCount, unsigned normalOffset, unsigned texCoordOffset, unsigned tangentOffset);
+LUTEFISK3D_EXPORT void GenerateTangents(void* vertexData, unsigned vertexSize, const void* indexData, unsigned indexSize, unsigned indexStart, unsigned indexCount, unsigned normalOffset, unsigned texCoordOffset, unsigned tangentOffset);
 
 }

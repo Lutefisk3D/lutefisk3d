@@ -32,7 +32,7 @@ class Deserializer;
 class Image;
 class RenderSurface;
 /// 2D texture array resource.
-class URHO3D_API Texture2DArray : public Texture
+class LUTEFISK3D_EXPORT Texture2DArray : public Texture
 {
     URHO3D_OBJECT(Texture2DArray, Texture)
 
@@ -79,7 +79,7 @@ protected:
 
 private:
     /// Handle render surface update event.
-    void HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleRenderSurfaceUpdate();
 
     /// Texture array layers number.
     unsigned layers_;

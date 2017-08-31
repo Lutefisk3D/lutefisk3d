@@ -33,7 +33,7 @@ namespace Urho3D
 enum VariantType : uint8_t;
 class Variant;
 typedef HashMap<StringHash, Variant> VariantMap;
-struct URHO3D_API ResourceRefList;
+struct LUTEFISK3D_EXPORT ResourceRefList;
 struct ResourceRef;
 class Color;
 class IntRect;
@@ -49,7 +49,7 @@ class Vector2;
 class Vector3;
 class Vector4;
 /// Abstract stream for reading.
-class URHO3D_API Deserializer
+class LUTEFISK3D_EXPORT Deserializer
 {
 public:
     /// Construct with zero size.
@@ -69,8 +69,12 @@ public:
     virtual unsigned GetChecksum();
     /// Return whether the end of stream has been reached.
     virtual bool IsEof() const { return position_ >= size_; }
+    /// Set position relative to current position. Return actual new position.
+    unsigned SeekRelative(int delta);
     /// Return current position.
     unsigned GetPosition() const { return position_; }
+    /// Return current position.
+    unsigned Tell() const { return position_; }
     /// Return size.
     unsigned GetSize() const { return size_; }
 

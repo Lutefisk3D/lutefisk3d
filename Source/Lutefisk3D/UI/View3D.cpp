@@ -31,7 +31,9 @@
 #include "Lutefisk3D/Graphics/Octree.h"
 #include "Lutefisk3D/Graphics/Texture2D.h"
 #include "Lutefisk3D/Graphics/Zone.h"
+#include "Lutefisk3D/Graphics/Viewport.h"
 #include "Lutefisk3D/Scene/Scene.h"
+
 
 namespace Urho3D
 {
@@ -47,7 +49,7 @@ View3D::View3D(Context* context) :
     renderTexture_ = new Texture2D(context_);
     depthTexture_ = new Texture2D(context_);
     viewport_ = new Viewport(context_);
-    SubscribeToEvent(E_RENDERSURFACEUPDATE, URHO3D_HANDLER(View3D, HandleRenderSurfaceUpdate));
+    g_graphicsSignals.renderSurfaceUpdate.Connect(this,&View3D::HandleRenderSurfaceUpdate);
 }
 
 View3D::~View3D()
@@ -163,7 +165,7 @@ void View3D::ResetScene()
         scene_ = 0;
 }
 
-void View3D::HandleRenderSurfaceUpdate(StringHash eventType, VariantMap& eventData)
+void View3D::HandleRenderSurfaceUpdate()
 {
     if (autoUpdate_ && IsVisibleEffective())
         QueueUpdate();

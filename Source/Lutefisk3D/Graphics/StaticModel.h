@@ -39,9 +39,9 @@ struct StaticModelGeometryData
 };
 
 /// Static model component.
-class URHO3D_API StaticModel : public Drawable
+class LUTEFISK3D_EXPORT StaticModel : public Drawable
 {
-    URHO3D_OBJECT(StaticModel,Drawable);
+    URHO3D_OBJECT(StaticModel,Drawable)
 
 public:
     /// Construct.
@@ -120,7 +120,7 @@ protected:
 
 private:
     /// Handle model reload finished.
-    void HandleModelReloadFinished(StringHash eventType, VariantMap& eventData);
+    void HandleModelReloadFinished();
 };
 
 }

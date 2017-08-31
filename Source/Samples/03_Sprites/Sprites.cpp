@@ -40,7 +40,7 @@ static const StringHash VAR_VELOCITY("Velocity");
 URHO3D_DEFINE_APPLICATION_MAIN(Sprites)
 
 Sprites::Sprites(Context* context) :
-    Sample(context)
+    Sample("Sprites",context)
 {
 }
 
@@ -58,9 +58,9 @@ void Sprites::Start()
 
 void Sprites::CreateSprites()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    Graphics* graphics = GetSubsystem<Graphics>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    Graphics* graphics = m_context->m_Graphics.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Get rendering window size as floats
     float width = (float)graphics->GetWidth();
@@ -72,7 +72,7 @@ void Sprites::CreateSprites()
     for (unsigned i = 0; i < NUM_SPRITES; ++i)
     {
         // Create a new sprite, set it to use the texture
-        SharedPtr<Sprite> sprite(new Sprite(context_));
+        SharedPtr<Sprite> sprite(new Sprite(m_context));
         sprite->SetTexture(decalTex);
 
         // The UI root element is as big as the rendering window, set random position within it
@@ -103,7 +103,7 @@ void Sprites::CreateSprites()
 
 void Sprites::MoveSprites(float timeStep)
 {
-    Graphics* graphics = GetSubsystem<Graphics>();
+    Graphics* graphics = m_context->m_Graphics.get();
     float width = (float)graphics->GetWidth();
     float height = (float)graphics->GetHeight();
 
@@ -133,16 +133,12 @@ void Sprites::MoveSprites(float timeStep)
 void Sprites::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(Sprites, HandleUpdate));
+    g_coreSignals.update.Connect(this,&Sprites::HandleUpdate);
 }
 
-void Sprites::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void Sprites::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
     // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move sprites, scale movement with time step
     MoveSprites(timeStep);
 }

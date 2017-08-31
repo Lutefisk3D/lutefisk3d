@@ -340,6 +340,12 @@ bool PListFile::BeginLoad(Deserializer& source)
     return true;
 }
 
+bool PListFile::Save(Serializer &/*dest*/) const
+{
+    URHO3D_LOGERROR("Save not supported for PListFile");
+    return false;
+}
+
 bool PListFile::LoadDict(PListValueMap& dict, const XMLElement& dictElem)
 {
     if (!dictElem)

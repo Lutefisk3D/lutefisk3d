@@ -33,9 +33,9 @@ class Animation;
 class AnimationState;
 
 /// Animated model component.
-class URHO3D_API AnimatedModel : public StaticModel
+class LUTEFISK3D_EXPORT AnimatedModel : public StaticModel
 {
-    URHO3D_OBJECT(AnimatedModel,StaticModel);
+    URHO3D_OBJECT(AnimatedModel,StaticModel)
 
     friend class AnimationState;
 
@@ -193,7 +193,7 @@ private:
     /// Apply a vertex morph.
     void ApplyMorph(VertexBuffer* buffer, void* destVertexData, unsigned morphRangeStart, const VertexBufferMorph& morph, float weight);
     /// Handle model reload finished.
-    void HandleModelReloadFinished(StringHash eventType, VariantMap& eventData);
+    void HandleModelReloadFinished();
 
     /// Skeleton.
     Skeleton skeleton_;

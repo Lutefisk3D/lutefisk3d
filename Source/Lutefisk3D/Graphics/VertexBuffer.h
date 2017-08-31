@@ -22,24 +22,85 @@
 
 #pragma once
 
-#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Graphics/GPUObject.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
-
-namespace gl {
-enum class GLenum : uint32_t;
-class GLboolean;
-}
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Container/HandleManager.h"
+#include <vector>
+#include <limits>
 namespace Urho3D
 {
-
+class Context;
 /// Hardware vertex buffer.
-class URHO3D_API VertexBuffer : public Object, public GPUObject
+class LUTEFISK3D_EXPORT VertexBuffer : public RefCounted, public GPUObject
 {
-    URHO3D_OBJECT(VertexBuffer,Object)
+    /// Prevent copy construction.
+    VertexBuffer(const VertexBuffer& rhs)=delete;
+    /// Prevent assignment.
+    VertexBuffer& operator = (const VertexBuffer& rhs)=delete;
 
 public:
+    VertexBuffer(VertexBuffer&& rhs) :
+        GPUObject(rhs),
+        shadowData_(std::move(rhs.shadowData_)),
+        vertexCount_(std::move(rhs.vertexCount_)),
+        vertexSize_(std::move(rhs.vertexSize_)),
+        elements_(std::move(rhs.elements_)),
+        elementHash_(std::move(rhs.elementHash_)),
+        elementMask_(std::move(rhs.elementMask_)),
+        lockState_(std::move(rhs.lockState_)),
+        lockStart_(std::move(rhs.lockStart_)),
+        lockCount_(std::move(rhs.lockCount_)),
+        lockScratchData_(std::move(rhs.lockScratchData_)),
+        dynamic_(std::move(rhs.dynamic_)),
+        shadowed_(std::move(rhs.shadowed_)),
+        discardLock_(std::move(rhs.discardLock_))
+    {
+        rhs.vertexCount_ = 0;
+        rhs.vertexSize_ = 0;
+        rhs.elementHash_ = 0;
+        rhs.elementMask_ = 0;
+        rhs.lockState_ = LOCK_NONE;
+        rhs.lockStart_ = 0;
+        rhs.lockCount_ = 0;
+        rhs.lockScratchData_ = nullptr;
+        rhs.dynamic_ = 0;
+        rhs.shadowed_ = 0;
+        rhs.discardLock_ = 0;
+    }
+    VertexBuffer& operator = (VertexBuffer&& rhs) {
+        if (this != &rhs) {
+            shadowData_ = std::move(rhs.shadowData_);
+            vertexCount_ = std::move(rhs.vertexCount_);
+            vertexSize_ = std::move(rhs.vertexSize_);
+            elements_ = std::move(rhs.elements_);
+            elementHash_ = std::move(rhs.elementHash_);
+            elementMask_ = std::move(rhs.elementMask_);
+            lockState_ = std::move(rhs.lockState_);
+            lockStart_ = std::move(rhs.lockStart_);
+            lockCount_ = std::move(rhs.lockCount_);
+            lockScratchData_ = std::move(rhs.lockScratchData_);
+            dynamic_ = std::move(rhs.dynamic_);
+            shadowed_ = std::move(rhs.shadowed_);
+            discardLock_ = std::move(rhs.discardLock_);
+
+            rhs.vertexCount_ = 0;
+            rhs.vertexSize_ = 0;
+            rhs.elementHash_ = 0;
+            rhs.elementMask_ = 0;
+            rhs.lockState_ = LOCK_NONE;
+            rhs.lockStart_ = 0;
+            rhs.lockCount_ = 0;
+            rhs.lockScratchData_ = nullptr;
+            rhs.dynamic_ = 0;
+            rhs.shadowed_ = 0;
+            rhs.discardLock_ = 0;
+        }
+        return  *this;
+    }
+
     /// Construct. Optionally force headless (no GPU-side buffer) operation.
     VertexBuffer(Context* context, bool forceHeadless = false);
     /// Destruct.
@@ -93,10 +154,18 @@ public:
     bool HasElement(VertexElementType type, VertexElementSemantic semantic, unsigned char index = 0) const { return GetElement(type, semantic, index) != 0; }
 
     /// Return offset of a element within vertex, or M_MAX_UNSIGNED if does not exist.
-    unsigned GetElementOffset(VertexElementSemantic semantic, unsigned char index = 0) const { const VertexElement* element = GetElement(semantic, index); return element ? element->offset_ : M_MAX_UNSIGNED; }
+    unsigned GetElementOffset(VertexElementSemantic semantic, unsigned char index = 0) const
+    {
+        const VertexElement *element = GetElement(semantic, index);
+        return element ? element->offset_ : std::numeric_limits<unsigned>::max();
+    }
 
     /// Return offset of a element with specific type within vertex, or M_MAX_UNSIGNED if element does not exist.
-    unsigned GetElementOffset(VertexElementType type, VertexElementSemantic semantic, unsigned char index = 0) const { const VertexElement* element = GetElement(type, semantic, index); return element ? element->offset_ : M_MAX_UNSIGNED; }
+    unsigned GetElementOffset(VertexElementType type, VertexElementSemantic semantic, unsigned char index = 0) const
+    {
+        const VertexElement *element = GetElement(type, semantic, index);
+        return element ? element->offset_ : std::numeric_limits<unsigned>::max();
+    }
 
     /// Return legacy vertex element mask. Note that both semantic and type must match the legacy element for a mask bit to be set.
     unsigned GetElementMask() const { return elementMask_; }
@@ -125,7 +194,8 @@ public:
 
     /// Return vertex size for a legacy vertex element bitmask.
     static unsigned GetVertexSize(unsigned elementMask);
-
+    /// Update offsets of vertex elements.
+    static void UpdateOffsets(std::vector<VertexElement>& elements);
 private:
     /// Update offsets of vertex elements.
     void UpdateOffsets();
@@ -165,5 +235,26 @@ private:
     /// Discard lock flag. Used by OpenGL only.
     bool discardLock_;
 };
+//struct VertexBufferManager : public HandleManager<VertexBuffer> {
+//    Handle build(Context *ctx,bool shadowed,unsigned count,unsigned elementMask,const float *data) {
+//        Handle ibh = add(ctx,"");
+//        VertexBuffer &ibuf(get(ibh));
+//        ibuf.SetShadowed(shadowed);
+//        ibuf.SetSize(count, elementMask);
+//        ibuf.SetData(data);
+//        return ibh;
+//    }
+//    void uploadData(Handle h, unsigned count, const std::vector<VertexElement> &elem_decls,
+//                    const unsigned char *data)
+//    {
+//        VertexBuffer &ibuf(get(h));
+//        ibuf.SetShadowed(true);
+//        ibuf.SetSize(count, elem_decls);
+//        ibuf.SetData(data);
+//    }
+//    unsigned getVertexCount(Handle h) { return valid(h) ? get(h).GetVertexCount() : 0; }
+//};
+//using VertexBufferHandle = VertexBufferManager::Handle;
+//extern VertexBufferManager g_vertexBufferManager;
 
 }

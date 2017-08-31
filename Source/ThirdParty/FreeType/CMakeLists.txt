@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008-2016 the Urho3D project.
+# Copyright (c) 2008-2017 the Urho3D project.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ set (SOURCE_FILES
     src/base/ftbase.c
     src/base/ftbbox.c
     src/base/ftbitmap.c
+    src/base/ftfntfmt.c
     src/base/ftfstype.c
     src/base/ftgasp.c
     src/base/ftglyph.c
@@ -76,12 +77,9 @@ set (SOURCE_FILES
 set (INCLUDE_DIRS include)
 
 include_directories(include)
-add_library(FreeType OBJECT ${SOURCE_FILES})
+add_library(FreeType STATIC ${SOURCE_FILES})
+set_property(TARGET FreeType PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Install headers for building the Urho3D library
-install(DIRECTORY include/freetype DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/freetype)
-install(FILES include/ft2build.h DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/freetype)
-
-######################### Add component to the project's list
-list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:FreeType>)
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)
+#install(DIRECTORY include/freetype DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/freetype)
+#install(FILES include/ft2build.h DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/freetype)

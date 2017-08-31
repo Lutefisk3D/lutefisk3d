@@ -55,7 +55,7 @@ const float CAMERA_DISTANCE = 10.0f;
 URHO3D_DEFINE_APPLICATION_MAIN(VehicleDemo)
 
 VehicleDemo::VehicleDemo(Context* context) :
-    Sample(context)
+    Sample("VehicleDemo",context)
 {
     // Register factory and attributes for the Vehicle component so it can be created via CreateComponent, and loaded / saved
     Vehicle::RegisterObject(context);
@@ -81,9 +81,9 @@ void VehicleDemo::Start()
 
 void VehicleDemo::CreateScene()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
 
-    scene_ = new Scene(context_);
+    scene_ = new Scene(m_context);
 
     // Create scene subsystem components
     scene_->CreateComponent<Octree>();
@@ -91,10 +91,10 @@ void VehicleDemo::CreateScene()
 
     // Create camera and define viewport. We will be doing load / save, so it's convenient to create the camera outside the scene,
     // so that it won't be destroyed and recreated, and we don't have to redefine the viewport on load
-    cameraNode_ = new Node(context_);
+    cameraNode_ = new Node(m_context);
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetFarClip(500.0f);
-    GetSubsystem<Renderer>()->SetViewport(0, new Viewport(context_, scene_, camera));
+    m_context->m_Renderer.get()->SetViewport(0, new Viewport(m_context, scene_, camera));
 
     // Create static scene content. First create a zone for ambient lighting and fog control
     Node* zoneNode = scene_->CreateChild("Zone");
@@ -169,8 +169,8 @@ void VehicleDemo::CreateVehicle()
 
 void VehicleDemo::CreateInstructions()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UI* ui = m_context->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -191,24 +191,22 @@ void VehicleDemo::CreateInstructions()
 void VehicleDemo::SubscribeToEvents()
 {
     // Subscribe to Update event for setting the vehicle controls before physics simulation
-    SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(VehicleDemo, HandleUpdate));
+    g_coreSignals.update.Connect(this,&VehicleDemo::HandleUpdate);
 
     // Subscribe to PostUpdate event for updating the camera position after physics simulation
-    SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(VehicleDemo, HandlePostUpdate));
+    g_coreSignals.postUpdate.Connect(this,&VehicleDemo::HandlePostUpdate);
 
     // Unsubscribe the SceneUpdate event from base class as the camera node is being controlled in HandlePostUpdate() in this sample
-    UnsubscribeFromEvent(E_SCENEUPDATE);
+    g_sceneSignals.sceneUpdate.Disconnect(this);
 }
 
-void VehicleDemo::HandleUpdate(StringHash eventType, VariantMap& eventData)
+void VehicleDemo::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    Input* input = GetSubsystem<Input>();
+    Input* input = m_context->m_InputSystem.get();
 
     if (vehicle_)
     {
-        UI* ui = GetSubsystem<UI>();
+        UI* ui = m_context->m_UISystem.get();
 
         // Get movement controls and assign them to the vehicle component. If UI has a focused element, clear controls
         if (!ui->GetFocusElement())
@@ -230,7 +228,7 @@ void VehicleDemo::HandleUpdate(StringHash eventType, VariantMap& eventData)
                         if (!camera)
                             return;
 
-                        Graphics* graphics = GetSubsystem<Graphics>();
+                        Graphics* graphics = m_context->m_Graphics.get();
                         vehicle_->controls_.yaw_ += TOUCH_SENSITIVITY * camera->GetFov() / graphics->GetHeight() * state->delta_.x_;
                         vehicle_->controls_.pitch_ += TOUCH_SENSITIVITY * camera->GetFov() / graphics->GetHeight() * state->delta_.y_;
                     }
@@ -247,13 +245,13 @@ void VehicleDemo::HandleUpdate(StringHash eventType, VariantMap& eventData)
             // Check for loading / saving the scene
             if (input->GetKeyPress(KEY_F5))
             {
-                File saveFile(context_, GetSubsystem<FileSystem>()->GetProgramDir() + "Data/Scenes/VehicleDemo.xml",
+                File saveFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/VehicleDemo.xml",
                     FILE_WRITE);
                 scene_->SaveXML(saveFile);
             }
             if (input->GetKeyPress(KEY_F7))
             {
-                File loadFile(context_, GetSubsystem<FileSystem>()->GetProgramDir() + "Data/Scenes/VehicleDemo.xml", FILE_READ);
+                File loadFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/VehicleDemo.xml", FILE_READ);
                 scene_->LoadXML(loadFile);
                 // After loading we have to reacquire the weak pointer to the Vehicle component, as it has been recreated
                 // Simply find the vehicle's scene node by name as there's only one of them
@@ -267,7 +265,7 @@ void VehicleDemo::HandleUpdate(StringHash eventType, VariantMap& eventData)
     }
 }
 
-void VehicleDemo::HandlePostUpdate(StringHash eventType, VariantMap& eventData)
+void VehicleDemo::HandlePostUpdate(float ts)
 {
     if (!vehicle_)
         return;

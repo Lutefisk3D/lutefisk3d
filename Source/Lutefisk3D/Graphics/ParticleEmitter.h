@@ -51,7 +51,7 @@ struct Particle
 };
 
 /// %Particle emitter component.
-class URHO3D_API ParticleEmitter : public BillboardSet
+class LUTEFISK3D_EXPORT ParticleEmitter : public BillboardSet
 {
     URHO3D_OBJECT(ParticleEmitter,BillboardSet);
 
@@ -122,9 +122,9 @@ protected:
 
 private:
     /// Handle scene post-update event.
-    void HandleScenePostUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleScenePostUpdate(Scene *, float ts);
     /// Handle live reload of the particle effect.
-    void HandleEffectReloadFinished(StringHash eventType, VariantMap& eventData);
+    void HandleEffectReloadFinished();
 
     /// Particle effect.
     SharedPtr<ParticleEffect> effect_;

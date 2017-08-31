@@ -27,6 +27,7 @@
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Graphics/ShaderPrecache.h"
 #include "Lutefisk3D/Graphics/ShaderVariation.h"
+#include "Lutefisk3D/Core/Context.h"
 
 
 
@@ -38,7 +39,7 @@ ShaderPrecache::ShaderPrecache(Context* context, const QString& fileName) :
     fileName_(fileName),
     xmlFile_(context)
 {
-    if (GetSubsystem<FileSystem>()->FileExists(fileName))
+    if (context->m_FileSystem->FileExists(fileName))
     {
         // If file exists, read the already listed combinations
         File source(context_, fileName);

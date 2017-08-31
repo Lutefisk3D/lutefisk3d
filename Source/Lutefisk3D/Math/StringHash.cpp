@@ -41,7 +41,19 @@ StringHash::StringHash(const QString& str) :
     value_(Calculate(qPrintable(str)))
 {
 }
+StringHash::StringHash(const QStringRef& str)
+{
+    value_ = 0;
 
+    if (str.string())
+    {
+        for(QChar c : str)
+        {
+            // Perform the actual hashing as case-insensitive
+            value_ = SDBMHash(value_, c.toLower().toLatin1());
+        }
+    }
+}
 unsigned StringHash::Calculate(const char* str)
 {
     unsigned hash = 0;

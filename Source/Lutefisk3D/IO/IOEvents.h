@@ -22,23 +22,31 @@
 
 #pragma once
 
-#include "Lutefisk3D/Core/Object.h"
+#include "jlsignal/Signal.h"
+
+class QString;
 
 namespace Urho3D
 {
 
-/// Log message event.
-URHO3D_EVENT(E_LOGMESSAGE, LogMessage)
-{
-    URHO3D_PARAM(P_MESSAGE, Message);              // String
-    URHO3D_PARAM(P_LEVEL, Level);                  // int
-}
+enum LogLevels : int32_t;
 
-/// Async system command execution finished.
-URHO3D_EVENT(E_ASYNCEXECFINISHED, AsyncExecFinished)
-{
-    URHO3D_PARAM(P_REQUESTID, RequestID);          // unsigned
-    URHO3D_PARAM(P_EXITCODE, ExitCode);            // int
-}
+struct IOSignals {
+    /// Async system command execution finished.
+    jl::Signal<unsigned,int> asyncExecFinished; //RequestID,ExitCode
+    void init(jl::ScopedAllocator *allocator)
+    {
+        asyncExecFinished.SetAllocator(allocator);
+    }
+};
+extern IOSignals g_ioSignals;
 
+struct LogSignals {
+    jl::Signal<LogLevels,const QString &> logMessageSignal;
+    void init(jl::ScopedAllocator *allocator)
+    {
+        logMessageSignal.SetAllocator(allocator);
+    }
+};
+extern LogSignals g_LogSignals;
 }

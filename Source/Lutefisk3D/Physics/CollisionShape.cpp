@@ -452,8 +452,6 @@ void CollisionShape::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 {
     if (debug && physicsWorld_ && shape_ && node_ && IsEnabledEffective())
     {
-        physicsWorld_->SetDebugRenderer(debug);
-        physicsWorld_->SetDebugDepthTest(depthTest);
 
         // Use the rigid body's world transform if possible, as it may be different from the rendering transform
         Matrix3x4 worldTransform;
@@ -467,29 +465,55 @@ void CollisionShape::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
         else
             worldTransform = node_->GetWorldTransform();
 
-        Vector3 position = position_;
-        // For terrains, undo the height centering performed automatically by Bullet
-        if (shapeType_ == SHAPE_TERRAIN && geometry_)
+        // Special case code for convex hull: bypass Bullet's own rendering to draw triangles correctly, not just edges
+        if (shapeType_ == SHAPE_CONVEXHULL)
         {
-            HeightfieldData* heightfield = static_cast<HeightfieldData*>(geometry_.Get());
-            position.y_ += (heightfield->minHeight_ + heightfield->maxHeight_) * 0.5f;
+            ConvexData *convexData = static_cast<ConvexData*>(GetGeometryData());
+            RigidBody* body = GetComponent<RigidBody>();
+            Color color = bodyActive ? Color::WHITE : Color::GREEN;
+            Matrix3x4 shapeTransform(worldTransform * position_, worldTransform.Rotation() * rotation_, worldTransform.Scale());
+
+            if (convexData)
+            {
+                for (unsigned i = 0; i < convexData->indexCount_; i += 3)
+                {
+                    Vector3 a = shapeTransform * convexData->vertexData_[convexData->indexData_[i + 0]];
+                    Vector3 b = shapeTransform * convexData->vertexData_[convexData->indexData_[i + 1]];
+                    Vector3 c = shapeTransform * convexData->vertexData_[convexData->indexData_[i + 2]];
+                    debug->AddLine(a, b, color, depthTest);
+                    debug->AddLine(b, c, color, depthTest);
+                    debug->AddLine(a, c, color, depthTest);
+                }
+            }
         }
+        else
+        {
+            physicsWorld_->SetDebugRenderer(debug);
+            physicsWorld_->SetDebugDepthTest(depthTest);
+            Vector3 position = position_;
+            // For terrains, undo the height centering performed automatically by Bullet
+            if (shapeType_ == SHAPE_TERRAIN && geometry_)
+            {
+                HeightfieldData* heightfield = static_cast<HeightfieldData*>(geometry_.Get());
+                position.y_ += (heightfield->minHeight_ + heightfield->maxHeight_) * 0.5f;
+            }
 
-        Vector3 worldPosition(worldTransform * position);
-        Quaternion worldRotation(worldTransform.Rotation() * rotation_);
+            Vector3 worldPosition(worldTransform * position);
+            Quaternion worldRotation(worldTransform.Rotation() * rotation_);
 
-        btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
-        world->debugDrawObject(btTransform(ToBtQuaternion(worldRotation), ToBtVector3(worldPosition)), shape_.get(), bodyActive ?
-                                   WHITE : GREEN);
+            btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
+            world->debugDrawObject(btTransform(ToBtQuaternion(worldRotation), ToBtVector3(worldPosition)), shape_.get(), bodyActive ?
+                                       WHITE : GREEN);
 
-        physicsWorld_->SetDebugRenderer(nullptr);
+            physicsWorld_->SetDebugRenderer(nullptr);
+        }
     }
 }
 
 void CollisionShape::SetBox(const Vector3& size, const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
 
     shapeType_ = SHAPE_BOX;
     size_ = size;
@@ -506,7 +530,8 @@ void CollisionShape::SetBox(const Vector3& size, const Vector3& position, const 
 void CollisionShape::SetSphere(float diameter, const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_SPHERE;
     size_ = Vector3(diameter, diameter, diameter);
@@ -523,7 +548,8 @@ void CollisionShape::SetSphere(float diameter, const Vector3& position, const Qu
 void CollisionShape::SetStaticPlane(const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_STATICPLANE;
     position_ = position;
@@ -539,7 +565,8 @@ void CollisionShape::SetStaticPlane(const Vector3& position, const Quaternion& r
 void CollisionShape::SetCylinder(float diameter, float height, const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_CYLINDER;
     size_ = Vector3(diameter, height, diameter);
@@ -556,7 +583,8 @@ void CollisionShape::SetCylinder(float diameter, float height, const Vector3& po
 void CollisionShape::SetCapsule(float diameter, float height, const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_CAPSULE;
     size_ = Vector3(diameter, height, diameter);
@@ -573,7 +601,8 @@ void CollisionShape::SetCapsule(float diameter, float height, const Vector3& pos
 void CollisionShape::SetCone(float diameter, float height, const Vector3& position, const Quaternion& rotation)
 {
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_CONE;
     size_ = Vector3(diameter, height, diameter);
@@ -596,7 +625,8 @@ void CollisionShape::SetTriangleMesh(Model* model, unsigned lodLevel, const Vect
     }
 
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_TRIANGLEMESH;
     model_ = model;
@@ -625,7 +655,8 @@ void CollisionShape::SetCustomTriangleMesh(CustomGeometry* custom, const Vector3
     }
 
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_TRIANGLEMESH;
     model_.Reset();
@@ -649,7 +680,8 @@ void CollisionShape::SetConvexHull(Model* model, unsigned lodLevel, const Vector
     }
 
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_CONVEXHULL;
     model_ = model;
@@ -678,7 +710,8 @@ void CollisionShape::SetCustomConvexHull(CustomGeometry* custom, const Vector3& 
     }
 
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_CONVEXHULL;
     model_.Reset();
@@ -703,7 +736,8 @@ void CollisionShape::SetTerrain(unsigned lodLevel)
     }
 
     if (model_)
-        UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+        model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
     shapeType_ = SHAPE_TERRAIN;
     lodLevel_ = lodLevel;
@@ -784,7 +818,8 @@ void CollisionShape::SetModel(Model* model)
     if (model != model_)
     {
         if (model_)
-            UnsubscribeFromEvent(model_, E_RELOADFINISHED);
+            model_->reloadFinished.Disconnect(this,&CollisionShape::HandleModelReloadFinished);
+
 
         model_ = model;
         if (shapeType_ >= SHAPE_TRIANGLEMESH)
@@ -864,8 +899,7 @@ void CollisionShape::NotifyRigidBody(bool updateMass)
 
 void CollisionShape::SetModelAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    model_ = cache->GetResource<Model>(value.name_);
+    model_ = context_->m_ResourceCache->GetResource<Model>(value.name_);
     recreateShape_ = true;
     MarkNetworkUpdate();
 }
@@ -1049,7 +1083,7 @@ void CollisionShape::UpdateShape()
                 }
                 else
                     URHO3D_LOGWARNING("Could not find custom geometry component from node ID " +
-                               QString::number(customGeometryID_) + " for triangle mesh shape creation");
+                                      QString::number(customGeometryID_) + " for triangle mesh shape creation");
             }
             else if (model_ && model_->GetNumGeometries())
             {
@@ -1070,7 +1104,7 @@ void CollisionShape::UpdateShape()
                 TriangleMeshData* triMesh = static_cast<TriangleMeshData*>(geometry_.Get());
                 shape_.reset(new btScaledBvhTriangleMeshShape(triMesh->shape_.get(), ToBtVector3(newWorldScale * size_)));
                 // Watch for live reloads of the collision model to reload the geometry if necessary
-                SubscribeToEvent(model_, E_RELOADFINISHED, URHO3D_HANDLER(CollisionShape, HandleModelReloadFinished));
+                model_->reloadFinished.Connect(this,&CollisionShape::HandleModelReloadFinished);
             }
             break;
 
@@ -1088,7 +1122,7 @@ void CollisionShape::UpdateShape()
                 }
                 else
                     URHO3D_LOGWARNING("Could not find custom geometry component from node ID " +
-                               QString::number(customGeometryID_) + " for convex shape creation");
+                                      QString::number(customGeometryID_) + " for convex shape creation");
             }
             else if (model_ && model_->GetNumGeometries())
             {
@@ -1109,7 +1143,7 @@ void CollisionShape::UpdateShape()
                 ConvexData* convex = static_cast<ConvexData*>(geometry_.Get());
                 shape_ .reset(new btConvexHullShape((btScalar*)convex->vertexData_.Get(), convex->vertexCount_, sizeof(Vector3)));
                 shape_->setLocalScaling(ToBtVector3(newWorldScale * size_));
-                SubscribeToEvent(model_, E_RELOADFINISHED, URHO3D_HANDLER(CollisionShape, HandleModelReloadFinished));
+                model_->reloadFinished.Connect(this,&CollisionShape::HandleModelReloadFinished);
             }
             break;
 
@@ -1123,8 +1157,8 @@ void CollisionShape::UpdateShape()
                 HeightfieldData* heightfield = static_cast<HeightfieldData*>(geometry_.Get());
 
                 shape_ .reset(new btHeightfieldTerrainShape(heightfield->size_.x_, heightfield->size_.y_,
-                                                       heightfield->heightData_.Get(), 1.0f, heightfield->minHeight_, heightfield->maxHeight_, 1, PHY_FLOAT,
-                                                       false));
+                                                            heightfield->heightData_.Get(), 1.0f, heightfield->minHeight_, heightfield->maxHeight_, 1, PHY_FLOAT,
+                                                            false));
                 shape_->setLocalScaling(ToBtVector3(Vector3(heightfield->spacing_.x_, 1.0f, heightfield->spacing_.z_) *
                                                     newWorldScale * size_));
             }
@@ -1166,7 +1200,7 @@ void CollisionShape::HandleTerrainCreated(StringHash eventType, VariantMap& even
     }
 }
 
-void CollisionShape::HandleModelReloadFinished(StringHash eventType, VariantMap& eventData)
+void CollisionShape::HandleModelReloadFinished()
 {
     if (physicsWorld_)
         physicsWorld_->RemoveCachedGeometry(model_);

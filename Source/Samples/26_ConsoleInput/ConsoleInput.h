@@ -30,8 +30,6 @@
 ///       and standard input.
 class ConsoleInput : public Sample
 {
-    URHO3D_OBJECT(ConsoleInput,Sample);
-
 public:
     /// Construct.
     ConsoleInput(Context* context);
@@ -39,24 +37,11 @@ public:
     /// Setup after engine initialization and before running the main loop.
     virtual void Start() override;
 
-protected:
-    /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
-    virtual QString GetScreenJoystickPatchString() const override { return
-        "<patch>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Button2']]\">"
-        "        <attribute name=\"Is Visible\" value=\"false\" />"
-        "    </add>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Hat0']]\">"
-        "        <attribute name=\"Is Visible\" value=\"false\" />"
-        "    </add>"
-        "</patch>";
-    }
-
 private:
     /// Handle console command event.
-    void HandleConsoleCommand(StringHash eventType, VariantMap& eventData);
+    void HandleConsoleCommand(const QString &command, const QString &id);
     /// Handle frame update event.
-    void HandleUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleUpdate(float timeStep);
     /// Handle ESC key down event to quit the engine.
     void HandleEscKeyDown(StringHash eventType, VariantMap& eventData);
     /// Print intro message and initialize the game state.

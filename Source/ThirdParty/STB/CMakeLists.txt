@@ -27,9 +27,6 @@ set(INCLUDES
     stb_vorbis.h
 )
 
-add_library(STB OBJECT ${SOURCE_FILES} ${INCLUDES})
-install (FILES ${INCLUDES} DESTINATION include/ThirdParty/STB)
-
-######################### Add component to the project's list
-list(APPEND ThirdParty_requisites $<TARGET_OBJECTS:STB>)
-SET(ThirdParty_requisites ${ThirdParty_requisites} PARENT_SCOPE)
+add_library(STB STATIC ${SOURCE_FILES} ${INCLUDES})
+#install (FILES ${INCLUDES} DESTINATION include/ThirdParty/STB)
+set_property(TARGET STB PROPERTY POSITION_INDEPENDENT_CODE ON)

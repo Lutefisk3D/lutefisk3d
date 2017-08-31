@@ -1,5 +1,3 @@
-project(jlss)
-
 IF(MSVC)
     ADD_DEFINITIONS(-D_CRT_NONSTDC_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -DWIN32 -DNOMINMAX -D_WIN32_WINNT=0x501)
 ELSE()
@@ -23,15 +21,6 @@ add_library(jlsignal STATIC
     ${jlsignal_INCLUDES}
     )
 set_property(TARGET jlsignal PROPERTY POSITION_INDEPENDENT_CODE ON)
-add_executable(jltest
-    src/testMain.cpp
-    src/ObjectPoolTest.cpp
-    src/SignalTest.cpp
 
-    )
-target_link_libraries(jltest jlsignal   )
-
-install(TARGETS jlsignal
-    ARCHIVE DESTINATION lib
-)
-install (FILES ${jlsignal_INCLUDES} DESTINATION include/jlsignal)
+install(TARGETS jlsignal ARCHIVE DESTINATION lib)
+install(FILES ${jlsignal_INCLUDES} DESTINATION include/jlsignal)

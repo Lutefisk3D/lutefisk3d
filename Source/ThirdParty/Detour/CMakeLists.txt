@@ -41,7 +41,7 @@ set(INCLUDES
 )
 
 add_library(Detour STATIC ${SOURCE_FILES} ${INCLUDES})
-install (FILES ${INCLUDES} DESTINATION include/ThirdParty/Detour)
+#install (FILES ${INCLUDES} DESTINATION include/ThirdParty/Detour)
 add_dependencies(Detour Recast)
 set_property(TARGET Detour PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(Detour PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} )

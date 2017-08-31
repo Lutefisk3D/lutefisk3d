@@ -90,5 +90,5 @@ set_property(TARGET Lutefisk3D_2D APPEND PROPERTY INTERFACE_LINK_LIBRARIES PugiX
 add_dependencies(Lutefisk3D_2D PugiXml Box2D)
 set(ThirdParty_requisites ${ThirdParty_requisites} PugiXml Box2D PARENT_SCOPE)
 set_property(TARGET Lutefisk3D_2D PROPERTY POSITION_INDEPENDENT_CODE ON)
-
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/2D)
 

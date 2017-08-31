@@ -9,20 +9,24 @@ macro(lutefisk_add_to_core Name)
 endmacro()
 
 set(Lutefisk3D_components "")
-
-set(MinimalSources
-    Core/CoreEvents.cpp
+set(MinimalHeaders
     Core/CoreEvents.h
-    Input/InputEvents.cpp
     Input/InputEvents.h
-    Scene/SceneEvents.cpp
     Scene/SceneEvents.h
-    Graphics/GraphicsEvents.cpp
     Graphics/GraphicsEvents.h
 )
+set(MinimalSources
+    Core/CoreEvents.cpp
+    Input/InputEvents.cpp
+    Scene/SceneEvents.cpp
+    Graphics/GraphicsEvents.cpp
+    ${MinimalHeaders}
+)
+
 add_library(Lutefisk3D SHARED
     ${MinimalSources}
 )
+GENERATE_EXPORT_HEADER(Lutefisk3D)
 
 lutefisk_add_to_core(Container)
 lutefisk_add_to_core(Core)
@@ -55,9 +59,12 @@ endif()
 if(NOT LUTEFISK3D_2DLESS)
     lutefisk_add_to_core(2D)
 endif()
-GENERATE_EXPORT_HEADER(Lutefisk3D)
 
-target_link_libraries(Lutefisk3D Threads::Threads ${CMAKE_DL_LIBS} ${ThirdParty_requisites})
+target_link_libraries(Lutefisk3D PRIVATE
+    Threads::Threads
+    ${CMAKE_DL_LIBS}
+    ${ThirdParty_requisites}
+)
 #set_property(TARGET Lutefisk3D PROPERTY CXX_INCLUDE_WHAT_YOU_USE /usr/bin/include-what-you-use)
 
 if(NOT LUTEFISK3D_HEADLESS)
@@ -69,5 +76,13 @@ if(NOT LUTEFISK3D_NETLESS)
     target_link_libraries(Lutefisk3D kNet_LIB) # add imported kNet target
 endif()
 
-qt5_use_modules(Lutefisk3D Core Gui)
+qt5_use_modules(Lutefisk3D LINK_PUBLIC Core Gui)
 
+install(TARGETS Lutefisk3D EXPORT lutefis3d-targets
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib
+            INCLUDES DESTINATION include
+)
+install(EXPORT lutefis3d-targets DESTINATION lib/Lutefisk3D)
+install(FILES ${MinimalHeaders} DESTINATION include/Lutefisk3D )
+install(FILES ${PROJECT_BINARY_DIR}/Source/Lutefisk3D/lutefisk3d_export.h DESTINATION include/Lutefisk3D)

@@ -38,7 +38,7 @@ DetourProximityGrid.h
 )
 
 add_library(DetourCrowd STATIC ${SOURCE_FILES} ${INCLUDES})
-install (FILES ${INCLUDES} DESTINATION include/ThirdParty/DetourCrowd)
+#install (FILES ${INCLUDES} DESTINATION include/ThirdParty/DetourCrowd)
 add_dependencies(DetourCrowd Detour Recast)
 set_property(TARGET DetourCrowd PROPERTY POSITION_INDEPENDENT_CODE ON)
 

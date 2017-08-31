@@ -14,6 +14,7 @@ set_property(TARGET Lutefisk3D_Input PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET Lutefisk3D_Input PROPERTY INTERFACE_LINK_LIBRARIES
     SDL2_LIB
 )
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Input )
 
 if(UNIT_TESTING)
 endif()

@@ -39,5 +39,5 @@ Recast.h
 )
 
 add_library(Recast STATIC ${SOURCE_FILES} ${INCLUDES})
-install (FILES ${INCLUDES} DESTINATION include/ThirdParty/Recast)
+#install (FILES ${INCLUDES} DESTINATION include/ThirdParty/Recast)
 set_property(TARGET Recast PROPERTY POSITION_INDEPENDENT_CODE ON)

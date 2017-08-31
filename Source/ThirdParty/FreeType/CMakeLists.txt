@@ -81,5 +81,5 @@ add_library(FreeType STATIC ${SOURCE_FILES})
 set_property(TARGET FreeType PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Install headers for building the Urho3D library
-install(DIRECTORY include/freetype DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/freetype)
-install(FILES include/ft2build.h DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/freetype)
+#install(DIRECTORY include/freetype DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/freetype)
+#install(FILES include/ft2build.h DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/freetype)

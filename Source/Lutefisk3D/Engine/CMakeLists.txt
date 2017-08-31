@@ -17,9 +17,9 @@ set_property(TARGET Lutefisk3D_Engine PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_dependencies(Lutefisk3D_Engine Lutefisk3D_Core Lutefisk3D_Container)
 
 set_property(TARGET Lutefisk3D_Engine APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-    jlsignal_IMP)
-set(ThirdParty_requisites ${ThirdParty_requisites} jlsignal_IMP PARENT_SCOPE)
-
+    jlsignal)
+set(ThirdParty_requisites ${ThirdParty_requisites} jlsignal PARENT_SCOPE)
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Engine)
 if(UNIT_TESTING)
 #add_lutefisk_test(AttributeTests)
 #add_lutefisk_test(ContextTests)

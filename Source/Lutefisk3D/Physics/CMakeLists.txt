@@ -31,6 +31,7 @@ target_include_directories(Lutefisk3D_Physics PRIVATE $<TARGET_PROPERTY:Qt5::Cor
 target_compile_definitions(Lutefisk3D_Physics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Physics PROPERTY POSITION_INDEPENDENT_CODE ON)
 set(ThirdParty_requisites ${ThirdParty_requisites} Bullet_LIB StanHull PARENT_SCOPE)
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Physics )
 
 if(UNIT_TESTING)
 endif()

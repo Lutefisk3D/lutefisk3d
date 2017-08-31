@@ -43,6 +43,7 @@ set(ThirdParty_requisites ${ThirdParty_requisites} Detour
     DetourTileCache PARENT_SCOPE)
 
 set_property(TARGET Lutefisk3D_Navigation PROPERTY POSITION_INDEPENDENT_CODE ON)
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Navigation )
 
 if(UNIT_TESTING)
 #add_lutefisk_test(AttributeTests)

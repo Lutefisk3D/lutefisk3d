@@ -44,3 +44,4 @@ target_compile_definitions(Lutefisk3D_Resource PRIVATE
     $<TARGET_PROPERTY:Qt5::Gui,INTERFACE_COMPILE_DEFINITIONS>
 )
 set_property(TARGET Lutefisk3D_Resource PROPERTY POSITION_INDEPENDENT_CODE ON)
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Resource )

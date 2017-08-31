@@ -131,6 +131,7 @@ target_include_directories(Lutefisk3D_Graphics PRIVATE $<TARGET_PROPERTY:Qt5::Co
 target_compile_definitions(Lutefisk3D_Graphics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Graphics PROPERTY POSITION_INDEPENDENT_CODE ON)
 set(ThirdParty_requisites ${ThirdParty_requisites} SDL2_LIB glbinding_LIB PARENT_SCOPE)
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Graphics )
 
 if(UNIT_TESTING)
 endif()

@@ -27,6 +27,7 @@ set_property(TARGET Lutefisk3D_Audio PROPERTY INTERFACE_LINK_LIBRARIES SDL2_LIB 
 set_property(TARGET Lutefisk3D_Audio PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_dependencies(Lutefisk3D_Audio STB SDL2_LIB)
 set(ThirdParty_requisites ${ThirdParty_requisites} STB PARENT_SCOPE)
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Audio )
 
 if(UNIT_TESTING)
 #add_lutefisk_test(AttributeTests)

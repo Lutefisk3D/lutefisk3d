@@ -42,4 +42,4 @@ set(INCLUDES
 # Setup target
 add_custom_target (rapidjson ALL)   # Dummy target just so that its post-build step can install headers to the build tree
 #install (FILES ${INCLUDES} DESTINATION include/ThirdParty/rapidjson)
-install(DIRECTORY . DESTINATION include/ThirdParty/rapidjson FILES_MATCHING PATTERN "*.h")
+#install(DIRECTORY . DESTINATION include/ThirdParty/rapidjson FILES_MATCHING PATTERN "*.h")

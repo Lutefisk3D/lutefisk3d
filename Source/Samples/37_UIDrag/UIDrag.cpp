@@ -73,10 +73,10 @@ void UIDrag::CreateGUI()
 
         if (i % 2 == 0)
             b->AddTag("SomeTag");
-        SubscribeToEvent(b, E_DRAGMOVE, URHO3D_HANDLER(UIDrag, HandleDragMove));
-        SubscribeToEvent(b, E_DRAGBEGIN, URHO3D_HANDLER(UIDrag, HandleDragBegin));
-        SubscribeToEvent(b, E_DRAGCANCEL, URHO3D_HANDLER(UIDrag, HandleDragCancel));
-        SubscribeToEvent(b, E_DRAGEND, URHO3D_HANDLER(UIDrag, HandleDragEnd));
+        b->dragMove.Connect(this,&UIDrag::HandleDragMove);
+        b->dragBegin.Connect(this,&UIDrag::HandleDragBegin);
+        b->dragCancel.Connect(this,&UIDrag::HandleDragCancel);
+        b->dragEnd.Connect(this,&UIDrag::HandleDragEnd);
 
         {
             Text* t = new Text(m_context);
@@ -140,57 +140,46 @@ void UIDrag::SubscribeToEvents()
     g_coreSignals.update.Connect(this,&UIDrag::HandleUpdate);
 }
 
-void UIDrag::HandleDragBegin(StringHash eventType, VariantMap& eventData)
+void UIDrag::HandleDragBegin(UIElement *elem,int lx,int ly,int,int,int buttons,int btncount)
 {
-    using namespace DragBegin;
-    Button* element = (Button*)eventData[P_ELEMENT].GetVoidPtr();
-
-    int lx = eventData[P_X].GetInt();
-    int ly = eventData[P_Y].GetInt();
+    Button* element = (Button*)elem;
 
     IntVector2 p = element->GetPosition();
     element->SetVar("START", p);
     element->SetVar("DELTA", IntVector2(p.x_ - lx, p.y_ - ly));
-
-    int buttons = eventData[P_BUTTONS].GetInt();
     element->SetVar("BUTTONS", buttons);
 
     Text* t = (Text*)element->GetChild(QString("Text"));
     t->SetText("Drag Begin Buttons: " + QString::number(buttons));
 
     t = (Text*)element->GetChild(QString("Num Touch"));
-    t->SetText("Number of buttons: " + QString::number(eventData[P_NUMBUTTONS].GetInt()));
+    t->SetText("Number of buttons: " + QString::number(btncount));
 }
 
-void UIDrag::HandleDragMove(StringHash eventType, VariantMap& eventData)
+void UIDrag::HandleDragMove(UIElement *element,int x,int y,IntVector2 d,int,int,int buttons,int)
 {
-    using namespace DragBegin;
-    Button* element = (Button*)eventData[P_ELEMENT].GetVoidPtr();
-    int buttons = eventData[P_BUTTONS].GetInt();
-    IntVector2 d = element->GetVar("DELTA").GetIntVector2();
-    int X = eventData[P_X].GetInt() + d.x_;
-    int Y = eventData[P_Y].GetInt() + d.y_;
-    int BUTTONS = element->GetVar("BUTTONS").GetInt();
+    Button* button = (Button*)element;
+    int X = x + d.x_;
+    int Y = y + d.y_;
+    int BUTTONS = button->GetVar("BUTTONS").GetInt();
 
-    Text* t = (Text*)element->GetChild(QString("Event Touch"));
+    Text* t = (Text*)button->GetChild(QString("Event Touch"));
     t->SetText("Drag Move Buttons: " + QString::number(buttons));
 
     if (buttons == BUTTONS)
-        element->SetPosition(IntVector2(X, Y));
+        button->SetPosition(IntVector2(X, Y));
 }
 
-void UIDrag::HandleDragCancel(StringHash eventType, VariantMap& eventData)
+void UIDrag::HandleDragCancel(UIElement *elem,int,int,int,int,int,int)
 {
-    using namespace DragBegin;
-    Button* element = (Button*)eventData[P_ELEMENT].GetVoidPtr();
+    Button* element = (Button*)elem;
     IntVector2 P = element->GetVar("START").GetIntVector2();
     element->SetPosition(P);
 }
 
-void UIDrag::HandleDragEnd(StringHash eventType, VariantMap& eventData)
+void UIDrag::HandleDragEnd(UIElement *elem,int,int,int,int,int,int)
 {
-    using namespace DragBegin;
-    Button* element = (Button*)eventData[P_ELEMENT].GetVoidPtr();
+    Button* element = (Button*)elem;
 }
 
 void UIDrag::HandleUpdate(float timeStep)

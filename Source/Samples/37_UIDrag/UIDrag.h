@@ -28,6 +28,7 @@ namespace Urho3D
 {
     class Node;
     class Scene;
+    class UIElement;
 }
 
 /// GUI test example.
@@ -54,10 +55,10 @@ private:
     void SubscribeToEvents();
 
     void HandleUpdate(float timeStep);
-    void HandleDragBegin(StringHash eventType, VariantMap& eventData);
-    void HandleDragMove(StringHash eventType, VariantMap& eventData);
-    void HandleDragCancel(StringHash eventType, VariantMap& eventData);
-    void HandleDragEnd(StringHash eventType, VariantMap& eventData);
+    void HandleDragBegin(UIElement *elem,int lx,int ly,int,int,int buttons,int btncount);
+    void HandleDragMove(UIElement *element, int x, int y, IntVector2 delta, int, int, int btns, int);
+    void HandleDragCancel(UIElement *elem, int, int, int, int, int, int);
+    void HandleDragEnd(UIElement *, int, int, int, int, int, int);
     void HandleTextFinished(StringHash eventType, VariantMap& eventData);
     void HandleLineEditDragBegin(StringHash eventType, VariantMap& eventData);
 };

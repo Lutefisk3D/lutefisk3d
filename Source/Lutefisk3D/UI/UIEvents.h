@@ -122,8 +122,8 @@ struct UiElementSignals  {
     // UIElement *element,int x,int y,int elemX,int elemY,int btns,int b_count
     jl::Signal<UIElement *,int,int,int,int,int,int> dragEnd;
     /// Drag behavior of a UI Element when the input device has moved
-    // Element,int x,int y,int dx,int dy,int elemX,int elemY,int btns,int b_count
-    jl::Signal<UIElement *,int,int,int,int,int,int,int,int> dragMove;
+    // Element,int x,int y,IntVector2 delta,int elemX,int elemY,int btns,int b_count
+    jl::Signal<UIElement *,int,int,IntVector2,int,int,int,int> dragMove;
     /// Drag of a UI Element was canceled by pressing ESC
     jl::Signal<UIElement *,int,int,int,int,int,int> dragCancel;
 

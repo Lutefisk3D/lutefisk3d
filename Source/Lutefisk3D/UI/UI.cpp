@@ -469,7 +469,7 @@ void UI::Render(bool renderUICommand)
     // Render modal batches
         Render(vertexBuffer_, batches_, nonModalBatchSize_, batches_.size());
     }
-    
+
     // Render to UIComponent textures. This is skipped when called from the RENDERUI command
     if (!renderUICommand)
     {
@@ -480,7 +480,7 @@ void UI::Render(bool renderUICommand)
             {
                 SetVertexData(component->vertexBuffer_, component->vertexData_);
                 SetVertexData(component->debugVertexBuffer_, component->debugVertexData_);
-                
+
                 RenderSurface* surface = component->GetTexture()->GetRenderSurface();
                 graphics_->SetRenderTarget(0, surface);
                 graphics_->SetViewport(IntRect(0, 0, surface->GetWidth(), surface->GetHeight()));
@@ -1035,7 +1035,7 @@ void UI::Render(VertexBuffer* buffer, const std::vector<UIBatch>& batches, unsig
         graphics_->SetBlendMode(batch.blendMode_);
         graphics_->SetScissorTest(true, scissor);
         graphics_->SetTexture(0, batch.texture_);
-        graphics_->Draw(TRIANGLE_LIST, batch.vertexStart_ / UI_VERTEX_SIZE, 
+        graphics_->Draw(TRIANGLE_LIST, batch.vertexStart_ / UI_VERTEX_SIZE,
               (batch.vertexEnd_ - batch.vertexStart_) / UI_VERTEX_SIZE);
     }
 }
@@ -1513,8 +1513,7 @@ void UI::ProcessMove(const IntVector2& cursorPos, const IntVector2& cursorDeltaP
                 {
                     dragElement->OnDragMove(dragElement->ScreenToElement(sendPos), sendPos, cursorDeltaPos, buttons, qualifiers, cursor);
                     IntVector2 relativePos = dragElement->ScreenToElement(sendPos);
-                    dragElement->dragMove.Emit(dragElement, sendPos.x_, sendPos.y_, cursorDeltaPos.x_,
-                                               cursorDeltaPos.y_, relativePos.x_, relativePos.y_, dragData->dragButtons,
+                    dragElement->dragMove.Emit(dragElement, sendPos.x_, sendPos.y_, cursorDeltaPos, relativePos.x_, relativePos.y_, dragData->dragButtons,
                                                dragData->numDragButtons);
                 }
             }

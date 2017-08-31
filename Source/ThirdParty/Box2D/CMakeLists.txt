@@ -177,6 +177,6 @@ source_group(Dynamics\\Joints FILES ${BOX2D_Joints_SRCS} ${BOX2D_Joints_HDRS})
 source_group(Include FILES ${BOX2D_General_HDRS})
 source_group(Rope FILES ${BOX2D_Rope_SRCS} ${BOX2D_Rope_HDRS})
 
-add_library(Box2D OBJECT ${SOURCE_FILES} ${INCLUDES})
+add_library(Box2D STATIC ${SOURCE_FILES} ${INCLUDES})
 install (FILES ${H_FILES} DESTINATION include/ThirdParty/Box2D)
 set_property(TARGET Box2D PROPERTY POSITION_INDEPENDENT_CODE ON)

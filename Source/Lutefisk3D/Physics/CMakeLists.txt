@@ -14,23 +14,23 @@ set(SOURCE
     RaycastVehicle.cpp
     RigidBody.cpp
 )
-if(LUTEFISK3D_AS_DLLS)
-    add_library(Lutefisk3D_Physics SHARED ${SOURCE} ${INCLUDES}
-        $<TARGET_OBJECTS:StanHull>
-    )
-    target_link_libraries(Lutefisk3D_Physics Bullet_LIB)
-else()
-    add_library(Lutefisk3D_Physics STATIC ${SOURCE} ${INCLUDES}
-        $<TARGET_OBJECTS:StanHull>
+#if(LUTEFISK3D_AS_DLLS)
+#    add_library(Lutefisk3D_Physics SHARED ${SOURCE} ${INCLUDES}
+#        $<TARGET_OBJECTS:StanHull>
+#    )
+#    target_link_libraries(Lutefisk3D_Physics Bullet_LIB)
+#else()
+    add_library(Lutefisk3D_Physics OBJECT ${SOURCE} ${INCLUDES}
     )
     set_property(TARGET Lutefisk3D_Physics APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-        Bullet_LIB
+        Bullet_LIB StanHull
     )
-endif()
+#endif()
 add_dependencies(Lutefisk3D_Physics Bullet_LIB)
 target_include_directories(Lutefisk3D_Physics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Physics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Physics PROPERTY POSITION_INDEPENDENT_CODE ON)
+set(ThirdParty_requisites ${ThirdParty_requisites} Bullet_LIB StanHull PARENT_SCOPE)
 
 if(UNIT_TESTING)
 endif()

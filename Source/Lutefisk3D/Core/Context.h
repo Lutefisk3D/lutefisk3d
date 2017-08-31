@@ -33,7 +33,7 @@
 #endif
 namespace jl {
 class ScopedAllocator;
-};
+}
 namespace Urho3D
 {
 #ifndef LUTEFISK3D_UILESS

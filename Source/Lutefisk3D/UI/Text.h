@@ -70,7 +70,7 @@ struct GlyphLocation
 };
 
 /// %Text %UI element.
-class Text : public UIElement
+class LUTEFISK3D_EXPORT Text : public UIElement
 {
     URHO3D_OBJECT(Text,UIElement)
 

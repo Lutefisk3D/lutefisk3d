@@ -122,24 +122,15 @@ set(OPENGL2_3_RENDERER
     OpenGL/OGLTextureCube.cpp
     OpenGL/OGLVertexBuffer.cpp
 )
-if(LUTEFISK3D_AS_DLLS)
-    add_library(Lutefisk3D_Graphics SHARED ${SOURCE} ${INCLUDES} ${OPENGL2_3_RENDERER})
-    target_link_libraries(Lutefisk3D_Graphics
-        SDL2_LIB
-        glbinding_LIB
-        Lutefisk3D
-    )
-else()
-    add_library(Lutefisk3D_Graphics STATIC ${SOURCE} ${INCLUDES} ${OPENGL2_3_RENDERER})
-    set_property(TARGET Lutefisk3D_Graphics PROPERTY INTERFACE_LINK_LIBRARIES
-        SDL2_LIB glbinding_LIB
-        Lutefisk3D
-    )
-    add_dependencies(Lutefisk3D_Graphics SDL2_LIB glbinding_LIB)
-endif()
+add_library(Lutefisk3D_Graphics OBJECT ${SOURCE} ${INCLUDES} ${OPENGL2_3_RENDERER})
+set_property(TARGET Lutefisk3D_Graphics PROPERTY INTERFACE_LINK_LIBRARIES
+    SDL2_LIB glbinding_LIB
+)
+add_dependencies(Lutefisk3D_Graphics SDL2_LIB glbinding_LIB)
 target_include_directories(Lutefisk3D_Graphics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D_Graphics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 set_property(TARGET Lutefisk3D_Graphics PROPERTY POSITION_INDEPENDENT_CODE ON)
+set(ThirdParty_requisites ${ThirdParty_requisites} SDL2_LIB glbinding_LIB PARENT_SCOPE)
 
 if(UNIT_TESTING)
 endif()

@@ -21,9 +21,9 @@
 //
 
 #pragma once
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 
 #include <functional>
-#include "Lutefisk3D/Core/Lutefisk3D.h"
 class QString;
 class QStringRef;
 namespace Urho3D

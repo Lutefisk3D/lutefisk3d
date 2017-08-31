@@ -47,7 +47,7 @@ class Vector2;
 class Vector3;
 class Vector4;
 /// Abstract stream for writing.
-class Serializer
+class LUTEFISK3D_EXPORT Serializer
 {
 public:
     /// Destruct.

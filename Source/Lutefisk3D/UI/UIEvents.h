@@ -60,7 +60,7 @@ struct UISignals {
     }
 
 };
-extern UISignals g_uiSignals;
+extern LUTEFISK3D_EXPORT UISignals g_uiSignals;
 
 /// UI element name changed.
 URHO3D_EVENT(E_NAMECHANGED, NameChanged)

@@ -50,7 +50,7 @@ public:
     /// Construct with a specified rectangle.
     Viewport(Context* context, Scene* scene, Camera* camera, const IntRect& rect, RenderPath* renderPath = nullptr);
     /// Destruct.
-    ~Viewport() = default;
+    ~Viewport();
 
     /// Set scene.
     void SetScene(Scene* scene);

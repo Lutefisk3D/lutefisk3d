@@ -21,7 +21,7 @@
 //
 
 #pragma once
-
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 #include <jlsignal/Signal.h>
 
 namespace Urho3D
@@ -50,6 +50,6 @@ struct CoreSignals
         beginFrame.SetAllocator(alloc);
     }
 };
-extern CoreSignals g_coreSignals;
+extern LUTEFISK3D_EXPORT CoreSignals g_coreSignals;
 
 }

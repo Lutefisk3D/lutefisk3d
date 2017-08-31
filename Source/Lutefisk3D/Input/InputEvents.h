@@ -142,7 +142,7 @@ struct InputSignals
 
 
 };
-extern InputSignals g_inputSignals;
+extern LUTEFISK3D_EXPORT InputSignals g_inputSignals;
 
 
 

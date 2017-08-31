@@ -20,19 +20,13 @@ set(SOURCE
     SoundStream.cpp
 )
 
-if(LUTEFISK3D_AS_DLLS)
-    add_library(Lutefisk3D_Audio SHARED ${SOURCE} ${INCLUDES} $<TARGET_OBJECTS:STB>)
-    target_link_libraries(Lutefisk3D_Audio Lutefisk3D SDL2_LIB )
-    qt5_use_modules(Lutefisk3D_Audio Core)
-else()
-    add_library(Lutefisk3D_Audio STATIC ${SOURCE} ${INCLUDES} $<TARGET_OBJECTS:STB> )
-    target_include_directories(Lutefisk3D_Audio PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
-    target_compile_definitions(Lutefisk3D_Audio PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
-    set_property(TARGET Lutefisk3D_Audio PROPERTY INTERFACE_LINK_LIBRARIES SDL2_LIB)
-endif()
+add_library(Lutefisk3D_Audio OBJECT ${SOURCE} ${INCLUDES} )
+target_include_directories(Lutefisk3D_Audio PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
+target_compile_definitions(Lutefisk3D_Audio PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
+set_property(TARGET Lutefisk3D_Audio PROPERTY INTERFACE_LINK_LIBRARIES SDL2_LIB STB)
 set_property(TARGET Lutefisk3D_Audio PROPERTY POSITION_INDEPENDENT_CODE ON)
-add_dependencies(Lutefisk3D_Audio SDL2_LIB)
-
+add_dependencies(Lutefisk3D_Audio STB SDL2_LIB)
+set(ThirdParty_requisites ${ThirdParty_requisites} STB PARENT_SCOPE)
 
 if(UNIT_TESTING)
 #add_lutefisk_test(AttributeTests)

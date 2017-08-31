@@ -40,4 +40,4 @@ public:
     virtual ~AbstractFile() = default;
 };
 
-};
+}

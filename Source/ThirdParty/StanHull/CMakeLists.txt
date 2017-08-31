@@ -27,5 +27,5 @@ set(INCLUDES
     hull.h
 )
 
-add_library(StanHull OBJECT ${SOURCE_FILES} ${INCLUDES})
+add_library(StanHull STATIC ${SOURCE_FILES} ${INCLUDES})
 set_property(TARGET StanHull PROPERTY POSITION_INDEPENDENT_CODE ON)

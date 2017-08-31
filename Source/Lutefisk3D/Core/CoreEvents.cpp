@@ -1,5 +1,5 @@
 #include "CoreEvents.h"
 namespace Urho3D
 {
-CoreSignals g_coreSignals;
+LUTEFISK3D_EXPORT CoreSignals g_coreSignals;
 }

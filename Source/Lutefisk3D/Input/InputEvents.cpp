@@ -3,6 +3,6 @@
 namespace Urho3D
 {
 
-InputSignals g_inputSignals;
+LUTEFISK3D_EXPORT InputSignals g_inputSignals;
 
 }

@@ -21,7 +21,7 @@
 //
 
 #pragma once
-
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 #include <jlsignal/Signal.h>
 
 class QString;
@@ -33,7 +33,7 @@ class Node;
 class Component;
 class Serializable;
 class Variant;
-struct SceneSignals
+struct LUTEFISK3D_EXPORT SceneSignals
 {
     /// Variable timestep scene update.
     jl::Signal<Scene *,float> sceneUpdate; //Scene *scene,float TimeStep
@@ -49,7 +49,7 @@ struct SceneSignals
         temporaryChanged.SetAllocator(allocator);
     }
 };
-extern SceneSignals g_sceneSignals;
+extern LUTEFISK3D_EXPORT SceneSignals g_sceneSignals;
 
 struct SingularSceneSignals {
     /// Scene drawable update finished. Custom animation (eg. IK) can be done at this point.

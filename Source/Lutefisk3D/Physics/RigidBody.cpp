@@ -19,18 +19,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "RigidBody.h"
 
-#include "Lutefisk3D/Physics/CollisionShape.h"
-#include "Lutefisk3D/Physics/Constraint.h"
+#include "CollisionShape.h"
+#include "Constraint.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/MemoryBuffer.h"
-#include "Lutefisk3D/Physics/PhysicsUtils.h"
-#include "Lutefisk3D/Physics/PhysicsWorld.h"
+#include "Lutefisk3D/IO/File.h"
+#include "PhysicsUtils.h"
+#include "PhysicsWorld.h"
 #include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Resource/BackgroundLoader.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
-#include "Lutefisk3D/Resource/ResourceEvents.h"
-#include "Lutefisk3D/Physics/RigidBody.h"
 #include "Lutefisk3D/Scene/Scene.h"
 #include "Lutefisk3D/Scene/SceneEvents.h"
 #include "Lutefisk3D/Scene/SmoothedTransform.h"

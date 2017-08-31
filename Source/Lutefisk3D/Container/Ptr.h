@@ -35,12 +35,12 @@ template <class T> class SharedPtr
 public:
     /// Construct a null shared pointer.
     SharedPtr() :
-        ptr_(0)
+        ptr_(nullptr)
     {
     }
     /// Construct a null shared pointer.
     SharedPtr(std::nullptr_t) :
-        ptr_(0)
+        ptr_(nullptr)
     {
     }
     /// Copy-construct from another shared pointer.
@@ -173,9 +173,9 @@ public:
     }
 
     /// Check if the pointer is null.
-    bool Null() const { return ptr_ == 0; }
+    bool Null() const { return ptr_ == nullptr; }
     /// Check if the pointer is not null.
-    bool NotNull() const { return ptr_ != 0; }
+    bool NotNull() const { return ptr_ != nullptr; }
     /// Return the raw pointer.
     T* Get() const { return ptr_; }
     /// Return the object's reference count, or 0 if the pointer is null.
@@ -233,14 +233,14 @@ template <class T> class WeakPtr
 public:
     /// Construct a null weak pointer.
     WeakPtr() :
-        ptr_(0),
-        refCount_(0)
+        ptr_(nullptr),
+        refCount_(nullptr)
     {
     }
     /// Construct a null weak pointer.
     WeakPtr(std::nullptr_t) :
-        ptr_(0),
-        refCount_(0)
+        ptr_(nullptr),
+        refCount_(nullptr)
     {
     }
     /// Copy-construct from another weak pointer.
@@ -352,7 +352,7 @@ public:
     T* Get() const
     {
         if (Expired())
-            return 0;
+            return nullptr;
         else
             return ptr_;
     }
@@ -414,13 +414,13 @@ public:
             AddRef();
         }
         else
-            refCount_ = 0;
+            refCount_ = nullptr;
     }
 
     /// Check if the pointer is null.
-    bool Null() const { return refCount_ == 0; }
+    bool Null() const { return refCount_ == nullptr; }
     /// Check if the pointer is not null.
-    bool NotNull() const { return refCount_ != 0; }
+    bool NotNull() const { return refCount_ != nullptr; }
     /// Return the object's reference count, or 0 if null pointer or if object has expired.
     int Refs() const { return (refCount_ && refCount_->refs_ >= 0) ? refCount_->refs_ : 0; }
 
@@ -466,7 +466,7 @@ private:
         }
 
         ptr_ = 0;
-        refCount_ = 0;
+        refCount_ = nullptr;
     }
 
     /// Pointer to the object.

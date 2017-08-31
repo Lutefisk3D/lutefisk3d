@@ -2,5 +2,5 @@
 
 namespace Urho3D
 {
-    SceneSignals g_sceneSignals;
+    LUTEFISK3D_EXPORT SceneSignals g_sceneSignals;
 }

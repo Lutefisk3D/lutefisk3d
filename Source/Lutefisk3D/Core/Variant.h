@@ -101,7 +101,7 @@ struct VariantValue
     };
     union
     {
-        void* ptr5_[4];
+        void* ptr5_[6];
     };
 #ifdef _GLIBCXX_DEBUG
     union
@@ -112,7 +112,7 @@ struct VariantValue
 };
 static_assert(sizeof(VariantValue)>=sizeof(QStringList),"Variant value to small");
 /// Typed resource reference.
-struct ResourceRef
+struct LUTEFISK3D_EXPORT ResourceRef
 {
     /// Construct.
     ResourceRef()
@@ -1073,8 +1073,8 @@ template<> inline VariantType GetVariantType<IntRect>() { return VAR_INTRECT; }
 template<> inline VariantType GetVariantType<IntVector2>() { return VAR_INTVECTOR2; }
 template <> inline VariantType GetVariantType<IntVector3>() { return VAR_INTVECTOR3; }
 template<> inline VariantType GetVariantType<Matrix3>() { return VAR_MATRIX3; }
-template<> inline VariantType GetVariantType<Matrix3x4>() { return VAR_MATRIX3X4; }
-template<> inline VariantType GetVariantType<Matrix4>() { return VAR_MATRIX4; }
+template<> LUTEFISK3D_EXPORT inline VariantType GetVariantType<Matrix3x4>() { return VAR_MATRIX3X4; }
+template<> LUTEFISK3D_EXPORT inline VariantType GetVariantType<Matrix4>() { return VAR_MATRIX4; }
 template <> LUTEFISK3D_EXPORT Rect Variant::Get<Rect>() const;
 template <> LUTEFISK3D_EXPORT IntRect Variant::Get<IntRect>() const;
 

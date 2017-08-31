@@ -29,7 +29,7 @@ namespace Urho3D
 {
 
 /// %UI element which allows sub-pixel positioning and size, as well as rotation. Only other Sprites should be added as child elements.
-class Sprite : public UIElement
+class LUTEFISK3D_EXPORT Sprite : public UIElement
 {
     URHO3D_OBJECT(Sprite,UIElement);
 

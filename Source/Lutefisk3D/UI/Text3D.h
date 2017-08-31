@@ -33,7 +33,7 @@ namespace Urho3D
 class Text;
 
 /// 3D text component.
-class Text3D : public Drawable
+class LUTEFISK3D_EXPORT Text3D : public Drawable
 {
     URHO3D_OBJECT(Text3D,Drawable);
 

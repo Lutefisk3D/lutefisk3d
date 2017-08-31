@@ -31,7 +31,7 @@ class BorderImage;
 class ScrollBar;
 
 /// Scrollable %UI element for showing a (possibly large) child element.
-class ScrollView : public UIElement
+class LUTEFISK3D_EXPORT ScrollView : public UIElement
 {
     URHO3D_OBJECT(ScrollView,UIElement);
 

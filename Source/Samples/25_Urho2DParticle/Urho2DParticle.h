@@ -37,8 +37,6 @@ namespace Urho3D
 //     - Handling mouse move to move particle
 class Urho2DParticle : public Sample
 {
-    URHO3D_OBJECT(Urho2DParticle,Sample)
-
 public:
     /// Construct.
     Urho2DParticle(Context* context);
@@ -56,7 +54,8 @@ private:
     /// Subscribe to application-wide logic update events.
     void SubscribeToEvents();
     /// Handle mouse move event.
-    void HandleMouseMove(StringHash eventType, VariantMap& eventData);
+    void HandleMouseMove(int x, int y, int, int, unsigned, int);
+    void HandleTouchMove(unsigned, int x, int y, int dx, int dy, float);
 
     /// Particle scene node.
     SharedPtr<Node> particleNode_;

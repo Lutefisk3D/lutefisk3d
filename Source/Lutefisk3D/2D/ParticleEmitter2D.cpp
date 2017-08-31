@@ -49,7 +49,8 @@ ParticleEmitter2D::ParticleEmitter2D(Context* context) :
     boundingBoxMaxPoint_(Vector3::ZERO),
     emitting_(true)
 {
-    sourceBatch_.front().owner_ = this;
+    sourceBatch_.resize(1);
+    sourceBatch_[0].owner_ = this;
 }
 
 ParticleEmitter2D::~ParticleEmitter2D()

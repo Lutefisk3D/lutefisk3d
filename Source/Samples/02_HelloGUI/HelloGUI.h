@@ -59,7 +59,7 @@ private:
     /// Handle drag begin for the fish button.
     void HandleDragBegin(UIElement *, int X, int Y, int elemX, int elemY, int, int);
     /// Handle drag move for the fish button.
-    void HandleDragMove(UIElement *draggedElement, int X, int Y, IntVector2, int elemX, int elemY, int, int);
+    void HandleDragMove(UIElement *draggedElement, int X, int Y, IntVector2 dlta, int elemX, int elemY, int, int);
     /// Handle drag end for the fish button.
     void HandleDragEnd(UIElement *, int, int, int, int, int, int);
     /// Handle any UI control being clicked.

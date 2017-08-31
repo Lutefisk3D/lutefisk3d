@@ -44,25 +44,12 @@ struct Vertex2D
 /// 2D source batch.
 struct SourceBatch2D
 {
-    friend class SourceBatch2D_Manager;
-private:
-    SourceBatch2D() = default;
-public:
     WeakPtr<Drawable2D>   owner_;            ///< Owner.
     mutable float         distance_  = 0.0f; ///< Distance to camera.
     int                   drawOrder_ = 0;    ///< Draw order.
     SharedPtr<Material>   material_;         ///< Material.
     std::vector<Vertex2D> vertices_;         ///< Vertices.
 };
-using SourceBatch2D_Handle = DataHandle<SourceBatch2D,20,20>;
-class SourceBatch2D_Manager {
-
-public:
-    SourceBatch2D_Handle create();
-    void release(SourceBatch2D_Handle h);
-    SourceBatch2D &get(SourceBatch2D_Handle h) const;
-};
-extern SourceBatch2D_Manager source2DBatchManger;
 /// Pixel size (equal 0.01f).
 extern LUTEFISK3D_EXPORT const float PIXEL_SIZE;
 

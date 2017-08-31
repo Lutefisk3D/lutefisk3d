@@ -23,10 +23,10 @@
 
 
 #include <Lutefisk3D/Graphics/Camera.h>
-#include <Lutefisk3D/Urho2D/CollisionBox2D.h>
-#include <Lutefisk3D/Urho2D/CollisionEdge2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintRevolute2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintRope2D.h>
+#include <Lutefisk3D/2D/CollisionBox2D.h>
+#include <Lutefisk3D/2D/CollisionEdge2D.h>
+#include <Lutefisk3D/2D/ConstraintRevolute2D.h>
+#include <Lutefisk3D/2D/ConstraintRope2D.h>
 #include <Lutefisk3D/Core/CoreEvents.h>
 #include <Lutefisk3D/Graphics/DebugRenderer.h>
 #include <Lutefisk3D/Engine/Engine.h>
@@ -34,9 +34,9 @@
 #include <Lutefisk3D/Graphics/Graphics.h>
 #include <Lutefisk3D/Input/Input.h>
 #include <Lutefisk3D/Graphics/Octree.h>
-#include <Lutefisk3D/Urho2D/PhysicsWorld2D.h>
+#include <Lutefisk3D/2D/PhysicsWorld2D.h>
 #include <Lutefisk3D/Graphics/Renderer.h>
-#include <Lutefisk3D/Urho2D/RigidBody2D.h>
+#include <Lutefisk3D/2D/RigidBody2D.h>
 #include <Lutefisk3D/Scene/Scene.h>
 #include <Lutefisk3D/Scene/SceneEvents.h>
 #include <Lutefisk3D/UI/Text.h>
@@ -50,7 +50,7 @@ URHO3D_DEFINE_APPLICATION_MAIN(Urho2DPhysicsRope)
 static const unsigned NUM_OBJECTS = 10;
 
 Urho2DPhysicsRope::Urho2DPhysicsRope(Context* context) :
-    Sample(context)
+    Sample("Urho2DPhysicsRope",context)
 {
 }
 
@@ -214,16 +214,11 @@ void Urho2DPhysicsRope::SubscribeToEvents()
     g_coreSignals.update.Connect(this,&Urho2DPhysicsRope::HandleUpdate);
 
     // Unsubscribe the SceneUpdate event from base class to prevent camera pitch and yaw in 2D sample
-    UnsubscribeFromEvent(E_SCENEUPDATE);
+    g_sceneSignals.sceneUpdate.Disconnect(this);
 }
 
 void Urho2DPhysicsRope::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 

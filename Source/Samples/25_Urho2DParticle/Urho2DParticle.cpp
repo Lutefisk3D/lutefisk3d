@@ -133,23 +133,22 @@ void Urho2DParticle::SetupViewport()
 
 void Urho2DParticle::SubscribeToEvents()
 {
-    SubscribeToEvent(E_MOUSEMOVE, URHO3D_HANDLER(Urho2DParticle, HandleMouseMove));
+    g_inputSignals.mouseMove.Connect(this,&Urho2DParticle::HandleMouseMove);
     if (touchEnabled_)
-        SubscribeToEvent(E_TOUCHMOVE, URHO3D_HANDLER(Urho2DParticle, HandleMouseMove));
+        g_inputSignals.touchMove.Connect(this,&Urho2DParticle::HandleTouchMove);
 
     // Unsubscribe the SceneUpdate event from base class to prevent camera pitch and yaw in 2D sample
-    UnsubscribeFromEvent(E_SCENEUPDATE);
+    g_sceneSignals.sceneUpdate.Disconnect(this);
 }
-
-void Urho2DParticle::HandleMouseMove(StringHash eventType, VariantMap& eventData)
+void Urho2DParticle::HandleTouchMove(unsigned,int x, int y, int dx, int dy,float) {
+    HandleMouseMove(x,y,dx,dy,0,0);
+}
+void Urho2DParticle::HandleMouseMove(int x, int y, int, int, unsigned, int)
 {
     if (particleNode_)
     {
-        using namespace MouseMove;
-        float x = (float)eventData[P_X].GetInt();
-        float y = (float)eventData[P_Y].GetInt();
         Graphics* graphics = m_context->m_Graphics.get();
         Camera* camera = cameraNode_->GetComponent<Camera>();
-        particleNode_->SetPosition(camera->ScreenToWorldPoint(Vector3(x / graphics->GetWidth(), y / graphics->GetHeight(), 10.0f)));
+        particleNode_->SetPosition(camera->ScreenToWorldPoint(Vector3(float(x) / graphics->GetWidth(), float(y) / graphics->GetHeight(), 10.0f)));
     }
 }

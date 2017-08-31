@@ -39,7 +39,7 @@ using namespace Urho3D;
 URHO3D_DEFINE_APPLICATION_MAIN(SoundSynthesis)
 
 SoundSynthesis::SoundSynthesis(Context* context) :
-    Sample(context),
+    Sample("SoundSynthesis",context),
     filter_(0.5f),
     accumulator_(0.0f),
     osc1_(0.0f),
@@ -137,11 +137,6 @@ void SoundSynthesis::SubscribeToEvents()
 
 void SoundSynthesis::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Use keys to control the filter constant
     Input* input = m_context->m_InputSystem.get();
     if (input->GetKeyDown(KEY_UP))

@@ -24,25 +24,25 @@
 #include "Urho2DConstraints.h"
 
 #include <Lutefisk3D/Graphics/Camera.h>
-#include <Lutefisk3D/Urho2D/CollisionBox2D.h>
-#include <Lutefisk3D/Urho2D/CollisionCircle2D.h>
-#include <Lutefisk3D/Urho2D/CollisionEdge2D.h>
-#include <Lutefisk3D/Urho2D/CollisionPolygon2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintDistance2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintFriction2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintGear2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintMotor2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintMouse2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintPrismatic2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintPulley2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintRevolute2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintRope2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintWeld2D.h>
-#include <Lutefisk3D/Urho2D/ConstraintWheel2D.h>
+#include <Lutefisk3D/2D/CollisionBox2D.h>
+#include <Lutefisk3D/2D/CollisionCircle2D.h>
+#include <Lutefisk3D/2D/CollisionEdge2D.h>
+#include <Lutefisk3D/2D/CollisionPolygon2D.h>
+#include <Lutefisk3D/2D/ConstraintDistance2D.h>
+#include <Lutefisk3D/2D/ConstraintFriction2D.h>
+#include <Lutefisk3D/2D/ConstraintGear2D.h>
+#include <Lutefisk3D/2D/ConstraintMotor2D.h>
+#include <Lutefisk3D/2D/ConstraintMouse2D.h>
+#include <Lutefisk3D/2D/ConstraintPrismatic2D.h>
+#include <Lutefisk3D/2D/ConstraintPulley2D.h>
+#include <Lutefisk3D/2D/ConstraintRevolute2D.h>
+#include <Lutefisk3D/2D/ConstraintRope2D.h>
+#include <Lutefisk3D/2D/ConstraintWeld2D.h>
+#include <Lutefisk3D/2D/ConstraintWheel2D.h>
 #include <Lutefisk3D/Core/CoreEvents.h>
 
 #include <Lutefisk3D/Graphics/DebugRenderer.h>
-#include <Lutefisk3D/Urho2D/Drawable2D.h>
+#include <Lutefisk3D/2D/Drawable2D.h>
 #include <Lutefisk3D/Engine/Engine.h>
 #include <Lutefisk3D/IO/FileSystem.h>
 #include <Lutefisk3D/IO/File.h>
@@ -50,14 +50,14 @@
 #include <Lutefisk3D/Graphics/Graphics.h>
 #include <Lutefisk3D/Input/Input.h>
 #include <Lutefisk3D/Graphics/Octree.h>
-#include <Lutefisk3D/Urho2D/PhysicsWorld2D.h>
+#include <Lutefisk3D/2D/PhysicsWorld2D.h>
 #include <Lutefisk3D/Graphics/Renderer.h>
 #include <Lutefisk3D/Resource/ResourceCache.h>
-#include <Lutefisk3D/Urho2D/RigidBody2D.h>
+#include <Lutefisk3D/2D/RigidBody2D.h>
 #include <Lutefisk3D/Scene/Scene.h>
 #include <Lutefisk3D/Scene/SceneEvents.h>
-#include <Lutefisk3D/Urho2D/Sprite2D.h>
-#include <Lutefisk3D/Urho2D/StaticSprite2D.h>
+#include <Lutefisk3D/2D/Sprite2D.h>
+#include <Lutefisk3D/2D/StaticSprite2D.h>
 #include <Lutefisk3D/UI/Text.h>
 #include <Lutefisk3D/UI/Text3D.h>
 #include <Lutefisk3D/Graphics/Zone.h>
@@ -69,7 +69,7 @@ Node* pickedNode;
 RigidBody2D* dummyBody;
 
 Urho2DConstraints::Urho2DConstraints(Context* context) :
-    Sample(context)
+    Sample("Urho2DConstraints",context)
 {
 }
 

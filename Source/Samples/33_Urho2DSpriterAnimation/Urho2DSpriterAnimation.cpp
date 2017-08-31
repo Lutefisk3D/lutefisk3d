@@ -22,11 +22,11 @@
 
 
 
-#include <Lutefisk3D/Urho2D/AnimatedSprite2D.h>
-#include <Lutefisk3D/Urho2D/AnimationSet2D.h>
+#include <Lutefisk3D/2D/AnimatedSprite2D.h>
+#include <Lutefisk3D/2D/AnimationSet2D.h>
 #include <Lutefisk3D/Graphics/Camera.h>
 #include <Lutefisk3D/Core/CoreEvents.h>
-#include <Lutefisk3D/Urho2D/Drawable2D.h>
+#include <Lutefisk3D/2D/Drawable2D.h>
 #include <Lutefisk3D/Engine/Engine.h>
 #include <Lutefisk3D/UI/Font.h>
 #include <Lutefisk3D/Graphics/Graphics.h>
@@ -45,7 +45,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(Urho2DSpriterAnimation)
 
 Urho2DSpriterAnimation::Urho2DSpriterAnimation(Context* context) :
-    Sample(context),
+    Sample("Urho2DSpriterAnimation",context),
     spriterAnimationIndex_(0)
 {
 }
@@ -85,7 +85,7 @@ void Urho2DSpriterAnimation::CreateScene()
     camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
     camera->SetZoom(1.5f * Min((float)graphics->GetWidth() / 1280.0f, (float)graphics->GetHeight() / 800.0f)); // Set zoom according to user's resolution to ensure full visibility (initial zoom (1.5) is set for full visibility at 1280x800 resolution)
 
-    ResourceCache* cache = m_context->m_ResourceCache.get();  
+    ResourceCache* cache = m_context->m_ResourceCache.get();
     AnimationSet2D* spriterAnimationSet = cache->GetResource<AnimationSet2D>("Urho2D/imp/imp.scml");
     if (!spriterAnimationSet)
         return;
@@ -160,25 +160,18 @@ void Urho2DSpriterAnimation::SubscribeToEvents()
 {
     // Subscribe HandleUpdate() function for processing update events
     g_coreSignals.update.Connect(this,&Urho2DSpriterAnimation::HandleUpdate);
-    SubscribeToEvent(E_MOUSEBUTTONDOWN, URHO3D_HANDLER(Urho2DSpriterAnimation, HandleMouseButtonDown));
-
-
+    g_inputSignals.mouseButtonDown.Connect(this,&Urho2DSpriterAnimation::HandleMouseButtonDown);
     // Unsubscribe the SceneUpdate event from base class to prevent camera pitch and yaw in 2D sample
-    UnsubscribeFromEvent(E_SCENEUPDATE);
+    g_sceneSignals.sceneUpdate.Disconnect(this);
 }
 
 void Urho2DSpriterAnimation::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }
 
-void Urho2DSpriterAnimation::HandleMouseButtonDown(StringHash eventType, VariantMap& eventData)
+void Urho2DSpriterAnimation::HandleMouseButtonDown(int, unsigned, int)
 {
     AnimatedSprite2D* spriterAnimatedSprite = spriterNode_->GetComponent<AnimatedSprite2D>();
     AnimationSet2D* spriterAnimationSet = spriterAnimatedSprite->GetAnimationSet();

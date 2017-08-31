@@ -34,9 +34,9 @@
 #include <Lutefisk3D/Scene/Scene.h>
 #include <Lutefisk3D/UI/Text.h>
 #include <Lutefisk3D/Graphics/Zone.h>
-#include <Lutefisk3D/Urho2D/TmxFile2D.h>
-#include <Lutefisk3D/Urho2D/TileMap2D.h>
-#include <Lutefisk3D/Urho2D/Drawable2D.h>
+#include <Lutefisk3D/2D/TmxFile2D.h>
+#include <Lutefisk3D/2D/TileMap2D.h>
+#include <Lutefisk3D/2D/Drawable2D.h>
 
 #include "Urho2DTileMap.h"
 
@@ -45,7 +45,7 @@
 URHO3D_DEFINE_APPLICATION_MAIN(Urho2DTileMap)
 
 Urho2DTileMap::Urho2DTileMap(Context* context) :
-    Sample(context)
+    Sample("Urho2DTileMap",context)
 {
 }
 
@@ -169,16 +169,11 @@ void Urho2DTileMap::SubscribeToEvents()
     g_coreSignals.update.Connect(this,&Urho2DTileMap::HandleUpdate);
 
     // Unsubscribe the SceneUpdate event from base class to prevent camera pitch and yaw in 2D sample
-    UnsubscribeFromEvent(E_SCENEUPDATE);
+    g_sceneSignals.sceneUpdate.Disconnect(this);
 }
 
 void Urho2DTileMap::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }

@@ -23,24 +23,24 @@
 
 
 #include <Lutefisk3D/Graphics/Camera.h>
-#include <Lutefisk3D/Urho2D/CollisionBox2D.h>
-#include <Lutefisk3D/Urho2D/CollisionCircle2D.h>
+#include <Lutefisk3D/2D/CollisionBox2D.h>
+#include <Lutefisk3D/2D/CollisionCircle2D.h>
 #include <Lutefisk3D/Core/CoreEvents.h>
 #include <Lutefisk3D/Graphics/DebugRenderer.h>
-#include <Lutefisk3D/Urho2D/Drawable2D.h>
+#include <Lutefisk3D/2D/Drawable2D.h>
 #include <Lutefisk3D/Engine/Engine.h>
 #include <Lutefisk3D/UI/Font.h>
 #include <Lutefisk3D/Graphics/Graphics.h>
 #include <Lutefisk3D/Input/Input.h>
 #include <Lutefisk3D/Graphics/Octree.h>
-#include <Lutefisk3D/Urho2D/PhysicsWorld2D.h>
+#include <Lutefisk3D/2D/PhysicsWorld2D.h>
 #include <Lutefisk3D/Graphics/Renderer.h>
 #include <Lutefisk3D/Resource/ResourceCache.h>
-#include <Lutefisk3D/Urho2D/RigidBody2D.h>
+#include <Lutefisk3D/2D/RigidBody2D.h>
 #include <Lutefisk3D/Scene/Scene.h>
 #include <Lutefisk3D/Scene/SceneEvents.h>
-#include <Lutefisk3D/Urho2D/Sprite2D.h>
-#include <Lutefisk3D/Urho2D/StaticSprite2D.h>
+#include <Lutefisk3D/2D/Sprite2D.h>
+#include <Lutefisk3D/2D/StaticSprite2D.h>
 #include <Lutefisk3D/UI/Text.h>
 
 #include "Urho2DPhysics.h"
@@ -52,7 +52,7 @@ URHO3D_DEFINE_APPLICATION_MAIN(Urho2DPhysics)
 static const unsigned NUM_OBJECTS = 100;
 
 Urho2DPhysics::Urho2DPhysics(Context* context) :
-    Sample(context)
+    Sample("Urho2DPhysics",context)
 {
 }
 
@@ -225,16 +225,11 @@ void Urho2DPhysics::SubscribeToEvents()
     g_coreSignals.update.Connect(this,&Urho2DPhysics::HandleUpdate);
 
     // Unsubscribe the SceneUpdate event from base class to prevent camera pitch and yaw in 2D sample
-    UnsubscribeFromEvent(E_SCENEUPDATE);
+    g_sceneSignals.sceneUpdate.Disconnect(this);
 }
 
 void Urho2DPhysics::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }

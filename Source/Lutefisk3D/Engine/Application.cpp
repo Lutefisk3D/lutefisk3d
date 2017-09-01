@@ -55,6 +55,11 @@ Application::Application(const QString &appName, Context* context) :
     g_LogSignals.logMessageSignal.Connect(this, &Application::HandleLogMessage);
 
 }
+// This destructor is implemented here, to fix the problem when the compiler was trying to generate
+// a SharedPtr<Engine>::~SharedPtr<Engine>  when Application.h was included.
+Application::~Application()
+{
+}
 
 int Application::Run()
 {

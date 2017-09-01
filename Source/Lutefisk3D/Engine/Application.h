@@ -36,7 +36,7 @@ class LUTEFISK3D_EXPORT Application : public jl::SignalObserver
 {
 public:
     Application(const QString &appName,Context* context);
-
+    virtual ~Application();
     /// Setup before engine initialization. This is a chance to eg. modify the engine parameters. Call ErrorExit() to terminate without initializing the engine. Called by Application.
     virtual void Setup() {}
     /// Setup after engine initialization and before running the main loop. Call ErrorExit() to terminate without running the main loop. Called by Application.

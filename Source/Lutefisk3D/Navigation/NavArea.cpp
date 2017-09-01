@@ -38,8 +38,8 @@ extern const char* NAVIGATION_CATEGORY;
 
 NavArea::NavArea(Context* context) :
     Component(context),
-    areaID_(DEFAULT_AREA_ID),
-    boundingBox_(DEFAULT_BOUNDING_BOX_MIN, DEFAULT_BOUNDING_BOX_MAX)
+    boundingBox_(DEFAULT_BOUNDING_BOX_MIN, DEFAULT_BOUNDING_BOX_MAX),
+    areaID_(DEFAULT_AREA_ID)
 {
 }
 

@@ -171,7 +171,7 @@ private:
 /// %Material technique. Consists of several passes.
 class LUTEFISK3D_EXPORT Technique : public Resource
 {
-    URHO3D_OBJECT(Technique,Resource);
+    URHO3D_OBJECT(Technique,Resource)
 
     friend class Renderer;
 

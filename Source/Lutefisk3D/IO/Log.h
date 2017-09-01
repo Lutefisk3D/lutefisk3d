@@ -112,7 +112,7 @@ private:
     /// Log messages from other threads.
     std::list<StoredLogMessage> threadMessages_;
     /// Log file.
-    SharedPtr<File> logFile_;
+    std::unique_ptr<File> logFile_;
     /// Last log message.
     QString lastMessage_;
     /// Logging level.

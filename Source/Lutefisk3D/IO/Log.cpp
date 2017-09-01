@@ -80,12 +80,12 @@ void Log::Open(const QString& fileName)
             Close();
     }
 
-    logFile_ = new File(m_context);
+    logFile_.reset(new File(m_context));
     if (logFile_->Open(fileName, FILE_WRITE))
         Write(LOG_INFO, "Opened log file " + fileName);
     else
     {
-        logFile_.Reset();
+        logFile_ = nullptr;
         Write(LOG_ERROR, "Failed to create log file " + fileName);
     }
 }
@@ -95,7 +95,7 @@ void Log::Close()
     if (logFile_ && logFile_->IsOpen())
     {
         logFile_->Close();
-        logFile_.Reset();
+        logFile_ = nullptr;
     }
 }
 

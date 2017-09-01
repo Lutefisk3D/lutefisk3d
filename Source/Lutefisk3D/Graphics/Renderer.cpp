@@ -1597,7 +1597,7 @@ void Renderer::Initialize()
 
     defaultLightRamp_ = cache->GetResource<Texture2D>("Textures/Ramp.png");
     defaultLightSpot_ = cache->GetResource<Texture2D>("Textures/Spot.png");
-    defaultMaterial_ = new Material(m_context);
+    defaultMaterial_ = std::make_unique<Material>(m_context);
 
     defaultRenderPath_ = new RenderPath();
     defaultRenderPath_->Load(cache->GetResource<XMLFile>("RenderPaths/Forward.xml"));

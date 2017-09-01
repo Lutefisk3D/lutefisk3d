@@ -329,9 +329,9 @@ public:
     /// Return number of occluders rendered.
     unsigned GetNumOccluders(bool allViews = false) const;
     /// Return the default zone.
-    Zone* GetDefaultZone() const { return defaultZone_; }
+    Zone* GetDefaultZone() const { return defaultZone_.get(); }
     /// Return the default material.
-    Material* GetDefaultMaterial() const { return defaultMaterial_; }
+    Material* GetDefaultMaterial() const { return defaultMaterial_.get(); }
     /// Return the default range attenuation texture.
     Texture2D* GetDefaultLightRamp() const { return defaultLightRamp_; }
     /// Return the default spotlight attenuation texture.
@@ -439,7 +439,7 @@ private:
     /// Default non-textured material technique.
     SharedPtr<Technique> defaultTechnique_;
     /// Default zone.
-    SharedPtr<Zone> defaultZone_;
+    std::unique_ptr<Zone> defaultZone_;
     /// Directional light quad geometry.
     SharedPtr<Geometry> dirLightGeometry_;
     /// Spot light volume geometry.
@@ -449,7 +449,7 @@ private:
     /// Instance stream vertex buffer.
     SharedPtr<VertexBuffer> instancingBuffer_;
     /// Default material.
-    SharedPtr<Material> defaultMaterial_;
+    std::unique_ptr<Material> defaultMaterial_;
     /// Default range attenuation texture.
     SharedPtr<Texture2D> defaultLightRamp_;
     /// Default spotlight attenuation texture.

@@ -308,7 +308,7 @@ void StaticModel::ApplyMaterialList(const QString& fileName)
         useFileName = ReplaceExtension(model_->GetName(), ".txt");
 
     ResourceCache* cache = context_->m_ResourceCache.get();
-    SharedPtr<File> file = cache->GetFile(useFileName, false);
+    std::unique_ptr<File> file = cache->GetFile(useFileName, false);
     if (!file)
         return;
 

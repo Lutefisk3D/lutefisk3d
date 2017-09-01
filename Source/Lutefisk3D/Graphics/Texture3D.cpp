@@ -112,9 +112,9 @@ bool Texture3D::BeginLoad(Deserializer& source)
         if (colorlutTexPath.isEmpty())
             name = texPath + name;
 
-        SharedPtr<File> file = context_->m_ResourceCache->GetFile(name);
+        std::unique_ptr<File> file = context_->m_ResourceCache->GetFile(name);
         loadImage_ = new Image(context_);
-        if (!loadImage_->LoadColorLUT(*(file.Get())))
+        if (!loadImage_->LoadColorLUT(*file))
         {
             loadParameters_.Reset();
             loadImage_.Reset();

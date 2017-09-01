@@ -182,7 +182,7 @@ bool Shader::ProcessSource(QString& code, Deserializer& source)
         {
             QString includeFileName = GetPath(source.GetName()) + line.mid(9).replace("\"", "").trimmed();
 
-            SharedPtr<File> includeFile = cache->GetFile(includeFileName);
+            std::unique_ptr<File> includeFile = cache->GetFile(includeFileName);
             if (!includeFile)
                 return false;
 

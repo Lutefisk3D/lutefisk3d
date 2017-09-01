@@ -107,7 +107,7 @@ public:
     void SetFinishBackgroundResourcesMs(int ms) { finishBackgroundResourcesMs_ = std::max(ms, 1); }
     void AddResourceRouter(ResourceRouter* router, bool addAsFirst = false);
     void RemoveResourceRouter(ResourceRouter* router);
-    SharedPtr<File> GetFile(const QString& name, bool sendEventOnFailure = true);
+    std::unique_ptr<Urho3D::File> GetFile(const QString& name, bool sendEventOnFailure = true);
     Resource* GetResource(StringHash type, const QString& name, bool sendEventOnFailure = true);
     SharedPtr<Resource> GetTempResource(StringHash type, const QString& name, bool sendEventOnFailure = true);
     bool BackgroundLoadResource(StringHash type, const QString& name, bool sendEventOnFailure = true, Resource* caller = nullptr);

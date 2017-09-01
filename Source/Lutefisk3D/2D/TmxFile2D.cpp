@@ -596,7 +596,7 @@ const TmxLayer2D* TmxFile2D::GetLayer(unsigned index) const
 SharedPtr<XMLFile> TmxFile2D::LoadTSXFile(const QString& source)
 {
     QString tsxFilePath = GetParentPath(GetName()) + source;
-    SharedPtr<File> tsxFile = context_->m_ResourceCache->GetFile(tsxFilePath);
+    std::unique_ptr<File> tsxFile(context_->m_ResourceCache->GetFile(tsxFilePath));
     SharedPtr<XMLFile> tsxXMLFile(new XMLFile(context_));
     if (!tsxFile || !tsxXMLFile->Load(*tsxFile))
     {

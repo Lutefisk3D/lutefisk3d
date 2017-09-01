@@ -375,9 +375,9 @@ bool ResourceCache::ReloadResource(Resource* resource)
     resource->reloadStarted.Emit();
 
     bool success = false;
-    SharedPtr<File> file = GetFile(resource->GetName());
+    std::unique_ptr<File> file = GetFile(resource->GetName());
     if (file)
-        success = resource->Load(*(file.Get()));
+        success = resource->Load(*file);
 
     if (success)
     {
@@ -491,7 +491,7 @@ void ResourceCache::RemoveResourceRouter(ResourceRouter* router)
 /// \param sendEventOnFailure
 /// \return
 ///
-SharedPtr<File> ResourceCache::GetFile(const QString& nameIn, bool sendEventOnFailure)
+std::unique_ptr<File> ResourceCache::GetFile(const QString& nameIn, bool sendEventOnFailure)
 {
     MutexLock lock(resourceMutex_);
 
@@ -522,7 +522,7 @@ SharedPtr<File> ResourceCache::GetFile(const QString& nameIn, bool sendEventOnFa
         }
 
         if (file)
-            return SharedPtr<File>(file);
+            return std::unique_ptr<File>(file);
     }
 
     if (sendEventOnFailure)
@@ -538,7 +538,7 @@ SharedPtr<File> ResourceCache::GetFile(const QString& nameIn, bool sendEventOnFa
         }
     }
 
-    return SharedPtr<File>();
+    return nullptr;
 }
 /// Return an already loaded resource of specific type & name, or null if not found. Will not load if does not exist.
 Resource* ResourceCache::GetExistingResource(StringHash type, const QString& nameIn)
@@ -608,14 +608,14 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
     }
 
     // Attempt to load the resource
-    SharedPtr<File> file = GetFile(name, sendEventOnFailure);
+    std::unique_ptr<File> file = GetFile(name, sendEventOnFailure);
     if (!file)
         return nullptr;   // Error is already logged
 
     URHO3D_LOGDEBUG("Loading resource " + name);
     resource->SetName(name);
 
-    if (!resource->Load(*(file.Get())))
+    if (!resource->Load(*file))
     {
         // Error should already been logged by corresponding resource descendant class
         if (sendEventOnFailure)
@@ -690,14 +690,14 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QStrin
     }
 
     // Attempt to load the resource
-    SharedPtr<File> file = GetFile(name, sendEventOnFailure);
+    std::unique_ptr<File> file = GetFile(name, sendEventOnFailure);
     if (!file)
         return SharedPtr<Resource>();  // Error is already logged
 
     URHO3D_LOGDEBUG("Loading temporary resource " + name);
     resource->SetName(file->GetName());
 
-    if (!resource->Load(*(file.Get())))
+    if (!resource->Load(*file))
     {
         // Error should already been logged by corresponding resource descendant class
         if (sendEventOnFailure)

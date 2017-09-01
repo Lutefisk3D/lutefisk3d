@@ -139,8 +139,8 @@ StringHash ParseTextureTypeXml(ResourceCache* cache, QString filename)
     if (!cache)
         return type;
 
-    SharedPtr<File> texXmlFile = cache->GetFile(filename, false);
-    if (texXmlFile.NotNull())
+    std::unique_ptr<File> texXmlFile = cache->GetFile(filename, false);
+    if (texXmlFile)
     {
         SharedPtr<XMLFile> texXml(new XMLFile(cache->GetContext()));
         if (texXml->Load(*texXmlFile))

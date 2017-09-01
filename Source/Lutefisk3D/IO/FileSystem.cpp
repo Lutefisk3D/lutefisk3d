@@ -305,10 +305,10 @@ bool FileSystem::Copy(const QString& srcFileName, const QString& destFileName)
         return false;
     }
 
-    SharedPtr<File> srcFile(new File(m_context, srcFileName, FILE_READ));
+    std::unique_ptr<File> srcFile(new File(m_context, srcFileName, FILE_READ));
     if (!srcFile->IsOpen())
         return false;
-    SharedPtr<File> destFile(new File(m_context, destFileName, FILE_WRITE));
+    std::unique_ptr<File> destFile(new File(m_context, destFileName, FILE_WRITE));
     if (!destFile->IsOpen())
         return false;
 

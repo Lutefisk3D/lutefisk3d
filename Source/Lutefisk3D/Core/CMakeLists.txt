@@ -1,5 +1,6 @@
 set(INCLUDES
     LAssert.h
+    Lutefisk3D.h
     Attribute.h
     CoreEvents.h
     Condition.h

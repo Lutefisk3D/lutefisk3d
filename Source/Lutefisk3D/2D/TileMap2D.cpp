@@ -112,16 +112,14 @@ void TileMap2D::SetTmxFile(TmxFile2D* tmxFile)
 
     layers_.clear();
 
-    tmxFile_ = tmxFile;
-    if (!tmxFile_)
+    if (!tmxFile)
         return;
 
+    tmxFile_ = tmxFile;
     info_ = tmxFile_->GetInfo();
 
     if (!rootNode_)
-    {
         rootNode_ = GetNode()->CreateTemporaryChild("_root_", LOCAL);
-    }
 
     unsigned numLayers = tmxFile_->GetNumLayers();
     layers_.resize(numLayers);

@@ -34,7 +34,7 @@ class TmxFile2D;
 /// Tile map component.
 class LUTEFISK3D_EXPORT TileMap2D : public Component
 {
-    URHO3D_OBJECT(TileMap2D,Component);
+    URHO3D_OBJECT(TileMap2D,Component)
 
 public:
     /// Construct.

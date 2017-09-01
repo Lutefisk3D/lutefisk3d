@@ -29,100 +29,57 @@
 
 namespace Urho3D
 {
-enum LogLevels : int32_t {
-    /// Fictional message level to indicate a stored raw message.
-    LOG_RAW = -1,
-    /// Debug message level. By default only shown in debug mode.
-    LOG_DEBUG = 0,
-    /// Informative message level.
-    LOG_INFO = 1,
-    /// Warning message level.
-    LOG_WARNING = 2,
-    /// Error message level.
-    LOG_ERROR = 3,
-    /// Disable all log messages.
-    LOG_NONE = 4,
+enum LogLevels : int32_t
+{
+    LOG_RAW     = -1, //!< Fictional message level to indicate a stored raw message.
+    LOG_DEBUG   = 0,  //!< Debug message level. By default only shown in debug mode.
+    LOG_INFO    = 1,  //!< Informative message level.
+    LOG_WARNING = 2,  //!< Warning message level.
+    LOG_ERROR   = 3,  //!< Error message level.
+    LOG_NONE    = 4,  //!< Disable all log messages.
 };
 class File;
 
 /// Stored log message from another thread.
 struct StoredLogMessage
 {
-    /// Construct undefined.
-    StoredLogMessage()
-    {
-    }
-
-    /// Construct with parameters.
-    StoredLogMessage(const QString& message, LogLevels level, bool error) :
-        message_(message),
-        level_(level),
-        error_(error)
-    {
-    }
-
-    /// Message text.
-    QString message_;
-    /// Message level. -1 for raw messages.
-    LogLevels level_;
-    /// Error flag for raw messages.
-    bool error_;
+    QString   message_; //!< Message text.
+    LogLevels level_;   //!< Message level. LOG_RAW for raw messages.
+    bool      error_;   //!< Error flag for raw messages.
 };
 
 /// Logging subsystem.
 class LUTEFISK3D_EXPORT Log : public jl::SignalObserver
 {
+    using LogMessageContainer = std::list<StoredLogMessage>;
 public:
     Log(Context *ctx);
-    /// Destruct. Close the log file if open.
     virtual ~Log();
 
-    /// Open the log file.
-    void Open(const QString& fileName);
-    /// Close the log file.
-    void Close();
-    /// Set logging level.
-    void SetLevel(int level);
-    /// Set whether to timestamp log messages.
+    void SetTargetFilename(const QString &fileName);
+    void CloseTargetFile();
+    void SetLoggingLevel(int level);
+    int  GetLoggingLevel() const { return level_; }
     void SetTimeStamp(bool enable);
-    /// Set quiet mode ie. only print error entries to standard error stream (which is normally redirected to console also). Output to log file is not affected by this mode.
-    void SetQuiet(bool quiet);
-
-    /// Return logging level.
-    int GetLevel() const { return level_; }
-    /// Return whether log messages are timestamped.
     bool GetTimeStamp() const { return timeStamp_; }
-    /// Return last log message.
+    void SetQuiet(bool quiet);
     QString GetLastMessage() const { return lastMessage_; }
-    /// Return whether log is in quiet mode (only errors printed to standard error stream).
-    bool IsQuiet() const { return quiet_; }
+    bool    IsQuiet() const { return quiet_; }
 
-    /// Write to the log. If logging level is higher than the level of the message, the message is ignored.
     static void Write(LogLevels level, const QString& message);
-    /// Write raw output to the log.
     static void WriteRaw(const QString& message, bool error = false);
 private:
-    /// Handle end of frame. Process the threaded log messages.
     void HandleEndFrame();
 
-    /// Current context this logger is bound to.
-    Context *m_context;
-    /// Mutex for threaded operation.
-    Mutex logMutex_;
-    /// Log messages from other threads.
-    std::list<StoredLogMessage> threadMessages_;
-    /// Log file.
-    std::unique_ptr<File> logFile_;
-    /// Last log message.
-    QString lastMessage_;
-    /// Logging level.
-    int level_;
-    /// Timestamp log messages flag.
-    bool timeStamp_;
-    /// In write flag to prevent recursion.
-    bool inWrite_;
-    /// Quiet mode flag.
-    bool quiet_;
+    Context *             m_context;       //!< Current context this logger is bound to.
+    Mutex                 logMutex_;       //!< Mutex for threaded operation.
+    LogMessageContainer   threadMessages_; //!< Log messages from other threads.
+    std::unique_ptr<File> logFile_;        //!< Log output file.
+    QString               lastMessage_;    //!< Last log message.
+    int                   level_;          //!< Logging level. Messages below that level will not be logged.
+    bool                  timeStamp_;      //!< Timestamp log messages flag.
+    bool                  inWrite_;        //!< In write flag to prevent recursion.
+    bool                  quiet_;          //!< Quiet mode flag, if true errors are only printed to standard error stream
 };
 extern unsigned logLevelNameToIndex(const QString &name);
 #ifdef LUTEFISK3D_LOGGING

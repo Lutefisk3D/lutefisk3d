@@ -62,13 +62,15 @@ Log::Log(Context *ctx) :
     logInstance = this;
     g_coreSignals.endFrame.Connect(this,&Log::HandleEndFrame);
 }
-
+/// Destruct. Close the log file if open.
 Log::~Log()
 {
     logInstance = nullptr;
 }
 
-void Log::Open(const QString& fileName)
+/// Will open a new file and start logging to it.
+/// If \a fileName is empty or same as current logFile_ does nothing.
+void Log::SetTargetFilename(const QString& fileName)
 {
     if (fileName.isEmpty())
         return;
@@ -77,7 +79,7 @@ void Log::Open(const QString& fileName)
         if (logFile_->GetName() == fileName)
             return;
         else
-            Close();
+            CloseTargetFile();
     }
 
     logFile_.reset(new File(m_context));
@@ -89,8 +91,8 @@ void Log::Open(const QString& fileName)
         Write(LOG_ERROR, "Failed to create log file " + fileName);
     }
 }
-
-void Log::Close()
+/// If logging file is open, close it and release underlying File
+void Log::CloseTargetFile()
 {
     if (logFile_ && logFile_->IsOpen())
     {
@@ -98,24 +100,26 @@ void Log::Close()
         logFile_ = nullptr;
     }
 }
-
-void Log::SetLevel(int level)
+/// Set logging level.
+void Log::SetLoggingLevel(int level)
 {
     assert(level >= LOG_DEBUG && level <= LOG_NONE);
 
     level_ = level;
 }
-
+/// Set whether to timestamp log messages.
 void Log::SetTimeStamp(bool enable)
 {
     timeStamp_ = enable;
 }
 
+/// Set quiet mode ie. only print error entries to standard error stream (which is normally redirected to console also).
+/// Output to log file is not affected by this mode.
 void Log::SetQuiet(bool quiet)
 {
     quiet_ = quiet;
 }
-
+/// Write to the log. If logging level is higher than the level of the message, the message is ignored.
 void Log::Write(LogLevels level, const QString& message)
 {
     // Special case for LOG_RAW level
@@ -132,7 +136,7 @@ void Log::Write(LogLevels level, const QString& message)
         if (logInstance)
         {
             MutexLock lock(logInstance->logMutex_);
-            logInstance->threadMessages_.push_back(StoredLogMessage(message, level, false));
+            logInstance->threadMessages_.emplace_back(StoredLogMessage {message, level, false});
         }
 
         return;
@@ -168,7 +172,7 @@ void Log::Write(LogLevels level, const QString& message)
     g_LogSignals.logMessageSignal.Emit(level,formattedMessage);
     logInstance->inWrite_ = false;
 }
-
+/// Write raw output to the log.
 void Log::WriteRaw(const QString& message, bool error)
 {
     // If not in the main thread, store message for later processing
@@ -177,7 +181,7 @@ void Log::WriteRaw(const QString& message, bool error)
         if (logInstance)
         {
             MutexLock lock(logInstance->logMutex_);
-            logInstance->threadMessages_.push_back(StoredLogMessage(message, LOG_RAW, error));
+            logInstance->threadMessages_.emplace_back(StoredLogMessage {message, LOG_RAW, error});
         }
 
         return;
@@ -208,7 +212,7 @@ void Log::WriteRaw(const QString& message, bool error)
     g_LogSignals.logMessageSignal.Emit(error ? LOG_ERROR : LOG_INFO,message);
     logInstance->inWrite_ = false;
 }
-
+/// Handle end of frame will process the threaded log messages.
 void Log::HandleEndFrame()
 {
     // If the MainThreadID is not valid, processing this loop can potentially be endless

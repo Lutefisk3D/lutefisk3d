@@ -38,45 +38,125 @@ namespace Urho3D
 {
 
 extern const char* GEOMETRY_CATEGORY;
-static const unsigned MAX_TAIL_COLUMN = 16;
 
+namespace {
+const unsigned MAX_TAIL_COLUMN = 16;
 const char* trailTypeNames[] =
 {
     "Face Camera",
     "Bone",
     nullptr
 };
-
 inline bool CompareTails(TrailPoint* lhs, TrailPoint* rhs)
 {
     return lhs->sortDistance_ > rhs->sortDistance_;
 }
+}
+
+/*!
+    \class RibbonTrail
+        \brief Drawable component that creates a tail.
+
+    \fn RibbonTrail::GetVertexDistance
+        \brief  Get distance between points.
+    \fn RibbonTrail::GetWidth
+        \brief  Get width of the trail.
+    \fn RibbonTrail::GetStartColor
+        \brief  Get vertex blended color for start of trail.
+    \fn RibbonTrail::GetEndColor
+        \brief  Get vertex blended color for end of trail.
+    \fn RibbonTrail::GetStartScale
+        \brief  Get vertex blended scale for start of trail.
+    \fn RibbonTrail::GetEndScale
+        \brief  Get vertex blended scale for end of trail.
+    \fn RibbonTrail::IsSorted
+        \brief  Return whether tails are sorted.
+    \fn RibbonTrail::GetLifetime
+        \brief  Return tail time to live.
+    \fn RibbonTrail::GetAnimationLodBias
+        \brief  Return animation LOD bias.
+    \fn RibbonTrail::GetTrailType
+        \brief  Return how the trail behave.
+    \fn RibbonTrail::GetTailColumn
+        \brief  Get number of column for tails.
+    \fn RibbonTrail::IsEmitting
+        \brief  Return whether is currently emitting.
+    \fn RibbonTrail::GetUpdateInvisible
+        \brief  Return whether to update when trail emitter are not visible.
+
+*/
+/*!
+    \var RibbonTrail::points_
+        \brief Tails.
+    \var RibbonTrail::sortedPoints_
+        \brief this vector is used by UpdateVertexBuffer
+    \var RibbonTrail::false
+        \brief Tails sorted flag.
+    \var RibbonTrail::animationLodBias_
+        \brief Animation LOD bias.
+    \var RibbonTrail::animationLodTimer_
+        \brief Animation LOD timer.
+    \var RibbonTrail::trailType_
+        \brief Trail type.
+
+    \var RibbonTrail::geometry_
+        \brief trail geometry.
+    \var RibbonTrail::vertexBuffer_
+        \brief Vertex buffer.
+    \var RibbonTrail::indexBuffer_
+        \brief Index buffer.
+    \var RibbonTrail::transforms_
+        \brief Transform matrices for position and orientation.
+    \var RibbonTrail::bufferSizeDirty_
+        \brief Buffers need resize flag.
+    \var RibbonTrail::bufferDirty_
+        \brief Vertex buffer needs rewrite flag.
+    \var RibbonTrail::previousPosition_
+        \brief Previous position of tail
+    \var RibbonTrail::vertexDistance_
+        \brief Distance between points. Basically is tail length.
+    \var RibbonTrail::width_
+        \brief Width of trail.
+    \var RibbonTrail::numPoints_
+        \brief Number of points.
+    \var RibbonTrail::startColor_
+        \brief Color for start of trails.
+    \var RibbonTrail::endColor_
+        \brief Color for end of trails.
+    \var RibbonTrail::startScale_
+        \brief Scale for start of trails.
+    \var RibbonTrail::endScale_
+        \brief End for start of trails.
+    \var RibbonTrail::lastTimeStep_
+        \brief Last scene timestep.
+    \var RibbonTrail::tailColumn_
+        \brief Number of columns for every tails.
+    \var RibbonTrail::lastUpdateFrameNumber_;
+        \brief Rendering framenumber on which was last updated.
+    \var RibbonTrail::needUpdate_;
+        \brief Need update flag.
+    \var RibbonTrail::previousOffset_;
+        \brief Previous offset to camera for determining whether sorting is necessary.
+    \var RibbonTrail::sortedPoints_;
+        \brief Trail pointers for sorting.
+    \var RibbonTrail::forceUpdate_;
+        \brief Force update flag (ignore animation LOD momentarily.)
+    \var RibbonTrail::emitting_
+        \brief Currently emitting flag.
+    \var RibbonTrail::updateInvisible_
+        \brief Update when invisible flag.
+    \var RibbonTrail::endTail_
+        \brief End of trail point for smoother tail disappearance.
+    \var RibbonTrail::startEndTailTime_
+        \brief The time the tail become end of trail.
+
+*/
 
 RibbonTrail::RibbonTrail(Context* context) :
     Drawable(context, DRAWABLE_GEOMETRY),
     geometry_(new Geometry(context_)),
-    animationLodBias_(1.0f),
-    animationLodTimer_(0.0f),
     vertexBuffer_(new VertexBuffer(context_)),
     indexBuffer_(new IndexBuffer(context_)),
-    bufferDirty_(true),
-    previousPosition_(Vector3::ZERO),
-    numPoints_(0),
-    lifetime_(1.0f),
-    vertexDistance_(0.1f),
-    width_(0.2f),
-    startScale_(1.0f),
-    endScale_(1.0f),
-    endColor_(Color(1.0f, 1.0f, 1.0f, 0.0f)),
-    startColor_(Color(1.0f, 1.0f, 1.0f, 1.0f)),
-    lastUpdateFrameNumber_(M_MAX_UNSIGNED),
-    needUpdate_(false),
-    sorted_(false),
-    previousOffset_(Vector3::ZERO),
-    forceUpdate_(false),
-    trailType_(TT_FACE_CAMERA),
-    tailColumn_(1),
-    updateInvisible_(false),
     emitting_(true)
 {
     geometry_->SetVertexBuffer(0, vertexBuffer_);
@@ -94,7 +174,7 @@ RibbonTrail::RibbonTrail(Context* context) :
 RibbonTrail::~RibbonTrail()
 {
 }
-
+/// Register object factory and instance attributes.
 void RibbonTrail::RegisterObject(Context* context)
 {
     context->RegisterFactory<RibbonTrail>(GEOMETRY_CATEGORY);
@@ -116,7 +196,7 @@ void RibbonTrail::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Animation LOD Bias", GetAnimationLodBias, SetAnimationLodBias, float, 1.0f, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Sort By Distance", IsSorted, SetSorted, bool, false, AM_DEFAULT);
 }
-
+/// Process octree raycast. May be called from a worker thread.
 void RibbonTrail::ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results)
 {
     // If no trail-level testing, use the Drawable test
@@ -152,7 +232,7 @@ void RibbonTrail::ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQu
         }
     }
 }
-
+/// Handle enabled/disabled state change.
 void RibbonTrail::OnSetEnabled()
 {
     Drawable::OnSetEnabled();
@@ -168,7 +248,10 @@ void RibbonTrail::OnSetEnabled()
             scene->scenePostUpdate.Disconnect(this,&RibbonTrail::HandleScenePostUpdate);
     }
 }
-
+/**
+ * \brief Handle scene post-update event.
+ * \param ts - time step of the last update
+ */
 void RibbonTrail::HandleScenePostUpdate(Scene*,float ts)
 {
     lastTimeStep_ = ts;
@@ -188,7 +271,7 @@ void RibbonTrail::HandleScenePostUpdate(Scene*,float ts)
         MarkForUpdate();
     }
 }
-
+/// Update before octree reinsertion. Is called from a main thread.
 void RibbonTrail::Update(const FrameInfo &frame)
 {
     Drawable::Update(frame);
@@ -200,7 +283,10 @@ void RibbonTrail::Update(const FrameInfo &frame)
     OnMarkedDirty(node_);
     needUpdate_ = false;
 }
-
+/**
+ * \brief Update/Rebuild tail mesh only if position changed (called by UpdateBatches())
+ * \sa UpdateBatches
+ */
 void RibbonTrail::UpdateTail()
 {
     Vector3 worldPosition = node_->GetWorldPosition();
@@ -314,19 +400,19 @@ void RibbonTrail::UpdateTail()
     if (points_.size() != numPoints_)
         bufferSizeDirty_ = true;
 }
-
+/// Set vertex blended scale for end of trail.
 void RibbonTrail::SetEndScale(float endScale)
 {
     endScale_ = endScale;
     Commit();
 }
-
+/// Set vertex blended scale for start of trail.
 void RibbonTrail::SetStartScale(float startScale)
 {
     startScale_ = startScale;
     Commit();
 }
-
+/// Set whether trail should be emitting.
 void RibbonTrail::SetEmitting(bool emitting)
 {
     if (emitting == emitting_)
@@ -344,7 +430,7 @@ void RibbonTrail::SetEmitting(bool emitting)
     Drawable::OnMarkedDirty(node_);
     MarkNetworkUpdate();
 }
-
+/// Set number of column for every tails. Can be useful for fixing distortion at high angle.
 void RibbonTrail::SetTailColumn(unsigned tailColumn)
 {
     if (tailColumn > MAX_TAIL_COLUMN)
@@ -363,7 +449,7 @@ void RibbonTrail::SetTailColumn(unsigned tailColumn)
     bufferSizeDirty_ = true;
     MarkNetworkUpdate();
 }
-
+/// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
 void RibbonTrail::UpdateBatches(const FrameInfo& frame)
 {
     // Update information for renderer about this drawable
@@ -386,7 +472,7 @@ void RibbonTrail::UpdateBatches(const FrameInfo& frame)
         previousOffset_ = offset;
     }
 }
-
+/// Prepare geometry for rendering. Called from a worker thread if possible (no GPU update.)
 void RibbonTrail::UpdateGeometry(const FrameInfo& frame)
 {
     if (bufferSizeDirty_ || indexBuffer_->IsDataLost())
@@ -395,7 +481,7 @@ void RibbonTrail::UpdateGeometry(const FrameInfo& frame)
     if (bufferDirty_ || vertexBuffer_->IsDataLost())
         UpdateVertexBuffer(frame);
 }
-
+/// Return whether a geometry update is necessary, and if it can happen in a worker thread.
 UpdateGeometryType RibbonTrail::GetUpdateGeometryType()
 {
     if (bufferDirty_ || bufferSizeDirty_ || vertexBuffer_->IsDataLost() || indexBuffer_->IsDataLost())
@@ -403,13 +489,13 @@ UpdateGeometryType RibbonTrail::GetUpdateGeometryType()
     else
         return UPDATE_NONE;
 }
-
+/// Set material.
 void RibbonTrail::SetMaterial(Material* material)
 {
     batches_[0].material_ = material;
     MarkNetworkUpdate();
 }
-
+/// Handle node being assigned.
 void RibbonTrail::OnSceneSet(Scene* scene)
 {
     Drawable::OnSceneSet(scene);
@@ -421,7 +507,7 @@ void RibbonTrail::OnSceneSet(Scene* scene)
         GetScene()->scenePostUpdate.Disconnect(this,&RibbonTrail::HandleScenePostUpdate);
     }
 }
-
+/// Recalculate the world-space bounding box.
 void RibbonTrail::OnWorldBoundingBoxUpdate()
 {
     BoundingBox worldBox;
@@ -435,7 +521,9 @@ void RibbonTrail::OnWorldBoundingBoxUpdate()
 
     worldBoundingBox_ = worldBox;
 }
-
+/**
+ * \brief Resize RibbonTrail vertex and index buffers.
+ */
 void RibbonTrail::UpdateBufferSize()
 {
     numPoints_ = points_.size();
@@ -514,7 +602,10 @@ void RibbonTrail::UpdateBufferSize()
     indexBuffer_->Unlock();
     indexBuffer_->ClearDataLost();
 }
-
+/**
+ * @brief Rewrite RibbonTrail vertex buffer.
+ * @param frame - source frame information
+ */
 void RibbonTrail::UpdateVertexBuffer(const FrameInfo& frame)
 {
     // If using animation LOD, accumulate time and see if it is time to update
@@ -542,11 +633,11 @@ void RibbonTrail::UpdateVertexBuffer(const FrameInfo& frame)
     unsigned vertexPerSegment = 4 + (tailColumn_ - 1) * 2;
 
     // Fill sorted points vector
-    sortedPoints_.resize(numPoints_);
+    sortedPoints_.reserve(numPoints_);
     for (unsigned i = 0; i < numPoints_; ++i)
     {
         TrailPoint& point = points_[i];
-        sortedPoints_[i] = &point;
+        sortedPoints_.emplace_back(&point);
         if (sorted_)
             point.sortDistance_ = frame.camera_->GetDistanceSquared(point.position_);
     }
@@ -683,7 +774,8 @@ void RibbonTrail::UpdateVertexBuffer(const FrameInfo& frame)
         {
             TrailPoint& point = *sortedPoints_[i];
 
-            if (sortedPoints_[i] == &points_.back()) continue;
+            if (sortedPoints_[i] == &points_.back())
+                continue;
 
             // This point
             float factor = SmoothStep(0.0f, trailLength, point.elapsedLength_);
@@ -804,37 +896,37 @@ void RibbonTrail::UpdateVertexBuffer(const FrameInfo& frame)
     vertexBuffer_->Unlock();
     vertexBuffer_->ClearDataLost();
 }
-
+/// Set tail time to live.
 void RibbonTrail::SetLifetime(float time)
 {
     lifetime_ = time;
     Commit();
 }
-
+/// Set distance between points.
 void RibbonTrail::SetVertexDistance(float length)
 {
     vertexDistance_ = length;
     Commit();
 }
-
+/// Set vertex blended color for end of trail.
 void RibbonTrail::SetEndColor(const Color& color)
 {
     endColor_ = color;
     Commit();
 }
-
+/// Set vertex blended color for start of trail.
 void RibbonTrail::SetStartColor(const Color& color)
 {
     startColor_ = color;
     Commit();
 }
-
+/// Set whether tails are sorted by distance. Default false.
 void RibbonTrail::SetSorted(bool enable)
 {
     sorted_ = enable;
     Commit();
 }
-
+/// Set how the trail behave.
 void RibbonTrail::SetTrailType(TrailType type)
 {
     if (trailType_ == type)
@@ -851,49 +943,51 @@ void RibbonTrail::SetTrailType(TrailType type)
     bufferSizeDirty_ = true;
     MarkNetworkUpdate();
 }
-
+/// Set material attribute.
 void RibbonTrail::SetMaterialAttr(const ResourceRef& value)
 {
     ResourceCache* cache =context_->m_ResourceCache.get();
     SetMaterial(cache->GetResource<Material>(value.name_));
     Commit();
 }
-
+/// Set width of the tail. Only works for face camera trail type.
 void RibbonTrail::SetWidth(float width)
 {
     width_ = width;
     Commit();
 }
-
+/// Set animation LOD bias.
 void RibbonTrail::SetAnimationLodBias(float bias)
 {
     animationLodBias_ = Max(bias, 0.0f);
     MarkNetworkUpdate();
 }
-
+/// Set whether to update when trail emiiter are not visible.
 void RibbonTrail::SetUpdateInvisible(bool enable)
 {
     updateInvisible_ = enable;
     MarkNetworkUpdate();
 }
-
+/**
+ * \brief Mark for bounding box and vertex buffer update. Call after modifying the trails.
+ */
 void RibbonTrail::Commit()
 {
     MarkPositionsDirty();
     MarkNetworkUpdate();
 }
-
+/// Mark vertex buffer to need an update.
 void RibbonTrail::MarkPositionsDirty()
 {
     Drawable::OnMarkedDirty(node_);
     bufferDirty_ = true;
 }
-
+/// Return material.
 Material* RibbonTrail::GetMaterial() const
 {
     return batches_[0].material_;
 }
-
+/// Return material attribute.
 ResourceRef RibbonTrail::GetMaterialAttr() const
 {
     return GetResourceRef(batches_[0].material_, Material::GetTypeStatic());

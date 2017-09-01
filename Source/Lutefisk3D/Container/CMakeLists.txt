@@ -1,7 +1,9 @@
 set(INCLUDES
     Allocator.h
     ArrayPtr.h
-    Hash.h
+    DataHandle.h
+    HandleManager.h
+    Hash.h    
     HashMap.h
     HashTable.h
     Ptr.h

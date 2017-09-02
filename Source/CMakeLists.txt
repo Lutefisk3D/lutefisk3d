@@ -19,8 +19,10 @@ option(LUTEFISK3D_NETLESS "Build without kNet network component" ON)
 option(LUTEFISK3D_UILESS "Build without old UI component" OFF)
 option(LUTEFISK3D_2DLESS "Build without 2D component" OFF)
 option(LUTEFISK3D_PHYSICLESS "Build without 3d physics component" OFF)
-
 option(LUTEFISK3D_PROFILING_SUPPORT "Internal profiling subsystem" ON)
+
+add_subdirectory(ThirdParty) # add required third party libraries to the build
+
 if(LUTEFISK3D_PROFILING_SUPPORT)
     add_definitions(-DLUTEFISK3D_PROFILING)
 endif()
@@ -57,7 +59,6 @@ if(NOT LUTEFISK3D_PHYSICLESS)
     add_definitions(-DLUTEFISK3D_PHYSICS)
 endif()
 
-add_subdirectory(ThirdParty) # add required third party libraries to the build
 add_subdirectory(Lutefisk3D)
 if(LUTEFISK3D_BUILD_SAMPLES)
 add_subdirectory(Samples)

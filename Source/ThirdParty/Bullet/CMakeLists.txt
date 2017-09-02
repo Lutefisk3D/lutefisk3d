@@ -236,7 +236,7 @@ ENDIF(BUILD_EXTRAS)
 
 #Maya Dynamica plugin is moved to http://dynamica.googlecode.com
 
-SUBDIRS(src)
+SUBDIRS(  BulletSoftBody BulletCollision BulletDynamics LinearMath )
 
 IF("${CMAKE_GENERATOR}" MATCHES "Unix Makefiles" OR "${CMAKE_GENERATOR}" MATCHES "Ninja")
 	OPTION(INSTALL_LIBS "Set when you want to install libraries" ON)
@@ -271,10 +271,6 @@ IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.5)
 ENDIF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.5)
 
 OPTION(BUILD_UNIT_TESTS "Build Unit Tests" OFF)
-
-IF (BUILD_UNIT_TESTS)
-	SUBDIRS(test)
-ENDIF()
 
 set (BULLET_CONFIG_CMAKE_PATH lib${LIB_SUFFIX}/cmake/bullet )
 list (APPEND BULLET_LIBRARIES LinearMath)

@@ -2,7 +2,7 @@ list (APPEND BULLET_LIBRARIES BulletSoftBody)
 list (APPEND BULLET_LIBRARIES BulletDynamics)
 list (APPEND BULLET_LIBRARIES BulletCollision)
 list (APPEND BULLET_LIBRARIES LinearMath)
-INCLUDE_DIRECTORIES(ThirdParty/Bullet/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR_DIR}/Source/ThirdParty/Bullet/src)
 set(INCLUDES
     CollisionShape.h
     Constraint.h

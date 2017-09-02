@@ -69,11 +69,11 @@ target_link_libraries(Lutefisk3D PRIVATE
 
 if(NOT LUTEFISK3D_HEADLESS)
     IF(WIN32)
-         target_link_libraries(Lutefisk3D winmm imm32 version)
+         target_link_libraries(Lutefisk3D PRIVATE winmm imm32 version)
     endif()
 endif()
 if(NOT LUTEFISK3D_NETLESS)
-    target_link_libraries(Lutefisk3D kNet_LIB) # add imported kNet target
+    target_link_libraries(Lutefisk3D PRIVATE kNet_LIB) # add imported kNet target
 endif()
 
 qt5_use_modules(Lutefisk3D LINK_PUBLIC Core Gui)

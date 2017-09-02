@@ -1,6 +1,7 @@
 set(INCLUDES
     Application.h
     Engine.h
+    EngineDefs.h
     EngineEvents.h
 )
 set(SOURCE

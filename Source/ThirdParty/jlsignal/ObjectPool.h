@@ -68,7 +68,7 @@ namespace ObjectPool
     // Returns true if an object is allocated to the given object pool
     bool IsBoundedAndAligned( const void* pObject, const unsigned char* pObjectBuffer, unsigned nCapacity, unsigned nStride );
     bool IsFree( const void* pObject, const FreeNode* pFreeListHead );
-};
+}
 
 /**
  * A class that manages allocations to a pre-allocated object buffer.

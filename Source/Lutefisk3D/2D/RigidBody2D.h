@@ -44,7 +44,7 @@ enum BodyType2D
 /// 2D rigid body component.
 class LUTEFISK3D_EXPORT RigidBody2D : public Component
 {
-    URHO3D_OBJECT(RigidBody2D,Component);
+    URHO3D_OBJECT(RigidBody2D,Component)
 
 public:
     /// Construct.
@@ -169,7 +169,6 @@ private:
     /// Collision shapes.
     std::set< WeakPtr<CollisionShape2D> > collisionShapes_;
     /// Constraints.
-
     std::set< WeakPtr<Constraint2D> > constraints_;
 };
 

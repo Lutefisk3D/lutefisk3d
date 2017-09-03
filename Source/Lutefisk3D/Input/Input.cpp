@@ -507,66 +507,6 @@ static void PopulateMouseButtonBindingMap(HashMap<QString, int>& mouseButtonBind
     mouseButtonBindingMap.emplace("X2", SDL_BUTTON_X2);
 }
 
-void Input::SetScreenKeyboardVisible(bool enable)
-{
-    if (enable != SDL_IsTextInputActive())
-    {
-        if (enable)
-            SDL_StartTextInput();
-        else
-            SDL_StopTextInput();
-    }
-}
-
-bool Input::RecordGesture()
-{
-    // If have no touch devices, fail
-    if (!SDL_GetNumTouchDevices())
-    {
-        URHO3D_LOGERROR("Can not record gesture: no touch devices");
-        return false;
-    }
-
-    return SDL_RecordGesture(-1) != 0;
-}
-
-bool Input::SaveGestures(Serializer& dest)
-{
-    RWOpsWrapper<Serializer> wrapper(dest);
-    return SDL_SaveAllDollarTemplates(wrapper.GetRWOps()) != 0;
-}
-
-bool Input::SaveGesture(Serializer& dest, unsigned gestureID)
-{
-    RWOpsWrapper<Serializer> wrapper(dest);
-    return SDL_SaveDollarTemplate(gestureID, wrapper.GetRWOps()) != 0;
-}
-
-unsigned Input::LoadGestures(Deserializer& source)
-{
-    // If have no touch devices, fail
-    if (!SDL_GetNumTouchDevices())
-    {
-        URHO3D_LOGERROR("Can not load gestures: no touch devices");
-        return 0;
-    }
-
-    RWOpsWrapper<Deserializer> wrapper(source);
-    return (unsigned)SDL_LoadDollarTemplates(-1, wrapper.GetRWOps());
-}
-
-
-bool Input::RemoveGesture(unsigned gestureID)
-{
-    return false;
-}
-
-void Input::RemoveAllGestures()
-{
-    assert(false);
-    //SDL_RemoveAllDollarTemplates();
-}
-
 SDL_JoystickID Input::OpenJoystick(unsigned index)
 {
     SDL_Joystick* joystick = SDL_JoystickOpen(index);

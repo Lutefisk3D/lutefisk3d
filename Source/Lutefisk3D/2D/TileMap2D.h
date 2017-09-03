@@ -40,7 +40,7 @@ public:
     /// Construct.
     explicit TileMap2D(Context* context);
     /// Destruct.
-    ~TileMap2D() = default;
+    ~TileMap2D();
     /// Register object factory.
     static void RegisterObject(Context* context);
 

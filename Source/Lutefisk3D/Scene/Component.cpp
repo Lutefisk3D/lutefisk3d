@@ -270,6 +270,25 @@ Component* Component::GetFixedUpdateSource()
 
     return ret;
 }
+PhysicsSignals* Component::GetFixedSignalSource()
+{
+    Scene* scene = GetScene();
+    if (scene != nullptr)
+    {
+#ifdef LUTEFISK3D_PHYSICS
+        PhysicsWorld *retw = scene->GetComponent<PhysicsWorld>();
+        if(retw)
+            return static_cast<PhysicsSignals *>(retw);
+#endif
+#ifdef LUTEFISK3D_URHO2D
+        PhysicsWorld2D *ret2d = scene->GetComponent<PhysicsWorld2D>();
+        if(ret2d)
+            return static_cast<PhysicsSignals *>(ret2d);
+#endif
+    }
+
+    return nullptr;
+}
 void Component::DoAutoRemove(AutoRemoveMode mode)
 {
     switch (mode)

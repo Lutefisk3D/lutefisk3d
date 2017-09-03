@@ -14,7 +14,7 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHERContactInfo
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
@@ -36,11 +36,334 @@
 #include "Lutefisk3D/Scene/SceneEvents.h"
 #include "Lutefisk3D/Graphics/Viewport.h"
 
+#include  <Box2D/Box2D.h>
 
 
 namespace Urho3D
 {
 
+namespace
+{
+/// Contact info.
+struct ContactInfo
+{
+    ContactInfo();
+    ContactInfo(b2Contact* contact)
+    {
+        b2Fixture* fixtureA = contact->GetFixtureA();
+        b2Fixture* fixtureB = contact->GetFixtureB();
+        bodyA_ = (RigidBody2D*)(fixtureA->GetBody()->GetUserData());
+        bodyB_ = (RigidBody2D*)(fixtureB->GetBody()->GetUserData());
+        nodeA_ = bodyA_->GetNode();
+        nodeB_ = bodyB_->GetNode();
+        shapeA_ = (CollisionShape2D*)fixtureA->GetUserData();
+        shapeB_ = (CollisionShape2D*)fixtureB->GetUserData();
+        b2WorldManifold worldManifold;
+        contact->GetWorldManifold(&worldManifold);
+        numPoints_ = contact->GetManifold()->pointCount;
+        worldNormal_ = Vector2(worldManifold.normal.x, worldManifold.normal.y);
+        for (int i = 0; i < numPoints_; ++i)
+        {
+            worldPositions_[i] = Vector2(worldManifold.points[i].x, worldManifold.points[i].y);
+            separations_[i] = worldManifold.separations[i];
+        }
+    }
+
+    SharedPtr<RigidBody2D> bodyA_;
+    SharedPtr<RigidBody2D> bodyB_;
+    SharedPtr<Node> nodeA_;
+    SharedPtr<Node> nodeB_;
+    SharedPtr<CollisionShape2D> shapeA_;
+    SharedPtr<CollisionShape2D> shapeB_;
+    /// Number of contact points.
+    int numPoints_;
+    /// Contact normal in world space.
+    Vector2 worldNormal_;
+    /// Contact positions in world space.
+    Vector2 worldPositions_[b2_maxManifoldPoints];
+    /// Contact overlap values.
+    float separations_[b2_maxManifoldPoints];
+
+    /// Write contact info to buffer.
+    const std::vector<unsigned char>& Serialize(VectorBuffer& buffer) const
+    {
+        buffer.clear();
+        for (int i = 0; i < numPoints_; ++i)
+        {
+            buffer.WriteVector2(worldPositions_[i]);
+            buffer.WriteVector2(worldNormal_);
+            buffer.WriteFloat(separations_[i]);
+        }
+        return buffer.GetBuffer();
+    }
+
+};
+struct PhysicsWorld2D_private : public b2ContactListener, public b2Draw
+{
+    PhysicsWorld2D_private(PhysicsWorld2D *owner) : m_owner(owner)
+    {
+        // Set default debug draw flags
+        m_drawFlags = e_shapeBit;
+    }
+    // Implement b2ContactListener
+    /// Called when two fixtures begin to touch.
+    void BeginContact(b2Contact* contact) final
+    {
+        // Only handle contact event while stepping the physics simulation
+        if (!physicsStepping_)
+            return;
+
+        b2Fixture* fixtureA = contact->GetFixtureA();
+        b2Fixture* fixtureB = contact->GetFixtureB();
+        if (!fixtureA || !fixtureB)
+            return;
+
+        beginContactInfos_.push_back(ContactInfo(contact));
+    }
+    /// Called when two fixtures cease to touch.
+    void EndContact(b2Contact* contact) final
+    {
+        if (!physicsStepping_)
+            return;
+
+        b2Fixture* fixtureA = contact->GetFixtureA();
+        b2Fixture* fixtureB = contact->GetFixtureB();
+        if (!fixtureA || !fixtureB)
+            return;
+
+        endContactInfos_.push_back(ContactInfo(contact));
+    }
+    /// Called when contact is updated.
+    void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) final
+    {
+        b2Fixture* fixtureA = contact->GetFixtureA();
+        b2Fixture* fixtureB = contact->GetFixtureB();
+        if (!fixtureA || !fixtureB)
+            return;
+
+        ContactInfo contactInfo(contact);
+
+        auto serializedContacts(contactInfo.Serialize(contacts_));
+        // Send global event
+        bool enabled=contact->IsEnabled();
+        m_owner->update_contact.Emit(
+                    m_owner,
+                    contactInfo.bodyA_.Get(),
+                    contactInfo.bodyB_.Get(),
+                    contactInfo.nodeA_.Get(),
+                    contactInfo.nodeB_.Get(),
+                    serializedContacts,
+                    contactInfo.shapeA_.Get(),
+                    contactInfo.shapeB_.Get(),
+                    enabled
+                    );
+        contact->SetEnabled(enabled);
+
+        // Send node event
+        enabled = contact->IsEnabled();
+
+        if (contactInfo.nodeA_ && contactInfo.nodeA_->physics2dSignals_)
+        {
+            contactInfo.nodeA_->physics2dSignals_->updated_contacts.Emit(
+                        contactInfo.bodyA_.Get(),
+                        contactInfo.nodeB_.Get(),
+                        contactInfo.bodyB_.Get(),
+                        serializedContacts,
+                        contactInfo.shapeA_.Get(),
+                        contactInfo.shapeB_.Get(),
+                        enabled
+                        );
+        }
+        // TODO: consider here the fact that contact can be disabled be signal handler on nodeA, but the nodeB_ handler will
+        // still be notified
+        if (contactInfo.nodeB_ && contactInfo.nodeA_->physics2dSignals_)
+        {
+            contactInfo.nodeB_->physics2dSignals_->updated_contacts.Emit(
+                        contactInfo.bodyB_.Get(),
+                        contactInfo.nodeA_.Get(),
+                        contactInfo.bodyA_.Get(),
+                        serializedContacts,
+                        contactInfo.shapeB_.Get(),
+                        contactInfo.shapeA_.Get(),
+                        enabled
+                        );
+        }
+
+        contact->SetEnabled(enabled);
+    }
+
+    // Implement b2Draw
+    /// Draw a closed polygon provided in CCW order.
+    void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) override;
+    /// Draw a solid closed polygon provided in CCW order.
+    void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) override;
+    /// Draw a circle.
+    void DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color) override;
+    /// Draw a solid circle.
+    void DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color) override;
+    /// Draw a line segment.
+    void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) override;
+    /// Draw a transform. Choose your own length scale.
+    void DrawTransform(const b2Transform& xf) override;
+    /// Draw a point.
+    void DrawPoint(const b2Vec2& p, float32 size, const b2Color& color) override;
+
+    bool GetDrawShape() const { return (m_drawFlags & e_shapeBit) != 0; }
+    bool GetDrawJoint() const { return (m_drawFlags & e_jointBit) != 0; }
+    bool GetDrawAabb() const { return (m_drawFlags & e_aabbBit) != 0; }
+    bool GetDrawPair() const { return (m_drawFlags & e_pairBit) != 0; }
+    bool GetDrawCenterOfMass() const { return (m_drawFlags & e_centerOfMassBit) != 0; }
+
+    void setDrawFlag(uint32_t flg) { m_drawFlags |= flg; }
+    /// Whether is currently stepping the world. Used internally.
+    bool physicsStepping_=false;
+    /// Begin contact infos.
+    std::vector<ContactInfo> beginContactInfos_;
+    /// End contact infos.
+    std::vector<ContactInfo> endContactInfos_;
+    /// Temporary buffer with contact data.
+    VectorBuffer contacts_;
+    PhysicsWorld2D *m_owner;
+    /// Debug renderer.
+    DebugRenderer* debugRenderer_ = nullptr;
+    /// Debug draw depth test mode.
+    bool debugDepthTest_ = false;
+
+
+
+public:
+    void SetDrawShape(bool drawShape)
+    {
+        if (drawShape)
+            m_drawFlags |= e_shapeBit;
+        else
+            m_drawFlags &= ~e_shapeBit;
+
+    }
+    void SetDrawJoint(bool drawJoint)
+    {
+        if (drawJoint)
+            m_drawFlags |= e_jointBit;
+        else
+            m_drawFlags &= ~e_jointBit;
+    }
+    void SetDrawAabb(bool drawAabb)
+    {
+        if (drawAabb)
+            m_drawFlags |= e_aabbBit;
+        else
+            m_drawFlags &= ~e_aabbBit;
+    }
+    void SetDrawPair(bool drawPair)
+    {
+        if (drawPair)
+            m_drawFlags |= e_pairBit;
+        else
+            m_drawFlags &= ~e_pairBit;
+    }
+    void SetDrawCenterOfMass(bool drawCenterOfMass)
+    {
+        if (drawCenterOfMass)
+            m_drawFlags |= e_centerOfMassBit;
+        else
+            m_drawFlags &= ~e_centerOfMassBit;
+    }
+    void SendBeginContactEvents()
+    {
+        if (beginContactInfos_.empty())
+            return;
+
+
+        for (ContactInfo& contactInfo : beginContactInfos_)
+        {
+            auto serializedContacts(contactInfo.Serialize(contacts_));
+            m_owner->begin_contact.Emit(
+                        m_owner,
+                        contactInfo.bodyA_.Get(),
+                        contactInfo.bodyB_.Get(),
+                        contactInfo.nodeA_.Get(),
+                        contactInfo.nodeB_.Get(),
+                        serializedContacts,
+                        contactInfo.shapeA_.Get(),
+                        contactInfo.shapeB_.Get()
+
+                        );
+
+            if (contactInfo.nodeA_ && contactInfo.nodeA_->physics2dSignals_)
+            {
+                contactInfo.nodeA_->physics2dSignals_->begin_contact.Emit(
+                            contactInfo.bodyA_.Get(),
+                            contactInfo.nodeB_.Get(),
+                            contactInfo.bodyB_.Get(),
+                            serializedContacts,
+                            contactInfo.shapeA_.Get(),
+                            contactInfo.shapeB_.Get()
+                            );
+            }
+
+            if (contactInfo.nodeB_ && contactInfo.nodeB_->physics2dSignals_)
+            {
+                contactInfo.nodeB_->physics2dSignals_->begin_contact.Emit(
+                            contactInfo.bodyB_.Get(),
+                            contactInfo.nodeA_.Get(),
+                            contactInfo.bodyA_.Get(),
+                            serializedContacts,
+                            contactInfo.shapeB_.Get(),
+                            contactInfo.shapeA_.Get()
+                            );
+            }
+        }
+        beginContactInfos_.clear();
+    }
+    void SendEndContactEvents()
+    {
+        if (endContactInfos_.empty())
+            return;
+
+        for (ContactInfo& contactInfo : endContactInfos_)
+        {
+            auto serializedContacts(contactInfo.Serialize(contacts_));
+            m_owner->end_contact.Emit(
+                        m_owner,
+                        contactInfo.bodyA_.Get(),
+                        contactInfo.bodyB_.Get(),
+                        contactInfo.nodeA_.Get(),
+                        contactInfo.nodeB_.Get(),
+                        serializedContacts,
+                        contactInfo.shapeA_.Get(),
+                        contactInfo.shapeB_.Get()
+
+                        );
+
+            if (contactInfo.nodeA_ && contactInfo.nodeA_->physics2dSignals_)
+            {
+                contactInfo.nodeA_->physics2dSignals_->end_contact.Emit(
+                            contactInfo.bodyA_.Get(),
+                            contactInfo.nodeB_.Get(),
+                            contactInfo.bodyB_.Get(),
+                            serializedContacts,
+                            contactInfo.shapeA_.Get(),
+                            contactInfo.shapeB_.Get()
+                            );
+            }
+
+            if (contactInfo.nodeB_ && contactInfo.nodeB_->physics2dSignals_)
+            {
+                contactInfo.nodeB_->physics2dSignals_->end_contact.Emit(
+                            contactInfo.bodyB_.Get(),
+                            contactInfo.nodeA_.Get(),
+                            contactInfo.bodyA_.Get(),
+                            serializedContacts,
+                            contactInfo.shapeB_.Get(),
+                            contactInfo.shapeA_.Get()
+                            );
+            }
+        }
+
+        endContactInfos_.clear();
+    }
+};
+};
 extern const char* SUBSYSTEM_CATEGORY;
 static const Vector2 DEFAULT_GRAVITY(0.0f, -9.81f);
 static const int DEFAULT_VELOCITY_ITERATIONS = 8;
@@ -53,24 +376,24 @@ PhysicsWorld2D::PhysicsWorld2D(Context* context) :
     gravity_(DEFAULT_GRAVITY),
     velocityIterations_(DEFAULT_VELOCITY_ITERATIONS),
     positionIterations_(DEFAULT_POSITION_ITERATIONS),
-    debugRenderer_(nullptr),
-    physicsStepping_(false),
-    applyingTransforms_(false),
-    updateEnabled_(true)
+    updateEnabled_(true),
+    applyingTransforms_(false)
 {
-    // Set default debug draw flags
-    m_drawFlags = e_shapeBit;
+    privateData_ = new PhysicsWorld2D_private(this);
+    PhysicsWorld2D_private *tgt = static_cast <PhysicsWorld2D_private *>(privateData_);
     // Create Box2D world
     world_.reset(new b2World(ToB2Vec2(gravity_)));
     // Set contact listener
-    world_->SetContactListener(this);
+    world_->SetContactListener(tgt);
     // Set debug draw
-    world_->SetDebugDraw(this);
+    world_->SetDebugDraw(tgt);
 
 }
 
 PhysicsWorld2D::~PhysicsWorld2D()
 {
+    world_->SetContactListener(nullptr);
+    delete static_cast <PhysicsWorld2D_private *>(privateData_);
     for (const WeakPtr<RigidBody2D> &rb : rigidBodies_) {
         if (rb)
             rb->ReleaseBody();
@@ -101,95 +424,16 @@ void PhysicsWorld2D::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     if (debug)
     {
         URHO3D_PROFILE(Physics2DDrawDebug);
+        PhysicsWorld2D_private *tgt = static_cast <PhysicsWorld2D_private *>(privateData_);
 
-        debugRenderer_ = debug;
-        debugDepthTest_ = depthTest;
+        tgt->debugRenderer_ = debug;
+        tgt->debugDepthTest_ = depthTest;
         world_->DrawDebugData();
-        debugRenderer_ = nullptr;
+        tgt->debugRenderer_ = nullptr;
     }
 }
 
-void PhysicsWorld2D::BeginContact(b2Contact* contact)
-{
-    // Only handle contact event while stepping the physics simulation
-    if (!physicsStepping_)
-        return;
-
-    b2Fixture* fixtureA = contact->GetFixtureA();
-    b2Fixture* fixtureB = contact->GetFixtureB();
-    if (!fixtureA || !fixtureB)
-        return;
-
-    beginContactInfos_.push_back(ContactInfo(contact));
-}
-
-void PhysicsWorld2D::EndContact(b2Contact* contact)
-{
-    if (!physicsStepping_)
-        return;
-
-    b2Fixture* fixtureA = contact->GetFixtureA();
-    b2Fixture* fixtureB = contact->GetFixtureB();
-    if (!fixtureA || !fixtureB)
-        return;
-
-    endContactInfos_.push_back(ContactInfo(contact));
-}
-void PhysicsWorld2D::PreSolve(b2Contact* contact, const b2Manifold* oldManifold)
-{
-    b2Fixture* fixtureA = contact->GetFixtureA();
-    b2Fixture* fixtureB = contact->GetFixtureB();
-    if (!fixtureA || !fixtureB)
-        return;
-
-    ContactInfo contactInfo(contact);
-
-    // Send global event
-    VariantMap& eventData = GetEventDataMap();
-    eventData[PhysicsUpdateContact2D::P_WORLD] = this;
-    eventData[PhysicsUpdateContact2D::P_ENABLED] = contact->IsEnabled();
-
-    eventData[PhysicsUpdateContact2D::P_BODYA] = contactInfo.bodyA_.Get();
-    eventData[PhysicsUpdateContact2D::P_BODYB] = contactInfo.bodyB_.Get();
-    eventData[PhysicsUpdateContact2D::P_NODEA] = contactInfo.nodeA_.Get();
-    eventData[PhysicsUpdateContact2D::P_NODEB] = contactInfo.nodeB_.Get();
-    eventData[PhysicsUpdateContact2D::P_CONTACTS] = contactInfo.Serialize(contacts_);
-    eventData[PhysicsUpdateContact2D::P_SHAPEA] = contactInfo.shapeA_.Get();
-    eventData[PhysicsUpdateContact2D::P_SHAPEB] = contactInfo.shapeB_.Get();
-
-    SendEvent(E_PHYSICSUPDATECONTACT2D, eventData);
-    contact->SetEnabled(eventData[PhysicsUpdateContact2D::P_ENABLED].GetBool());
-    eventData.clear();
-
-    // Send node event
-    eventData[NodeUpdateContact2D::P_ENABLED] = contact->IsEnabled();
-    eventData[NodeUpdateContact2D::P_CONTACTS] = contactInfo.Serialize(contacts_);
-
-    if (contactInfo.nodeA_)
-    {
-        eventData[NodeUpdateContact2D::P_BODY] = contactInfo.bodyA_.Get();
-        eventData[NodeUpdateContact2D::P_OTHERNODE] = contactInfo.nodeB_.Get();
-        eventData[NodeUpdateContact2D::P_OTHERBODY] = contactInfo.bodyB_.Get();
-        eventData[NodeUpdateContact2D::P_SHAPE] = contactInfo.shapeA_.Get();
-        eventData[NodeUpdateContact2D::P_OTHERSHAPE] = contactInfo.shapeB_.Get();
-
-        contactInfo.nodeA_->SendEvent(E_NODEUPDATECONTACT2D, eventData);
-    }
-
-    if (contactInfo.nodeB_)
-    {
-        eventData[NodeUpdateContact2D::P_BODY] = contactInfo.bodyB_.Get();
-        eventData[NodeUpdateContact2D::P_OTHERNODE] = contactInfo.nodeA_.Get();
-        eventData[NodeUpdateContact2D::P_OTHERBODY] = contactInfo.bodyA_.Get();
-        eventData[NodeUpdateContact2D::P_SHAPE] = contactInfo.shapeB_.Get();
-        eventData[NodeUpdateContact2D::P_OTHERSHAPE] = contactInfo.shapeA_.Get();
-
-        contactInfo.nodeB_->SendEvent(E_NODEUPDATECONTACT2D, eventData);
-    }
-
-    contact->SetEnabled(eventData[NodeUpdateContact2D::P_ENABLED].GetBool());
-}
-void PhysicsWorld2D::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
+void PhysicsWorld2D_private::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
 {
     if (!debugRenderer_)
         return;
@@ -201,7 +445,7 @@ void PhysicsWorld2D::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, cons
     debugRenderer_->AddLine(ToVector3(vertices[vertexCount - 1]), ToVector3(vertices[0]), c, debugDepthTest_);
 }
 
-void PhysicsWorld2D::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
+void PhysicsWorld2D_private::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
 {
     if (!debugRenderer_)
         return;
@@ -212,7 +456,7 @@ void PhysicsWorld2D::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount,
         debugRenderer_->AddTriangle(v, ToVector3(vertices[i]), ToVector3(vertices[i + 1]), c, debugDepthTest_);
 }
 
-void PhysicsWorld2D::DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color)
+void PhysicsWorld2D_private::DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color)
 {
     if (!debugRenderer_)
         return;
@@ -233,12 +477,12 @@ void PhysicsWorld2D::DrawCircle(const b2Vec2& center, float32 radius, const b2Co
 
 extern LUTEFISK3D_EXPORT const float PIXEL_SIZE;
 
-void PhysicsWorld2D::DrawPoint(const b2Vec2& p, float32 size, const b2Color& color)
+void PhysicsWorld2D_private::DrawPoint(const b2Vec2& p, float32 size, const b2Color& color)
 {
     DrawSolidCircle(p, size * 0.5f * PIXEL_SIZE, b2Vec2(), color);
 }
 
-void PhysicsWorld2D::DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color)
+void PhysicsWorld2D_private::DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color)
 {
     if (!debugRenderer_)
         return;
@@ -258,13 +502,13 @@ void PhysicsWorld2D::DrawSolidCircle(const b2Vec2& center, float32 radius, const
     }
 }
 
-void PhysicsWorld2D::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color)
+void PhysicsWorld2D_private::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color)
 {
     if (debugRenderer_)
         debugRenderer_->AddLine(ToVector3(p1), ToVector3(p2), ToColor(color), debugDepthTest_);
 }
 
-void PhysicsWorld2D::DrawTransform(const b2Transform& xf)
+void PhysicsWorld2D_private::DrawTransform(const b2Transform& xf)
 {
     if (!debugRenderer_)
         return;
@@ -282,16 +526,13 @@ void PhysicsWorld2D::DrawTransform(const b2Transform& xf)
 void PhysicsWorld2D::Update(float timeStep)
 {
     URHO3D_PROFILE(UpdatePhysics2D);
-    using namespace PhysicsPreStep;
 
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_WORLD] = this;
-    eventData[P_TIMESTEP] = timeStep;
-    SendEvent(E_PHYSICSPRESTEP, eventData);
+    pre_step.Emit(this,timeStep);
 
-    physicsStepping_ = true;
+    PhysicsWorld2D_private *tgt = static_cast <PhysicsWorld2D_private *>(privateData_);
+    tgt->physicsStepping_ = true;
     world_->Step(timeStep, velocityIterations_, positionIterations_);
-    physicsStepping_ = false;
+    tgt->physicsStepping_ = false;
 
     // Apply world transforms. Unparented transforms first
     for (auto iter = rigidBodies_.begin(); iter != rigidBodies_.end();)
@@ -307,28 +548,27 @@ void PhysicsWorld2D::Update(float timeStep)
             iter = rigidBodies_.erase(iter);
         }
     }
-        // Apply delayed (parented) world transforms now, if any
-        while (!delayedWorldTransforms_.empty())
+    // Apply delayed (parented) world transforms now, if any
+    while (!delayedWorldTransforms_.empty())
+    {
+        for (auto i = delayedWorldTransforms_.begin(); i != delayedWorldTransforms_.end();)
         {
-            for (auto i = delayedWorldTransforms_.begin(); i != delayedWorldTransforms_.end();)
+            const DelayedWorldTransform2D& transform = MAP_VALUE(i);
+
+            // If parent's transform has already been assigned, can proceed
+            if (!delayedWorldTransforms_.contains(transform.parentRigidBody_))
             {
-                const DelayedWorldTransform2D& transform = MAP_VALUE(i);
-
-                // If parent's transform has already been assigned, can proceed
-                if (!delayedWorldTransforms_.contains(transform.parentRigidBody_))
-                {
-                    transform.rigidBody_->ApplyWorldTransform(transform.worldPosition_, transform.worldRotation_);
-                    i = delayedWorldTransforms_.erase(i);
-                }
-                else
-                    ++i;
+                transform.rigidBody_->ApplyWorldTransform(transform.worldPosition_, transform.worldRotation_);
+                i = delayedWorldTransforms_.erase(i);
             }
+            else
+                ++i;
         }
-    SendBeginContactEvents();
-    SendEndContactEvents();
+    }
+    tgt->SendBeginContactEvents();
+    tgt->SendEndContactEvents();
 
-    using namespace PhysicsPostStep;
-    SendEvent(E_PHYSICSPOSTSTEP, eventData);
+    post_step.Emit(this,timeStep);
 }
 
 void PhysicsWorld2D::DrawDebugGeometry()
@@ -345,43 +585,32 @@ void PhysicsWorld2D::SetUpdateEnabled(bool enable)
 
 void PhysicsWorld2D::SetDrawShape(bool drawShape)
 {
-    if (drawShape)
-        m_drawFlags |= e_shapeBit;
-    else
-        m_drawFlags &= ~e_shapeBit;
-
+    PhysicsWorld2D_private *tgt = static_cast <PhysicsWorld2D_private *>(privateData_);
+    tgt->SetDrawShape(drawShape);
 }
 
 void PhysicsWorld2D::SetDrawJoint(bool drawJoint)
 {
-    if (drawJoint)
-        m_drawFlags |= e_jointBit;
-    else
-        m_drawFlags &= ~e_jointBit;
+    PhysicsWorld2D_private *tgt = static_cast <PhysicsWorld2D_private *>(privateData_);
+    tgt->SetDrawJoint(drawJoint);
 }
 
 void PhysicsWorld2D::SetDrawAabb(bool drawAabb)
 {
-    if (drawAabb)
-        m_drawFlags |= e_aabbBit;
-    else
-        m_drawFlags &= ~e_aabbBit;
+    PhysicsWorld2D_private *tgt = static_cast <PhysicsWorld2D_private *>(privateData_);
+    tgt->SetDrawAabb(drawAabb);
 }
 
 void PhysicsWorld2D::SetDrawPair(bool drawPair)
 {
-    if (drawPair)
-        m_drawFlags |= e_pairBit;
-    else
-        m_drawFlags &= ~e_pairBit;
+    PhysicsWorld2D_private *tgt = static_cast <PhysicsWorld2D_private *>(privateData_);
+    tgt->SetDrawAabb(drawPair);
 }
 
 void PhysicsWorld2D::SetDrawCenterOfMass(bool drawCenterOfMass)
 {
-    if (drawCenterOfMass)
-        m_drawFlags |= e_centerOfMassBit;
-    else
-        m_drawFlags &= ~e_centerOfMassBit;
+    PhysicsWorld2D_private *tgt = static_cast <PhysicsWorld2D_private *>(privateData_);
+    tgt->SetDrawAabb(drawCenterOfMass);
 }
 
 void PhysicsWorld2D::SetAllowSleeping(bool enable)
@@ -670,6 +899,31 @@ void PhysicsWorld2D::GetRigidBodies(std::vector<RigidBody2D*>& results, const Re
     world_->QueryAABB(&callback, b2Aabb);
 }
 
+bool PhysicsWorld2D::GetDrawShape() const
+{
+    return static_cast <PhysicsWorld2D_private *>(privateData_)->GetDrawShape();
+}
+
+bool PhysicsWorld2D::GetDrawJoint() const
+{
+    return static_cast <PhysicsWorld2D_private *>(privateData_)->GetDrawJoint();
+}
+
+bool PhysicsWorld2D::GetDrawAabb() const
+{
+    return static_cast <PhysicsWorld2D_private *>(privateData_)->GetDrawAabb();
+}
+
+bool PhysicsWorld2D::GetDrawPair() const
+{
+    return static_cast <PhysicsWorld2D_private *>(privateData_)->GetDrawPair();
+}
+
+bool PhysicsWorld2D::GetDrawCenterOfMass() const
+{
+    return static_cast <PhysicsWorld2D_private *>(privateData_)->GetDrawCenterOfMass();
+}
+
 bool PhysicsWorld2D::GetAllowSleeping() const
 {
     return world_->GetAllowSleeping();
@@ -713,138 +967,9 @@ void PhysicsWorld2D::HandleSceneSubsystemUpdate(Scene *,float ts)
     Update(ts);
 }
 
-void PhysicsWorld2D::SendBeginContactEvents()
-{
-    if (beginContactInfos_.empty())
-        return;
 
-    using namespace PhysicsBeginContact2D;
-    VariantMap& eventData = GetEventDataMap();
-    VariantMap nodeEventData;
-    eventData[P_WORLD] = this;
 
-    for (unsigned i = 0; i < beginContactInfos_.size(); ++i)
-    {
-        ContactInfo& contactInfo = beginContactInfos_[i];
-        eventData[P_BODYA] = contactInfo.bodyA_.Get();
-        eventData[P_BODYB] = contactInfo.bodyB_.Get();
-        eventData[P_NODEA] = contactInfo.nodeA_.Get();
-        eventData[P_NODEB] = contactInfo.nodeB_.Get();
-        eventData[P_CONTACTS] = contactInfo.Serialize(contacts_);
-        eventData[P_SHAPEA] = contactInfo.shapeA_.Get();
-        eventData[P_SHAPEB] = contactInfo.shapeB_.Get();
 
-        SendEvent(E_PHYSICSBEGINCONTACT2D, eventData);
-        nodeEventData[NodeBeginContact2D::P_CONTACTS] = contactInfo.Serialize(contacts_);
-        if (contactInfo.nodeA_)
-        {
-            nodeEventData[NodeBeginContact2D::P_BODY] = contactInfo.bodyA_.Get();
-            nodeEventData[NodeBeginContact2D::P_OTHERNODE] = contactInfo.nodeB_.Get();
-            nodeEventData[NodeBeginContact2D::P_OTHERBODY] = contactInfo.bodyB_.Get();
-            nodeEventData[NodeBeginContact2D::P_SHAPE] = contactInfo.shapeA_.Get();
-            nodeEventData[NodeBeginContact2D::P_OTHERSHAPE] = contactInfo.shapeB_.Get();
 
-            contactInfo.nodeA_->SendEvent(E_NODEBEGINCONTACT2D, nodeEventData);
-        }
-
-        if (contactInfo.nodeB_)
-        {
-            nodeEventData[NodeBeginContact2D::P_BODY] = contactInfo.bodyB_.Get();
-            nodeEventData[NodeBeginContact2D::P_OTHERNODE] = contactInfo.nodeA_.Get();
-            nodeEventData[NodeBeginContact2D::P_OTHERBODY] = contactInfo.bodyA_.Get();
-            nodeEventData[NodeBeginContact2D::P_SHAPE] = contactInfo.shapeB_.Get();
-            nodeEventData[NodeBeginContact2D::P_OTHERSHAPE] = contactInfo.shapeA_.Get();
-
-            contactInfo.nodeB_->SendEvent(E_NODEBEGINCONTACT2D, nodeEventData);
-        }
-    }
-
-    beginContactInfos_.clear();
-}
-
-void PhysicsWorld2D::SendEndContactEvents()
-{
-    if (endContactInfos_.empty())
-        return;
-
-    using namespace PhysicsEndContact2D;
-    VariantMap& eventData = GetEventDataMap();
-    VariantMap nodeEventData;
-    eventData[P_WORLD] = this;
-
-    for (unsigned i = 0; i < endContactInfos_.size(); ++i)
-    {
-        ContactInfo& contactInfo = endContactInfos_[i];
-        eventData[P_BODYA] = contactInfo.bodyA_.Get();
-        eventData[P_BODYB] = contactInfo.bodyB_.Get();
-        eventData[P_NODEA] = contactInfo.nodeA_.Get();
-        eventData[P_NODEB] = contactInfo.nodeB_.Get();
-        eventData[P_CONTACTS] = contactInfo.Serialize(contacts_);
-        eventData[P_SHAPEA] = contactInfo.shapeA_.Get();
-        eventData[P_SHAPEB] = contactInfo.shapeB_.Get();
-        SendEvent(E_PHYSICSENDCONTACT2D, eventData);
-        nodeEventData[NodeEndContact2D::P_CONTACTS] = contactInfo.Serialize(contacts_);
-        if (contactInfo.nodeA_)
-        {
-            nodeEventData[NodeEndContact2D::P_BODY] = contactInfo.bodyA_.Get();
-            nodeEventData[NodeEndContact2D::P_OTHERNODE] = contactInfo.nodeB_.Get();
-            nodeEventData[NodeEndContact2D::P_OTHERBODY] = contactInfo.bodyB_.Get();
-            nodeEventData[NodeEndContact2D::P_SHAPE] = contactInfo.shapeA_.Get();
-            nodeEventData[NodeEndContact2D::P_OTHERSHAPE] = contactInfo.shapeB_.Get();
-
-            contactInfo.nodeA_->SendEvent(E_NODEENDCONTACT2D, nodeEventData);
-        }
-
-        if (contactInfo.nodeB_)
-        {
-            nodeEventData[NodeEndContact2D::P_BODY] = contactInfo.bodyB_.Get();
-            nodeEventData[NodeEndContact2D::P_OTHERNODE] = contactInfo.nodeA_.Get();
-            nodeEventData[NodeEndContact2D::P_OTHERBODY] = contactInfo.bodyA_.Get();
-            nodeEventData[NodeEndContact2D::P_SHAPE] = contactInfo.shapeB_.Get();
-            nodeEventData[NodeEndContact2D::P_OTHERSHAPE] = contactInfo.shapeA_.Get();
-
-            contactInfo.nodeB_->SendEvent(E_NODEENDCONTACT2D, nodeEventData);
-        }
-    }
-
-    endContactInfos_.clear();
-}
-
-PhysicsWorld2D::ContactInfo::ContactInfo()
-{
-}
-
-PhysicsWorld2D::ContactInfo::ContactInfo(b2Contact* contact)
-{
-    b2Fixture* fixtureA = contact->GetFixtureA();
-    b2Fixture* fixtureB = contact->GetFixtureB();
-    bodyA_ = (RigidBody2D*)(fixtureA->GetBody()->GetUserData());
-    bodyB_ = (RigidBody2D*)(fixtureB->GetBody()->GetUserData());
-    nodeA_ = bodyA_->GetNode();
-    nodeB_ = bodyB_->GetNode();
-    shapeA_ = (CollisionShape2D*)fixtureA->GetUserData();
-    shapeB_ = (CollisionShape2D*)fixtureB->GetUserData();
-    b2WorldManifold worldManifold;
-    contact->GetWorldManifold(&worldManifold);
-    numPoints_ = contact->GetManifold()->pointCount;
-    worldNormal_ = Vector2(worldManifold.normal.x, worldManifold.normal.y);
-    for (int i = 0; i < numPoints_; ++i)
-    {
-        worldPositions_[i] = Vector2(worldManifold.points[i].x, worldManifold.points[i].y);
-        separations_[i] = worldManifold.separations[i];
-    }
-}
-
-const std::vector<unsigned char>& PhysicsWorld2D::ContactInfo::Serialize(VectorBuffer& buffer) const
-{
-    buffer.clear();
-    for (int i = 0; i < numPoints_; ++i)
-    {
-        buffer.WriteVector2(worldPositions_[i]);
-        buffer.WriteVector2(worldNormal_);
-        buffer.WriteFloat(separations_[i]);
-    }
-    return buffer.GetBuffer();
-}
 
 }

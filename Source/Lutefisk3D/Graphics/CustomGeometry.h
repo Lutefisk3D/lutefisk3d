@@ -55,18 +55,18 @@ public:
     /// Construct.
     CustomGeometry(Context* context);
     /// Destruct.
-    virtual ~CustomGeometry() = default;
+    virtual ~CustomGeometry();
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);
 
     /// Process octree raycast. May be called from a worker thread.
-    virtual void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
+    void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
     /// Return the geometry for a specific LOD level.
-    virtual Geometry* GetLodGeometry(unsigned batchIndex, unsigned level) override;
+    Geometry* GetLodGeometry(unsigned batchIndex, unsigned level) override;
     /// Return number of occlusion geometry triangles.
-    virtual unsigned GetNumOccluderTriangles() override;
+    unsigned GetNumOccluderTriangles() override;
     /// Draw to occlusion buffer. Return true if did not run out of triangles.
-    virtual bool DrawOcclusion(OcclusionBuffer* buffer) override;
+    bool DrawOcclusion(OcclusionBuffer* buffer) override;
 
     /// Clear all geometries.
     void Clear();
@@ -119,7 +119,7 @@ public:
 
 protected:
     /// Recalculate the world-space bounding box.
-    virtual void OnWorldBoundingBoxUpdate() override;
+    void OnWorldBoundingBoxUpdate() override;
 
 private:
     /// Primitive type per geometry.

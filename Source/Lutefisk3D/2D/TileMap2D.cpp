@@ -43,6 +43,8 @@ TileMap2D::TileMap2D(Context* context) :
 {
 }
 
+TileMap2D::~TileMap2D() {
+}
 
 
 void TileMap2D::RegisterObject(Context* context)

@@ -53,6 +53,9 @@ CustomGeometry::CustomGeometry(Context* context) :
     SetNumGeometries(1);
 }
 
+CustomGeometry::~CustomGeometry() {
+}
+
 void CustomGeometry::RegisterObject(Context* context)
 {
     context->RegisterFactory<CustomGeometry>(GEOMETRY_CATEGORY);

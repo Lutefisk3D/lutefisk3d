@@ -53,7 +53,7 @@ public:
     static void RegisterObject(Context* context);
 
     /// Add debug geometry to the debug renderer.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
+    void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
     /// Initialize with tile map and tmx layer.
     void Initialize(TileMap2D* tileMap, const TmxLayer2D* tmxLayer);

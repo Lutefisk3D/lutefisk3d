@@ -23,23 +23,18 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
+#include "jlsignal/Signal.h"
 
 namespace Urho3D
 {
-
-/// Physics world is about to be stepped.
-URHO3D_EVENT(E_PHYSICSPRESTEP, PhysicsPreStep)
-{
-    URHO3D_PARAM(P_WORLD, World);                  // PhysicsWorld pointer
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
-
-/// Physics world has been stepped.
-URHO3D_EVENT(E_PHYSICSPOSTSTEP, PhysicsPostStep)
-{
-    URHO3D_PARAM(P_WORLD, World);                  // PhysicsWorld pointer
-    URHO3D_PARAM(P_TIMESTEP, TimeStep);            // float
-}
+class Component;
+struct PhysicsSignals {
+    // Component * is used here since both PhysicsWorld and PhysicsWorld2D can emit this signal
+    /// Physics world is about to be stepped.
+    jl::Signal<Component *, float > pre_step;
+    /// Physics world has been stepped.
+    jl::Signal<Component *, float > post_step;
+};
 
 /// Physics collision started. Global event sent by the PhysicsWorld.
 URHO3D_EVENT(E_PHYSICSCOLLISIONSTART, PhysicsCollisionStart)

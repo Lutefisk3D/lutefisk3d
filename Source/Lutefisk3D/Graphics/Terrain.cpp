@@ -111,6 +111,9 @@ Terrain::Terrain(Context* context) :
     indexBuffer_->SetShadowed(true);
 }
 
+Terrain::~Terrain() {
+}
+
 void Terrain::RegisterObject(Context* context)
 {
     context->RegisterFactory<Terrain>(GEOMETRY_CATEGORY);

@@ -35,12 +35,17 @@ function(libname tgt basename)
 endfunction()
 
 macro(set_shared_lib_properties basename)
-    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION ${ace_LIBRARY_SHARED} )
+    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION ${${basename}_LIBRARY_SHARED} )
     SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION_DEBUG ${${basename}_LIBRARY_SHARED_D} )
     SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION_RELEASE ${${basename}_LIBRARY_SHARED} )
     SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_IMPLIB ${${basename}_LIBRARY_IMP} )
     SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_IMPLIB_RELEASE ${${basename}_LIBRARY_IMP} )
     SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_IMPLIB_DEBUG ${${basename}_LIBRARY_IMP_D} )
+endmacro()
+macro(set_static_lib_properties basename)
+    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION ${${basename}_LIBRARY_STATIC} )
+    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION_DEBUG ${${basename}_LIBRARY_STATIC_D} )
+    SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION_RELEASE ${${basename}_LIBRARY_STATIC} )
 endmacro()
 link_directories(${ThirdParty_Install_Dir}/lib)
 
@@ -79,8 +84,10 @@ if(NOT LUTEFISK3D_HEADLESS)
 
     if(UNIX OR MINGW)
         set(GLBINDING_BuiltFile ${ThirdParty_Install_Dir}/lib/libglbinding.a)
+        set(GLBINDING_BuiltFileD ${ThirdParty_Install_Dir}/lib/libglbinding.a)
     else()
         set(GLBINDING_BuiltFile ${ThirdParty_Install_Dir}/lib/glbinding.lib)
+        set(GLBINDING_BuiltFileD ${ThirdParty_Install_Dir}/lib/glbindingd.lib)
     endif()
     ExternalProject_Add(
         glbinding
@@ -96,6 +103,7 @@ if(NOT LUTEFISK3D_HEADLESS)
     FIND_PACKAGE(OpenGL REQUIRED)
     SET_TARGET_PROPERTIES(glbinding_LIB PROPERTIES
         IMPORTED_LOCATION ${GLBINDING_BuiltFile}
+        IMPORTED_LOCATION_DEBUG ${GLBINDING_BuiltFileD}
         IMPORTED_LINK_INTERFACE_LIBRARIES "${OPENGL_LIBRARIES}"
     )
 endif()
@@ -138,39 +146,7 @@ if(NOT LUTEFISK3D_2DLESS)
 endif()
 
 if(NOT LUTEFISK3D_PHYSICLESS)
-    if(UNIX)
-        set(BULLET_BuiltFile ${ThirdParty_Install_Dir}/lib/libBulletCollision.a)
-        set(BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletDynamics.a)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletSoftBody.a)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libLinearMath.a)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletCollision.a)
-    elseif(MSVC)
-        set(BULLET_BuiltFile ${ThirdParty_Install_Dir}/lib/BulletCollision_RelWithDebugInfo.lib)
-        set(BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletDynamics_RelWithDebugInfo.lib)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletSoftBody_RelWithDebugInfo.lib)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/LinearMath_RelWithDebugInfo.lib)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/BulletCollision_RelWithDebugInfo.lib)
-    elseif(MINGW)
-        set(BULLET_BuiltFile ${ThirdParty_Install_Dir}/lib/libBulletCollision_RelWithDebugInfo.a)
-        set(BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletDynamics_RelWithDebugInfo.a)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletSoftBody_RelWithDebugInfo.a)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libLinearMath_RelWithDebugInfo.a)
-        list(APPEND BULLET_AllLibs ${ThirdParty_Install_Dir}/lib/libBulletCollision_RelWithDebugInfo.a)
-    endif()
-
-    #ExternalProject_Add(
-    #    Bullet
-    #   DOWNLOAD_COMMAND ""
-    #    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Bullet
-    #    UPDATE_COMMAND ""
-    #    CMAKE_ARGS -DUSE_MSVC_RUNTIME_LIBRARY_DLL=TRUE -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH=${ThirdParty_Install_Dir} -DINSTALL_LIBS:BOOL=ON -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-    #    INSTALL_DIR ${ThirdParty_Install_Dir}/
-    #    BUILD_BYPRODUCTS ${BULLET_BuiltFile} ${BULLET_AllLibs}
-    #)
-    #ADD_LIBRARY(Bullet_LIB STATIC IMPORTED GLOBAL)
-    #add_dependencies(Bullet_LIB BULLET)
-    #SET_TARGET_PROPERTIES(Bullet_LIB PROPERTIES IMPORTED_LOCATION ${BULLET_BuiltFile})
-    #SET_TARGET_PROPERTIES(Bullet_LIB PROPERTIES INTERFACE_LINK_LIBRARIES "${BULLET_AllLibs}")
-	add_subdirectory(Bullet)
+	set(USE_MSVC_RUNTIME_LIBRARY_DLL TRUE)
+    add_subdirectory(Bullet)
     add_subdirectory(StanHull)
 endif()

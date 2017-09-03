@@ -26,7 +26,6 @@
 #include "Geometry.h"
 #include "Graphics.h"
 #include "GraphicsDefs.h"
-#include "GraphicsImpl.h"
 #include "Material.h"
 #include "Renderer.h"
 #include "ShaderVariation.h"
@@ -35,7 +34,6 @@
 #include "VertexBuffer.h"
 #include "View.h"
 #include "Zone.h"
-#include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Scene/Node.h"
 #include "Lutefisk3D/Scene/Scene.h"
 
@@ -161,8 +159,8 @@ void Batch::CalculateSortKey()
     unsigned materialID = (unsigned)((*((unsigned*)&material_) / sizeof(Material)) & 0xffff);
     unsigned geometryID = (unsigned)((*((unsigned*)&geometry_) / sizeof(Geometry)) & 0xffff);
 
-    sortKey_ = (((unsigned long long)shaderID) << 48) | (((unsigned long long)lightQueueID) << 32) |
-               (((unsigned long long)materialID) << 16) | geometryID;
+    sortKey_ = (uint64_t(shaderID) << 48) | (uint64_t(lightQueueID) << 32) |
+               (uint64_t(materialID) << 16) | geometryID;
 }
 
 void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bool allowDepthWrite) const
@@ -214,7 +212,7 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
 
 
     // Set global (per-frame) shader parameters
-    if (graphics->NeedParameterUpdate(SP_FRAME, (void*)nullptr))
+    if (graphics->NeedParameterUpdate(SP_FRAME, nullptr))
         view->SetGlobalShaderParameters();
 
     // Set camera & viewport shader parameters
@@ -266,7 +264,7 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
         graphics->SetShaderParameter(VSP_AMBIENTENDCOLOR, zone_->GetAmbientEndColor().ToVector4() - zone_->GetAmbientStartColor().ToVector4());
 
         const BoundingBox& box = zone_->GetBoundingBox();
-        Vector3 boxSize = box.size();
+        const Vector3 boxSize = box.size();
         Matrix3x4 adjust(Matrix3x4::IDENTITY);
         adjust.SetScale(Vector3(1.0f / boxSize.x_, 1.0f / boxSize.y_, 1.0f / boxSize.z_));
         adjust.SetTranslation(Vector3(0.5f, 0.5f, 0.5f));
@@ -772,7 +770,7 @@ void BatchQueue::SortFrontToBack2Pass(std::vector<Batch*>& batches)
             ++freeShaderID;
         }
 
-        unsigned short materialID = (unsigned short)(batch->sortKey_ & 0xffff0000);
+        unsigned short materialID = uint16_t(batch->sortKey_ >> 16);
         HashMap<unsigned short, unsigned short>::const_iterator k = materialRemapping_.find(materialID);
         if (k != materialRemapping_.end())
             materialID = MAP_VALUE(k);
@@ -782,7 +780,7 @@ void BatchQueue::SortFrontToBack2Pass(std::vector<Batch*>& batches)
             ++freeMaterialID;
         }
 
-        unsigned short geometryID = (unsigned short)(batch->sortKey_ & 0xffff);
+        unsigned short geometryID = uint16_t(batch->sortKey_ & 0xffff);
         HashMap<unsigned short, unsigned short>::const_iterator l = geometryRemapping_.find(geometryID);
         if (l != geometryRemapping_.end())
             geometryID = MAP_VALUE(l);
@@ -792,7 +790,7 @@ void BatchQueue::SortFrontToBack2Pass(std::vector<Batch*>& batches)
             ++freeGeometryID;
         }
 
-        batch->sortKey_ = (((unsigned long long)shaderID) << 32) | (((unsigned long long)materialID) << 16) | geometryID;
+        batch->sortKey_ = (uint64_t(shaderID) << 32) | (uint64_t(materialID) << 16) | geometryID;
     }
 
     shaderRemapping_.clear();

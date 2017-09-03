@@ -1920,7 +1920,7 @@ QString Renderer::GetShadowVariations() const
             return "VSM_SHADOW ";
     }
     return "";
-};
+}
 
 void Renderer::HandleScreenMode(int,int,bool,bool,bool,bool,int,int)
 {

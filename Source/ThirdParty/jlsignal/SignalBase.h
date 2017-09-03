@@ -36,8 +36,22 @@ protected:
 private:
     friend class SignalBase;
     
-    void OnSignalConnect( SignalBase* pSignal );
-    void OnSignalDisconnect( SignalBase* pSignal );
+    void OnSignalConnect( SignalBase* pSignal )
+    {
+        const bool bAdded = m_oSignals.Add( pSignal );
+        JL_ASSERT( bAdded );
+    }
+    void OnSignalDisconnect( SignalBase* pSignal )
+    {
+        OnSignalDisconnectInternal( pSignal );
+        for ( SignalList::iterator i = m_oSignals.begin(); i.isValid(); )
+        {
+            if ( *i == pSignal )
+                m_oSignals.erase( i );
+            else
+                ++i;
+        }
+    }
     
     // Signal list
 public:

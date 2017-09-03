@@ -24,8 +24,11 @@
 
 #include "Lutefisk3D/Scene/Component.h"
 #include "Lutefisk3D/IO/VectorBuffer.h"
-#include <Box2D/Box2D.h>
+#include "Lutefisk3D/2D/PhysicsEvents2D.h"
+
 #include <unordered_set>
+
+class b2World;
 namespace Urho3D
 {
 
@@ -66,9 +69,9 @@ struct DelayedWorldTransform2D
 };
 
 /// 2D physics simulation world component. Should be added only to the root scene node.
-class LUTEFISK3D_EXPORT PhysicsWorld2D : public Component, public b2ContactListener, public b2Draw
+class LUTEFISK3D_EXPORT PhysicsWorld2D : public Component, public Physics2DWorldSignals, public PhysicsSignals
 {
-    URHO3D_OBJECT(PhysicsWorld2D,Component);
+    URHO3D_OBJECT(PhysicsWorld2D,Component)
 
 public:
     /// Construct.
@@ -79,30 +82,7 @@ public:
     static void RegisterObject(Context* context);
 
     /// Visualize the component as debug geometry.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
-
-    // Implement b2ContactListener
-    /// Called when two fixtures begin to touch.
-    virtual void BeginContact(b2Contact* contact) override;
-    /// Called when two fixtures cease to touch.
-    virtual void EndContact(b2Contact* contact) override;
-    /// Called when contact is updated.
-    virtual void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) override;
-    // Implement b2Draw
-    /// Draw a closed polygon provided in CCW order.
-    virtual void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) override;
-    /// Draw a solid closed polygon provided in CCW order.
-    virtual void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) override;
-    /// Draw a circle.
-    virtual void DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color) override;
-    /// Draw a solid circle.
-    virtual void DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color) override;
-    /// Draw a line segment.
-    virtual void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) override;
-    /// Draw a transform. Choose your own length scale.
-    virtual void DrawTransform(const b2Transform& xf) override;
-    /// Draw a point.
-    virtual void DrawPoint(const b2Vec2& p, float32 size, const b2Color& color) override;
+    void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
     /// Step the simulation forward.
     void Update(float timeStep);
@@ -158,15 +138,15 @@ public:
     bool IsUpdateEnabled() const { return updateEnabled_; }
 
     /// Return draw shape.
-    bool GetDrawShape() const { return (m_drawFlags & e_shapeBit) != 0; }
+    bool GetDrawShape() const;
     /// Return draw joint.
-    bool GetDrawJoint() const { return (m_drawFlags & e_jointBit) != 0; }
+    bool GetDrawJoint() const;
     /// Return draw aabb.
-    bool GetDrawAabb() const { return (m_drawFlags & e_aabbBit) != 0; }
+    bool GetDrawAabb() const;
     /// Return draw pair.
-    bool GetDrawPair() const { return (m_drawFlags & e_pairBit) != 0; }
+    bool GetDrawPair() const;
     /// Return draw center of mass.
-    bool GetDrawCenterOfMass() const { return (m_drawFlags & e_centerOfMassBit) != 0; }
+    bool GetDrawCenterOfMass() const;
     /// Return allow sleeping.
     bool GetAllowSleeping() const;
     /// Return warm starting.
@@ -193,14 +173,10 @@ public:
 
 protected:
     /// Handle scene being assigned.
-    virtual void OnSceneSet(Scene *scene) override;
+    void OnSceneSet(Scene *scene) override;
 
     /// Handle the scene subsystem update event, step simulation here.
     void HandleSceneSubsystemUpdate(Scene *, float ts);
-    /// Send begin contact events.
-    void SendBeginContactEvents();
-    /// Send end contact events.
-    void SendEndContactEvents();
 
     /// Box2D physics world.
     std::unique_ptr<b2World> world_;
@@ -213,59 +189,18 @@ protected:
 
     /// Extra weak pointer to scene to allow for cleanup in case the world is destroyed before other components.
     WeakPtr<Scene> scene_;
-    /// Debug renderer.
-    DebugRenderer* debugRenderer_;
-    /// Debug draw depth test mode.
-    bool debugDepthTest_;
 
     /// Automatic simulation update enabled flag.
     bool updateEnabled_;
-    /// Whether is currently stepping the world. Used internally.
-    bool physicsStepping_;
     /// Applying transforms.
     bool applyingTransforms_;
     /// Rigid bodies.
     std::unordered_set< WeakPtr<RigidBody2D> > rigidBodies_;
     /// Delayed (parented) world transform assignments.
     HashMap<RigidBody2D*, DelayedWorldTransform2D> delayedWorldTransforms_;
-
-    /// Contact info.
-    struct ContactInfo
-    {
-        /// Construct.
-        ContactInfo();
-        /// Construct.
-        ContactInfo(b2Contact* contract);
-        /// Write contact info to buffer.
-        const std::vector<unsigned char>& Serialize(VectorBuffer& buffer) const;
-
-        /// Rigid body A.
-        SharedPtr<RigidBody2D> bodyA_;
-        /// Rigid body B.
-        SharedPtr<RigidBody2D> bodyB_;
-        /// Node A.
-        SharedPtr<Node> nodeA_;
-        /// Node B.
-        SharedPtr<Node> nodeB_;
-        /// Shape A.
-        SharedPtr<CollisionShape2D> shapeA_;
-        /// Shape B.
-        SharedPtr<CollisionShape2D> shapeB_;
-        /// Number of contact points.
-        int numPoints_;
-        /// Contact normal in world space.
-        Vector2 worldNormal_;
-        /// Contact positions in world space.
-        Vector2 worldPositions_[b2_maxManifoldPoints];
-        /// Contact overlap values.
-        float separations_[b2_maxManifoldPoints];
-    };
-    /// Begin contact infos.
-    std::vector<ContactInfo> beginContactInfos_;
-    /// End contact infos.
-    std::vector<ContactInfo> endContactInfos_;
-    /// Temporary buffer with contact data.
-    VectorBuffer contacts_;
+private:
+    // Data hiding the Box2D specific things.
+    void *privateData_ = nullptr;
 };
 
 }

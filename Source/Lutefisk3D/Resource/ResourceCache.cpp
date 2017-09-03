@@ -75,7 +75,7 @@ ResourceCache::ResourceCache(Context* context) :
     RegisterResourceLibrary(m_context);
 
     // Create resource background loader. Its thread will start on the first background request
-    backgroundLoader_ = new BackgroundLoader(this);
+    backgroundLoader_.reset(new BackgroundLoader(this));
 
     // Subscribe BeginFrame for handling directory watchers and background loaded resource finalization
     g_coreSignals.beginFrame.Connect(this,&ResourceCache::HandleBeginFrame);
@@ -84,7 +84,7 @@ ResourceCache::ResourceCache(Context* context) :
 ResourceCache::~ResourceCache()
 {
     // Shut down the background loader first
-    backgroundLoader_.Reset();
+    backgroundLoader_.reset();
 }
 /// Add a resource load directory. Optional priority parameter which will control search order.
 bool ResourceCache::AddResourceDir(const QString& pathName, unsigned priority)

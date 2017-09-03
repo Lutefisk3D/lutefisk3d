@@ -63,7 +63,7 @@ public:
     /// Construct.
     Animatable(Context* context);
     /// Destruct.
-    virtual ~Animatable() = default;
+    virtual ~Animatable();
     /// Register object factory.
     static void RegisterObject(Context* context);
 

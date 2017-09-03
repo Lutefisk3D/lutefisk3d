@@ -42,7 +42,7 @@ public:
     /// Construct.
     Terrain(Context* context);
     /// Destruct.
-    ~Terrain() = default;
+    ~Terrain();
     /// Register object factory.
     static void RegisterObject(Context* context);
 

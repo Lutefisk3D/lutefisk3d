@@ -19,6 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "Scene.h"
 
 #include "Component.h"
 #include "ObjectAnimation.h"
@@ -34,7 +35,6 @@
 #include "Lutefisk3D/Resource/ResourceEvents.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Resource/JSONFile.h"
-#include "Scene.h"
 #include "SceneEvents.h"
 #include "SmoothedTransform.h"
 #include "SplinePath.h"

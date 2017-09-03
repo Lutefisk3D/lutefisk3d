@@ -60,6 +60,9 @@ ValueAnimationInfo::ValueAnimationInfo(const ValueAnimationInfo& other) :
 {
 }
 
+ValueAnimationInfo::~ValueAnimationInfo() {
+}
+
 bool ValueAnimationInfo::Update(float timeStep)
 {
     if ((animation_ == nullptr) || (target_ == nullptr))

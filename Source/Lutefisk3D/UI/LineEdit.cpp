@@ -627,16 +627,11 @@ void LineEdit::HandleFocused(UIElement *el,bool byKey)
     }
     UpdateCursor();
 
-    if (context_->m_UISystem->GetUseScreenKeyboard())
-        context_->m_InputSystem->SetScreenKeyboardVisible(true);
 }
 
 void LineEdit::HandleDefocused(UIElement *)
 {
     text_->ClearSelection();
-
-    if (context_->m_UISystem->GetUseScreenKeyboard())
-        context_->m_InputSystem->SetScreenKeyboardVisible(false);
 }
 
 void LineEdit::HandleLayoutUpdated(UIElement *)

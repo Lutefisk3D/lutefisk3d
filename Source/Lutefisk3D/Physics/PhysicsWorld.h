@@ -27,6 +27,7 @@
 #include "Lutefisk3D/Math/Sphere.h"
 #include "Lutefisk3D/Math/Vector3.h"
 #include "Lutefisk3D/IO/VectorBuffer.h"
+#include "Lutefisk3D/Physics/PhysicsEvents.h"
 
 #include "Lutefisk3D/Container/HashMap.h"
 
@@ -129,7 +130,7 @@ struct PhysicsWorldConfig
 static const float DEFAULT_MAX_NETWORK_ANGULAR_VELOCITY = 100.0f;
 
 /// Physics simulation world component. Should be added only to the root scene node.
-class LUTEFISK3D_EXPORT PhysicsWorld : public Component, public btIDebugDraw
+class LUTEFISK3D_EXPORT PhysicsWorld : public Component, public btIDebugDraw, public PhysicsSignals
 {
     URHO3D_OBJECT(PhysicsWorld,Component);
 

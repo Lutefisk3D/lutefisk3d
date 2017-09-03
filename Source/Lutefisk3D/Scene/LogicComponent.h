@@ -86,9 +86,9 @@ private:
     void HandleScenePostUpdate(Scene *s, float ts);
 #if defined(LUTEFISK3D_PHYSICS) || defined (LUTEFISK3D_2D)
     /// Handle physics pre-step event.
-    void HandlePhysicsPreStep(StringHash eventType, VariantMap& eventData);
+    void HandlePhysicsPreStep(Component *c, float timeStep);
     /// Handle physics post-step event.
-    void HandlePhysicsPostStep(StringHash eventType, VariantMap& eventData);
+    void HandlePhysicsPostStep(Component *c, float timeStep);
 #endif
     /// Requested event subscription mask.
     unsigned char updateEventMask_;

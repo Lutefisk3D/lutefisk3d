@@ -774,12 +774,7 @@ void PhysicsWorld::HandleSceneSubsystemUpdate(Scene *, float ts)
 void PhysicsWorld::PreStep(float timeStep)
 {
     // Send pre-step event
-    using namespace PhysicsPreStep;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_WORLD] = this;
-    eventData[P_TIMESTEP] = timeStep;
-    SendEvent(E_PHYSICSPRESTEP, eventData);
+    pre_step.Emit(this,timeStep);
 
     // Start profiling block for the actual simulation step
 #ifdef LUTEFISK3D_PROFILING
@@ -800,12 +795,7 @@ void PhysicsWorld::PostStep(float timeStep)
     SendCollisionEvents();
 
     // Send post-step event
-    using namespace PhysicsPostStep;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_WORLD] = this;
-    eventData[P_TIMESTEP] = timeStep;
-    SendEvent(E_PHYSICSPOSTSTEP, eventData);
+    post_step.Emit(this,timeStep);
 }
 
 void PhysicsWorld::SendCollisionEvents()

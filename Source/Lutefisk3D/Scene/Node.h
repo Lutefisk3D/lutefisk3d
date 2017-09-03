@@ -534,6 +534,11 @@ public:
     /// Set local transform silently without marking the node & child nodes dirty. Used by animation code.
     void SetTransformSilent(const Vector3& position, const Quaternion& rotation, const Vector3& scale);
 
+    // Signals are part of the public interface.
+
+    /// if node is part of physics simulation, those will be used
+    struct Physics2DNodeSignals *physics2dSignals_ = nullptr;
+
 protected:
     /// Handle attribute animation added.
     virtual void OnAttributeAnimationAdded() override;

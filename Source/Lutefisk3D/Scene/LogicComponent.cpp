@@ -91,12 +91,16 @@ void LogicComponent::OnSceneSet(Scene* scene)
         UpdateEventSubscription();
     else
     {
-        assert(GetScene());
+        Scene *scene = GetScene();
+        assert(scene);
         g_sceneSignals.sceneUpdate.Disconnect(this,&LogicComponent::HandleSceneUpdate);
-        GetScene()->scenePostUpdate.Disconnect(this,&LogicComponent::HandleScenePostUpdate);
+        scene->scenePostUpdate.Disconnect(this,&LogicComponent::HandleScenePostUpdate);
 #if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
-        UnsubscribeFromEvent(E_PHYSICSPRESTEP);
-        UnsubscribeFromEvent(E_PHYSICSPOSTSTEP);
+        PhysicsSignals *signal_source = GetFixedSignalSource();
+        if(signal_source) {
+            signal_source->pre_step.Disconnect(this);
+            signal_source->post_step.Disconnect(this);
+        }
 #endif
         currentEventMask_ = 0;
     }
@@ -135,31 +139,31 @@ void LogicComponent::UpdateEventSubscription()
     }
 
 #if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
-    Component* world = GetFixedUpdateSource();
-    if (world == nullptr)
+    PhysicsSignals *signal_source = GetFixedSignalSource();
+    if (signal_source == nullptr)
         return;
 
     bool needFixedUpdate = enabled && ((updateEventMask_ & USE_FIXEDUPDATE) != 0);
     if (needFixedUpdate && ((currentEventMask_ & USE_FIXEDUPDATE) == 0))
     {
-        SubscribeToEvent(world, E_PHYSICSPRESTEP, URHO3D_HANDLER(LogicComponent, HandlePhysicsPreStep));
+        signal_source->pre_step.Connect(this,&LogicComponent::HandlePhysicsPreStep);
         currentEventMask_ |= USE_FIXEDUPDATE;
     }
     else if (!needFixedUpdate && ((currentEventMask_ & USE_FIXEDUPDATE) != 0))
     {
-        UnsubscribeFromEvent(world, E_PHYSICSPRESTEP);
+        signal_source->pre_step.Disconnect(this);
         currentEventMask_ &= ~USE_FIXEDUPDATE;
     }
 
     bool needFixedPostUpdate = enabled && ((updateEventMask_ & USE_FIXEDPOSTUPDATE) != 0);
     if (needFixedPostUpdate && ((currentEventMask_ & USE_FIXEDPOSTUPDATE) == 0))
     {
-        SubscribeToEvent(world, E_PHYSICSPOSTSTEP, URHO3D_HANDLER(LogicComponent, HandlePhysicsPostStep));
+        signal_source->post_step.Connect(this,&LogicComponent::HandlePhysicsPostStep);
         currentEventMask_ |= USE_FIXEDPOSTUPDATE;
     }
     else if (!needFixedPostUpdate && ((currentEventMask_ & USE_FIXEDPOSTUPDATE) != 0))
     {
-        UnsubscribeFromEvent(world, E_PHYSICSPOSTSTEP);
+        signal_source->post_step.Disconnect(this);
         currentEventMask_ &= ~USE_FIXEDPOSTUPDATE;
     }
 #endif
@@ -193,10 +197,8 @@ void LogicComponent::HandleScenePostUpdate(Scene *s,float ts)
 }
 
 #if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
-void LogicComponent::HandlePhysicsPreStep(StringHash eventType, VariantMap& eventData)
+void LogicComponent::HandlePhysicsPreStep(Component *c, float timeStep)
 {
-    using namespace PhysicsPreStep;
-
     // Execute user-defined delayed start function before first fixed update if not called yet
     if (!delayedStartCalled_)
     {
@@ -204,15 +206,13 @@ void LogicComponent::HandlePhysicsPreStep(StringHash eventType, VariantMap& even
         delayedStartCalled_ = true;
     }
     // Execute user-defined fixed update function
-    FixedUpdate(eventData[P_TIMESTEP].GetFloat());
+    FixedUpdate(timeStep);
 }
 
-void LogicComponent::HandlePhysicsPostStep(StringHash eventType, VariantMap& eventData)
+void LogicComponent::HandlePhysicsPostStep(Component *c, float timeStep)
 {
-    using namespace PhysicsPostStep;
-
     // Execute user-defined fixed post-update function
-    FixedPostUpdate(eventData[P_TIMESTEP].GetFloat());
+    FixedPostUpdate(timeStep);
 }
 #endif
 

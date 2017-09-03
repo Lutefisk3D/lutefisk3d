@@ -34,7 +34,9 @@
 #include "Lutefisk3D/IO/MemoryBuffer.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Resource/JSONFile.h"
-
+#ifdef LUTEFISK3D_PHYSICS
+#include "Lutefisk3D/2D/PhysicsEvents2D.h"
+#endif
 namespace Urho3D
 {
 
@@ -65,6 +67,9 @@ Node::~Node()
     // Remove from the scene
     if (scene_ != nullptr)
         scene_->NodeRemoved(this);
+#ifdef LUTEFISK3D_PHYSICS
+    delete physics2dSignals_;
+#endif
 }
 
 void Node::RegisterObject(Context* context)

@@ -30,7 +30,7 @@ namespace Urho3D
 class DebugRenderer;
 class Node;
 class Scene;
-
+struct PhysicsSignals;
 struct ComponentReplicationState;
 
 /// Autoremove is used by some components for automatic removal from the scene hierarchy upon completion of an action, for example sound or particle effect.
@@ -119,8 +119,10 @@ protected:
     void SetNode(Node* node);
     /// Handle scene attribute animation update event.
     void HandleAttributeAnimationUpdate(Scene *, float ts);
-    /// Return a component from the scene root that sends out fixed update events (either PhysicsWorld or PhysicsWorld2D). Return null if neither exists.
+    /// Return a component from the scene root that sends out fixed update events
+    /// (either PhysicsWorld or PhysicsWorld2D). Return null if neither exists.
     Component* GetFixedUpdateSource();
+    PhysicsSignals *GetFixedSignalSource();
     /// Perform autoremove. Called by subclasses. Caller should keep a weak pointer to itself to check whether was actually removed, and return immediately without further member operations in that case.
     void DoAutoRemove(AutoRemoveMode mode);
 

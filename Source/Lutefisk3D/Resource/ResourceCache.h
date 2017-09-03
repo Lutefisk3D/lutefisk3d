@@ -185,7 +185,7 @@ private:
     /// Dependent resources. Only used with automatic reload to eg. trigger reload of a cube texture when any of its faces change.
     HashMap<StringHash, QSet<StringHash> > dependentResources_;
     /// Resource background loader.
-    SharedPtr<BackgroundLoader> backgroundLoader_;
+    std::unique_ptr<BackgroundLoader> backgroundLoader_;
     /// Resource routers.
     std::deque<SharedPtr<ResourceRouter> > resourceRouters_;
 

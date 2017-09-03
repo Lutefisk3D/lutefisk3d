@@ -80,6 +80,7 @@ qt5_use_modules(Lutefisk3D LINK_PUBLIC Core Gui)
 
 install(TARGETS Lutefisk3D EXPORT lutefis3d-targets
             RUNTIME DESTINATION bin
+            ARCHIVE DESTINATION lib
             LIBRARY DESTINATION lib
             INCLUDES DESTINATION include
 )

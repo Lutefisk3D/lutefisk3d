@@ -31,6 +31,9 @@
 #include "Lutefisk3D/Container/DataHandle.h"
 #include "jlsignal/SignalBase.h"
 #include <QtCore/QSet>
+namespace gl {
+enum class GLenum : uint32_t;
+}
 namespace Urho3D
 {
 

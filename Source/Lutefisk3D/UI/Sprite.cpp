@@ -21,6 +21,7 @@
 //
 
 #include "Sprite.h"
+#include "UIBatch.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Graphics/Texture2D.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"

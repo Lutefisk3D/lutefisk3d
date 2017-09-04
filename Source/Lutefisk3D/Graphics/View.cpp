@@ -23,6 +23,7 @@
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Core/WorkQueue.h"
 #include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Math/Polyhedron.h"
 #include "Lutefisk3D/Graphics/Camera.h"
 #include "Lutefisk3D/Graphics/DebugRenderer.h"
 #include "Lutefisk3D/Graphics/Geometry.h"
@@ -53,6 +54,7 @@
 
 #include <QDebug>
 #include <algorithm>
+
 namespace Urho3D
 {
 

@@ -23,17 +23,16 @@
 #pragma once
 
 #include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
 
 namespace Urho3D
 {
-
-/// No ongoing smoothing.
-static const unsigned SMOOTH_NONE = 0;
-/// Ongoing position smoothing.
-static const unsigned SMOOTH_POSITION = 1;
-/// Ongoing rotation smoothing.
-static const unsigned SMOOTH_ROTATION = 2;
-
+enum eSmoothingModes : unsigned
+{
+    SMOOTH_NONE     = 0, //!< No ongoing smoothing.
+    SMOOTH_POSITION = 1, //!< Ongoing position smoothing.
+    SMOOTH_ROTATION = 2, //!< Ongoing rotation smoothing.
+};
 /// Transform smoothing component for network updates.
 class LUTEFISK3D_EXPORT SmoothedTransform : public Component, public SmoothedTransformSignals
 {

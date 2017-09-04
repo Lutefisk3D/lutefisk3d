@@ -25,7 +25,6 @@
 #include "Lutefisk3D/Math/Vector2.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Scene/Animatable.h"
-#include "Lutefisk3D/UI/UIBatch.h"
 #include "Lutefisk3D/UI/UIEvents.h"
 
 namespace Urho3D
@@ -110,12 +109,13 @@ static const unsigned DD_TARGET = 0x2;
 static const unsigned DD_SOURCE_AND_TARGET = 0x3;
 
 class Cursor;
+class UIBatch;
 class ResourceCache;
 
 /// Base class for %UI elements.
 class LUTEFISK3D_EXPORT UIElement : public Animatable, public UiElementSignals
 {
-    URHO3D_OBJECT(UIElement,Animatable);
+    URHO3D_OBJECT(UIElement,Animatable)
 
 public:
     /// Construct.

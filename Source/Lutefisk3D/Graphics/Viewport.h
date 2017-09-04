@@ -24,23 +24,20 @@
 
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Container/Ptr.h"
-#include "Lutefisk3D/Math/Ray.h"
-#include "Lutefisk3D/Math/Rect.h"
-#include "Lutefisk3D/Math/Vector2.h"
 
 namespace Urho3D
 {
 
-class Camera;
-class RenderPath;
-class Scene;
-class XMLFile;
-class View;
-
+class LUTEFISK3D_EXPORT Camera;
+class LUTEFISK3D_EXPORT RenderPath;
+class LUTEFISK3D_EXPORT Scene;
+class LUTEFISK3D_EXPORT XMLFile;
+class LUTEFISK3D_EXPORT View;
+class LUTEFISK3D_EXPORT Ray;
 /// %Viewport definition either for a render surface or the backbuffer.
 class LUTEFISK3D_EXPORT Viewport : public Object
 {
-    URHO3D_OBJECT(Viewport,Object);
+    URHO3D_OBJECT(Viewport,Object)
 
 public:
     /// Construct with defaults.

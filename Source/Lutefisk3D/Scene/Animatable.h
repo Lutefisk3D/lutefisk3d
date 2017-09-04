@@ -23,9 +23,8 @@
 #pragma once
 
 #include "Lutefisk3D/Scene/Serializable.h"
-#include "Lutefisk3D/Scene/ValueAnimationInfo.h"
 #include "Lutefisk3D/Container/HashMap.h"
-#include "Lutefisk3D/Scene/ObjectAnimation.h"
+#include "jlsignal/Signal.h"
 
 namespace Urho3D
 {
@@ -34,25 +33,7 @@ class Animatable;
 class ValueAnimation;
 class AttributeAnimationInfo;
 class ObjectAnimation;
-
-/// Attribute animation instance.
-class AttributeAnimationInfo : public ValueAnimationInfo
-{
-public:
-    AttributeAnimationInfo(Animatable* animatable, const AttributeInfo& attributeInfo, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed);
-    AttributeAnimationInfo(const AttributeAnimationInfo& other) = default;
-    ~AttributeAnimationInfo() = default;
-
-    /// Return attribute information.
-    const AttributeInfo& GetAttributeInfo() const { return attributeInfo_; }
-
-protected:
-    virtual void ApplyValue(const Variant& newValue) override;
-
-private:
-    /// Attribute information.
-    const AttributeInfo& attributeInfo_;
-};
+enum WrapMode : int;
 
 /// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an object animation to it.
 class LUTEFISK3D_EXPORT Animatable : public Serializable, public jl::SignalObserver
@@ -82,8 +63,8 @@ public:
     void SetAnimationTime(float time);
     /// Set object animation.
     void SetObjectAnimation(ObjectAnimation* objectAnimation);
-    /// Set attribute animation.
-    void SetAttributeAnimation(const QString& name, ValueAnimation* attributeAnimation, WrapMode wrapMode = WM_LOOP, float speed = 1.0f);
+    /// Set attribute animation, default wrapMode is WM_LOOP
+    void SetAttributeAnimation(const QString& name, ValueAnimation* attributeAnimation, WrapMode wrapMode = WrapMode(0), float speed = 1.0f);
     /// Set attribute animation wrap mode.
     void SetAttributeAnimationWrapMode(const QString& name, WrapMode wrapMode);
     /// Set attribute animation speed.

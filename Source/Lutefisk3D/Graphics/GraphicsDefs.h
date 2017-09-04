@@ -58,7 +58,7 @@ enum GeometryType
 };
 
 /// Blending mode.
-enum BlendMode
+enum BlendMode : unsigned
 {
     BLEND_REPLACE = 0,
     BLEND_ADD,

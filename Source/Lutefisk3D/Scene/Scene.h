@@ -34,7 +34,7 @@ namespace Urho3D
 class JSONFile;
 class File;
 class PackageFile;
-
+class Resource;
 static const unsigned FIRST_REPLICATED_ID = 0x1;
 static const unsigned LAST_REPLICATED_ID = 0xffffff;
 static const unsigned FIRST_LOCAL_ID = 0x01000000;

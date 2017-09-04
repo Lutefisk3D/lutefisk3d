@@ -41,25 +41,23 @@ template<> struct hash<Urho3D::TextureUnit> {
 namespace Urho3D
 {
 
-class Material;
-class Pass;
-class Scene;
-class Technique;
-class Texture;
-class Texture2D;
-class TextureCube;
-class ValueAnimationInfo;
-class JSONFile;
-
+class LUTEFISK3D_EXPORT Material;
+class LUTEFISK3D_EXPORT Pass;
+class LUTEFISK3D_EXPORT Scene;
+class LUTEFISK3D_EXPORT Technique;
+class LUTEFISK3D_EXPORT Texture;
+class LUTEFISK3D_EXPORT Texture2D;
+class LUTEFISK3D_EXPORT TextureCube;
+class LUTEFISK3D_EXPORT ValueAnimationInfo;
+class LUTEFISK3D_EXPORT JSONFile;
+class LUTEFISK3D_EXPORT XMLFile;
 static const constexpr uint8_t DEFAULT_RENDER_ORDER = 128;
 
 /// %Material's shader parameter definition.
 struct MaterialShaderParameter
 {
-    /// Name.
-    QString name_;
-    /// Value.
-    Variant value_;
+    QString name_; //!< Name.
+    Variant value_; //!< Value.
 };
 
 /// %Material's technique list entry.

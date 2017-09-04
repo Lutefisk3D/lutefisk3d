@@ -23,6 +23,7 @@
 #include "Animatable.h"
 
 #include "ObjectAnimation.h"
+#include "AttributeAnimationInfo.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
@@ -35,23 +36,6 @@ namespace Urho3D
 {
 
 extern const char* wrapModeNames[];
-
-AttributeAnimationInfo::AttributeAnimationInfo(Animatable* target, const AttributeInfo& attributeInfo, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed) :
-    ValueAnimationInfo(target, attributeAnimation, wrapMode, speed),
-    attributeInfo_(attributeInfo)
-{
-}
-
-/// Apply new animation value to the target object. Called by Update().
-void AttributeAnimationInfo::ApplyValue(const Variant& newValue)
-{
-    Animatable* animatable = static_cast<Animatable*>(target_.Get());
-    if (animatable != nullptr)
-    {
-        animatable->OnSetAttribute(attributeInfo_, newValue);
-        animatable->ApplyAttributes();
-    }
-}
 
 Animatable::Animatable(Context* context) :
     Serializable(context),

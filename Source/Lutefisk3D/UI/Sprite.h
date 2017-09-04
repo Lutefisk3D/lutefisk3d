@@ -27,7 +27,8 @@
 
 namespace Urho3D
 {
-
+class Texture;
+enum BlendMode : unsigned;
 /// %UI element which allows sub-pixel positioning and size, as well as rotation. Only other Sprites should be added as child elements.
 class LUTEFISK3D_EXPORT Sprite : public UIElement
 {

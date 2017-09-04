@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/UI/UIElement.h"
 
 namespace Urho3D
@@ -30,11 +29,12 @@ namespace Urho3D
 
 class Texture;
 class Texture2D;
+enum BlendMode : unsigned;
 
 /// %Image %UI element with optional border.
 class LUTEFISK3D_EXPORT BorderImage : public UIElement
 {
-    URHO3D_OBJECT(BorderImage,UIElement);
+    URHO3D_OBJECT(BorderImage,UIElement)
 
 public:
     /// Construct.

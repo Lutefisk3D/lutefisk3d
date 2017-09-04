@@ -23,6 +23,7 @@
 #include "Text.h"
 #include "Font.h"
 #include "FontFace.h"
+#include "UIBatch.h"
 
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/IO/Log.h"

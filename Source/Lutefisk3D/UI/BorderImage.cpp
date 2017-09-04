@@ -21,6 +21,7 @@
 //
 
 #include "BorderImage.h"
+#include "UIBatch.h"
 
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"

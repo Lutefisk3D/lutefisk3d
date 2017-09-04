@@ -22,15 +22,12 @@
 
 #pragma once
 
-#include "Lutefisk3D/Math/Color.h"
 #include "Lutefisk3D/Graphics/Drawable.h"
-#include "Lutefisk3D/Math/Frustum.h"
-#include "Lutefisk3D/Graphics/Texture.h"
 
 namespace Urho3D
 {
-
-class Camera;
+class LUTEFISK3D_EXPORT Texture;
+class LUTEFISK3D_EXPORT Camera;
 struct LightBatchQueue;
 
 /// %Light types.

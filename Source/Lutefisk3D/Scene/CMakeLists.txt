@@ -1,6 +1,7 @@
 set(INCLUDES
     Animatable.h
     AnimationDefs.h
+    AttributeAnimationInfo.h
     Component.h
     LogicComponent.h
     Node.h
@@ -18,6 +19,7 @@ set(INCLUDES
 )
 set(SOURCE
     Animatable.cpp
+    AttributeAnimationInfo.cpp
     Component.cpp
     Node.cpp
     LogicComponent.cpp

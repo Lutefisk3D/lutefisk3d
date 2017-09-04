@@ -21,12 +21,14 @@
 //
 
 #include "Text3D.h"
+#include "UIBatch.h"
 
 #include "Text.h"
 #include "Font.h"
 #include "Lutefisk3D/Graphics/Camera.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Graphics/Geometry.h"
+#include "Lutefisk3D/Graphics/Texture.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Graphics/Material.h"
 #include "Lutefisk3D/Scene/Node.h"

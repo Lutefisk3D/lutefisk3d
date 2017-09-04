@@ -26,7 +26,7 @@ namespace Urho3D
 {
 
 /// Animation wrap mode.
-enum WrapMode
+enum WrapMode : int
 {
     /// Loop mode.
     WM_LOOP = 0,

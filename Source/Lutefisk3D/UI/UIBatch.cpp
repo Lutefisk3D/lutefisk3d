@@ -19,6 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "UIBatch.h"
 
 #include "Lutefisk3D/Graphics/Graphics.h"
 #include "Lutefisk3D/Math/Matrix3x4.h"

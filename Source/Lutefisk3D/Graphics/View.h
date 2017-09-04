@@ -26,7 +26,6 @@
 #include "Lutefisk3D/Graphics/Batch.h"
 #include "Lutefisk3D/Graphics/Light.h"
 #include "Lutefisk3D/Container/RefCounted.h"
-#include "Lutefisk3D/Math/Polyhedron.h"
 #include "Lutefisk3D/Graphics/Zone.h"
 #include <array>
 #include <deque>

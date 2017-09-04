@@ -50,7 +50,6 @@ set(INCLUDES
     TextureCube.h
     Texture.h
     VertexBuffer.h
-    VertexDeclaration.h
     View.h
     Viewport.h
     Zone.h

@@ -42,19 +42,19 @@ Skybox::Skybox(Context* context) :
 Skybox::~Skybox()
 {
 }
-
+/// Register object factory. StaticModel must be registered first.
 void Skybox::RegisterObject(Context* context)
 {
     context->RegisterFactory<Skybox>(GEOMETRY_CATEGORY);
 
     URHO3D_COPY_BASE_ATTRIBUTES(StaticModel);
 }
-
+/// Process octree raycast. May be called from a worker thread.
 void Skybox::ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results)
 {
     // Do not record a raycast result for a skybox, as it would block all other results
 }
-
+/// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
 void Skybox::UpdateBatches(const FrameInfo& frame)
 {
     distance_ = 0.0f;
@@ -76,7 +76,7 @@ void Skybox::UpdateBatches(const FrameInfo& frame)
         batches_[i].distance_ = 0.0f;
     }
 }
-
+/// Recalculate the world-space bounding box.
 void Skybox::OnWorldBoundingBoxUpdate()
 {
     // The skybox is supposed to be visible everywhere, so set a humongous bounding box

@@ -36,7 +36,7 @@
 namespace Urho3D
 {
 
-const char* interpMethodNames[] =
+static const char* interpMethodNames[] =
 {
     "None",
     "Linear",

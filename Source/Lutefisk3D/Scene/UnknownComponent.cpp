@@ -230,9 +230,9 @@ bool UnknownComponent::SaveJSON(JSONValue& dest) const
     return true;
 }
 
-void UnknownComponent::SetTypeName(const QString& typeName)
+void UnknownComponent::SetTypeName(const QStringRef& typeName)
 {
-    typeName_ = typeName;
+    typeName_ = typeName.toString();
     typeHash_ = typeName;
 }
 

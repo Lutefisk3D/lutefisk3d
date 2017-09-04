@@ -31,6 +31,16 @@
 namespace Urho3D
 {
 
+namespace  {
+struct ResourceWithMetadataPrivate {
+    /// Animation metadata variables.
+    VariantMap metadata_;
+    /// Animation metadata keys.
+    QStringList metadataKeys_;
+};
+#define L_D(Class) Class##Private * const d = (Class##Private *)privateData
+}
+
 Resource::Resource(Context* context) :
     Object(context),
     memoryUse_(0),
@@ -111,34 +121,56 @@ unsigned Resource::GetUseTimer()
     else
         return useTimer_.GetMSec(false);
 }
-void ResourceWithMetadata::AddMetadata(const QString& name, const Variant& value)
+ResourceWithMetadata::ResourceWithMetadata(Context *context) : Resource(context),
+    //TODO: use allocator here. ?
+    privateData(new ResourceWithMetadataPrivate)
 {
-    auto insertStatus = metadata_.insert({StringHash(name), value});
-    if (insertStatus.second)
-        metadataKeys_.push_back(name);
 }
 
+ResourceWithMetadata::~ResourceWithMetadata()
+{
+    delete (ResourceWithMetadataPrivate *)privateData;
+}
+
+void ResourceWithMetadata::AddMetadata(const QString& name, const Variant& value)
+{
+    L_D(ResourceWithMetadata);
+    auto insertStatus = d->metadata_.insert({StringHash(name), value});
+    if (insertStatus.second)
+        d->metadataKeys_.push_back(name);
+}
+void ResourceWithMetadata::AddMetadata(const QStringRef& name, const Variant& value)
+{
+    L_D(ResourceWithMetadata);
+    auto insertStatus = d->metadata_.insert({StringHash(name), value});
+    if (insertStatus.second)
+        d->metadataKeys_.push_back(name.toString());
+}
 void ResourceWithMetadata::RemoveMetadata(const QString& name)
 {
-    metadata_.erase(name);
-    metadataKeys_.removeAll(name);
+    L_D(ResourceWithMetadata);
+    d->metadata_.erase(name);
+    d->metadataKeys_.removeAll(name);
 }
 
 void ResourceWithMetadata::RemoveAllMetadata()
 {
-    metadata_.clear();
-    metadataKeys_.clear();
+    L_D(ResourceWithMetadata);
+    d->metadata_.clear();
+    d->metadataKeys_.clear();
 }
 
 const Urho3D::Variant& ResourceWithMetadata::GetMetadata(const QString& name) const
 {
-    auto value_iter = metadata_.find(name);
-    return value_iter!=metadata_.end() ? MAP_VALUE(value_iter) : Variant::EMPTY;
+    L_D(ResourceWithMetadata);
+    auto value_iter = d->metadata_.find(name);
+    return value_iter!=d->metadata_.end() ? MAP_VALUE(value_iter) : Variant::EMPTY;
 }
 
 bool ResourceWithMetadata::HasMetadata() const
 {
-    return !metadata_.isEmpty();
+    L_D(ResourceWithMetadata);
+    return !d->metadata_.isEmpty();
 }
 
 void ResourceWithMetadata::LoadMetadataFromXML(const XMLElement& source)
@@ -158,18 +190,19 @@ void ResourceWithMetadata::LoadMetadataFromJSON(const JSONArray& array)
 
 void ResourceWithMetadata::SaveMetadataToXML(XMLElement& destination) const
 {
-    for (unsigned i = 0; i < metadataKeys_.size(); ++i)
+    L_D(ResourceWithMetadata);
+    for (const QString & str : d->metadataKeys_)
     {
         XMLElement elem = destination.CreateChild("metadata");
-        elem.SetString("name", metadataKeys_[i]);
-        elem.SetVariant(GetMetadata(metadataKeys_[i]));
+        elem.SetString("name", str);
+        elem.SetVariant(GetMetadata(str));
     }
 }
 
 void ResourceWithMetadata::CopyMetadata(const ResourceWithMetadata& source)
 {
-    metadata_ = source.metadata_;
-    metadataKeys_ = source.metadataKeys_;
+    L_D(ResourceWithMetadata);
+    *d = *(ResourceWithMetadataPrivate *)source.privateData;
 }
 
 }

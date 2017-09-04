@@ -45,7 +45,7 @@ static int const UICOMPONENT_DEFAULT_TEXTURE_SIZE = 512;
 static int const UICOMPONENT_MIN_TEXTURE_SIZE = 64;
 static int const UICOMPONENT_MAX_TEXTURE_SIZE = 4096;
 
-UIComponent::UIComponent(Context* context) : 
+UIComponent::UIComponent(Context* context) :
     Component(context),
     isStaticModelOwned_(false)
 {
@@ -61,7 +61,8 @@ UIComponent::UIComponent(Context* context) :
     material_->SetTechnique(0, context_->m_ResourceCache->GetResource<Technique>("Techniques/Diff.xml"));
     material_->SetTexture(TU_DIFFUSE, texture_);
 
-    SubscribeToEvent(rootElement_, E_RESIZED, URHO3D_HANDLER(UIComponent, OnElementResized));
+
+    rootElement_->resized.Connect(this,&UIComponent::OnElementResized);
 
     // Triggers resizing of texture.
     rootElement_->SetSize(UICOMPONENT_DEFAULT_TEXTURE_SIZE, UICOMPONENT_DEFAULT_TEXTURE_SIZE);
@@ -121,11 +122,8 @@ void UIComponent::OnNodeSet(Node* node)
         ui->SetRenderToTexture(this, node != 0);
 }
 
-void UIComponent::OnElementResized(StringHash eventType, VariantMap& args)
+void UIComponent::OnElementResized(UIElement *res,int width,int height,int dx,int dy)
 {
-    int width = args[Resized::P_WIDTH].GetInt();
-    int height = args[Resized::P_HEIGHT].GetInt();
-
     if (width < UICOMPONENT_MIN_TEXTURE_SIZE || width > UICOMPONENT_MAX_TEXTURE_SIZE ||
         height < UICOMPONENT_MIN_TEXTURE_SIZE || height > UICOMPONENT_MAX_TEXTURE_SIZE)
     {

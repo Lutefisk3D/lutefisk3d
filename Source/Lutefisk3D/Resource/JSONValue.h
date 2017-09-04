@@ -20,17 +20,23 @@
 // THE SOFTWARE.
 //
 #pragma once
-
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 #include "Lutefisk3D/Container/HashMap.h"
-#include "Lutefisk3D/Core/Variant.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Container/Str.h"
+
+//#include "Lutefisk3D/Core/Variant.h"
 
 #include <QString>
-
 
 namespace Urho3D
 {
 
-class Context;
+class LUTEFISK3D_EXPORT Context;
+class LUTEFISK3D_EXPORT Variant;
+enum LUTEFISK3D_EXPORT VariantType : uint8_t;
+using VariantMap = HashMap<StringHash, Variant>;
+using VariantVector = std::vector<Variant>;
 
 /// JSON value type.
 enum JSONValueType
@@ -61,12 +67,12 @@ enum JSONNumberType
     JSONNT_FLOAT_DOUBLE
 };
 
-class JSONValue;
+class LUTEFISK3D_EXPORT JSONValue;
 
 /// JSON array type.
-typedef std::vector<JSONValue> JSONArray;
+using JSONArray = std::vector<JSONValue> ;
 /// JSON object type.
-typedef HashMap<QString, JSONValue> JSONObject;
+using JSONObject = HashMap<QString, JSONValue>;
 
 /// JSON value class.
 class LUTEFISK3D_EXPORT JSONValue
@@ -196,7 +202,7 @@ public:
     /// Return double value.
     double GetDouble() const { return IsNumber() ? numberValue_ : 0.0; }
     /// Return string value.
-    const QString& GetString() const { return IsString() ? *stringValue_ : s_dummy;}
+    QString GetString() const { return IsString() ? *stringValue_ : QString();}
     /// Return JSON array value.
     const JSONArray& GetArray() const { return IsArray() ? *arrayValue_ : emptyArray; }
     /// Return JSON object value.

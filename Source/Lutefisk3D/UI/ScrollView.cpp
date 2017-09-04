@@ -284,13 +284,13 @@ void ScrollView::SetContentElement(UIElement* element)
     if (contentElement_)
     {
         scrollPanel_->RemoveChild(contentElement_);
-        UnsubscribeFromEvent(contentElement_, E_RESIZED);
+        contentElement_->resized.Disconnect(this);
     }
     contentElement_ = element;
     if (contentElement_)
     {
         scrollPanel_->AddChild(contentElement_);
-        SubscribeToEvent(contentElement_, E_RESIZED, URHO3D_HANDLER(ScrollView, HandleElementResized));
+        contentElement_->resized.Connect(this,&ScrollView::HandleElementResized);
     }
 
     OnResize(GetSize(), IntVector2::ZERO);
@@ -518,7 +518,7 @@ void ScrollView::HandleScrollBarVisibleChanged(StringHash eventType, VariantMap&
         OnResize(GetSize(), IntVector2::ZERO);
 }
 
-void ScrollView::HandleElementResized(StringHash eventType, VariantMap& eventData)
+void ScrollView::HandleElementResized(UIElement *,int,int,int,int)
 {
     if (!ignoreEvents_)
         OnResize(GetSize(), IntVector2::ZERO);

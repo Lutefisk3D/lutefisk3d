@@ -20,10 +20,13 @@
 // THE SOFTWARE.
 //
 #include "JSONValue.h"
+
 #include "Lutefisk3D/Core/StringUtils.h"
 #include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/IO/Log.h"
 
+#include <QtCore/QVector>
 
 
 namespace Urho3D
@@ -485,7 +488,7 @@ Variant JSONValue::GetVariantValue(VariantType type) const
     case VAR_RESOURCEREF:
         {
             ResourceRef ref;
-            QStringList values = GetString().split(';');
+            auto values = GetString().split(';');
             if (values.size() == 2)
             {
                 ref.type_ = values[0];
@@ -498,7 +501,7 @@ Variant JSONValue::GetVariantValue(VariantType type) const
     case VAR_RESOURCEREFLIST:
         {
             ResourceRefList refList;
-            QStringList values = GetString().split(';');
+            auto values = GetString().split(';');
             if (values.size() >= 1)
             {
                 refList.type_ = values[0];

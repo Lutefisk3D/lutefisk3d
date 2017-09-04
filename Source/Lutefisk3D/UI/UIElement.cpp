@@ -554,13 +554,7 @@ bool UIElement::FilterAttributes(XMLElement& dest) const
 void UIElement::SetName(const QString& name)
 {
     name_ = name;
-
-    using namespace NameChanged;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_ELEMENT] = this;
-
-    SendEvent(E_NAMECHANGED, eventData);
+    nameChanged.Emit(this);
 }
 
 void UIElement::SetPosition(const IntVector2& position)
@@ -611,15 +605,7 @@ void UIElement::SetSize(const IntVector2& size)
             OnResize(size_, delta);
             UpdateLayout();
 
-            using namespace Resized;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_ELEMENT] = this;
-            eventData[P_WIDTH] = size_.x_;
-            eventData[P_HEIGHT] = size_.y_;
-            eventData[P_DX] = delta.x_;
-            eventData[P_DY] = delta.y_;
-            SendEvent(E_RESIZED, eventData);
+            resized.Emit(this,size_.x_,size_.y_,delta.x_,delta.y_);
         }
     }
 

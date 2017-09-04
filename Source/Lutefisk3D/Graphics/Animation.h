@@ -23,10 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Container/Ptr.h"
-#include "Lutefisk3D/Math/Quaternion.h"
-#include "Lutefisk3D/Math/Vector3.h"
 #include "Lutefisk3D/Math/StringHash.h"
-#include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Resource/Resource.h"
 
 namespace Urho3D
@@ -91,16 +88,10 @@ struct LUTEFISK3D_EXPORT AnimationTrack
 /// %Animation trigger point.
 struct AnimationTriggerPoint
 {
-    /// Construct.
-    AnimationTriggerPoint() :
-        time_(0.0f)
-    {
-    }
-
-    /// Trigger time.
-    float time_;
     /// Trigger data.
     Variant data_;
+    /// Trigger time.
+    float time_ = 0.0f;
 };
 
 static const unsigned char CHANNEL_POSITION = 0x1;

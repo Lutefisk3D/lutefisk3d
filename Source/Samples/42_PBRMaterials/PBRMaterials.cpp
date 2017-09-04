@@ -28,6 +28,7 @@
 #include <Lutefisk3D/Graphics/RenderPath.h>
 #include <Lutefisk3D/Graphics/StaticModel.h>
 #include <Lutefisk3D/Graphics/Zone.h>
+#include <Lutefisk3D/Graphics/Material.h>
 #include <Lutefisk3D/IO/File.h>
 #include <Lutefisk3D/Input/Input.h>
 #include <Lutefisk3D/Resource/ResourceCache.h>

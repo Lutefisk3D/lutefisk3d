@@ -195,7 +195,7 @@ private:
     std::vector<SharedPtr<VertexBuffer> > vertexBuffers_;
     /// Index buffers.
     std::vector<SharedPtr<IndexBuffer> > indexBuffers_;
-    /// Geometries.
+    /// Geometries. first index used for geomtry LODSet, second index LODLevel geometry
     std::vector<std::vector<SharedPtr<Geometry> > > geometries_;
     /// Geometry bone mappings.
     std::vector<std::vector<unsigned> > geometryBoneMappings_;

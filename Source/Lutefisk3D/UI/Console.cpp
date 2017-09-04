@@ -103,7 +103,7 @@ Console::Console(Context* context) :
     lineEdit_->textFinished.Connect(this,&Console::HandleTextFinished);
     SubscribeToEvent(lineEdit_, E_UNHANDLEDKEY, URHO3D_HANDLER(Console, HandleLineEditKey));
     closeButton_->released.Connect(this,&Console::HandleCloseButtonPressed);
-    SubscribeToEvent(uiRoot, E_RESIZED, URHO3D_HANDLER(Console, HandleRootElementResized));
+    uiRoot->resized.Connect(this,&Console::HandleRootElementResized);
     g_LogSignals.logMessageSignal.Connect(this,&Console::HandleLogMessage);
     g_coreSignals.postUpdate.Connect(this,&Console::HandlePostUpdate);
 }
@@ -509,7 +509,7 @@ void Console::HandleCloseButtonPressed(UIElement *)
     SetVisible(false);
 }
 
-void Console::HandleRootElementResized(StringHash eventType, VariantMap& eventData)
+void Console::HandleRootElementResized(UIElement *, int,int,int,int)
 {
     UpdateElements();
 }

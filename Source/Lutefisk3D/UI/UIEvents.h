@@ -48,6 +48,7 @@ struct UISignals {
 
     /// A file was drag-dropped into the application window. Includes also coordinates and UI element if applicable
     jl::Signal<const QString &,UIElement *,int,int,int,int> dropFileUI; //FileName,Element,X,Y,ElementX,ElementY
+
     void init(jl::ScopedAllocator *allocator)
     {
         mouseClickUI.SetAllocator(allocator);
@@ -58,25 +59,8 @@ struct UISignals {
         focusChanged.SetAllocator(allocator);
         dropFileUI.SetAllocator(allocator);
     }
-
 };
 extern LUTEFISK3D_EXPORT UISignals g_uiSignals;
-
-/// UI element name changed.
-URHO3D_EVENT(E_NAMECHANGED, NameChanged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-}
-
-/// UI element resized.
-URHO3D_EVENT(E_RESIZED, Resized)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_WIDTH, Width);                  // int
-    URHO3D_PARAM(P_HEIGHT, Height);                // int
-    URHO3D_PARAM(P_DX, DX);                        // int
-    URHO3D_PARAM(P_DY, DY);                        // int
-}
 
 /// UI element positioned.
 URHO3D_EVENT(E_POSITIONED, Positioned)
@@ -93,6 +77,10 @@ URHO3D_EVENT(E_VISIBLECHANGED, VisibleChanged)
     URHO3D_PARAM(P_VISIBLE, Visible);              // bool
 }
 struct UiElementSignals  {
+    /// UI element name changed.
+    jl::Signal<UIElement *> nameChanged;
+    /// UI element resized Width,Height  DX,DY
+    jl::Signal<UIElement *,int,int,int,int> resized;
 
     /// Mouse click on a UI element. Parameters are same as in UIMouseClick event, but is sent by the element.
     jl::Signal<UIElement *,int, int, int, unsigned, int> click; //Element,x,y,Button,Buttons,Qualifiers

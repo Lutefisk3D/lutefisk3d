@@ -168,8 +168,8 @@ void Localization::LoadJSON(const JSONValue& source)
                 URHO3D_LOGWARNING("Localization::LoadJSON(source): language name is empty, string ID=\"" + id + "\"");
                 continue;
             }
-            const QString& string = MAP_VALUE(j).GetString();
-            if (string.isEmpty())
+            const QString stringRef = MAP_VALUE(j).GetString();
+            if (stringRef.isEmpty())
             {
                 URHO3D_LOGWARNING(
                     "Localization::LoadJSON(source): translation is empty, string ID=\"" + id + "\", language=\"" + lang + "\"");
@@ -180,7 +180,7 @@ void Localization::LoadJSON(const JSONValue& source)
                 URHO3D_LOGWARNING(
                     "Localization::LoadJSON(source): override translation, string ID=\"" + id + "\", language=\"" + lang + "\"");
             }
-            strings_[StringHash(lang)][StringHash(id)] = string;
+            strings_[StringHash(lang)][StringHash(id)] = stringRef;
             if (!languages_.contains(lang))
                 languages_.push_back(lang);
             if (languageIndex_ == -1)

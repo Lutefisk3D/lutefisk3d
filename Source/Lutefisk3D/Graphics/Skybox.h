@@ -30,24 +30,20 @@ namespace Urho3D
 /// Static model component with fixed position in relation to the camera.
 class LUTEFISK3D_EXPORT Skybox : public StaticModel
 {
-    URHO3D_OBJECT(Skybox,StaticModel);
+    URHO3D_OBJECT(Skybox,StaticModel)
 
 public:
-    /// Construct.
-    Skybox(Context* context);
-    /// Destruct.
-    virtual ~Skybox();
-    /// Register object factory. StaticModel must be registered first.
     static void RegisterObject(Context* context);
 
-    /// Process octree raycast. May be called from a worker thread.
-    virtual void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
-    /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
-    virtual void UpdateBatches(const FrameInfo& frame) override;
+    Skybox(Context* context);
+    virtual ~Skybox();
+
+    void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
+    void UpdateBatches(const FrameInfo& frame) override;
 
 protected:
-    /// Recalculate the world-space bounding box.
-    virtual void OnWorldBoundingBoxUpdate() override;
+
+    void OnWorldBoundingBoxUpdate() override;
 
     /// Custom world transform per camera.
     HashMap<Camera*, Matrix3x4> customWorldTransforms_;

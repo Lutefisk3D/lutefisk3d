@@ -33,7 +33,7 @@
 namespace Urho3D
 {
 /// Variant's supported types.
-enum VariantType : uint8_t
+enum LUTEFISK3D_EXPORT VariantType : uint8_t
 {
     VAR_NONE = 0,
     VAR_INT,

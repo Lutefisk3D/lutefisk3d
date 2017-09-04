@@ -44,9 +44,7 @@ class LUTEFISK3D_EXPORT StaticModel : public Drawable
     URHO3D_OBJECT(StaticModel,Drawable)
 
 public:
-    /// Construct.
     StaticModel(Context* context);
-    /// Destruct.
     ~StaticModel();
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);
@@ -76,7 +74,7 @@ public:
     /// Return model.
     Model* GetModel() const { return model_; }
     /// Return number of geometries.
-    unsigned GetNumGeometries() const { return geometries_.size(); }
+    size_t GetNumGeometries() const { return geometries_.size(); }
     /// Return material by geometry index.
     virtual Material* GetMaterial(unsigned index = 0) const;
     /// Return occlusion LOD level.

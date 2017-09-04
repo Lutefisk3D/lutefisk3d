@@ -122,7 +122,7 @@ private:
     /// Handle close button being pressed.
     void HandleCloseButtonPressed(UIElement *);
     /// Handle UI root resize.
-    void HandleRootElementResized(StringHash eventType, VariantMap& eventData);
+    void HandleRootElementResized(UIElement *, int, int, int, int);
     /// Handle a log message.
     void HandleLogMessage(LogLevels level, const QString &msg);
     /// Handle the application post-update.

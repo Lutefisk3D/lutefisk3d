@@ -907,7 +907,7 @@ Component* Node::CloneComponent(Component* component, CreateMode mode, unsigned 
         return nullptr;
     }
 
-    Component* cloneComponent = SafeCreateComponent(component->GetTypeName(), component->GetType(), mode, 0);
+    Component* cloneComponent = SafeCreateComponent(&component->GetTypeName(), component->GetType(), mode, 0);
     if (cloneComponent == nullptr)
     {
         URHO3D_LOGERROR("Could not clone component " + component->GetTypeName());
@@ -1487,7 +1487,7 @@ bool Node::Load(Deserializer& source, SceneResolver& resolver, bool readChildren
         StringHash compType = compBuffer.ReadStringHash();
         unsigned compID = compBuffer.ReadUInt();
 
-        Component* newComponent = SafeCreateComponent(QString(), compType,
+        Component* newComponent = SafeCreateComponent(nullptr, compType,
                                                       (mode == REPLICATED && compID < FIRST_LOCAL_ID) ? REPLICATED : LOCAL, rewriteIDs ? 0 : compID);
         if (newComponent != nullptr)
         {
@@ -1528,7 +1528,7 @@ bool Node::LoadXML(const XMLElement& source, SceneResolver& resolver, bool readC
     {
         QString typeName = compElem.GetAttribute("type");
         unsigned compID = compElem.GetUInt("id");
-        Component* newComponent = SafeCreateComponent(typeName, StringHash(typeName),
+        Component* newComponent = SafeCreateComponent(&typeName, StringHash(typeName),
                                                       (mode == REPLICATED && compID < FIRST_LOCAL_ID) ? REPLICATED : LOCAL, rewriteIDs ? 0 : compID);
         if (newComponent != nullptr)
         {
@@ -1575,7 +1575,7 @@ bool Node::LoadJSON(const JSONValue& source, SceneResolver& resolver, bool readC
         const JSONValue& compVal = componentsArray.at(i);
         QString typeName = compVal.Get("type").GetString();
         unsigned compID = compVal.Get("id").GetUInt();
-        Component* newComponent = SafeCreateComponent(typeName, StringHash(typeName),
+        Component* newComponent = SafeCreateComponent(&typeName, StringHash(typeName),
                                                       (mode == REPLICATED && compID < FIRST_LOCAL_ID) ? REPLICATED : LOCAL, rewriteIDs ? 0 : compID);
         if (newComponent != nullptr)
         {
@@ -1954,7 +1954,7 @@ void Node::SetEnabled(bool enable, bool recursive, bool storeSelf)
     }
 }
 
-Component* Node::SafeCreateComponent(const QString& typeName, StringHash type, CreateMode mode, unsigned id)
+Component* Node::SafeCreateComponent(const QStringRef& typeName, StringHash type, CreateMode mode, unsigned id)
 {
     // Do not attempt to create replicated components to local nodes, as that may lead to component ID overwrite
     // as replicated components are synced over

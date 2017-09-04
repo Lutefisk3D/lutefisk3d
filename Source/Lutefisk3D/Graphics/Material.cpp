@@ -352,9 +352,8 @@ bool Material::BeginLoadJSON(Deserializer& source)
             const JSONValue& rootVal = loadJSONFile_->GetRoot();
 
             JSONArray techniqueArray = rootVal.Get("techniques").GetArray();
-            for (unsigned i = 0; i < techniqueArray.size(); i++)
+            for (const JSONValue &techVal : techniqueArray)
             {
-                const JSONValue& techVal = techniqueArray[i];
                 cache->BackgroundLoadResource<Technique>(techVal.Get("name").GetString(), true, this);
             }
 

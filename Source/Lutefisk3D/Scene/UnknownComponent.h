@@ -57,7 +57,7 @@ public:
     virtual bool SaveJSON(JSONValue& dest) const override;
 
     /// Initialize the type name. Called by Node when loading.
-    void SetTypeName(const QString& typeName);
+    void SetTypeName(const QStringRef &typeName);
    /// Initialize the type hash only when type name not known. Called by Node when loading.
     void SetType(StringHash typeHash);
 

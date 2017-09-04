@@ -24,7 +24,6 @@
 
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Container/RefCounted.h"
-#include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Graphics/GPUObject.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include <QtCore/QString>
@@ -40,16 +39,10 @@ class Shader;
 /// %Shader parameter definition.
 struct ShaderParameter
 {
-    /// Construct with defaults.
-    ShaderParameter() :
-        bufferPtr_(0)
-    {
-    }
-
-    /// %Shader type.
-    ShaderType type_;
     /// Name of the parameter.
     QString name_;
+    /// %Shader type.
+    ShaderType type_;
 
     union
     {
@@ -74,7 +67,7 @@ struct ShaderParameter
     /// Constant buffer index. Only used on Direct3D11.
     unsigned buffer_;
     /// Constant buffer pointer. Defined only in shader programs.
-    ConstantBuffer* bufferPtr_;
+    ConstantBuffer* bufferPtr_ = nullptr;
 };
 
 /// Vertex or pixel shader on the GPU.

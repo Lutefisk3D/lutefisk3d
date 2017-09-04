@@ -24,13 +24,9 @@
 
 #include "Lutefisk3D/Graphics/Drawable.h"
 #include "Lutefisk3D/Graphics/Material.h"
-#include "Lutefisk3D/Math/MathDefs.h"
 #include "Lutefisk3D/Math/Matrix3x4.h"
 #include "Lutefisk3D/Container/Ptr.h"
-#include "Lutefisk3D/Math/Rect.h"
-#include "Lutefisk3D/Container/HashMap.h"
 
-#include "Light.h"
 #include <functional>
 #include <cstdio>
 #include <stdint.h>
@@ -54,7 +50,7 @@ struct SourceBatch;
 struct LightBatchQueue;
 
 /// Queued 3D geometry draw call.
-struct Batch
+struct LUTEFISK3D_EXPORT Batch
 {
     /// Construct with defaults.
     Batch() :

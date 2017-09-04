@@ -183,7 +183,7 @@ private:
     /// Handle scrollbar visibility changed.
     void HandleScrollBarVisibleChanged(StringHash eventType, VariantMap& eventData);
     /// Handle content element resized.
-    void HandleElementResized(StringHash eventType, VariantMap& eventData);
+    void HandleElementResized(UIElement *, int, int, int, int);
     /// Handle touch move event for scrolling.
     void HandleTouchMove(unsigned, int, int, int _dX, int _dY, float);
     void HandleTouchBegin(unsigned, int X, int Y, float);

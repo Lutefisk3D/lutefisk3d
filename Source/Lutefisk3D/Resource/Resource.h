@@ -25,7 +25,6 @@
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Core/Timer.h"
 #include "Lutefisk3D/Resource/JSONValue.h"
-#include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/Resource/ResourceEvents.h"
 namespace Urho3D
 {
@@ -93,10 +92,11 @@ class LUTEFISK3D_EXPORT ResourceWithMetadata : public Resource
 
 public:
     /// Construct.
-    ResourceWithMetadata(Context* context) : Resource(context) {}
-
+    ResourceWithMetadata(Context* context);
+    ~ResourceWithMetadata() override;
     /// Add new metadata variable or overwrite old value.
     void AddMetadata(const QString& name, const Variant& value);
+    void AddMetadata(const QStringRef& name, const Variant& value);
     /// Remove metadata variable.
     void RemoveMetadata(const QString& name);
     /// Remove all metadata variables.
@@ -117,10 +117,7 @@ protected:
     void CopyMetadata(const ResourceWithMetadata& source);
 
 private:
-    /// Animation metadata variables.
-    VariantMap metadata_;
-    /// Animation metadata keys.
-    QStringList metadataKeys_;
+    void *privateData = nullptr;
 };
 inline QString GetResourceName(Resource* resource)
 {

@@ -36,13 +36,39 @@
 #include "Lutefisk3D/Scene/SceneEvents.h"
 #include "Lutefisk3D/Scene/SmoothedTransform.h"
 
-#include <bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-#include <bullet/BulletDynamics/Dynamics/btRigidBody.h>
-#include <bullet/BulletCollision/CollisionShapes/btCompoundShape.h>
+#include <Bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <Bullet/BulletDynamics/Dynamics/btRigidBody.h>
+#include <Bullet/BulletCollision/CollisionShapes/btCompoundShape.h>
+#include <Bullet/LinearMath/btMotionState.h>
 
 namespace Urho3D
 {
+struct RigidBodyPrivate : public btMotionState
+{
+    RigidBodyPrivate(RigidBody *o) : owner(o),
+        compoundShape_(new btCompoundShape()),
+        shiftedCompoundShape_(new btCompoundShape())
+    {}
+    /// Return initial world transform to Bullet.
+    virtual void getWorldTransform(btTransform &worldTrans) const override;
+    /// Update world transform from Bullet.
+    virtual void setWorldTransform(const btTransform &worldTrans) override;
 
+    RigidBody *owner = nullptr;
+    /// Bullet rigid body.
+    std::unique_ptr<btRigidBody> body_;
+    /// Bullet compound collision shape.
+    std::unique_ptr<btCompoundShape> compoundShape_;
+    /// Compound collision shape with center of mass offset applied.
+    std::unique_ptr<btCompoundShape> shiftedCompoundShape_;
+    /// Last interpolated position from the simulation.
+    mutable Vector3 lastPosition_  {0,0,0};
+    /// Last interpolated rotation from the simulation.
+    mutable Quaternion lastRotation_ = Quaternion::IDENTITY;
+    /// Internal flag whether has simulated at least once.
+    mutable bool hasSimulated_=false;
+
+};
 static const float DEFAULT_MASS = 0.0f;
 static const float DEFAULT_FRICTION = 0.5f;
 static const float DEFAULT_RESTITUTION = 0.0f;
@@ -62,23 +88,18 @@ extern const char* PHYSICS_CATEGORY;
 
 RigidBody::RigidBody(Context* context) :
     Component(context),
-    compoundShape_(new btCompoundShape()),
-    shiftedCompoundShape_(new btCompoundShape()),
     gravityOverride_(Vector3::ZERO),
     centerOfMass_(Vector3::ZERO),
     mass_(DEFAULT_MASS),
     collisionLayer_(DEFAULT_COLLISION_LAYER),
     collisionMask_(DEFAULT_COLLISION_MASK),
     collisionEventMode_(COLLISION_ACTIVE),
-    lastPosition_(Vector3::ZERO),
-    lastRotation_(Quaternion::IDENTITY),
     kinematic_(false),
     trigger_(false),
     useGravity_(true),
     readdBody_(false),
     inWorld_(false),
-    enableMassUpdate_(true),
-    hasSimulated_(false)
+    enableMassUpdate_(true)
 {
 }
 
@@ -148,63 +169,63 @@ void RigidBody::OnSetEnabled()
         RemoveBodyFromWorld();
 }
 
-void RigidBody::getWorldTransform(btTransform &worldTrans) const
+void RigidBodyPrivate::getWorldTransform(btTransform &worldTrans) const
 {
     // We may be in a pathological state where a RigidBody exists without a scene node when this callback is fired,
     // so check to be sure
-    if (node_)
+    if (owner->GetNode())
     {
-        lastPosition_ = node_->GetWorldPosition();
-        lastRotation_ = node_->GetWorldRotation();
-        worldTrans.setOrigin(ToBtVector3(lastPosition_ + lastRotation_ * centerOfMass_));
+        lastPosition_ = owner->GetNode()->GetWorldPosition();
+        lastRotation_ = owner->GetNode()->GetWorldRotation();
+        worldTrans.setOrigin(ToBtVector3(lastPosition_ + lastRotation_ * owner->GetCenterOfMass()));
         worldTrans.setRotation(ToBtQuaternion(lastRotation_));
     }
     hasSimulated_ = true;
 }
 
-void RigidBody::setWorldTransform(const btTransform &worldTrans)
+void RigidBodyPrivate::setWorldTransform(const btTransform &worldTrans)
 {
     Quaternion newWorldRotation = ToQuaternion(worldTrans.getRotation());
-    Vector3 newWorldPosition = ToVector3(worldTrans.getOrigin()) - newWorldRotation * centerOfMass_;
+    Vector3 newWorldPosition = ToVector3(worldTrans.getOrigin()) - newWorldRotation * owner->GetCenterOfMass();
     RigidBody* parentRigidBody = nullptr;
 
     // It is possible that the RigidBody component has been kept alive via a shared pointer,
     // while its scene node has already been destroyed
-    if (node_)
+    if (owner->GetNode())
     {
         // If the rigid body is parented to another rigid body, can not set the transform immediately.
         // In that case store it to PhysicsWorld for delayed assignment
-        Node* parent = node_->GetParent();
-        if (parent != GetScene() && parent)
+        Node* parent = owner->GetNode()->GetParent();
+        if (parent != owner->GetScene() && parent)
             parentRigidBody = parent->GetComponent<RigidBody>();
 
         if (!parentRigidBody)
-            ApplyWorldTransform(newWorldPosition, newWorldRotation);
+            owner->ApplyWorldTransform(newWorldPosition, newWorldRotation);
         else
         {
             DelayedWorldTransform delayed;
-            delayed.rigidBody_ = this;
+            delayed.rigidBody_ = owner;
             delayed.parentRigidBody_ = parentRigidBody;
             delayed.worldPosition_ = newWorldPosition;
             delayed.worldRotation_ = newWorldRotation;
-            physicsWorld_->AddDelayedWorldTransform(delayed);
+            owner->GetPhysicsWorld()->AddDelayedWorldTransform(delayed);
         }
 
-        MarkNetworkUpdate();
+        owner->MarkNetworkUpdate();
     }
     hasSimulated_ = true;
 }
 
 void RigidBody::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 {
-    if (debug && physicsWorld_ && body_ && IsEnabledEffective())
+    if (debug && physicsWorld_ && private_data->body_ && IsEnabledEffective())
     {
         physicsWorld_->SetDebugRenderer(debug);
         physicsWorld_->SetDebugDepthTest(depthTest);
 
         btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
-        world->debugDrawObject(body_->getWorldTransform(), shiftedCompoundShape_.get(), IsActive() ? btVector3(1.0f, 1.0f, 1.0f) :
-                                                                                               btVector3(0.0f, 1.0f, 0.0f));
+        world->debugDrawObject(private_data->body_->getWorldTransform(), private_data->shiftedCompoundShape_.get(),
+                               IsActive() ? btVector3(1.0f, 1.0f, 1.0f) : btVector3(0.0f, 1.0f, 0.0f));
 
         physicsWorld_->SetDebugRenderer(nullptr);
     }
@@ -224,20 +245,20 @@ void RigidBody::SetMass(float mass)
 
 void RigidBody::SetPosition(const Vector3& position)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        btTransform& worldTrans = body_->getWorldTransform();
+        btTransform& worldTrans = private_data->body_->getWorldTransform();
         worldTrans.setOrigin(ToBtVector3(position + ToQuaternion(worldTrans.getRotation()) * centerOfMass_));
 
         // When forcing the physics position, set also interpolated position so that there is no jitter
         // When not inside the simulation loop, this may lead to erratic movement of parented rigidbodies
         // so skip in that case. Exception made before first simulation tick so that interpolation position
         // of e.g. instantiated prefabs will be correct from the start
-        if (!hasSimulated_ || physicsWorld_->IsSimulating())
+        if (!private_data->hasSimulated_ || physicsWorld_->IsSimulating())
         {
-            btTransform interpTrans = body_->getInterpolationWorldTransform();
+            btTransform interpTrans = private_data->body_->getInterpolationWorldTransform();
             interpTrans.setOrigin(worldTrans.getOrigin());
-            body_->setInterpolationWorldTransform(interpTrans);
+            private_data->body_->setInterpolationWorldTransform(interpTrans);
         }
 
         Activate();
@@ -247,23 +268,23 @@ void RigidBody::SetPosition(const Vector3& position)
 
 void RigidBody::SetRotation(const Quaternion& rotation)
 {
-    if (body_)
+    if (private_data->body_)
     {
         Vector3 oldPosition = GetPosition();
-        btTransform& worldTrans = body_->getWorldTransform();
+        btTransform& worldTrans = private_data->body_->getWorldTransform();
         worldTrans.setRotation(ToBtQuaternion(rotation));
         if (!centerOfMass_.Equals(Vector3::ZERO))
             worldTrans.setOrigin(ToBtVector3(oldPosition + rotation * centerOfMass_));
 
-        if (!hasSimulated_ || physicsWorld_->IsSimulating())
+        if (!private_data->hasSimulated_ || physicsWorld_->IsSimulating())
         {
-            btTransform interpTrans = body_->getInterpolationWorldTransform();
+            btTransform interpTrans = private_data->body_->getInterpolationWorldTransform();
             interpTrans.setRotation(worldTrans.getRotation());
             if (!centerOfMass_.Equals(Vector3::ZERO))
                 interpTrans.setOrigin(worldTrans.getOrigin());
-            body_->setInterpolationWorldTransform(interpTrans);
+            private_data->body_->setInterpolationWorldTransform(interpTrans);
         }
-        body_->updateInertiaTensor();
+        private_data->body_->updateInertiaTensor();
 
         Activate();
         MarkNetworkUpdate();
@@ -272,20 +293,20 @@ void RigidBody::SetRotation(const Quaternion& rotation)
 
 void RigidBody::SetTransform(const Vector3& position, const Quaternion& rotation)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        btTransform& worldTrans = body_->getWorldTransform();
+        btTransform& worldTrans = private_data->body_->getWorldTransform();
         worldTrans.setRotation(ToBtQuaternion(rotation));
         worldTrans.setOrigin(ToBtVector3(position + rotation * centerOfMass_));
 
-        if (!hasSimulated_ || physicsWorld_->IsSimulating())
+        if (!private_data->hasSimulated_ || physicsWorld_->IsSimulating())
         {
-            btTransform interpTrans = body_->getInterpolationWorldTransform();
+            btTransform interpTrans = private_data->body_->getInterpolationWorldTransform();
             interpTrans.setOrigin(worldTrans.getOrigin());
             interpTrans.setRotation(worldTrans.getRotation());
-            body_->setInterpolationWorldTransform(interpTrans);
+            private_data->body_->setInterpolationWorldTransform(interpTrans);
         }
-        body_->updateInertiaTensor();
+        private_data->body_->updateInertiaTensor();
 
         Activate();
         MarkNetworkUpdate();
@@ -294,9 +315,9 @@ void RigidBody::SetTransform(const Vector3& position, const Quaternion& rotation
 
 void RigidBody::SetLinearVelocity(const Vector3& velocity)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setLinearVelocity(ToBtVector3(velocity));
+        private_data->body_->setLinearVelocity(ToBtVector3(velocity));
         if (velocity != Vector3::ZERO)
             Activate();
         MarkNetworkUpdate();
@@ -305,36 +326,36 @@ void RigidBody::SetLinearVelocity(const Vector3& velocity)
 
 void RigidBody::SetLinearFactor(const Vector3& factor)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setLinearFactor(ToBtVector3(factor));
+        private_data->body_->setLinearFactor(ToBtVector3(factor));
         MarkNetworkUpdate();
     }
 }
 
 void RigidBody::SetLinearRestThreshold(float threshold)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setSleepingThresholds(threshold, body_->getAngularSleepingThreshold());
+        private_data->body_->setSleepingThresholds(threshold, private_data->body_->getAngularSleepingThreshold());
         MarkNetworkUpdate();
     }
 }
 
 void RigidBody::SetLinearDamping(float damping)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setDamping(damping, body_->getAngularDamping());
+        private_data->body_->setDamping(damping, private_data->body_->getAngularDamping());
         MarkNetworkUpdate();
     }
 }
 
 void RigidBody::SetAngularVelocity(const Vector3& velocity)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setAngularVelocity(ToBtVector3(velocity));
+        private_data->body_->setAngularVelocity(ToBtVector3(velocity));
         if (velocity != Vector3::ZERO)
             Activate();
         MarkNetworkUpdate();
@@ -343,72 +364,72 @@ void RigidBody::SetAngularVelocity(const Vector3& velocity)
 
 void RigidBody::SetAngularFactor(const Vector3& factor)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setAngularFactor(ToBtVector3(factor));
+        private_data->body_->setAngularFactor(ToBtVector3(factor));
         MarkNetworkUpdate();
     }
 }
 
 void RigidBody::SetAngularRestThreshold(float threshold)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setSleepingThresholds(body_->getLinearSleepingThreshold(), threshold);
+        private_data->body_->setSleepingThresholds(private_data->body_->getLinearSleepingThreshold(), threshold);
         MarkNetworkUpdate();
     }
 }
 
 void RigidBody::SetAngularDamping(float damping)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setDamping(body_->getLinearDamping(), damping);
+        private_data->body_->setDamping(private_data->body_->getLinearDamping(), damping);
         MarkNetworkUpdate();
     }
 }
 
 void RigidBody::SetFriction(float friction)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setFriction(friction);
+        private_data->body_->setFriction(friction);
         MarkNetworkUpdate();
     }
 }
 
 void RigidBody::SetAnisotropicFriction(const Vector3& friction)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setAnisotropicFriction(ToBtVector3(friction));
+        private_data->body_->setAnisotropicFriction(ToBtVector3(friction));
         MarkNetworkUpdate();
     }
 }
 
 void RigidBody::SetRollingFriction(float friction)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setRollingFriction(friction);
+        private_data->body_->setRollingFriction(friction);
         MarkNetworkUpdate();
     }
 }
 
 void RigidBody::SetRestitution(float restitution)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setRestitution(restitution);
+        private_data->body_->setRestitution(restitution);
         MarkNetworkUpdate();
     }
 }
 
 void RigidBody::SetContactProcessingThreshold(float threshold)
 {
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setContactProcessingThreshold(threshold);
+        private_data->body_->setContactProcessingThreshold(threshold);
         MarkNetworkUpdate();
     }
 }
@@ -416,9 +437,9 @@ void RigidBody::SetContactProcessingThreshold(float threshold)
 void RigidBody::SetCcdRadius(float radius)
 {
     radius = Max(radius, 0.0f);
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setCcdSweptSphereRadius(radius);
+        private_data->body_->setCcdSweptSphereRadius(radius);
         MarkNetworkUpdate();
     }
 }
@@ -426,9 +447,9 @@ void RigidBody::SetCcdRadius(float radius)
 void RigidBody::SetCcdMotionThreshold(float threshold)
 {
     threshold = Max(threshold, 0.0f);
-    if (body_)
+    if (private_data->body_)
     {
-        body_->setCcdMotionThreshold(threshold);
+        private_data->body_->setCcdMotionThreshold(threshold);
         MarkNetworkUpdate();
     }
 }
@@ -512,73 +533,73 @@ void RigidBody::SetCollisionEventMode(CollisionEventMode mode)
 
 void RigidBody::ApplyForce(const Vector3& force)
 {
-    if (body_ && force != Vector3::ZERO)
+    if (private_data->body_ && force != Vector3::ZERO)
     {
         Activate();
-        body_->applyCentralForce(ToBtVector3(force));
+        private_data->body_->applyCentralForce(ToBtVector3(force));
     }
 }
 
 void RigidBody::ApplyForce(const Vector3& force, const Vector3& position)
 {
-    if (body_ && force != Vector3::ZERO)
+    if (private_data->body_ && force != Vector3::ZERO)
     {
         Activate();
-        body_->applyForce(ToBtVector3(force), ToBtVector3(position - centerOfMass_));
+        private_data->body_->applyForce(ToBtVector3(force), ToBtVector3(position - centerOfMass_));
     }
 }
 
 void RigidBody::ApplyTorque(const Vector3& torque)
 {
-    if (body_ && torque != Vector3::ZERO)
+    if (private_data->body_ && torque != Vector3::ZERO)
     {
         Activate();
-        body_->applyTorque(ToBtVector3(torque));
+        private_data->body_->applyTorque(ToBtVector3(torque));
     }
 }
 
 void RigidBody::ApplyImpulse(const Vector3& impulse)
 {
-    if (body_ && impulse != Vector3::ZERO)
+    if (private_data->body_ && impulse != Vector3::ZERO)
     {
         Activate();
-        body_->applyCentralImpulse(ToBtVector3(impulse));
+        private_data->body_->applyCentralImpulse(ToBtVector3(impulse));
     }
 }
 
 void RigidBody::ApplyImpulse(const Vector3& impulse, const Vector3& position)
 {
-    if (body_ && impulse != Vector3::ZERO)
+    if (private_data->body_ && impulse != Vector3::ZERO)
     {
         Activate();
-        body_->applyImpulse(ToBtVector3(impulse), ToBtVector3(position - centerOfMass_));
+        private_data->body_->applyImpulse(ToBtVector3(impulse), ToBtVector3(position - centerOfMass_));
     }
 }
 
 void RigidBody::ApplyTorqueImpulse(const Vector3& torque)
 {
-    if (body_ && torque != Vector3::ZERO)
+    if (private_data->body_ && torque != Vector3::ZERO)
     {
         Activate();
-        body_->applyTorqueImpulse(ToBtVector3(torque));
+        private_data->body_->applyTorqueImpulse(ToBtVector3(torque));
     }
 }
 
 void RigidBody::ResetForces()
 {
-    if (body_)
-        body_->clearForces();
+    if (private_data->body_)
+        private_data->body_->clearForces();
 }
 
 void RigidBody::Activate()
 {
-    if (body_ && mass_ > 0.0f)
-        body_->activate(true);
+    if (private_data->body_ && mass_ > 0.0f)
+        private_data->body_->activate(true);
 }
 
 void RigidBody::ReAddBodyToWorld()
 {
-    if (body_ && inWorld_)
+    if (private_data->body_ && inWorld_)
         AddBodyToWorld();
 }
 
@@ -596,11 +617,20 @@ void RigidBody::EnableMassUpdate()
     }
 }
 
+btRigidBody *RigidBody::GetBody() const {
+    return private_data->body_.get();
+}
+
+btCompoundShape *RigidBody::GetCompoundShape() const
+{
+    return private_data->compoundShape_.get();
+}
+
 Vector3 RigidBody::GetPosition() const
 {
-    if (body_)
+    if (private_data->body_)
     {
-        const btTransform& transform = body_->getWorldTransform();
+        const btTransform& transform = private_data->body_->getWorldTransform();
         return ToVector3(transform.getOrigin()) - ToQuaternion(transform.getRotation()) * centerOfMass_;
     }
     else
@@ -609,92 +639,92 @@ Vector3 RigidBody::GetPosition() const
 
 Quaternion RigidBody::GetRotation() const
 {
-    return body_ ? ToQuaternion(body_->getWorldTransform().getRotation()) : Quaternion::IDENTITY;
+    return private_data->body_ ? ToQuaternion(private_data->body_->getWorldTransform().getRotation()) : Quaternion::IDENTITY;
 }
 
 Vector3 RigidBody::GetLinearVelocity() const
 {
-    return body_ ? ToVector3(body_->getLinearVelocity()) : Vector3::ZERO;
+    return private_data->body_ ? ToVector3(private_data->body_->getLinearVelocity()) : Vector3::ZERO;
 }
 
 Vector3 RigidBody::GetLinearFactor() const
 {
-    return body_ ? ToVector3(body_->getLinearFactor()) : Vector3::ZERO;
+    return private_data->body_ ? ToVector3(private_data->body_->getLinearFactor()) : Vector3::ZERO;
 }
 
 Vector3 RigidBody::GetVelocityAtPoint(const Vector3& position) const
 {
-    return body_ ? ToVector3(body_->getVelocityInLocalPoint(ToBtVector3(position - centerOfMass_))) : Vector3::ZERO;
+    return private_data->body_ ? ToVector3(private_data->body_->getVelocityInLocalPoint(ToBtVector3(position - centerOfMass_))) : Vector3::ZERO;
 }
 
 float RigidBody::GetLinearRestThreshold() const
 {
-    return body_ ? body_->getLinearSleepingThreshold() : 0.0f;
+    return private_data->body_ ? private_data->body_->getLinearSleepingThreshold() : 0.0f;
 }
 
 float RigidBody::GetLinearDamping() const
 {
-    return body_ ? body_->getLinearDamping() : 0.0f;
+    return private_data->body_ ? private_data->body_->getLinearDamping() : 0.0f;
 }
 
 Vector3 RigidBody::GetAngularVelocity() const
 {
-    return body_ ? ToVector3(body_->getAngularVelocity()) : Vector3::ZERO;
+    return private_data->body_ ? ToVector3(private_data->body_->getAngularVelocity()) : Vector3::ZERO;
 }
 
 Vector3 RigidBody::GetAngularFactor() const
 {
-    return body_ ? ToVector3(body_->getAngularFactor()) : Vector3::ZERO;
+    return private_data->body_ ? ToVector3(private_data->body_->getAngularFactor()) : Vector3::ZERO;
 }
 
 float RigidBody::GetAngularRestThreshold() const
 {
-    return body_ ? body_->getAngularSleepingThreshold() : 0.0f;
+    return private_data->body_ ? private_data->body_->getAngularSleepingThreshold() : 0.0f;
 }
 
 float RigidBody::GetAngularDamping() const
 {
-    return body_ ? body_->getAngularDamping() : 0.0f;
+    return private_data->body_ ? private_data->body_->getAngularDamping() : 0.0f;
 }
 
 float RigidBody::GetFriction() const
 {
-    return body_ ? body_->getFriction() : 0.0f;
+    return private_data->body_ ? private_data->body_->getFriction() : 0.0f;
 }
 
 Vector3 RigidBody::GetAnisotropicFriction() const
 {
-    return body_ ? ToVector3(body_->getAnisotropicFriction()) : Vector3::ZERO;
+    return private_data->body_ ? ToVector3(private_data->body_->getAnisotropicFriction()) : Vector3::ZERO;
 }
 
 float RigidBody::GetRollingFriction() const
 {
-    return body_ ? body_->getRollingFriction() : 0.0f;
+    return private_data->body_ ? private_data->body_->getRollingFriction() : 0.0f;
 }
 
 float RigidBody::GetRestitution() const
 {
-    return body_ ? body_->getRestitution() : 0.0f;
+    return private_data->body_ ? private_data->body_->getRestitution() : 0.0f;
 }
 
 float RigidBody::GetContactProcessingThreshold() const
 {
-    return body_ ? body_->getContactProcessingThreshold() : 0.0f;
+    return private_data->body_ ? private_data->body_->getContactProcessingThreshold() : 0.0f;
 }
 
 float RigidBody::GetCcdRadius() const
 {
-    return body_ ? body_->getCcdSweptSphereRadius() : 0.0f;
+    return private_data->body_ ? private_data->body_->getCcdSweptSphereRadius() : 0.0f;
 }
 
 float RigidBody::GetCcdMotionThreshold() const
 {
-    return body_ ? body_->getCcdMotionThreshold() : 0.0f;
+    return private_data->body_ ? private_data->body_->getCcdMotionThreshold() : 0.0f;
 }
 
 bool RigidBody::IsActive() const
 {
-    return body_ ? body_->isActive() : false;
+    return private_data->body_ ? private_data->body_->isActive() : false;
 }
 
 void RigidBody::GetCollidingBodies(std::unordered_set<RigidBody*>& result) const
@@ -719,15 +749,15 @@ void RigidBody::ApplyWorldTransform(const Vector3& newWorldPosition, const Quate
     {
         smoothedTransform_->SetTargetWorldPosition(newWorldPosition);
         smoothedTransform_->SetTargetWorldRotation(newWorldRotation);
-        lastPosition_ = newWorldPosition;
-        lastRotation_ = newWorldRotation;
+        private_data->lastPosition_ = newWorldPosition;
+        private_data->lastRotation_ = newWorldRotation;
     }
     else
     {
         node_->SetWorldPosition(newWorldPosition);
         node_->SetWorldRotation(newWorldRotation);
-        lastPosition_ = node_->GetWorldPosition();
-        lastRotation_ = node_->GetWorldRotation();
+        private_data->lastPosition_ = node_->GetWorldPosition();
+        private_data->lastRotation_ = node_->GetWorldRotation();
     }
 
     physicsWorld_->SetApplyingTransforms(false);
@@ -735,7 +765,7 @@ void RigidBody::ApplyWorldTransform(const Vector3& newWorldPosition, const Quate
 
 void RigidBody::UpdateMass()
 {
-    if (!body_ || !enableMassUpdate_)
+    if (!private_data->body_ || !enableMassUpdate_)
         return;
 
     btTransform principal;
@@ -743,7 +773,7 @@ void RigidBody::UpdateMass()
     principal.setOrigin(btVector3(0.0f, 0.0f, 0.0f));
 
     // Calculate center of mass shift from all the collision shapes
-    unsigned numShapes = compoundShape_->getNumChildShapes();
+    unsigned numShapes = private_data->compoundShape_->getNumChildShapes();
     if (numShapes)
     {
         std::vector<float> masses(numShapes);
@@ -754,17 +784,17 @@ void RigidBody::UpdateMass()
         }
 
         btVector3 inertia(0.0f, 0.0f, 0.0f);
-        compoundShape_->calculatePrincipalAxisTransform(&masses[0], principal, inertia);
+        private_data->compoundShape_->calculatePrincipalAxisTransform(&masses[0], principal, inertia);
     }
 
     // Add child shapes to shifted compound shape with adjusted offset
-    while (shiftedCompoundShape_->getNumChildShapes())
-        shiftedCompoundShape_->removeChildShapeByIndex(shiftedCompoundShape_->getNumChildShapes() - 1);
+    while (private_data->shiftedCompoundShape_->getNumChildShapes())
+        private_data->shiftedCompoundShape_->removeChildShapeByIndex(private_data->shiftedCompoundShape_->getNumChildShapes() - 1);
     for (unsigned i = 0; i < numShapes; ++i)
     {
-        btTransform adjusted = compoundShape_->getChildTransform(i);
+        btTransform adjusted = private_data->compoundShape_->getChildTransform(i);
         adjusted.setOrigin(adjusted.getOrigin() - principal.getOrigin());
-        shiftedCompoundShape_->addChildShape(adjusted, compoundShape_->getChildShape(i));
+        private_data->shiftedCompoundShape_->addChildShape(adjusted, private_data->compoundShape_->getChildShape(i));
     }
 
     // If shifted compound shape has only one child with no offset/rotation, use the child shape
@@ -772,20 +802,20 @@ void RigidBody::UpdateMass()
     bool useCompound = !numShapes || numShapes > 1;
     if (!useCompound)
     {
-        const btTransform& childTransform = shiftedCompoundShape_->getChildTransform(0);
+        const btTransform& childTransform = private_data->shiftedCompoundShape_->getChildTransform(0);
         if (!ToVector3(childTransform.getOrigin()).Equals(Vector3::ZERO) ||
                 !ToQuaternion(childTransform.getRotation()).Equals(Quaternion::IDENTITY))
             useCompound = true;
     }
-    btCollisionShape* oldCollisionShape = body_->getCollisionShape();
-    body_->setCollisionShape(useCompound ? shiftedCompoundShape_.get() : shiftedCompoundShape_->getChildShape(0));
+    btCollisionShape* oldCollisionShape = private_data->body_->getCollisionShape();
+    private_data->body_->setCollisionShape(useCompound ? private_data->shiftedCompoundShape_.get() : private_data->shiftedCompoundShape_->getChildShape(0));
 
     // If we have one shape and this is a triangle mesh, we use a custom material callback in order to adjust internal edges
-    if (!useCompound && body_->getCollisionShape()->getShapeType() == SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE &&
+    if (!useCompound && private_data->body_->getCollisionShape()->getShapeType() == SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE &&
             physicsWorld_->GetInternalEdge())
-        body_->setCollisionFlags(body_->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+        private_data->body_->setCollisionFlags(private_data->body_->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
     else
-        body_->setCollisionFlags(body_->getCollisionFlags() & ~btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+        private_data->body_->setCollisionFlags(private_data->body_->getCollisionFlags() & ~btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
 
     // Reapply rigid body position with new center of mass shift
     Vector3 oldPosition = GetPosition();
@@ -795,9 +825,9 @@ void RigidBody::UpdateMass()
     // Calculate final inertia
     btVector3 localInertia(0.0f, 0.0f, 0.0f);
     if (mass_ > 0.0f)
-        shiftedCompoundShape_->calculateLocalInertia(mass_, localInertia);
-    body_->setMassProps(mass_, localInertia);
-    body_->updateInertiaTensor();
+        private_data->shiftedCompoundShape_->calculateLocalInertia(mass_, localInertia);
+    private_data->body_->setMassProps(mass_, localInertia);
+    private_data->body_->updateInertiaTensor();
 
     // Reapply constraint positions for new center of mass shift
     if (node_)
@@ -806,37 +836,37 @@ void RigidBody::UpdateMass()
             elem->ApplyFrames();
     }
     // Readd body to world to reset Bullet collision cache if collision shape was changed (issue #2064)
-    if (inWorld_ && body_->getCollisionShape() != oldCollisionShape && physicsWorld_)
+    if (inWorld_ && private_data->body_->getCollisionShape() != oldCollisionShape && physicsWorld_)
     {
         btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
-        world->removeRigidBody(body_.get());
-        world->addRigidBody(body_.get(), (short)collisionLayer_, (short)collisionMask_);
+        world->removeRigidBody(private_data->body_.get());
+        world->addRigidBody(private_data->body_.get(), (short)collisionLayer_, (short)collisionMask_);
     }
 }
 
 void RigidBody::UpdateGravity()
 {
-    if (physicsWorld_ && body_)
+    if (physicsWorld_ && private_data->body_)
     {
         btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
 
-        int flags = body_->getFlags();
+        int flags = private_data->body_->getFlags();
         if (useGravity_ && gravityOverride_ == Vector3::ZERO)
             flags &= ~BT_DISABLE_WORLD_GRAVITY;
         else
             flags |= BT_DISABLE_WORLD_GRAVITY;
-        body_->setFlags(flags);
+        private_data->body_->setFlags(flags);
 
         if (useGravity_)
         {
             // If override vector is zero, use world's gravity
             if (gravityOverride_ == Vector3::ZERO)
-                body_->setGravity(world->getGravity());
+                private_data->body_->setGravity(world->getGravity());
             else
-                body_->setGravity(ToBtVector3(gravityOverride_));
+                private_data->body_->setGravity(ToBtVector3(gravityOverride_));
         }
         else
-            body_->setGravity(btVector3(0.0f, 0.0f, 0.0f));
+            private_data->body_->setGravity(btVector3(0.0f, 0.0f, 0.0f));
     }
 }
 
@@ -869,7 +899,7 @@ void RigidBody::RemoveConstraint(Constraint* constraint)
 
 void RigidBody::ReleaseBody()
 {
-    if (body_)
+    if (private_data->body_)
     {
         // Release all constraints which refer to this body
         // Make a copy for iteration
@@ -879,7 +909,7 @@ void RigidBody::ReleaseBody()
 
         RemoveBodyFromWorld();
 
-        body_.reset();
+        private_data->body_.reset();
     }
 }
 
@@ -890,7 +920,7 @@ void RigidBody::OnMarkedDirty(Node* node)
     // states; rather follow the SmoothedTransform target transform directly
     // Also, for kinematic objects Bullet asks the position from us, so we do not need to apply ourselves
     // (exception: initial setting of transform)
-    if ((!kinematic_ || !hasSimulated_) && (!physicsWorld_ || !physicsWorld_->IsApplyingTransforms()) && !smoothedTransform_)
+    if ((!kinematic_ || !private_data->hasSimulated_) && (!physicsWorld_ || !physicsWorld_->IsApplyingTransforms()) && !smoothedTransform_)
     {
         // Physics operations are not safe from worker threads
         Scene* scene = GetScene();
@@ -904,14 +934,14 @@ void RigidBody::OnMarkedDirty(Node* node)
         Vector3 newPosition = node_->GetWorldPosition();
         Quaternion newRotation = node_->GetWorldRotation();
 
-        if (!newRotation.Equals(lastRotation_))
+        if (!newRotation.Equals(private_data->lastRotation_))
         {
-            lastRotation_ = newRotation;
+            private_data->lastRotation_ = newRotation;
             SetRotation(newRotation);
         }
-        if (!newPosition.Equals(lastPosition_))
+        if (!newPosition.Equals(private_data->lastPosition_))
         {
-            lastPosition_ = newPosition;
+            private_data->lastPosition_ = newPosition;
             SetPosition(newPosition);
         }
     }
@@ -954,14 +984,14 @@ void RigidBody::AddBodyToWorld()
     if (mass_ < 0.0f)
         mass_ = 0.0f;
 
-    if (body_)
+    if (private_data->body_)
         RemoveBodyFromWorld();
     else
     {
         // Correct inertia will be calculated below
         btVector3 localInertia(0.0f, 0.0f, 0.0f);
-        body_.reset(new btRigidBody(mass_, this, shiftedCompoundShape_.get(), localInertia));
-        body_->setUserPointer(this);
+        private_data->body_.reset(new btRigidBody(mass_, private_data, private_data->shiftedCompoundShape_.get(), localInertia));
+        private_data->body_->setUserPointer(this);
 
         // Check for existence of the SmoothedTransform component, which should be created by now in network client mode.
         // If it exists, subscribe to its change events
@@ -990,7 +1020,7 @@ void RigidBody::AddBodyToWorld()
     UpdateMass();
     UpdateGravity();
 
-    int flags = body_->getCollisionFlags();
+    int flags = private_data->body_->getCollisionFlags();
     if (trigger_)
         flags |= btCollisionObject::CF_NO_CONTACT_RESPONSE;
     else
@@ -999,17 +1029,17 @@ void RigidBody::AddBodyToWorld()
         flags |= btCollisionObject::CF_KINEMATIC_OBJECT;
     else
         flags &= ~btCollisionObject::CF_KINEMATIC_OBJECT;
-    body_->setCollisionFlags(flags);
-    body_->forceActivationState(kinematic_ ? DISABLE_DEACTIVATION : ISLAND_SLEEPING);
+    private_data->body_->setCollisionFlags(flags);
+    private_data->body_->forceActivationState(kinematic_ ? DISABLE_DEACTIVATION : ISLAND_SLEEPING);
 
     if (!IsEnabledEffective())
         return;
 
     btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
-    world->addRigidBody(body_.get(), collisionLayer_, collisionMask_);
+    world->addRigidBody(private_data->body_.get(), collisionLayer_, collisionMask_);
     inWorld_ = true;
     readdBody_ = false;
-    hasSimulated_ = false;
+    private_data->hasSimulated_ = false;
 
     if (mass_ > 0.0f)
         Activate();
@@ -1022,10 +1052,10 @@ void RigidBody::AddBodyToWorld()
 
 void RigidBody::RemoveBodyFromWorld()
 {
-    if (physicsWorld_ && body_ && inWorld_)
+    if (physicsWorld_ && private_data->body_ && inWorld_)
     {
         btDiscreteDynamicsWorld* world = physicsWorld_->GetWorld();
-        world->removeRigidBody(body_.get());
+        world->removeRigidBody(private_data->body_.get());
         inWorld_ = false;
     }
 }

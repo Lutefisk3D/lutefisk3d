@@ -24,11 +24,12 @@
 #include "../Physics/PhysicsUtils.h"
 #include "../Physics/RigidBody.h"
 #include "../Physics/PhysicsWorld.h"
+#include "../Physics/PhysicsUtils.h"
 #include "../Scene/Scene.h"
 #include "../IO/Log.h"
 #include "../Physics/RaycastVehicle.h"
-#include <bullet/BulletDynamics/Vehicle/btRaycastVehicle.h>
-#include <bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <Bullet/BulletDynamics/Vehicle/btRaycastVehicle.h>
+#include <Bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 namespace Urho3D
 {

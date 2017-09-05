@@ -25,8 +25,8 @@
 #include "Lutefisk3D/Math/Quaternion.h"
 #include "Lutefisk3D/Math/Vector3.h"
 
-#include <bullet/LinearMath/btVector3.h>
-#include <bullet/LinearMath/btQuaternion.h>
+#include <Bullet/LinearMath/btVector3.h>
+#include <Bullet/LinearMath/btQuaternion.h>
 
 namespace Urho3D
 {

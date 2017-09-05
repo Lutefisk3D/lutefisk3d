@@ -22,16 +22,14 @@
 
 #pragma once
 
-#include "Lutefisk3D/Math/BoundingBox.h"
+#include "Lutefisk3D/Physics/PhysicsEvents.h"
 #include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Math/BoundingBox.h"
 #include "Lutefisk3D/Math/Sphere.h"
 #include "Lutefisk3D/Math/Vector3.h"
 #include "Lutefisk3D/IO/VectorBuffer.h"
-#include "Lutefisk3D/Physics/PhysicsEvents.h"
-
 #include "Lutefisk3D/Container/HashMap.h"
 
-#include <bullet/LinearMath/btIDebugDraw.h>
 #include <QtCore/QSet>
 
 class btCollisionConfiguration;
@@ -130,13 +128,10 @@ struct PhysicsWorldConfig
 static const float DEFAULT_MAX_NETWORK_ANGULAR_VELOCITY = 100.0f;
 
 /// Physics simulation world component. Should be added only to the root scene node.
-class LUTEFISK3D_EXPORT PhysicsWorld : public Component, public btIDebugDraw, public PhysicsSignals
+class LUTEFISK3D_EXPORT PhysicsWorld : public Component, public PhysicsSignals
 {
-    URHO3D_OBJECT(PhysicsWorld,Component);
-
-    friend void InternalPreTickCallback(btDynamicsWorld *world, btScalar timeStep);
-    friend void InternalTickCallback(btDynamicsWorld *world, btScalar timeStep);
-
+    URHO3D_OBJECT(PhysicsWorld,Component)
+    friend struct PhysicsWorldPrivate;
 public:
     /// Construct.
     PhysicsWorld(Context* scontext);
@@ -145,20 +140,6 @@ public:
     /// Register object factory.
     static void RegisterObject(Context* context);
 
-    /// Check if an AABB is visible for debug drawing.
-    virtual bool isVisible(const btVector3& aabbMin, const btVector3& aabbMax) override;
-    /// Draw a physics debug line.
-    virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override;
-    /// Log warning from the physics engine.
-    virtual void reportErrorWarning(const char* warningString) override;
-    /// Draw a physics debug contact point. Not implemented.
-    virtual void drawContactPoint(const btVector3& pointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override;
-    /// Draw physics debug 3D text. Not implemented.
-    virtual void draw3dText(const btVector3& location,const char* textString) override;
-    /// Set debug draw flags.
-    virtual void setDebugMode(int debugMode) override { debugMode_ = debugMode; }
-    /// Return debug draw flags.
-    virtual int getDebugMode() const override { return debugMode_; }
     /// Visualize the component as debug geometry.
     virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
@@ -248,7 +229,7 @@ public:
     void SetDebugDepthTest(bool enable);
 
     /// Return the Bullet physics world.
-    btDiscreteDynamicsWorld* GetWorld() { return world_.get(); }
+    btDiscreteDynamicsWorld* GetWorld();
     /// Clean up the geometry cache.
     void CleanupGeometryCache();
     /// Return trimesh collision geometry cache.
@@ -278,16 +259,6 @@ private:
     /// Send accumulated collision events.
     void SendCollisionEvents();
 
-    /// Bullet collision configuration.
-    btCollisionConfiguration* collisionConfiguration_;
-    /// Bullet collision dispatcher.
-    std::unique_ptr<btDispatcher> collisionDispatcher_;
-    /// Bullet collision broadphase.
-    std::unique_ptr<btBroadphaseInterface> broadphase_;
-    /// Bullet constraint solver.
-    std::unique_ptr<btConstraintSolver> solver_;
-    /// Bullet physics world.
-    std::unique_ptr<btDiscreteDynamicsWorld> world_;
     /// Extra weak pointer to scene to allow for cleanup in case the world is destroyed before other components.
     WeakPtr<Scene> scene_;
     /// Rigid bodies in the world.
@@ -330,12 +301,8 @@ private:
     bool applyingTransforms_;
     /// Simulating flag.
     bool simulating_;
-    /// Debug draw depth test mode.
-    bool debugDepthTest_;
-    /// Debug renderer.
-    DebugRenderer* debugRenderer_;
-    /// Debug draw flags.
-    int debugMode_;
+
+    struct PhysicsWorldPrivate *private_data = nullptr;
 };
 
 /// Register Physics library objects.

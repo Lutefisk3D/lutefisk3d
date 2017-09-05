@@ -7,12 +7,12 @@ set(INCLUDES
     CollisionShape.h
     Constraint.h
     PhysicsEvents.h
-    PhysicsUtils.h
     PhysicsWorld.h
     RaycastVehicle.h
     RigidBody.h
 )
 set(SOURCE
+    PhysicsUtils.h
     CollisionShape.cpp
     Constraint.cpp
     PhysicsWorld.cpp

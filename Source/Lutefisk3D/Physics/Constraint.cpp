@@ -32,11 +32,11 @@
 #include "RigidBody.h"
 #include "Lutefisk3D/Scene/Scene.h"
 
-#include <bullet/BulletDynamics/ConstraintSolver/btConeTwistConstraint.h>
-#include <bullet/BulletDynamics/ConstraintSolver/btHingeConstraint.h>
-#include <bullet/BulletDynamics/ConstraintSolver/btPoint2PointConstraint.h>
-#include <bullet/BulletDynamics/ConstraintSolver/btSliderConstraint.h>
-#include <bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <Bullet/BulletDynamics/ConstraintSolver/btConeTwistConstraint.h>
+#include <Bullet/BulletDynamics/ConstraintSolver/btHingeConstraint.h>
+#include <Bullet/BulletDynamics/ConstraintSolver/btPoint2PointConstraint.h>
+#include <Bullet/BulletDynamics/ConstraintSolver/btSliderConstraint.h>
+#include <Bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 namespace Urho3D
 {

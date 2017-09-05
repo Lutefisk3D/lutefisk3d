@@ -37,14 +37,15 @@
 #include "Lutefisk3D/Scene/Scene.h"
 #include "Lutefisk3D/Scene/SceneEvents.h"
 
-#include <bullet/BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
-#include <bullet/BulletCollision/BroadphaseCollision/btBroadphaseProxy.h>
-#include <bullet/BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
-#include <bullet/BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
-#include <bullet/BulletCollision/CollisionShapes/btBoxShape.h>
-#include <bullet/BulletCollision/CollisionShapes/btSphereShape.h>
-#include <bullet/BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
-#include <bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <Bullet/BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
+#include <Bullet/BulletCollision/BroadphaseCollision/btBroadphaseProxy.h>
+#include <Bullet/BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
+#include <Bullet/BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
+#include <Bullet/BulletCollision/CollisionShapes/btBoxShape.h>
+#include <Bullet/BulletCollision/CollisionShapes/btSphereShape.h>
+#include <Bullet/BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
+#include <Bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <Bullet/LinearMath/btIDebugDraw.h>
 
 #include <unordered_set>
 
@@ -52,32 +53,74 @@ extern ContactAddedCallback gContactAddedCallback;
 
 namespace Urho3D
 {
-
-const char* PHYSICS_CATEGORY = "Physics";
 extern const char* SUBSYSTEM_CATEGORY;
+const char* PHYSICS_CATEGORY = "Physics";
 
-static const int MAX_SOLVER_ITERATIONS = 256;
-static const int DEFAULT_FPS = 60;
-static const Vector3 DEFAULT_GRAVITY = Vector3(0.0f, -9.81f, 0.0f);
+struct PhysicsWorldPrivate : public btIDebugDraw {
+    PhysicsWorldPrivate(PhysicsWorld *o);
+    ~PhysicsWorldPrivate();
+    friend void InternalPreTickCallback(btDynamicsWorld *world, btScalar timeStep);
+    friend void InternalTickCallback(btDynamicsWorld *world, btScalar timeStep);
+    /// Check if an AABB is visible for debug drawing.
+    virtual bool isVisible(const btVector3& aabbMin, const btVector3& aabbMax) override;
+    /// Draw a physics debug line.
+    virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override;
+    /// Log warning from the physics engine.
+    virtual void reportErrorWarning(const char* warningString) override;
+    /// Draw a physics debug contact point. Not implemented.
+    virtual void drawContactPoint(const btVector3& pointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override;
+    /// Draw physics debug 3D text. Not implemented.
+    virtual void draw3dText(const btVector3& location,const char* textString) override;
+    /// Set debug draw flags.
+    virtual void setDebugMode(int debugMode) override { debugMode_ = debugMode; }
+    /// Return debug draw flags.
+    virtual int getDebugMode() const override { return debugMode_; }
+    void PreStep(float ts) { owner->PreStep(ts); }
+    void PostStep(float ts) { owner->PostStep(ts); }
+
+    PhysicsWorld *owner;
+    /// Debug draw flags.
+    int debugMode_ = btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawConstraints | btIDebugDraw::DBG_DrawConstraintLimits;
+    /// Bullet collision configuration.
+    btCollisionConfiguration* collisionConfiguration_ = nullptr;
+    /// Bullet collision dispatcher.
+    std::unique_ptr<btDispatcher> collisionDispatcher_;
+    /// Bullet collision broadphase.
+    std::unique_ptr<btBroadphaseInterface> broadphase_;
+    /// Bullet constraint solver.
+    std::unique_ptr<btConstraintSolver> solver_;
+    /// Bullet physics world.
+    std::unique_ptr<btDiscreteDynamicsWorld> world_;
+    /// Debug renderer.
+    DebugRenderer* debugRenderer_ = nullptr;
+    /// Debug draw depth test mode.
+    bool debugDepthTest_;
+
+};
+#define L_D(Classname) Classname##Private *d = (Classname##Private *)private_data
+
 
 PhysicsWorldConfig PhysicsWorld::config;
+namespace {
+const int MAX_SOLVER_ITERATIONS = 256;
+const int DEFAULT_FPS = 60;
+const Vector3 DEFAULT_GRAVITY = Vector3(0.0f, -9.81f, 0.0f);
 
-static bool CompareRaycastResults(const PhysicsRaycastResult& lhs, const PhysicsRaycastResult& rhs)
+bool CompareRaycastResults(const PhysicsRaycastResult& lhs, const PhysicsRaycastResult& rhs)
 {
     return lhs.distance_ < rhs.distance_;
 }
 
 void InternalPreTickCallback(btDynamicsWorld *world, btScalar timeStep)
 {
-    static_cast<PhysicsWorld*>(world->getWorldUserInfo())->PreStep(timeStep);
+    static_cast<PhysicsWorldPrivate*>(world->getWorldUserInfo())->PreStep(timeStep);
 }
 
 void InternalTickCallback(btDynamicsWorld *world, btScalar timeStep)
 {
-    static_cast<PhysicsWorld*>(world->getWorldUserInfo())->PostStep(timeStep);
+    static_cast<PhysicsWorldPrivate*>(world->getWorldUserInfo())->PostStep(timeStep);
 }
-
-static bool CustomMaterialCombinerCallback(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0, const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
+bool CustomMaterialCombinerCallback(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0, const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
 {
     btAdjustInternalEdgeContacts(cp, colObj1Wrap, colObj0Wrap, partId1, index1);
 
@@ -86,7 +129,6 @@ static bool CustomMaterialCombinerCallback(btManifoldPoint& cp, const btCollisio
 
     return true;
 }
-
 /// Callback for physics world queries.
 struct PhysicsQueryCallback : public btCollisionWorld::ContactResultCallback
 {
@@ -113,10 +155,12 @@ struct PhysicsQueryCallback : public btCollisionWorld::ContactResultCallback
     /// Collision mask for the query.
     unsigned collisionMask_;
 };
+}
+
+
 
 PhysicsWorld::PhysicsWorld(Context* context) :
     Component(context),
-    collisionConfiguration_(nullptr),
     fps_(DEFAULT_FPS),
     maxSubSteps_(0),
     timeAcc_(0.0f),
@@ -126,27 +170,10 @@ PhysicsWorld::PhysicsWorld(Context* context) :
     internalEdge_(true),
     applyingTransforms_(false),
     simulating_(false),
-    debugRenderer_(nullptr),
-    debugMode_(btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawConstraints | btIDebugDraw::DBG_DrawConstraintLimits)
+    private_data(new PhysicsWorldPrivate(this))
 {
     gContactAddedCallback = CustomMaterialCombinerCallback;
 
-    if (PhysicsWorld::config.collisionConfig_)
-        collisionConfiguration_ = PhysicsWorld::config.collisionConfig_;
-    else
-        collisionConfiguration_ = new btDefaultCollisionConfiguration();
-    collisionDispatcher_.reset(new btCollisionDispatcher(collisionConfiguration_));
-    broadphase_.reset(new btDbvtBroadphase());
-    solver_.reset(new btSequentialImpulseConstraintSolver());
-    world_.reset(new btDiscreteDynamicsWorld(collisionDispatcher_.get(), broadphase_.get(), solver_.get(), collisionConfiguration_));
-
-    world_->setGravity(ToBtVector3(DEFAULT_GRAVITY));
-    world_->getDispatchInfo().m_useContinuous = true;
-    world_->getSolverInfo().m_splitImpulse = false; // Disable by default for performance
-    world_->setDebugDrawer(this);
-    world_->setInternalTickCallback(InternalPreTickCallback, static_cast<void*>(this), true);
-    world_->setInternalTickCallback(InternalTickCallback, static_cast<void*>(this), false);
-    world_->setSynchronizeAllMotionStates(true);
 }
 
 PhysicsWorld::~PhysicsWorld()
@@ -163,16 +190,7 @@ PhysicsWorld::~PhysicsWorld()
         for (CollisionShape* elem : collisionShapes_)
             elem->ReleaseShape();
     }
-
-    world_.reset();
-    solver_.reset();
-    broadphase_.reset();
-    collisionDispatcher_.reset();
-
-    // Delete configuration only if it was the default created by PhysicsWorld
-    if (!PhysicsWorld::config.collisionConfig_)
-        delete collisionConfiguration_;
-    collisionConfiguration_ = nullptr;
+    delete private_data;
 }
 
 void PhysicsWorld::RegisterObject(Context* context)
@@ -189,7 +207,39 @@ void PhysicsWorld::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Split Impulse", GetSplitImpulse, SetSplitImpulse, bool, false, AM_DEFAULT);
 }
 
-bool PhysicsWorld::isVisible(const btVector3& aabbMin, const btVector3& aabbMax)
+PhysicsWorldPrivate::PhysicsWorldPrivate(PhysicsWorld * o) : owner(o) {
+    if (PhysicsWorld::config.collisionConfig_)
+        collisionConfiguration_ = PhysicsWorld::config.collisionConfig_;
+    else
+        collisionConfiguration_ = new btDefaultCollisionConfiguration();
+    collisionDispatcher_.reset(new btCollisionDispatcher(collisionConfiguration_));
+    broadphase_.reset(new btDbvtBroadphase());
+    solver_.reset(new btSequentialImpulseConstraintSolver);
+    world_.reset(new btDiscreteDynamicsWorld(collisionDispatcher_.get(), broadphase_.get(), solver_.get(), collisionConfiguration_));
+
+    world_->setGravity(ToBtVector3(DEFAULT_GRAVITY));
+    world_->getDispatchInfo().m_useContinuous = true;
+    world_->getSolverInfo().m_splitImpulse = false; // Disable by default for performance
+    world_->setDebugDrawer(this);
+    world_->setInternalTickCallback(InternalPreTickCallback, static_cast<void*>(this), true);
+    world_->setInternalTickCallback(InternalTickCallback, static_cast<void*>(this), false);
+    world_->setSynchronizeAllMotionStates(true);
+}
+
+PhysicsWorldPrivate::~PhysicsWorldPrivate()
+{
+    world_.reset();
+    solver_.reset();
+    broadphase_.reset();
+    collisionDispatcher_.reset();
+
+    // Delete configuration only if it was the default created by PhysicsWorld
+    if (!PhysicsWorld::config.collisionConfig_)
+        delete collisionConfiguration_;
+    collisionConfiguration_ = nullptr;
+}
+
+bool PhysicsWorldPrivate::isVisible(const btVector3& aabbMin, const btVector3& aabbMax)
 {
     if (debugRenderer_)
         return debugRenderer_->IsInside(BoundingBox(ToVector3(aabbMin), ToVector3(aabbMax)));
@@ -197,7 +247,7 @@ bool PhysicsWorld::isVisible(const btVector3& aabbMin, const btVector3& aabbMax)
         return false;
 }
 
-void PhysicsWorld::drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
+void PhysicsWorldPrivate::drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
 {
     if (debugRenderer_)
         debugRenderer_->AddLine(ToVector3(from), ToVector3(to), Color(color.x(), color.y(), color.z()), debugDepthTest_);
@@ -208,24 +258,24 @@ void PhysicsWorld::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     if (debug)
     {
         URHO3D_PROFILE(PhysicsDrawDebug);
-
-        debugRenderer_ = debug;
-        debugDepthTest_ = depthTest;
-        world_->debugDrawWorld();
-        debugRenderer_ = nullptr;
+        L_D(PhysicsWorld);
+        d->debugRenderer_ = debug;
+        d->debugDepthTest_ = depthTest;
+        d->world_->debugDrawWorld();
+        d->debugRenderer_ = nullptr;
     }
 }
 
-void PhysicsWorld::reportErrorWarning(const char* warningString)
+void PhysicsWorldPrivate::reportErrorWarning(const char* warningString)
 {
     URHO3D_LOGWARNING("Physics: " + QString(warningString));
 }
 
-void PhysicsWorld::drawContactPoint(const btVector3& pointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color)
+void PhysicsWorldPrivate::drawContactPoint(const btVector3& pointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color)
 {
 }
 
-void PhysicsWorld::draw3dText(const btVector3& location, const char* textString)
+void PhysicsWorldPrivate::draw3dText(const btVector3& location, const char* textString)
 {
 }
 
@@ -245,15 +295,15 @@ void PhysicsWorld::Update(float timeStep)
 
     delayedWorldTransforms_.clear();
     simulating_ = true;
-
+    L_D(PhysicsWorld);
     if (interpolation_)
-        world_->stepSimulation(timeStep, maxSubSteps, internalTimeStep);
+        d->world_->stepSimulation(timeStep, maxSubSteps, internalTimeStep);
     else
     {
         timeAcc_ += timeStep;
         while (timeAcc_ >= internalTimeStep && maxSubSteps > 0)
         {
-            world_->stepSimulation(internalTimeStep, 0, internalTimeStep);
+            d->world_->stepSimulation(internalTimeStep, 0, internalTimeStep);
             timeAcc_ -= internalTimeStep;
             --maxSubSteps;
         }
@@ -281,7 +331,8 @@ void PhysicsWorld::Update(float timeStep)
 
 void PhysicsWorld::UpdateCollisions()
 {
-    world_->performDiscreteCollisionDetection();
+    L_D(PhysicsWorld);
+    d->world_->performDiscreteCollisionDetection();
 }
 
 void PhysicsWorld::SetFps(int fps)
@@ -293,7 +344,8 @@ void PhysicsWorld::SetFps(int fps)
 
 void PhysicsWorld::SetGravity(const Vector3& gravity)
 {
-    world_->setGravity(ToBtVector3(gravity));
+    L_D(PhysicsWorld);
+    d->world_->setGravity(ToBtVector3(gravity));
 
     MarkNetworkUpdate();
 }
@@ -306,8 +358,9 @@ void PhysicsWorld::SetMaxSubSteps(int num)
 
 void PhysicsWorld::SetNumIterations(int num)
 {
+    L_D(PhysicsWorld);
     num = Clamp(num, 1, MAX_SOLVER_ITERATIONS);
-    world_->getSolverInfo().m_numIterations = num;
+    d->world_->getSolverInfo().m_numIterations = num;
 
     MarkNetworkUpdate();
 }
@@ -330,7 +383,8 @@ void PhysicsWorld::SetInternalEdge(bool enable)
 
 void PhysicsWorld::SetSplitImpulse(bool enable)
 {
-    world_->getSolverInfo().m_splitImpulse = enable;
+    L_D(PhysicsWorld);
+    d->world_->getSolverInfo().m_splitImpulse = enable;
 
     MarkNetworkUpdate();
 }
@@ -351,8 +405,9 @@ void PhysicsWorld::Raycast(std::vector<PhysicsRaycastResult>& result, const Ray&
     btCollisionWorld::AllHitsRayResultCallback rayCallback(ToBtVector3(ray.origin_), ToBtVector3(ray.origin_ + maxDistance * ray.direction_));
     rayCallback.m_collisionFilterGroup = (short)0xffff;
     rayCallback.m_collisionFilterMask = (short)collisionMask;
+    L_D(PhysicsWorld);
 
-    world_->rayTest(rayCallback.m_rayFromWorld, rayCallback.m_rayToWorld, rayCallback);
+    d->world_->rayTest(rayCallback.m_rayFromWorld, rayCallback.m_rayToWorld, rayCallback);
 
     for (int i = 0; i < rayCallback.m_collisionObjects.size(); ++i)
     {
@@ -378,8 +433,9 @@ void PhysicsWorld::RaycastSingle(PhysicsRaycastResult& result, const Ray& ray, f
                                                            ToBtVector3(ray.origin_ + maxDistance * ray.direction_));
     rayCallback.m_collisionFilterGroup = (short)0xffff;
     rayCallback.m_collisionFilterMask = (short)collisionMask;
+    L_D(PhysicsWorld);
 
-    world_->rayTest(rayCallback.m_rayFromWorld, rayCallback.m_rayToWorld, rayCallback);
+    d->world_->rayTest(rayCallback.m_rayFromWorld, rayCallback.m_rayToWorld, rayCallback);
 
     if (rayCallback.hasHit())
     {
@@ -410,6 +466,7 @@ void PhysicsWorld::RaycastSingleSegmented(PhysicsRaycastResult& result, const Ra
     btVector3 end;
     btVector3 direction = ToBtVector3(ray.direction_);
     float distance;
+    L_D(PhysicsWorld);
 
     for (float remainingDistance = maxDistance; remainingDistance > 0; remainingDistance -= segmentDistance)
     {
@@ -421,7 +478,7 @@ void PhysicsWorld::RaycastSingleSegmented(PhysicsRaycastResult& result, const Ra
         rayCallback.m_collisionFilterGroup = (short)0xffff;
         rayCallback.m_collisionFilterMask = (short)collisionMask;
 
-        world_->rayTest(rayCallback.m_rayFromWorld, rayCallback.m_rayToWorld, rayCallback);
+        d->world_->rayTest(rayCallback.m_rayFromWorld, rayCallback.m_rayToWorld, rayCallback);
 
         if (rayCallback.hasHit())
         {
@@ -450,6 +507,7 @@ void PhysicsWorld::SphereCast(PhysicsRaycastResult& result, const Ray& ray, floa
     URHO3D_PROFILE(PhysicsSphereCast);
     if (maxDistance >= M_INFINITY)
         URHO3D_LOGWARNING("Infinite maxDistance in physics sphere cast is not supported");
+    L_D(PhysicsWorld);
 
     btSphereShape shape(radius);
     Vector3 endPos = ray.origin_ + maxDistance * ray.direction_;
@@ -459,7 +517,7 @@ void PhysicsWorld::SphereCast(PhysicsRaycastResult& result, const Ray& ray, floa
     convexCallback.m_collisionFilterGroup = (short)0xffff;
     convexCallback.m_collisionFilterMask = (short)collisionMask;
 
-    world_->convexSweepTest(&shape, btTransform(btQuaternion::getIdentity(), convexCallback.m_convexFromWorld),
+    d->world_->convexSweepTest(&shape, btTransform(btQuaternion::getIdentity(), convexCallback.m_convexFromWorld),
                             btTransform(btQuaternion::getIdentity(), convexCallback.m_convexToWorld), convexCallback);
 
     if (convexCallback.hasHit())
@@ -542,6 +600,7 @@ void PhysicsWorld::ConvexCast(PhysicsRaycastResult& result, btCollisionShape* sh
         result.hitFraction_ = 0.0f;
         return;
     }
+    L_D(PhysicsWorld);
 
     URHO3D_PROFILE(PhysicsConvexCast);
 
@@ -549,9 +608,9 @@ void PhysicsWorld::ConvexCast(PhysicsRaycastResult& result, btCollisionShape* sh
     convexCallback.m_collisionFilterGroup = (short)0xffff;
     convexCallback.m_collisionFilterMask = (short)collisionMask;
 
-    world_->convexSweepTest(static_cast<btConvexShape*>(shape), btTransform(ToBtQuaternion(startRot),
-                                                                            convexCallback.m_convexFromWorld), btTransform(ToBtQuaternion(endRot), convexCallback.m_convexToWorld),
-                            convexCallback);
+    d->world_->convexSweepTest(static_cast<btConvexShape *>(shape),
+                               btTransform(ToBtQuaternion(startRot), convexCallback.m_convexFromWorld),
+                               btTransform(ToBtQuaternion(endRot), convexCallback.m_convexToWorld), convexCallback);
 
     if (convexCallback.hasHit())
     {
@@ -594,23 +653,25 @@ void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const 
     URHO3D_PROFILE(PhysicsSphereQuery);
 
     result.clear();
+    L_D(PhysicsWorld);
 
     btSphereShape sphereShape(sphere.radius_);
     std::unique_ptr<btRigidBody> tempRigidBody(new btRigidBody(1.0f, nullptr, &sphereShape));
     tempRigidBody->setWorldTransform(btTransform(btQuaternion::getIdentity(), ToBtVector3(sphere.center_)));
     // Need to activate the temporary rigid body to get reliable results from static, sleeping objects
     tempRigidBody->activate();
-    world_->addRigidBody(tempRigidBody.get());
+    d->world_->addRigidBody(tempRigidBody.get());
 
     PhysicsQueryCallback callback(result, collisionMask);
-    world_->contactTest(tempRigidBody.get(), callback);
+    d->world_->contactTest(tempRigidBody.get(), callback);
 
-    world_->removeRigidBody(tempRigidBody.get());
+    d->world_->removeRigidBody(tempRigidBody.get());
 }
 
 void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const BoundingBox& box, unsigned collisionMask)
 {
     URHO3D_PROFILE(PhysicsBoxQuery);
+    L_D(PhysicsWorld);
 
     result.clear();
 
@@ -618,12 +679,12 @@ void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const 
     std::unique_ptr<btRigidBody> tempRigidBody(new btRigidBody(1.0f, nullptr, &boxShape));
     tempRigidBody->setWorldTransform(btTransform(btQuaternion::getIdentity(), ToBtVector3(box.Center())));
     tempRigidBody->activate();
-    world_->addRigidBody(tempRigidBody.get());
+    d->world_->addRigidBody(tempRigidBody.get());
 
     PhysicsQueryCallback callback(result, collisionMask);
-    world_->contactTest(tempRigidBody.get(), callback);
+    d->world_->contactTest(tempRigidBody.get(), callback);
 
-    world_->removeRigidBody(tempRigidBody.get());
+    d->world_->removeRigidBody(tempRigidBody.get());
 }
 
 void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const RigidBody* body)
@@ -634,9 +695,10 @@ void PhysicsWorld::GetRigidBodies(std::unordered_set<RigidBody*>& result, const 
 
     if (!body || !body->GetBody())
         return;
+    L_D(PhysicsWorld);
 
     PhysicsQueryCallback callback(result, body->GetCollisionMask());
-    world_->contactTest(body->GetBody(), callback);
+    d->world_->contactTest(body->GetBody(), callback);
 
     // Remove the body itself from the returned list
     result.erase((RigidBody *)body);
@@ -663,17 +725,20 @@ void PhysicsWorld::GetCollidingBodies(std::unordered_set<RigidBody*>& result, co
 
 Vector3 PhysicsWorld::GetGravity() const
 {
-    return ToVector3(world_->getGravity());
+    L_D(PhysicsWorld);
+    return ToVector3(d->world_->getGravity());
 }
 
 int PhysicsWorld::GetNumIterations() const
 {
-    return world_->getSolverInfo().m_numIterations;
+    L_D(PhysicsWorld);
+    return d->world_->getSolverInfo().m_numIterations;
 }
 
 bool PhysicsWorld::GetSplitImpulse() const
 {
-    return world_->getSolverInfo().m_splitImpulse != 0;
+    L_D(PhysicsWorld);
+    return d->world_->getSolverInfo().m_splitImpulse != 0;
 }
 
 void PhysicsWorld::AddRigidBody(RigidBody* body)
@@ -723,12 +788,14 @@ void PhysicsWorld::DrawDebugGeometry(bool depthTest)
 
 void PhysicsWorld::SetDebugRenderer(DebugRenderer* debug)
 {
-    debugRenderer_ = debug;
+    L_D(PhysicsWorld);
+    d->debugRenderer_ = debug;
 }
 
 void PhysicsWorld::SetDebugDepthTest(bool enable)
 {
-    debugDepthTest_ = enable;
+    L_D(PhysicsWorld);
+    d->debugDepthTest_ = enable;
 }
 
 void PhysicsWorld::CleanupGeometryCache()
@@ -805,8 +872,9 @@ void PhysicsWorld::SendCollisionEvents()
     currentCollisions_.clear();
     physicsCollisionData_.clear();
     nodeCollisionData_.clear();
+    L_D(PhysicsWorld);
 
-    int numManifolds = collisionDispatcher_->getNumManifolds();
+    int numManifolds = d->collisionDispatcher_->getNumManifolds();
 
     if (numManifolds)
     {
@@ -814,7 +882,7 @@ void PhysicsWorld::SendCollisionEvents()
 
         for (int i = 0; i < numManifolds; ++i)
         {
-            btPersistentManifold* contactManifold = collisionDispatcher_->getManifoldByIndexInternal(i);
+            btPersistentManifold* contactManifold = d->collisionDispatcher_->getManifoldByIndexInternal(i);
             // First check that there are actual contacts, as the manifold exists also when objects are close but not touching
             if (!contactManifold->getNumContacts())
                 continue;
@@ -1049,6 +1117,11 @@ void RegisterPhysicsLibrary(Context* context)
     RigidBody::RegisterObject(context);
     Constraint::RegisterObject(context);
     PhysicsWorld::RegisterObject(context);
+}
+
+btDiscreteDynamicsWorld *Urho3D::PhysicsWorld::GetWorld() {
+    L_D(PhysicsWorld);
+    return d->world_.get();
 }
 
 }

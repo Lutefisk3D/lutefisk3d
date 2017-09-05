@@ -23,7 +23,6 @@
 #pragma once
 
 #include "../Scene/LogicComponent.h"
-#include "../Physics/PhysicsUtils.h"
 #include "../Physics/RigidBody.h"
 
 namespace Urho3D

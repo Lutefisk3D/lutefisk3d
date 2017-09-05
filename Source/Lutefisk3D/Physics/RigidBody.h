@@ -25,7 +25,6 @@
 #include "Lutefisk3D/Scene/Component.h"
 #include "Lutefisk3D/IO/VectorBuffer.h"
 
-#include <bullet/LinearMath/btMotionState.h>
 #include <unordered_set>
 
 class btCompoundShape;
@@ -48,9 +47,9 @@ enum CollisionEventMode
 };
 
 /// Physics rigid body component.
-class LUTEFISK3D_EXPORT RigidBody : public Component, public btMotionState
+class LUTEFISK3D_EXPORT RigidBody : public Component
 {
-    URHO3D_OBJECT(RigidBody,Component);
+    URHO3D_OBJECT(RigidBody,Component)
 
 public:
     /// Construct.
@@ -66,10 +65,6 @@ public:
     virtual void ApplyAttributes() override;
     /// Handle enabled/disabled state change.
     virtual void OnSetEnabled() override;
-    /// Return initial world transform to Bullet.
-    virtual void getWorldTransform(btTransform &worldTrans) const override;
-    /// Update world transform from Bullet.
-    virtual void setWorldTransform(const btTransform &worldTrans) override;
     /// Visualize the component as debug geometry.
     virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
@@ -153,9 +148,9 @@ public:
     /// Return physics world.
     PhysicsWorld* GetPhysicsWorld() const { return physicsWorld_; }
     /// Return Bullet rigid body.
-    btRigidBody* GetBody() const { return body_.get(); }
+    btRigidBody* GetBody() const;
     /// Return Bullet compound collision shape.
-    btCompoundShape* GetCompoundShape() const { return compoundShape_.get(); }
+    btCompoundShape* GetCompoundShape() const;
     /// Return mass.
     float GetMass() const { return mass_; }
     /// Return rigid body position in world space.
@@ -250,12 +245,7 @@ private:
     /// Handle SmoothedTransform target rotation update.
     void HandleTargetRotation();
 
-    /// Bullet rigid body.
-    std::unique_ptr<btRigidBody> body_;
-    /// Bullet compound collision shape.
-    std::unique_ptr<btCompoundShape> compoundShape_;
-    /// Compound collision shape with center of mass offset applied.
-    std::unique_ptr<btCompoundShape> shiftedCompoundShape_;
+    struct RigidBodyPrivate *private_data;
     /// Physics world.
     WeakPtr<PhysicsWorld> physicsWorld_;
     /// Smoothed transform, if has one.
@@ -276,10 +266,6 @@ private:
     unsigned collisionMask_;
     /// Collision event signaling mode.
     CollisionEventMode collisionEventMode_;
-    /// Last interpolated position from the simulation.
-    mutable Vector3 lastPosition_;
-    /// Last interpolated rotation from the simulation.
-    mutable Quaternion lastRotation_;
     /// Kinematic flag.
     bool kinematic_;
     /// Trigger flag.
@@ -292,8 +278,6 @@ private:
     bool inWorld_;
     /// Mass update enable flag.
     bool enableMassUpdate_;
-    /// Internal flag whether has simulated at least once.
-    mutable bool hasSimulated_;
 };
 
 }

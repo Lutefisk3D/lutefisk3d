@@ -203,7 +203,7 @@ bool Shader::ProcessSource(QString& code, Deserializer& source)
     return true;
 }
 
-QString Shader::NormalizeDefines(const QString& defines)
+QString Shader::NormalizeDefines(const QString& defines) const
 {
     QStringList definesVec = defines.toUpper().trimmed().split(' ',QString::SkipEmptyParts);
     std::sort(definesVec.begin(), definesVec.end());

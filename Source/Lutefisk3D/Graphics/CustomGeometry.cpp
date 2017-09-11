@@ -132,7 +132,7 @@ void CustomGeometry::ProcessRayQuery(const RayOctreeQuery& query, std::vector<Ra
 
 Geometry* CustomGeometry::GetLodGeometry(unsigned batchIndex, unsigned level)
 {
-    return batchIndex < geometries_.size() ? geometries_[batchIndex] : (Geometry*)nullptr;
+    return batchIndex < geometries_.size() ? geometries_[batchIndex] : nullptr;
 }
 
 unsigned CustomGeometry::GetNumOccluderTriangles()
@@ -430,13 +430,13 @@ unsigned CustomGeometry::GetNumVertices(unsigned index) const
 
 Material* CustomGeometry::GetMaterial(unsigned index) const
 {
-    return index < batches_.size() ? batches_[index].material_ : (Material*)nullptr;
+    return index < batches_.size() ? batches_[index].material_ : nullptr;
 }
 
 CustomGeometryVertex* CustomGeometry::GetVertex(unsigned geometryIndex, unsigned vertexNum)
 {
     return (geometryIndex < vertices_.size() && vertexNum < vertices_[geometryIndex].size()) ?
-                &vertices_[geometryIndex][vertexNum] : (CustomGeometryVertex*)nullptr;
+                &vertices_[geometryIndex][vertexNum] : nullptr;
 }
 
 void CustomGeometry::SetGeometryDataAttr(const std::vector<unsigned char>& value)

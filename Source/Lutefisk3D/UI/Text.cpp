@@ -123,7 +123,7 @@ void Text::ApplyAttributes()
 
 void Text::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor)
 {
-    FontFace* face = font_ ? font_->GetFace(fontSize_) : (FontFace*)nullptr;
+    FontFace* face = font_ ? font_->GetFace(fontSize_) : nullptr;
     if (!face)
     {
         hovering_ = false;
@@ -703,7 +703,7 @@ void Text::UpdateText(bool onResize)
 void Text::UpdateCharLocations()
 {
     // Remember the font face to see if it's still valid when it's time to render
-    FontFace* face = font_ ? font_->GetFace(fontSize_) : (FontFace*)nullptr;
+    FontFace* face = font_ ? font_->GetFace(fontSize_) : nullptr;
     if (!face)
         return;
     fontFace_ = face;

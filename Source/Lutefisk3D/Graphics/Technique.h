@@ -43,40 +43,22 @@ enum PassLightingMode
 class LUTEFISK3D_EXPORT Pass : public RefCounted
 {
 public:
-    /// Construct.
     Pass(const QString& passName);
-    /// Destruct.
     ~Pass();
 
-    /// Set blend mode.
-    void SetBlendMode(BlendMode mode);
-    /// Set culling mode override. By default culling mode is read from the material instead. Set the illegal culling mode MAX_CULLMODES to disable override again.
+	void SetBlendMode(BlendMode mode);
     void SetCullMode(CullMode mode);
-    /// Set depth compare mode.
     void SetDepthTestMode(CompareMode mode);
-    /// Set pass lighting mode, affects what shader variations will be attempted to be loaded.
     void SetLightingMode(PassLightingMode mode);
-    /// Set depth write on/off.
     void SetDepthWrite(bool enable);
-    /// Set alpha-to-coverage on/off.
     void SetAlphaToCoverage(bool enable);
-    /// Set whether requires desktop level hardware.
-    void SetIsDesktop(bool enable);
-    /// Set vertex shader name.
     void SetVertexShader(const QString& name);
-    /// Set pixel shader name.
     void SetPixelShader(const QString& name);
-    /// Set vertex shader defines. Separate multiple defines with spaces.
     void SetVertexShaderDefines(const QString& defines);
-    /// Set pixel shader defines. Separate multiple defines with spaces.
     void SetPixelShaderDefines(const QString& defines);
-    /// Set vertex shader define excludes. Use to mark defines that the shader code will not recognize, to prevent compiling redundant shader variations.
     void SetVertexShaderDefineExcludes(const QString& excludes);
-    /// Set pixel shader define excludes. Use to mark defines that the shader code will not recognize, to prevent compiling redundant shader variations.
     void SetPixelShaderDefineExcludes(const QString& excludes);
-    /// Reset shader pointers.
     void ReleaseShaders();
-    /// Mark shaders loaded this frame.
     void MarkShadersLoaded(unsigned frameNumber);
 
     /// Return pass name.
@@ -97,8 +79,6 @@ public:
     bool GetDepthWrite() const { return depthWrite_; }
     /// Return alpha-to-coverage mode.
     bool GetAlphaToCoverage() const { return alphaToCoverage_; }
-    /// Return whether requires desktop level hardware.
-    bool IsDesktop() const { return isDesktop_; }
     /// Return vertex shader name.
     const QString& GetVertexShader() const { return vertexShaderName_; }
     /// Return pixel shader name.
@@ -142,8 +122,6 @@ private:
     bool depthWrite_;
     /// Alpha-to-coverage mode.
     bool alphaToCoverage_;
-    /// Require desktop level hardware flag.
-    bool isDesktop_;
     /// Vertex shader name.
     QString vertexShaderName_;
     /// Pixel shader name.
@@ -176,18 +154,14 @@ class LUTEFISK3D_EXPORT Technique : public Resource
     friend class Renderer;
 
 public:
-    /// Construct.
     Technique(Context* context);
-    /// Destruct.
     ~Technique();
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
+	bool BeginLoad(Deserializer& source) override;
 
-    /// Set whether requires desktop level hardware.
-    void SetIsDesktop(bool enable);
     /// Create a new pass.
     Pass* CreatePass(const QString& passName);
     /// Remove a pass.
@@ -197,10 +171,8 @@ public:
     /// Clone the technique. Passes will be deep copied to allow independent modification.
     SharedPtr<Technique> Clone(const QString& cloneName = QString()) const;
 
-    /// Return whether requires desktop level hardware.
-    bool IsDesktop() const { return isDesktop_; }
     /// Return whether technique is supported by the current hardware.
-    bool IsSupported() const { return !isDesktop_ || desktopSupport_; }
+    bool IsSupported() const { return true; }
     /// Return whether has a pass.
     bool HasPass(unsigned passIndex) const { return passIndex < passes_.size() && passes_[passIndex].Get() != nullptr; }
     /// Return whether has a pass by name. This overload should not be called in time-critical rendering loops; use a pre-acquired pass index instead.
@@ -215,7 +187,7 @@ public:
     Pass* GetSupportedPass(unsigned passIndex) const
     {
         Pass* pass = passIndex < passes_.size() ? passes_[passIndex].Get() : nullptr;
-        return pass && (!pass->IsDesktop() || desktopSupport_) ? pass : nullptr;
+        return pass;
     }
     /// Return a supported pass by name. This overload should not be called in time-critical rendering loops; use a pre-acquired pass index instead.
     Pass* GetSupportedPass(const QString& passName) const;
@@ -249,10 +221,6 @@ public:
     static unsigned shadowPassIndex;
 
 private:
-    /// Require desktop GPU flag.
-    bool isDesktop_;
-    /// Cached desktop GPU support flag.
-    bool desktopSupport_;
     /// Passes.
     std::vector<SharedPtr<Pass> > passes_;
     /// Cached clones with added shader compilation defines.

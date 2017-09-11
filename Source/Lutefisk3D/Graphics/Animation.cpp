@@ -83,7 +83,7 @@ void AnimationTrack::RemoveAllKeyFrames()
 
 AnimationKeyFrame* AnimationTrack::GetKeyFrame(unsigned index)
 {
-    return index < keyFrames_.size() ? &keyFrames_[index] : (AnimationKeyFrame*)nullptr;
+    return index < keyFrames_.size() ? &keyFrames_[index] : nullptr;
 }
 void AnimationTrack::GetKeyFrameIndex(float time, unsigned& index) const
 {
@@ -372,7 +372,7 @@ SharedPtr<Animation> Animation::Clone(const QString& cloneName) const
 AnimationTrack* Animation::GetTrack(unsigned index)
 {
     if (index >= GetNumTracks())
-        return (AnimationTrack*) nullptr;
+        return nullptr;
 
     int j = 0;
     for(auto i = tracks_.begin(); i != tracks_.end(); ++i)
@@ -382,23 +382,23 @@ AnimationTrack* Animation::GetTrack(unsigned index)
         ++j;
     }
 
-    return (AnimationTrack*) nullptr;
+    return nullptr;
 }
 AnimationTrack* Animation::GetTrack(const QString& name)
 {
     HashMap<StringHash, AnimationTrack>::iterator i = tracks_.find(StringHash(name));
-    return i != tracks_.end() ? &MAP_VALUE(i): (AnimationTrack*)nullptr;
+    return i != tracks_.end() ? &MAP_VALUE(i): nullptr;
 }
 
 AnimationTrack* Animation::GetTrack(StringHash nameHash)
 {
     HashMap<StringHash, AnimationTrack>::iterator i = tracks_.find(nameHash);
-    return i != tracks_.end() ? &MAP_VALUE(i) : (AnimationTrack*)nullptr;
+    return i != tracks_.end() ? &MAP_VALUE(i) : nullptr;
     }
 
 AnimationTriggerPoint* Animation::GetTrigger(unsigned index)
 {
-    return index < triggers_.size() ? &triggers_[index] : (AnimationTriggerPoint*)nullptr;
+    return index < triggers_.size() ? &triggers_[index] : nullptr;
 }
 
 }

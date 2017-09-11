@@ -37,7 +37,7 @@ namespace Urho3D
 class ConstantBuffer;
 class Shader;
 /// %Shader parameter definition.
-struct ShaderParameter
+struct LUTEFISK3D_EXPORT ShaderParameter
 {
     /// Name of the parameter.
     QString name_;
@@ -50,8 +50,6 @@ struct ShaderParameter
         unsigned offset_;
         /// OpenGL uniform location.
         int location_;
-        /// Direct3D9 register index.
-        unsigned register_;
     };
 
     union
@@ -60,8 +58,6 @@ struct ShaderParameter
         unsigned size_;
         /// Parameter OpenGL type.
         gl::GLenum glType_;
-        /// Number of registers on Direct3D9.
-        unsigned regCount_;
     };
 
     /// Constant buffer index. Only used on Direct3D11.
@@ -80,9 +76,9 @@ public:
     virtual ~ShaderVariation();
 
     /// Mark the GPU resource destroyed on graphics context destruction.
-    virtual void OnDeviceLost();
+	void OnDeviceLost() override;
     /// Release the shader.
-    virtual void Release();
+	void Release() override;
 
     /// Compile the shader. Return true if successful.
     bool Create();

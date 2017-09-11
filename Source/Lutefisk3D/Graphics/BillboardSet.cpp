@@ -355,7 +355,7 @@ Material* BillboardSet::GetMaterial() const
 
 Billboard* BillboardSet::GetBillboard(unsigned index)
 {
-    return index < billboards_.size() ? &billboards_[index] : (Billboard*)nullptr;
+    return index < billboards_.size() ? &billboards_[index] : nullptr;
 }
 
 void BillboardSet::SetMaterialAttr(const ResourceRef& value)

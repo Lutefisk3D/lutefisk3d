@@ -81,91 +81,92 @@ Pass::Pass(const QString& name) :
     lightingMode_(LIGHTING_UNLIT),
     shadersLoadedFrameNumber_(0),
     alphaToCoverage_(false),
-    depthWrite_(true),
-    isDesktop_(false)
+    depthWrite_(true)
 {
     name_ = name.toLower();
     index_ = Technique::GetPassIndex(name_);
     // Guess default lighting mode from pass name
-    if (index_ == Technique::basePassIndex || index_ == Technique::alphaPassIndex || index_ == Technique::materialPassIndex ||
-            index_ == Technique::deferredPassIndex)
+    if (index_ == Technique::basePassIndex ||
+			index_ == Technique::alphaPassIndex || 
+			index_ == Technique::materialPassIndex ||
+			index_ == Technique::deferredPassIndex)
         lightingMode_ = LIGHTING_PERVERTEX;
-    else if (index_ == Technique::lightPassIndex || index_ == Technique::litBasePassIndex || index_ == Technique::litAlphaPassIndex)
+    else if (index_ == Technique::lightPassIndex ||
+				index_ == Technique::litBasePassIndex || 
+				index_ == Technique::litAlphaPassIndex)
         lightingMode_ = LIGHTING_PERPIXEL;
 }
 
 Pass::~Pass()
 {
 }
-
+/// Set blend mode.
 void Pass::SetBlendMode(BlendMode mode)
 {
     blendMode_ = mode;
 }
+/// Set culling mode override. By default culling mode is read from the material instead. Set the illegal culling mode MAX_CULLMODES to disable override again.
 void Pass::SetCullMode(CullMode mode)
 {
     cullMode_ = mode;
 }
+/// Set depth compare mode.
 void Pass::SetDepthTestMode(CompareMode mode)
 {
     depthTestMode_ = mode;
 }
-
+/// Set pass lighting mode, affects what shader variations will be attempted to be loaded.
 void Pass::SetLightingMode(PassLightingMode mode)
 {
     lightingMode_ = mode;
 }
-
+/// Set depth write on/off.
 void Pass::SetDepthWrite(bool enable)
 {
     depthWrite_ = enable;
 }
-
+/// Set alpha-to-coverage on/off.
 void Pass::SetAlphaToCoverage(bool enable)
 {
     alphaToCoverage_ = enable;
 }
-
-void Pass::SetIsDesktop(bool enable)
-{
-    isDesktop_ = enable;
-}
-
+/// Set vertex shader name.
 void Pass::SetVertexShader(const QString& name)
 {
     vertexShaderName_ = name;
     ReleaseShaders();
 }
-
+/// Set pixel shader name.
 void Pass::SetPixelShader(const QString& name)
 {
     pixelShaderName_ = name;
     ReleaseShaders();
 }
-
+/// Set vertex shader defines. Separate multiple defines with spaces.
 void Pass::SetVertexShaderDefines(const QString& defines)
 {
     vertexShaderDefines_ = defines;
     ReleaseShaders();
 }
-
+/// Set pixel shader defines. Separate multiple defines with spaces.
 void Pass::SetPixelShaderDefines(const QString& defines)
 {
     pixelShaderDefines_ = defines;
     ReleaseShaders();
 }
-
+/// Set vertex shader define excludes. Use to mark defines that the shader code will not recognize, to prevent compiling redundant shader variations.
 void Pass::SetVertexShaderDefineExcludes(const QString& excludes)
 {
     vertexShaderDefineExcludes_ = excludes;
     ReleaseShaders();
 }
-
+/// Set pixel shader define excludes. Use to mark defines that the shader code will not recognize, to prevent compiling redundant shader variations.
 void Pass::SetPixelShaderDefineExcludes(const QString& excludes)
 {
     pixelShaderDefineExcludes_ = excludes;
     ReleaseShaders();
 }
+/// Reset shader pointers.
 void Pass::ReleaseShaders()
 {
     vertexShaders_.clear();
@@ -173,7 +174,7 @@ void Pass::ReleaseShaders()
     extraVertexShaders_.clear();
     extraPixelShaders_.clear();
 }
-
+/// Mark shaders loaded this frame.
 void Pass::MarkShadersLoaded(unsigned frameNumber)
 {
     shadersLoadedFrameNumber_ = frameNumber;
@@ -210,16 +211,16 @@ std::vector<SharedPtr<ShaderVariation> >& Pass::GetVertexShaders(const StringHas
     // If empty hash, return the base shaders
     if (!extraDefinesHash.Value())
         return vertexShaders_;
-    else
-        return extraVertexShaders_[extraDefinesHash];
+	
+	return extraVertexShaders_[extraDefinesHash];
 }
 
 std::vector<SharedPtr<ShaderVariation> >& Pass::GetPixelShaders(const StringHash& extraDefinesHash)
 {
     if (!extraDefinesHash.Value())
         return pixelShaders_;
-    else
-        return extraPixelShaders_[extraDefinesHash];
+	
+	return extraPixelShaders_[extraDefinesHash];
 }
 unsigned Technique::basePassIndex = 0;
 unsigned Technique::alphaPassIndex = 0;
@@ -232,10 +233,8 @@ unsigned Technique::shadowPassIndex = 0;
 HashMap<QString, unsigned> Technique::passIndices;
 
 Technique::Technique(Context* context) :
-    Resource(context),
-    isDesktop_(false)
+    Resource(context)
 {
-    desktopSupport_ = true;
 }
 
 Technique::~Technique()
@@ -259,8 +258,6 @@ bool Technique::BeginLoad(Deserializer& source)
         return false;
 
     XMLElement rootElem = xml->GetRoot();
-    if (rootElem.HasAttribute("desktop"))
-        isDesktop_ = rootElem.GetBool("desktop");
 
     QString globalVS = rootElem.GetAttribute("vs");
     QString globalPS = rootElem.GetAttribute("ps");
@@ -273,85 +270,75 @@ bool Technique::BeginLoad(Deserializer& source)
         globalPSDefines += ' ';
 
     XMLElement passElem = rootElem.GetChild("pass");
-    while (passElem)
+    for (;passElem; passElem = passElem.GetNext("pass"))
     {
-        if (passElem.HasAttribute("name"))
-        {
-            Pass* newPass = CreatePass(passElem.GetAttribute("name"));
+		if (!passElem.HasAttribute("name")) {
+			URHO3D_LOGERROR("Missing pass name");
+			continue;
+		}
 
-            if (passElem.HasAttribute("desktop"))
-                newPass->SetIsDesktop(passElem.GetBool("desktop"));
+	    Pass* newPass = CreatePass(passElem.GetAttribute("name"));
 
-            // Append global defines only when pass does not redefine the shader
-            if (passElem.HasAttribute("vs"))
-            {
-                newPass->SetVertexShader(passElem.GetAttribute("vs"));
-                newPass->SetVertexShaderDefines(passElem.GetAttribute("vsdefines"));
-            }
-            else
-            {
-                newPass->SetVertexShader(globalVS);
-                newPass->SetVertexShaderDefines(globalVSDefines + passElem.GetAttribute("vsdefines"));
-            }
-            if (passElem.HasAttribute("ps"))
-            {
-                newPass->SetPixelShader(passElem.GetAttribute("ps"));
-                newPass->SetPixelShaderDefines(passElem.GetAttribute("psdefines"));
-            }
-            else
-            {
-                newPass->SetPixelShader(globalPS);
-                newPass->SetPixelShaderDefines(globalPSDefines + passElem.GetAttribute("psdefines"));
-            }
+	    // Append global defines only when pass does not redefine the shader
+	    if (passElem.HasAttribute("vs"))
+	    {
+		    newPass->SetVertexShader(passElem.GetAttribute("vs"));
+		    newPass->SetVertexShaderDefines(passElem.GetAttribute("vsdefines"));
+	    }
+	    else
+	    {
+		    newPass->SetVertexShader(globalVS);
+		    newPass->SetVertexShaderDefines(globalVSDefines + passElem.GetAttribute("vsdefines"));
+	    }
+	    if (passElem.HasAttribute("ps"))
+	    {
+		    newPass->SetPixelShader(passElem.GetAttribute("ps"));
+		    newPass->SetPixelShaderDefines(passElem.GetAttribute("psdefines"));
+	    }
+	    else
+	    {
+		    newPass->SetPixelShader(globalPS);
+		    newPass->SetPixelShaderDefines(globalPSDefines + passElem.GetAttribute("psdefines"));
+	    }
 
-            newPass->SetVertexShaderDefineExcludes(passElem.GetAttribute("vsexcludes"));
-            newPass->SetPixelShaderDefineExcludes(passElem.GetAttribute("psexcludes"));
-            if (passElem.HasAttribute("lighting"))
-            {
-                QString lighting = passElem.GetAttributeLower("lighting");
-                newPass->SetLightingMode((PassLightingMode)GetStringListIndex(lighting, lightingModeNames,
-                                                                              LIGHTING_UNLIT));
-            }
+	    newPass->SetVertexShaderDefineExcludes(passElem.GetAttribute("vsexcludes"));
+	    newPass->SetPixelShaderDefineExcludes(passElem.GetAttribute("psexcludes"));
+	    if (passElem.HasAttribute("lighting"))
+	    {
+		    QString lighting = passElem.GetAttributeLower("lighting");
+		    newPass->SetLightingMode((PassLightingMode)GetStringListIndex(lighting, lightingModeNames,
+		                                                                  LIGHTING_UNLIT));
+	    }
 
-            if (passElem.HasAttribute("blend"))
-            {
-                QString blend = passElem.GetAttributeLower("blend");
-                newPass->SetBlendMode((BlendMode)GetStringListIndex(blend, blendModeNames, BLEND_REPLACE));
-            }
+	    if (passElem.HasAttribute("blend"))
+	    {
+		    QString blend = passElem.GetAttributeLower("blend");
+		    newPass->SetBlendMode((BlendMode)GetStringListIndex(blend, blendModeNames, BLEND_REPLACE));
+	    }
 
-            if (passElem.HasAttribute("cull"))
-            {
-                QString cull = passElem.GetAttributeLower("cull");
-                newPass->SetCullMode((CullMode)GetStringListIndex(cull, cullModeNames, MAX_CULLMODES));
-            }
+	    if (passElem.HasAttribute("cull"))
+	    {
+		    QString cull = passElem.GetAttributeLower("cull");
+		    newPass->SetCullMode((CullMode)GetStringListIndex(cull, cullModeNames, MAX_CULLMODES));
+	    }
 
-            if (passElem.HasAttribute("depthtest"))
-            {
-                QString depthTest = passElem.GetAttributeLower("depthtest");
-                if (depthTest == "false")
-                    newPass->SetDepthTestMode(CMP_ALWAYS);
-                else
-                    newPass->SetDepthTestMode((CompareMode)GetStringListIndex(depthTest, compareModeNames, CMP_LESS));
-            }
+	    if (passElem.HasAttribute("depthtest"))
+	    {
+		    QString depthTest = passElem.GetAttributeLower("depthtest");
+		    if (depthTest == "false")
+			    newPass->SetDepthTestMode(CMP_ALWAYS);
+		    else
+			    newPass->SetDepthTestMode((CompareMode)GetStringListIndex(depthTest, compareModeNames, CMP_LESS));
+	    }
 
-            if (passElem.HasAttribute("depthwrite"))
-                newPass->SetDepthWrite(passElem.GetBool("depthwrite"));
+	    if (passElem.HasAttribute("depthwrite"))
+		    newPass->SetDepthWrite(passElem.GetBool("depthwrite"));
 
-            if (passElem.HasAttribute("alphatocoverage"))
-                newPass->SetAlphaToCoverage(passElem.GetBool("alphatocoverage"));
-        }
-        else
-            URHO3D_LOGERROR("Missing pass name");
-
-        passElem = passElem.GetNext("pass");
+	    if (passElem.HasAttribute("alphatocoverage"))
+		    newPass->SetAlphaToCoverage(passElem.GetBool("alphatocoverage"));
     }
 
     return true;
-}
-
-void Technique::SetIsDesktop(bool enable)
-{
-    isDesktop_ = enable;
 }
 
 void Technique::ReleaseShaders()
@@ -365,7 +352,6 @@ void Technique::ReleaseShaders()
 SharedPtr<Technique> Technique::Clone(const QString& cloneName) const
 {
     SharedPtr<Technique> ret(new Technique(context_));
-    ret->SetIsDesktop(isDesktop_);
     ret->SetName(cloneName);
 
     // Deep copy passes
@@ -381,7 +367,6 @@ SharedPtr<Technique> Technique::Clone(const QString& cloneName) const
         newPass->SetLightingMode(srcPass->GetLightingMode());
         newPass->SetDepthWrite(srcPass->GetDepthWrite());
         newPass->SetAlphaToCoverage(srcPass->GetAlphaToCoverage());
-        newPass->SetIsDesktop(srcPass->IsDesktop());
         newPass->SetVertexShader(srcPass->GetVertexShader());
         newPass->SetPixelShader(srcPass->GetPixelShader());
         newPass->SetVertexShaderDefines(srcPass->GetVertexShaderDefines());
@@ -408,7 +393,7 @@ Pass* Technique::CreatePass(const QString& name)
     passes_[passIndex] = newPass;
 
     // Calculate memory use now
-    SetMemoryUse((unsigned)(sizeof(Technique) + GetNumPasses() * sizeof(Pass)));
+    SetMemoryUse(unsigned(sizeof(Technique) + GetNumPasses() * sizeof(Pass)));
     return newPass;
 }
 
@@ -417,7 +402,8 @@ void Technique::RemovePass(const QString& name)
     HashMap<QString, unsigned>::const_iterator i = passIndices.find(name.toLower());
     if (i == passIndices.end())
         return;
-    else if (MAP_VALUE(i) < passes_.size() && passes_[MAP_VALUE(i)].Get())
+
+    if (MAP_VALUE(i) < passes_.size() && passes_[MAP_VALUE(i)].Get())
     {
         passes_[MAP_VALUE(i)].Reset();
         SetMemoryUse((unsigned)(sizeof(Technique) + GetNumPasses() * sizeof(Pass)));
@@ -527,11 +513,8 @@ unsigned Technique::GetPassIndex(const QString& passName)
     HashMap<QString, unsigned>::iterator i = passIndices.find(nameLower);
     if (i != passIndices.end())
         return MAP_VALUE(i);
-    else
-    {
-        unsigned newPassIndex = passIndices.size();
-        passIndices[nameLower] = newPassIndex;
-        return newPassIndex;
-    }
+    unsigned newPassIndex = passIndices.size();
+    passIndices[nameLower] = newPassIndex;
+    return newPassIndex;
 }
 }

@@ -1629,7 +1629,7 @@ unsigned UIElement::GetNumChildren(bool recursive) const
 
 UIElement* UIElement::GetChild(unsigned index) const
 {
-    return index < children_.size() ? children_[index] : (UIElement*)nullptr;
+    return index < children_.size() ? children_[index] : nullptr;
 }
 
 UIElement* UIElement::GetChild(const QString& name, bool recursive) const

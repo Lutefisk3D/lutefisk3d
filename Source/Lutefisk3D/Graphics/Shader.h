@@ -61,7 +61,7 @@ private:
     /// Process source code and include files. Return true if successful.
     bool ProcessSource(QString& code, Deserializer& file);
     /// Sort the defines and strip extra spaces to prevent creation of unnecessary duplicate shader variations.
-    QString NormalizeDefines(const QString& defines);
+    QString NormalizeDefines(const QString& defines) const;
     /// Recalculate the memory used by the shader.
     void RefreshMemoryUse();
 

@@ -925,7 +925,7 @@ void View::GetBatches()
     threadedGeometries_.clear();
     // retrieve default technique.
     const std::vector<TechniqueEntry>& techniques(renderer_->GetDefaultMaterial()->GetTechniques());
-    Technique *default_tech = techniques.empty() ? (Technique *)nullptr : techniques.back().technique_;
+    Technique *default_tech = techniques.empty() ? nullptr : techniques.back().technique_;
 
     ProcessLights();
     GetLightBatches(default_tech);
@@ -1963,11 +1963,11 @@ void View::AllocateScreenBuffers()
     int multiSample = renderTarget_ != nullptr ? renderTarget_->GetMultiSample() : graphics_->GetMultiSample();
     bool autoResolve = renderTarget_ != nullptr ? renderTarget_->GetAutoResolve() : true;
     substituteRenderTarget_ = needSubstitute ? GetRenderSurfaceFromTexture(renderer_->GetScreenBuffer(viewSize_.x_, viewSize_.y_,
-        format, multiSample, autoResolve, false, true, sRGB)) : (RenderSurface*)nullptr;
+        format, multiSample, autoResolve, false, true, sRGB)) : nullptr;
     for (unsigned i = 0; i < MAX_VIEWPORT_TEXTURES; ++i)
     {
         viewportTextures_[i] = i < numViewportTextures ? renderer_->GetScreenBuffer(viewSize_.x_, viewSize_.y_, format, multiSample,
-            autoResolve, false, true, sRGB) : (Texture*)nullptr;
+            autoResolve, false, true, sRGB) : nullptr;
     }
     // If using a substitute render target and pingponging, the substitute can act as the second viewport texture
     if (numViewportTextures == 1 && (substituteRenderTarget_ != nullptr))

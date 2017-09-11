@@ -150,8 +150,7 @@ public:
             auto j = MAP_VALUE(i).find(eventType);
             return j != MAP_VALUE(i).end() ? MAP_VALUE(j) : nullptr;
         }
-        else
-            return nullptr;
+	    return nullptr;
     }
     EventReceiverGroup* GetEventReceivers(StringHash eventType)
     {
@@ -199,7 +198,6 @@ template <class T> void Context::RegisterAttribute(const AttributeInfo& attr) { 
 template <class T> void Context::RemoveAttribute(const char* name) { RemoveAttribute(T::GetTypeStatic(), name); }
 template <class T, class U> void Context::CopyBaseAttributes() { CopyBaseAttributes(T::GetTypeStatic(), U::GetTypeStatic()); }
 template <class T> T* Context::GetSubsystemT() const { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }
-//template <> FileSystem* Context::GetSubsystem<FileSystem>() const { return m_FileSystem.get(); }
 template <class T> AttributeInfo* Context::GetAttribute(const char* name) { return GetAttribute(T::GetTypeStatic(), name); }
 template <class T> void Context::UpdateAttributeDefaultValue(const char* name, const Variant& defaultValue) { UpdateAttributeDefaultValue(T::GetTypeStatic(), name, defaultValue); }
 

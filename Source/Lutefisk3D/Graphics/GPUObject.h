@@ -32,8 +32,6 @@ class Graphics;
 /// API-specific GPU object representation.
 union GPUObjectHandle
 {
-    /// Object pointer (Direct3D.)
-    void* ptr_;
     /// Object name (OpenGL.)
     unsigned name_;
 };

@@ -484,7 +484,7 @@ bool Variant::IsZero() const
         return *reinterpret_cast<const IntVector2*>(&value_) == IntVector2::ZERO;
 
     case VAR_PTR:
-        return *reinterpret_cast<const WeakPtr<RefCounted>*>(&value_) == (RefCounted*)nullptr;
+        return *reinterpret_cast<const WeakPtr<RefCounted>*>(&value_) == nullptr;
 
     case VAR_MATRIX3:
         return *reinterpret_cast<const Matrix3*>(value_.ptr_) == Matrix3::IDENTITY;

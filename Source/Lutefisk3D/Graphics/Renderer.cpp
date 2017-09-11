@@ -357,7 +357,7 @@ void Renderer::SetTextureFilterMode(TextureFilterMode mode)
 
 void Renderer::SetTextureQuality(int quality)
 {
-    quality = Clamp(quality, QUALITY_LOW, QUALITY_HIGH);
+    quality = Clamp<int>(quality, QUALITY_LOW, QUALITY_HIGH);
 
     if (quality != textureQuality_)
     {
@@ -368,7 +368,7 @@ void Renderer::SetTextureQuality(int quality)
 
 void Renderer::SetMaterialQuality(int quality)
 {
-    quality = Clamp(quality, QUALITY_LOW, QUALITY_MAX);
+    quality = Clamp<int>(quality, QUALITY_LOW, QUALITY_MAX);
 
     if (quality != materialQuality_)
     {
@@ -558,7 +558,7 @@ void Renderer::ApplyShadowMapFilter(View* view, Texture2D* shadowMap, float blur
 }
 Viewport* Renderer::GetViewport(unsigned index) const
 {
-    return index < viewports_.size() ? viewports_[index] : (Viewport*)nullptr;
+    return index < viewports_.size() ? viewports_[index] : nullptr;
 }
 
 Viewport* Renderer::GetViewportForScene(Scene* scene, unsigned index) const
@@ -790,20 +790,20 @@ void Renderer::DrawDebugGeometry(bool depthTest)
         const std::vector<Drawable*>& geometries = view->GetGeometries();
         const std::vector<Light*>& lights = view->GetLights();
 
-        for (unsigned i = 0; i < geometries.size(); ++i)
+        for (Drawable *draw : geometries)
         {
-            if (!processedGeometries.contains(geometries[i]))
+            if (!processedGeometries.contains(draw))
             {
-                geometries[i]->DrawDebugGeometry(debug, depthTest);
-                processedGeometries.insert(geometries[i]);
+				draw->DrawDebugGeometry(debug, depthTest);
+                processedGeometries.insert(draw);
             }
         }
-        for (unsigned i = 0; i < lights.size(); ++i)
+        for (Light *lght : lights)
         {
-            if (!processedLights.contains(lights[i]))
+            if (!processedLights.contains(lght))
             {
-                lights[i]->DrawDebugGeometry(debug, depthTest);
-                processedLights.insert(lights[i]);
+				lght->DrawDebugGeometry(debug, depthTest);
+                processedLights.insert(lght);
             }
         }
     }
@@ -1023,7 +1023,7 @@ Texture* Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, int
     if (multiSample == 1)
         autoResolve = false;
 
-    long long searchKey = ((long long)format << 32) | (multiSample << 24) | (width << 12) | height;
+	int64_t searchKey = (int64_t(format) << 32) | (multiSample << 24) | (width << 12) | height;
     if (filtered)
         searchKey |= 0x8000000000000000LL;
     if (srgb)
@@ -1035,7 +1035,7 @@ Texture* Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, int
 
     // Add persistent key if defined
     if (persistentKey)
-        searchKey += ((long long)persistentKey << 32);
+        searchKey += (int64_t(persistentKey) << 32);
 
     // If new size or format, initialize the allocation stats
     if (screenBuffers_.find(searchKey) == screenBuffers_.end())
@@ -1101,11 +1101,9 @@ RenderSurface* Renderer::GetDepthStencil(int width, int height, int multiSample,
     // (when using OpenGL Graphics will allocate right size surfaces on demand to emulate Direct3D9)
     if (width == graphics_->GetWidth() && height == graphics_->GetHeight() && multiSample == 1 && graphics_->GetMultiSample() == multiSample)
         return nullptr;
-    else
-    {
-        return static_cast<Texture2D*>(GetScreenBuffer(width, height, Graphics::GetDepthStencilFormat(), multiSample, autoResolve,
-            false, false, false))->GetRenderSurface();
-    }
+	
+	return static_cast<Texture2D*>(GetScreenBuffer(width, height, Graphics::GetDepthStencilFormat(), multiSample, autoResolve,
+	                                               false, false, false))->GetRenderSurface();
 }
 
 OcclusionBuffer* Renderer::GetOcclusionBuffer(Camera* camera)
@@ -1156,15 +1154,15 @@ void Renderer::StorePreparedView(View* view, Camera* camera)
 View* Renderer::GetPreparedView(Camera* camera)
 {
     HashMap<Camera*, WeakPtr<View> >::iterator i = preparedViews_.find(camera);
-    return i != preparedViews_.end() ? MAP_VALUE(i) : (View*)nullptr;
+    return i != preparedViews_.end() ? MAP_VALUE(i) : nullptr;
 }
 
 View* Renderer::GetActualView(View* view)
 {
     if (view && view->GetSourceView())
         return view->GetSourceView();
-    else
-        return view;
+	
+	return view;
 }
 
 void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, const BatchQueue& queue, bool allowShadows)
@@ -1205,9 +1203,8 @@ void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, const BatchQ
             }
 
             Light* light = lightQueue->light_;
-            unsigned vsi = 0;
-            unsigned psi = 0;
-            vsi = batch.geometryType_ * MAX_LIGHT_VS_VARIATIONS;
+	        unsigned psi = 0;
+            unsigned vsi = batch.geometryType_ * MAX_LIGHT_VS_VARIATIONS;
 
             bool materialHasSpecular = batch.material_ ? batch.material_->GetSpecular() : true;
             if (specularLighting_ && light->GetSpecularIntensity() > 0.0f && materialHasSpecular)
@@ -1382,73 +1379,73 @@ void Renderer::OptimizeLightByScissor(Light* light, Camera* camera)
 
 void Renderer::OptimizeLightByStencil(Light* light, Camera* camera)
 {
-    if (light)
-    {
-        LightType type = light->GetLightType();
-        if (type == LIGHT_DIRECTIONAL)
-        {
-            graphics_->SetStencilTest(false);
-            return;
-        }
+	if (!light) {
+		graphics_->SetStencilTest(false);
+		return;
+	}
 
-        Geometry* geometry = GetLightGeometry(light);
-        const Matrix3x4& view = camera->GetView();
-        const Matrix4& projection = camera->GetGPUProjection();
-        Vector3 cameraPos = camera->GetNode()->GetWorldPosition();
-        float lightDist;
+	LightType type = light->GetLightType();
+	if (type == LIGHT_DIRECTIONAL)
+	{
+		graphics_->SetStencilTest(false);
+		return;
+	}
 
-        if (type == LIGHT_POINT)
-            lightDist = Sphere(light->GetNode()->GetWorldPosition(), light->GetRange() * 1.25f).Distance(cameraPos);
-        else
-            lightDist = light->GetFrustum().Distance(cameraPos);
+	Geometry* geometry = GetLightGeometry(light);
+	const Matrix3x4& view = camera->GetView();
+	const Matrix4& projection = camera->GetGPUProjection();
+	Vector3 cameraPos = camera->GetNode()->GetWorldPosition();
+	float lightDist;
 
-        // If the camera is actually inside the light volume, do not draw to stencil as it would waste fillrate
-        if (lightDist < M_EPSILON)
-        {
-            graphics_->SetStencilTest(false);
-            return;
-        }
+	if (type == LIGHT_POINT)
+		lightDist = Sphere(light->GetNode()->GetWorldPosition(), light->GetRange() * 1.25f).Distance(cameraPos);
+	else
+		lightDist = light->GetFrustum().Distance(cameraPos);
 
-        // If the stencil value has wrapped, clear the whole stencil first
-        if (!lightStencilValue_)
-        {
-            graphics_->Clear(CLEAR_STENCIL);
-            lightStencilValue_ = 1;
-        }
+	// If the camera is actually inside the light volume, do not draw to stencil as it would waste fillrate
+	if (lightDist < M_EPSILON)
+	{
+		graphics_->SetStencilTest(false);
+		return;
+	}
 
-        // If possible, render the stencil volume front faces. However, close to the near clip plane render back faces instead
-        // to avoid clipping.
-        if (lightDist < camera->GetNearClip() * 2.0f)
-        {
-            SetCullMode(CULL_CW, camera);
-            graphics_->SetDepthTest(CMP_GREATER);
-        }
-        else
-        {
-            SetCullMode(CULL_CCW, camera);
-            graphics_->SetDepthTest(CMP_LESSEQUAL);
-        }
+	// If the stencil value has wrapped, clear the whole stencil first
+	if (!lightStencilValue_)
+	{
+		graphics_->Clear(CLEAR_STENCIL);
+		lightStencilValue_ = 1;
+	}
 
-        graphics_->SetColorWrite(false);
-        graphics_->SetDepthWrite(false);
-        graphics_->SetStencilTest(true, CMP_ALWAYS, OP_REF, OP_KEEP, OP_KEEP, lightStencilValue_);
-        graphics_->SetShaders(graphics_->GetShader(VS, "Stencil"), graphics_->GetShader(PS, "Stencil"));
-        graphics_->SetShaderParameter(VSP_VIEW, view);
-        graphics_->SetShaderParameter(VSP_VIEWINV, camera->GetEffectiveWorldTransform());
-        graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * view);
-        graphics_->SetShaderParameter(VSP_MODEL, light->GetVolumeTransform(camera));
+	// If possible, render the stencil volume front faces. However, close to the near clip plane render back faces instead
+	// to avoid clipping.
+	if (lightDist < camera->GetNearClip() * 2.0f)
+	{
+		SetCullMode(CULL_CW, camera);
+		graphics_->SetDepthTest(CMP_GREATER);
+	}
+	else
+	{
+		SetCullMode(CULL_CCW, camera);
+		graphics_->SetDepthTest(CMP_LESSEQUAL);
+	}
 
-        geometry->Draw(graphics_);
+	graphics_->SetColorWrite(false);
+	graphics_->SetDepthWrite(false);
+	graphics_->SetStencilTest(true, CMP_ALWAYS, OP_REF, OP_KEEP, OP_KEEP, lightStencilValue_);
+	graphics_->SetShaders(graphics_->GetShader(VS, "Stencil"), graphics_->GetShader(PS, "Stencil"));
+	graphics_->SetShaderParameter(VSP_VIEW, view);
+	graphics_->SetShaderParameter(VSP_VIEWINV, camera->GetEffectiveWorldTransform());
+	graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * view);
+	graphics_->SetShaderParameter(VSP_MODEL, light->GetVolumeTransform(camera));
 
-        graphics_->ClearTransformSources();
-        graphics_->SetColorWrite(true);
-        graphics_->SetStencilTest(true, CMP_EQUAL, OP_KEEP, OP_KEEP, OP_KEEP, lightStencilValue_);
+	geometry->Draw(graphics_);
 
-        // Increase stencil value for next light
-        ++lightStencilValue_;
-    }
-    else
-        graphics_->SetStencilTest(false);
+	graphics_->ClearTransformSources();
+	graphics_->SetColorWrite(true);
+	graphics_->SetStencilTest(true, CMP_EQUAL, OP_KEEP, OP_KEEP, OP_KEEP, lightStencilValue_);
+
+	// Increase stencil value for next light
+	++lightStencilValue_;
 }
 
 const Rect& Renderer::GetLightScissor(Light* light, Camera* camera)

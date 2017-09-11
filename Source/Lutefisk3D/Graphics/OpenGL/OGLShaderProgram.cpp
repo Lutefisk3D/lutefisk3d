@@ -70,8 +70,9 @@ ShaderProgram::ShaderProgram(Graphics* graphics, ShaderVariation* vertexShader, 
 
 ShaderProgram::~ShaderProgram()
 {
-    Release();
+	ShaderProgram::Release();
 }
+/// Mark the GPU resource destroyed on context destruction.
 void ShaderProgram::OnDeviceLost()
 {
     GPUObject::OnDeviceLost();
@@ -82,35 +83,32 @@ void ShaderProgram::OnDeviceLost()
 
     linkerOutput_.clear();
 }
-
+/// Release shader program.
 void ShaderProgram::Release()
 {
-    if (object_)
-    {
-        if (!graphics_)
-            return;
+    if (!object_ || !graphics_)
+		return;
 
-        if (!graphics_->IsDeviceLost())
-        {
-            if (graphics_->GetShaderProgram() == this)
-                graphics_->SetShaders(nullptr, nullptr);
+	if (!graphics_->IsDeviceLost())
+	{
+		if (graphics_->GetShaderProgram() == this)
+			graphics_->SetShaders(nullptr, nullptr);
 
-            gl::glDeleteProgram(object_);
-        }
+		gl::glDeleteProgram(object_);
+	}
 
-        object_ = 0;
-        linkerOutput_.clear();
-        shaderParameters_.clear();
-        vertexAttributes_.clear();
-        usedVertexAttributes_ = 0;
+	object_ = 0;
+	linkerOutput_.clear();
+	shaderParameters_.clear();
+	vertexAttributes_.clear();
+	usedVertexAttributes_ = 0;
 
-        for (auto & elem : useTextureUnit_)
-            elem = false;
-        for (unsigned i = 0; i < MAX_SHADER_PARAMETER_GROUPS; ++i)
-            constantBuffers_[i].Reset();
-    }
+	for (auto & elem : useTextureUnit_)
+		elem = false;
+	for (unsigned i = 0; i < MAX_SHADER_PARAMETER_GROUPS; ++i)
+		constantBuffers_[i].Reset();
 }
-
+/// Link the shaders and examine the uniforms and samplers used. Return true if successful.
 bool ShaderProgram::Link()
 {
     Release();
@@ -162,17 +160,17 @@ bool ShaderProgram::Link()
 
         QString name = QString::fromLatin1(nameBuffer, nameLength);
         VertexElementSemantic semantic = MAX_VERTEX_ELEMENT_SEMANTICS;
-        unsigned char semanticIndex = 0;
+        uint8_t semanticIndex = 0;
 
         // Go in reverse order so that "binormal" is detected before "normal"
         for (unsigned j = MAX_VERTEX_ELEMENT_SEMANTICS - 1; j < MAX_VERTEX_ELEMENT_SEMANTICS; --j)
         {
             if (name.contains(ShaderVariation::elementSemanticNames[j], Qt::CaseInsensitive))
             {
-                semantic = (VertexElementSemantic)j;
+                semantic = static_cast<VertexElementSemantic>(j);
                 unsigned index = NumberPostfix(name);
                 if (index != M_MAX_UNSIGNED)
-                    semanticIndex = (unsigned char)index;
+                    semanticIndex = static_cast<uint8_t>(index);
                 break;
             }
         }
@@ -185,7 +183,7 @@ bool ShaderProgram::Link()
         }
 
         int location = glGetAttribLocation(object_, qPrintable(name));
-        vertexAttributes_[std::make_pair((unsigned char)semantic, semanticIndex)] = location;
+        vertexAttributes_[std::make_pair(uint8_t(semantic), semanticIndex)] = location;
         usedVertexAttributes_ |= (1 << location);
     }
 
@@ -202,7 +200,7 @@ bool ShaderProgram::Link()
 
         QString name = QString::fromLatin1(nameBuffer, nameLength);
 
-        unsigned blockIndex = glGetUniformBlockIndex(object_, qPrintable(name));
+        unsigned blockIndex = glGetUniformBlockIndex(object_, nameBuffer);
         unsigned group = M_MAX_UNSIGNED;
 
         // Try to recognize the use of the buffer from its name
@@ -323,30 +321,31 @@ bool ShaderProgram::Link()
     return true;
 }
 
+/// Return the vertex shader.
 ShaderVariation* ShaderProgram::GetVertexShader() const
 {
     return vertexShader_;
 }
 
+/// Return the pixel shader.
 ShaderVariation* ShaderProgram::GetPixelShader() const
 {
     return pixelShader_;
 }
-
+/// Return whether uses a shader parameter.
 bool ShaderProgram::HasParameter(StringHash param) const
 {
     return shaderParameters_.contains(param);
 }
-
+/// Return the info for a shader parameter, or null if does not exist.
 const ShaderParameter* ShaderProgram::GetParameter(StringHash param) const
 {
     auto i = shaderParameters_.find(param);
     if (i != shaderParameters_.end())
         return &(MAP_VALUE(i));
-    else
-        return nullptr;
+    return nullptr;
 }
-
+/// Check whether a shader parameter group needs update. Does not actually check whether parameters exist in the shaders.
 bool ShaderProgram::NeedParameterUpdate(ShaderParameterGroup group, const void* source)
 {
     // If global framenumber has changed, invalidate all per-program parameter sources now
@@ -376,7 +375,7 @@ bool ShaderProgram::NeedParameterUpdate(ShaderParameterGroup group, const void* 
 
     return needUpdate;
 }
-
+/// Clear a parameter source. Affects only the current shader program if appropriate.
 void ShaderProgram::ClearParameterSource(ShaderParameterGroup group)
 {
     // The shader program may use a mixture of constant buffers and individual uniforms even in the same group
@@ -388,7 +387,7 @@ void ShaderProgram::ClearParameterSource(ShaderParameterGroup group)
     if (useIndividual)
         parameterSources_[group] = (const void*)M_MAX_UNSIGNED;
 }
-
+/// Clear all parameter sources from all shader programs by incrementing the global parameter source framenumber.
 void ShaderProgram::ClearParameterSources()
 {
     ++globalFrameNumber;
@@ -398,7 +397,7 @@ void ShaderProgram::ClearParameterSources()
     for (auto & globalParameterSource : globalParameterSources)
         globalParameterSource = (const void*)M_MAX_UNSIGNED;
 }
-
+/// Clear a global parameter source when constant buffers change.
 void ShaderProgram::ClearGlobalParameterSource(ShaderParameterGroup group)
 {
     globalParameterSources[group] = (const void*)M_MAX_UNSIGNED;

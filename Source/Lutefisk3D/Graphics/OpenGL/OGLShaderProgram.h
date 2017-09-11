@@ -40,46 +40,28 @@ struct ShaderParameter;
 class LUTEFISK3D_EXPORT ShaderProgram : public RefCounted, public GPUObject
 {
 public:
-    /// Construct.
     ShaderProgram(Graphics* graphics, ShaderVariation* vertexShader, ShaderVariation* pixelShader);
-    /// Destruct.
     ~ShaderProgram();
-
-    /// Mark the GPU resource destroyed on context destruction.
-    virtual void OnDeviceLost();
-    /// Release shader program.
-    virtual void Release();
-
-    /// Link the shaders and examine the uniforms and samplers used. Return true if successful.
+	void OnDeviceLost() override;
+	void Release() override;
     bool Link();
-
-    /// Return the vertex shader.
     ShaderVariation* GetVertexShader() const;
-    /// Return the pixel shader.
     ShaderVariation* GetPixelShader() const;
-    /// Return whether uses a shader parameter.
     bool HasParameter(StringHash param) const;
     /// Return whether uses a texture unit.
     bool HasTextureUnit(TextureUnit unit) const { return useTextureUnit_[unit]; }
-    /// Return the info for a shader parameter, or null if does not exist.
     const ShaderParameter* GetParameter(StringHash param) const;
     /// Return linker output.
     const QString& GetLinkerOutput() const { return linkerOutput_; }
     /// Return semantic to vertex attributes location mappings used by the shader.
-    const HashMap<std::pair<unsigned char, unsigned char>, unsigned>& GetVertexAttributes() const { return vertexAttributes_; }
+    const HashMap<std::pair<uint8_t, uint8_t>, unsigned>& GetVertexAttributes() const { return vertexAttributes_; }
     /// Return attribute location use bitmask.
     unsigned GetUsedVertexAttributes() const { return usedVertexAttributes_; }
     /// Return all constant buffers.
     const SharedPtr<ConstantBuffer>* GetConstantBuffers() const { return &constantBuffers_[0]; }
-
-    /// Check whether a shader parameter group needs update. Does not actually check whether parameters exist in the shaders.
     bool NeedParameterUpdate(ShaderParameterGroup group, const void* source);
-    /// Clear a parameter source. Affects only the current shader program if appropriate.
     void ClearParameterSource(ShaderParameterGroup group);
-
-    /// Clear all parameter sources from all shader programs by incrementing the global parameter source framenumber.
     static void ClearParameterSources();
-    /// Clear a global parameter source when constant buffers change.
     static void ClearGlobalParameterSource(ShaderParameterGroup group);
 
 private:
@@ -92,7 +74,7 @@ private:
     /// Texture unit use.
     bool useTextureUnit_[MAX_TEXTURE_UNITS];
     /// Vertex attributes.
-    HashMap<std::pair<unsigned char, unsigned char>, unsigned> vertexAttributes_;
+    HashMap<std::pair<uint8_t, uint8_t>, unsigned> vertexAttributes_;
     /// Used vertex attribute location bitmask.
     unsigned usedVertexAttributes_;
     /// Constant buffers by binding index.
@@ -103,7 +85,6 @@ private:
     QString linkerOutput_;
     /// Shader parameter source framenumber.
     unsigned frameNumber_;
-
     /// Global shader parameter source framenumber.
     static unsigned globalFrameNumber;
     /// Remembered global shader parameter sources for constant buffer mode.

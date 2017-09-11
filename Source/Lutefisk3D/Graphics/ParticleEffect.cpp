@@ -771,12 +771,12 @@ SharedPtr<ParticleEffect> ParticleEffect::Clone(const QString& cloneName) const
 
 const ColorFrame* ParticleEffect::GetColorFrame(unsigned index) const
 {
-    return index < colorFrames_.size() ? &colorFrames_[index] : (ColorFrame*)nullptr;
+    return index < colorFrames_.size() ? &colorFrames_[index] : nullptr;
 }
 
 const TextureFrame* ParticleEffect::GetTextureFrame(unsigned index) const
 {
-    return index < textureFrames_.size() ? &textureFrames_[index] : (TextureFrame*)nullptr;
+    return index < textureFrames_.size() ? &textureFrames_[index] : nullptr;
 }
 
 Vector3 ParticleEffect::GetRandomDirection() const

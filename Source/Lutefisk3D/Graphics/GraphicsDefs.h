@@ -412,14 +412,18 @@ extern LUTEFISK3D_EXPORT const StringHash PSP_ZONEMAX;
 // Scale calculation from bounding box diagonal.
 extern LUTEFISK3D_EXPORT const Vector3 DOT_SCALE;
 
-static const int QUALITY_LOW = 0;
-static const int QUALITY_MEDIUM = 1;
-static const int QUALITY_HIGH = 2;
-static const int QUALITY_MAX = 15;
-
-static const unsigned CLEAR_COLOR = 0x1;
-static const unsigned CLEAR_DEPTH = 0x2;
-static const unsigned CLEAR_STENCIL = 0x4;
+enum eQuality : int {
+	QUALITY_LOW = 0,
+	QUALITY_MEDIUM = 1,
+	QUALITY_HIGH = 2,
+	QUALITY_MAX = 15
+};
+enum eClearBF : uint32_t
+{
+	CLEAR_COLOR = 0x1,
+	CLEAR_DEPTH = 0x2,
+	CLEAR_STENCIL = 0x4,
+};
 
 // Legacy vertex element bitmasks.
 static const unsigned MASK_NONE = 0x0;

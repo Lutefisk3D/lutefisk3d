@@ -281,59 +281,57 @@ bool Material::EndLoad()
     loadJSONFile_.Reset();
     return success;
 }
-
+/// Helper function for loading XML files.
 bool Material::BeginLoadXML(Deserializer& source)
 {
     ResetToDefaults();
     loadXMLFile_ = new XMLFile(context_);
-    if (loadXMLFile_->Load(source))
-    {
-        // If async loading, scan the XML content beforehand for technique & texture resources
-        // and request them to also be loaded. Can not do anything else at this point
-        if (GetAsyncLoadState() == ASYNC_LOADING)
-        {
-            ResourceCache* cache =context_->m_ResourceCache.get();
-            XMLElement rootElem = loadXMLFile_->GetRoot();
-            XMLElement techniqueElem = rootElem.GetChild("technique");
-            while (techniqueElem)
-            {
-                cache->BackgroundLoadResource<Technique>(techniqueElem.GetAttribute("name"), true, this);
-                techniqueElem = techniqueElem.GetNext("technique");
-            }
+    if (!loadXMLFile_->Load(source))
+		return false;
+	// If async loading, scan the XML content beforehand for technique & texture resources
+	// and request them to also be loaded. Can not do anything else at this point
+	if (GetAsyncLoadState() == ASYNC_LOADING)
+	{
+		ResourceCache* cache =context_->m_ResourceCache.get();
+		XMLElement rootElem = loadXMLFile_->GetRoot();
+		XMLElement techniqueElem = rootElem.GetChild("technique");
+		while (techniqueElem)
+		{
+			cache->BackgroundLoadResource<Technique>(techniqueElem.GetAttribute("name"), true, this);
+			techniqueElem = techniqueElem.GetNext("technique");
+		}
 
-            XMLElement textureElem = rootElem.GetChild("texture");
-            while (textureElem)
-            {
-                QString name = textureElem.GetAttribute("name");
-                // Detect cube maps and arrays by file extension: they are defined by an XML file
-                if (GetExtension(name) == ".xml")
-                {
-                    StringHash type = ParseTextureTypeXml(cache, name);
-                    if (!type && textureElem.HasAttribute("unit"))
-                    {
-                        TextureUnit unit = ParseTextureUnitName(textureElem.GetAttribute("unit"));
-                        if (unit == TU_VOLUMEMAP)
-                            type = Texture3D::GetTypeStatic();
-                    }
+		XMLElement textureElem = rootElem.GetChild("texture");
+		while (textureElem)
+		{
+			QString name = textureElem.GetAttribute("name");
+			// Detect cube maps and arrays by file extension: they are defined by an XML file
+			if (GetExtension(name) == ".xml")
+			{
+				StringHash type = ParseTextureTypeXml(cache, name);
+				if (!type && textureElem.HasAttribute("unit"))
+				{
+					TextureUnit unit = ParseTextureUnitName(textureElem.GetAttribute("unit"));
+					if (unit == TU_VOLUMEMAP)
+						type = Texture3D::GetTypeStatic();
+				}
 
-                    if (type == Texture3D::GetTypeStatic())
-                        cache->BackgroundLoadResource<Texture3D>(name, true, this);
-                    else if (type == Texture2DArray::GetTypeStatic())
-                        cache->BackgroundLoadResource<Texture2DArray>(name, true, this);
-                    else
-                        cache->BackgroundLoadResource<TextureCube>(name, true, this);
-                }
-                else
-                    cache->BackgroundLoadResource<Texture2D>(name, true, this);
-                textureElem = textureElem.GetNext("texture");
-            }
-        }
+				if (type == Texture3D::GetTypeStatic())
+					cache->BackgroundLoadResource<Texture3D>(name, true, this);
+				else if (type == Texture2DArray::GetTypeStatic())
+					cache->BackgroundLoadResource<Texture2DArray>(name, true, this);
+				else
+					cache->BackgroundLoadResource<TextureCube>(name, true, this);
+			}
+			else
+				cache->BackgroundLoadResource<Texture2D>(name, true, this);
+			textureElem = textureElem.GetNext("texture");
+		}
+	}
 
-        return true;
-    }
-    return false;
+	return true;
 }
-
+/// Helper function for loading JSON files.
 bool Material::BeginLoadJSON(Deserializer& source)
 {
     // Attempt to load a JSON file
@@ -342,54 +340,52 @@ bool Material::BeginLoadJSON(Deserializer& source)
 
     // Attempt to load from JSON file instead
     loadJSONFile_ = new JSONFile(context_);
-    if (loadJSONFile_->Load(source))
-    {
-        // If async loading, scan the XML content beforehand for technique & texture resources
-        // and request them to also be loaded. Can not do anything else at this point
-        if (GetAsyncLoadState() == ASYNC_LOADING)
-        {
-            ResourceCache* cache =context_->m_ResourceCache.get();
-            const JSONValue& rootVal = loadJSONFile_->GetRoot();
+    if (!loadJSONFile_->Load(source))
+		return false;
 
-            JSONArray techniqueArray = rootVal.Get("techniques").GetArray();
-            for (const JSONValue &techVal : techniqueArray)
-            {
-                cache->BackgroundLoadResource<Technique>(techVal.Get("name").GetString(), true, this);
-            }
+	// If async loading, scan the XML content beforehand for technique & texture resources
+	// and request them to also be loaded. Can not do anything else at this point
+	if (GetAsyncLoadState() == ASYNC_LOADING)
+	{
+		ResourceCache* cache =context_->m_ResourceCache.get();
+		const JSONValue& rootVal = loadJSONFile_->GetRoot();
 
-            JSONObject textureObject = rootVal.Get("textures").GetObject();
-            for (JSONObject::const_iterator it = textureObject.begin(); it != textureObject.end(); ++it)
-            {
-                QString  unitString = it->first;
-                QString  name = it->second.GetString();
-                // Detect cube maps and arrays by file extension: they are defined by an XML file
-                if (GetExtension(name) == ".xml")
-                {
-                    StringHash type = ParseTextureTypeXml(cache, name);
-                    if (!type && !unitString.isEmpty())
-                    {
-                        TextureUnit unit = ParseTextureUnitName(unitString);
-                        if (unit == TU_VOLUMEMAP)
-                            type = Texture3D::GetTypeStatic();
-                    }
+		JSONArray techniqueArray = rootVal.Get("techniques").GetArray();
+		for (const JSONValue &techVal : techniqueArray)
+		{
+			cache->BackgroundLoadResource<Technique>(techVal.Get("name").GetString(), true, this);
+		}
 
-                    if (type == Texture3D::GetTypeStatic())
-                        cache->BackgroundLoadResource<Texture3D>(name, true, this);
-                    else if (type == Texture2DArray::GetTypeStatic())
-                        cache->BackgroundLoadResource<Texture2DArray>(name, true, this);
-                    else
-                        cache->BackgroundLoadResource<TextureCube>(name, true, this);
-                }
-                else
-                    cache->BackgroundLoadResource<Texture2D>(name, true, this);
-            }
-        }
+		JSONObject textureObject = rootVal.Get("textures").GetObject();
+		for (JSONObject::const_iterator it = textureObject.begin(); it != textureObject.end(); ++it)
+		{
+			QString  unitString = it->first;
+			QString  name = it->second.GetString();
+			// Detect cube maps and arrays by file extension: they are defined by an XML file
+			if (GetExtension(name) == ".xml")
+			{
+				StringHash type = ParseTextureTypeXml(cache, name);
+				if (!type && !unitString.isEmpty())
+				{
+					TextureUnit unit = ParseTextureUnitName(unitString);
+					if (unit == TU_VOLUMEMAP)
+						type = Texture3D::GetTypeStatic();
+				}
 
-        // JSON material was successfully loaded
-        return true;
-    }
+				if (type == Texture3D::GetTypeStatic())
+					cache->BackgroundLoadResource<Texture3D>(name, true, this);
+				else if (type == Texture2DArray::GetTypeStatic())
+					cache->BackgroundLoadResource<Texture2DArray>(name, true, this);
+				else
+					cache->BackgroundLoadResource<TextureCube>(name, true, this);
+			}
+			else
+				cache->BackgroundLoadResource<Texture2D>(name, true, this);
+		}
+	}
 
-    return false;
+	// JSON material was successfully loaded
+	return true;
 }
 
 bool Material::Save(Serializer& dest) const
@@ -844,8 +840,7 @@ bool Material::Save(JSONValue& dest) const
 
     // Write shader parameters
     JSONValue shaderParamsVal;
-    for (HashMap<StringHash, MaterialShaderParameter>::const_iterator j = shaderParameters_.begin();
-         j != shaderParameters_.end(); ++j)
+    for (auto j = shaderParameters_.cbegin(); j != shaderParameters_.cend(); ++j)
     {
         if (j->second.value_.GetType() != VAR_BUFFER)
             shaderParamsVal.Set(j->second.name_, j->second.value_.ToString());
@@ -1001,14 +996,14 @@ void Material::SetShaderParameterAnimation(const QString& name, ValueAnimation* 
     }
 }
 
-void Material::SetShaderParameterAnimationWrapMode(const QString& name, WrapMode wrapMode)
+void Material::SetShaderParameterAnimationWrapMode(const QString& name, WrapMode wrapMode) const
 {
     ShaderParameterAnimationInfo* info = GetShaderParameterAnimationInfo(name);
     if (info)
         info->SetWrapMode(wrapMode);
 }
 
-void Material::SetShaderParameterAnimationSpeed(const QString& name, float speed)
+void Material::SetShaderParameterAnimationSpeed(const QString& name, float speed) const
 {
     ShaderParameterAnimationInfo* info = GetShaderParameterAnimationInfo(name);
     if (info)
@@ -1134,22 +1129,22 @@ SharedPtr<Material> Material::Clone(const QString& cloneName) const
 {
     SharedPtr<Material> ret(new Material(context_));
 
-    ret->SetName(cloneName);
-    ret->techniques_ = techniques_;
-    ret->vertexShaderDefines_ = vertexShaderDefines_;
-    ret->pixelShaderDefines_ = pixelShaderDefines_;
-    ret->shaderParameters_ = shaderParameters_;
-    ret->shaderParameterHash_ = shaderParameterHash_;
-    ret->textures_ = textures_;
-    ret->depthBias_ = depthBias_;
-    ret->alphaToCoverage_ = alphaToCoverage_;
-    ret->lineAntiAlias_ = lineAntiAlias_;
-    ret->occlusion_ = occlusion_;
-    ret->specular_ = specular_;
-    ret->cullMode_ = cullMode_;
-    ret->shadowCullMode_ = shadowCullMode_;
-    ret->fillMode_ = fillMode_;
-    ret->renderOrder_ = renderOrder_;
+	ret->SetName(cloneName);
+	ret->techniques_ = techniques_;
+	ret->vertexShaderDefines_ = vertexShaderDefines_;
+	ret->pixelShaderDefines_ = pixelShaderDefines_;
+	ret->shaderParameters_ = shaderParameters_;
+	ret->shaderParameterHash_ = shaderParameterHash_;
+	ret->textures_ = textures_;
+	ret->depthBias_ = depthBias_;
+	ret->alphaToCoverage_ = alphaToCoverage_;
+	ret->lineAntiAlias_ = lineAntiAlias_;
+	ret->occlusion_ = occlusion_;
+	ret->specular_ = specular_;
+	ret->cullMode_ = cullMode_;
+	ret->shadowCullMode_ = shadowCullMode_;
+	ret->fillMode_ = fillMode_;
+	ret->renderOrder_ = renderOrder_;
 
     ret->RefreshMemoryUse();
 
@@ -1173,19 +1168,19 @@ const TechniqueEntry& Material::GetTechniqueEntry(unsigned index) const
 
 Technique* Material::GetTechnique(unsigned index) const
 {
-    return index < techniques_.size() ? techniques_[index].technique_ : (Technique*)nullptr;
+    return index < techniques_.size() ? techniques_[index].technique_ : nullptr;
 }
 
 Pass* Material::GetPass(unsigned index, const QString& passName) const
 {
-    Technique* tech = index < techniques_.size() ? techniques_[index].technique_ : (Technique*)nullptr;
+    Technique* tech = index < techniques_.size() ? techniques_[index].technique_ : nullptr;
     return tech ? tech->GetPass(passName) : nullptr;
 }
 
 Texture* Material::GetTexture(TextureUnit unit) const
 {
     HashMap<TextureUnit, SharedPtr<Texture> >::const_iterator i = textures_.find(unit);
-    return i != textures_.end() ? MAP_VALUE(i).Get() : (Texture*)nullptr;
+    return i != textures_.end() ? MAP_VALUE(i).Get() : nullptr;
 }
 
 const Variant& Material::GetShaderParameter(const QString& name) const
@@ -1230,7 +1225,7 @@ Variant Material::ParseShaderParameterValue(const QString& value)
     else
         return ToVectorVariant(valueTrimmed);
 }
-
+/// Reset to defaults.
 void Material::ResetToDefaults()
 {
     // Needs to be a no-op when async loading, as this does a GetResource() which is not allowed from worker threads
@@ -1270,13 +1265,11 @@ void Material::ResetToDefaults()
     RefreshShaderParameterHash();
     RefreshMemoryUse();
 }
-
+/// Recalculate shader parameter hash.
 void Material::RefreshShaderParameterHash()
 {
     VectorBuffer temp;
-    for (HashMap<StringHash, MaterialShaderParameter>::const_iterator i = shaderParameters_.begin();
-         i != shaderParameters_.end();
-         ++i)
+    for (auto i = shaderParameters_.begin(); i != shaderParameters_.end(); ++i)
     {
         temp.WriteStringHash(MAP_KEY(i));
         temp.WriteVariant(MAP_VALUE(i).value_);
@@ -1288,6 +1281,7 @@ void Material::RefreshShaderParameterHash()
     for (unsigned i = 0; i < dataSize; ++i)
         shaderParameterHash_ = SDBMHash(shaderParameterHash_, data[i]);
 }
+/// Recalculate the memory used by the material.
 void Material::RefreshMemoryUse()
 {
     unsigned memoryUse = sizeof(Material);
@@ -1298,7 +1292,7 @@ void Material::RefreshMemoryUse()
 
     SetMemoryUse(memoryUse);
 }
-
+/// Return shader parameter animation info.
 ShaderParameterAnimationInfo* Material::GetShaderParameterAnimationInfo(const QString& name) const
 {
     StringHash nameHash(name);
@@ -1307,7 +1301,7 @@ ShaderParameterAnimationInfo* Material::GetShaderParameterAnimationInfo(const QS
         return nullptr;
     return MAP_VALUE(i);
 }
-
+/// Update whether should be subscribed to scene or global update events for shader parameter animation.
 void Material::UpdateEventSubscription()
 {
 
@@ -1329,7 +1323,7 @@ void Material::UpdateEventSubscription()
 void Material::HandleAttributeGlobalAnimationUpdate(float timeStep) {
 
 }
-
+/// Update shader parameter animations.
 void Material::HandleAttributeAnimationUpdate(Scene*,float timeStep)
 {
     // Timestep parameter is same no matter what event is being listened to
@@ -1353,7 +1347,7 @@ void Material::HandleAttributeAnimationUpdate(Scene*,float timeStep)
     for (const QString &fin_name : finishedNames)
         SetShaderParameterAnimation(fin_name, nullptr);
 }
-
+/// Reapply shader defines to technique index. By default reapply all.
 void Material::ApplyShaderDefines(unsigned index)
 {
     if (index == M_MAX_UNSIGNED)

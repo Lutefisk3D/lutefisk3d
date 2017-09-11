@@ -31,7 +31,7 @@
 #include <unordered_map>
 namespace std {
 template<> struct hash<Urho3D::TextureUnit> {
-    inline size_t operator()(const Urho3D::TextureUnit & key) const
+	size_t operator()(const Urho3D::TextureUnit & key) const
     {
         return (unsigned)key;
     }
@@ -67,7 +67,6 @@ struct TechniqueEntry
     TechniqueEntry();
     /// Construct with parameters.
     TechniqueEntry(Technique* tech, unsigned qualityLevel, float lodDistance);
-    /// Destruct.
     ~TechniqueEntry();
 
     /// Technique.
@@ -117,11 +116,11 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
+	bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
-    virtual bool EndLoad() override;
+	bool EndLoad() override;
     /// Save resource. Return true if successful.
-    virtual bool Save(Serializer& dest) const override;
+	bool Save(Serializer& dest) const override;
 
     /// Load from an XML element. Return true if successful.
     bool Load(const XMLElement& source);
@@ -144,9 +143,9 @@ public:
     /// Set shader parameter animation.
     void SetShaderParameterAnimation(const QString& name, ValueAnimation* animation, WrapMode wrapMode = WM_LOOP, float speed = 1.0f);
     /// Set shader parameter animation wrap mode.
-    void SetShaderParameterAnimationWrapMode(const QString& name, WrapMode wrapMode);
+    void SetShaderParameterAnimationWrapMode(const QString& name, WrapMode wrapMode) const;
     /// Set shader parameter animation speed.
-    void SetShaderParameterAnimationSpeed(const QString& name, float speed);
+    void SetShaderParameterAnimationSpeed(const QString& name, float speed) const;
     /// Set texture.
     void SetTexture(TextureUnit unit, Texture* texture);
     /// Set texture coordinate transform.
@@ -242,23 +241,14 @@ public:
     static Variant ParseShaderParameterValue(const QString& value);
 
 private:
-    /// Helper function for loading JSON files.
     bool BeginLoadJSON(Deserializer& source);
-    /// Helper function for loading XML files.
     bool BeginLoadXML(Deserializer& source);
-    /// Reset to defaults.
     void ResetToDefaults();
-    /// Recalculate shader parameter hash.
     void RefreshShaderParameterHash();
-    /// Recalculate the memory used by the material.
     void RefreshMemoryUse();
-    /// Reapply shader defines to technique index. By default reapply all.
     void ApplyShaderDefines(unsigned index = M_MAX_UNSIGNED);
-    /// Return shader parameter animation info.
     ShaderParameterAnimationInfo* GetShaderParameterAnimationInfo(const QString& name) const;
-    /// Update whether should be subscribed to scene or global update events for shader parameter animation.
     void UpdateEventSubscription();
-    /// Update shader parameter animations.
     void HandleAttributeAnimationUpdate(Scene *, float timeStep);
     void HandleAttributeGlobalAnimationUpdate(float timeStep);
 
@@ -282,12 +272,12 @@ private:
     FillMode fillMode_;
     /// Depth bias parameters.
     BiasParameters depthBias_;
-    /// Render order value.
-    unsigned char renderOrder_;
-    /// Last auxiliary view rendered frame number.
-    unsigned auxViewFrameNumber_;
-    /// Shader parameter hash value.
-    unsigned shaderParameterHash_;
+	/// Last auxiliary view rendered frame number.
+	unsigned auxViewFrameNumber_;
+	/// Shader parameter hash value.
+	unsigned shaderParameterHash_;
+	/// Render order value.
+    uint8_t renderOrder_;
     /// Alpha-to-coverage flag.
     bool alphaToCoverage_;
     /// Line antialiasing flag.

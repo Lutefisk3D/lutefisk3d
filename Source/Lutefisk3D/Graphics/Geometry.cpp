@@ -190,7 +190,7 @@ void Geometry::Draw(Graphics* graphics)
 
 VertexBuffer* Geometry::GetVertexBuffer(unsigned index) const
 {
-    return index < vertexBuffers_.size() ? vertexBuffers_[index] : (VertexBuffer*)nullptr;
+    return index < vertexBuffers_.size() ? vertexBuffers_[index] : nullptr;
 }
 
 unsigned short Geometry::GetBufferHash() const

@@ -283,23 +283,22 @@ const Frustum& Camera::GetFrustum() const
     if (projectionDirty_)
         UpdateProjection();
 
-    if (frustumDirty_)
-    {
-        if (customProjection_)
-            frustum_.Define(projection_ * GetView());
-        else
-        {
-            // If not using a custom projection, prefer calculating frustum from projection parameters instead of matrix
-            // for better accuracy
-    if (!orthographic_)
-                frustum_.Define(fov_, aspectRatio_, zoom_, GetNearClip(), GetFarClip(), GetEffectiveWorldTransform());
-    else
-                frustum_.DefineOrtho(orthoSize_, aspectRatio_, zoom_, GetNearClip(), GetFarClip(), GetEffectiveWorldTransform());
-        }
+    if (!frustumDirty_)
+        return frustum_;
 
-        frustumDirty_ = false;
+    if (customProjection_)
+        frustum_.Define(projection_ * GetView());
+    else
+    {
+        // If not using a custom projection, prefer calculating frustum from projection parameters instead of matrix
+        // for better accuracy
+        if (!orthographic_)
+            frustum_.Define(fov_, aspectRatio_, zoom_, GetNearClip(), GetFarClip(), GetEffectiveWorldTransform());
+        else
+            frustum_.DefineOrtho(orthoSize_, aspectRatio_, zoom_, GetNearClip(), GetFarClip(), GetEffectiveWorldTransform());
     }
 
+    frustumDirty_ = false;
     return frustum_;
 }
 
@@ -324,9 +323,9 @@ Frustum Camera::GetSplitFrustum(float nearClip, float farClip) const
     }
     else
     {
-    if (!orthographic_)
+        if (!orthographic_)
             ret.Define(fov_, aspectRatio_, zoom_, nearClip, farClip, GetEffectiveWorldTransform());
-    else
+        else
             ret.DefineOrtho(orthoSize_, aspectRatio_, zoom_, nearClip, farClip, GetEffectiveWorldTransform());
     }
 
@@ -343,9 +342,9 @@ Frustum Camera::GetViewSpaceFrustum() const
         ret.Define(projection_);
     else
     {
-    if (!orthographic_)
+        if (!orthographic_)
             ret.Define(fov_, aspectRatio_, zoom_, GetNearClip(), GetFarClip());
-    else
+        else
             ret.DefineOrtho(orthoSize_, aspectRatio_, zoom_, GetNearClip(), GetFarClip());
     }
 
@@ -368,10 +367,10 @@ Frustum Camera::GetViewSpaceSplitFrustum(float nearClip, float farClip) const
         ret.DefineSplit(projection_, nearClip, farClip);
     else
     {
-    if (!orthographic_)
-        ret.Define(fov_, aspectRatio_, zoom_, nearClip, farClip);
-    else
-        ret.DefineOrtho(orthoSize_, aspectRatio_, zoom_, nearClip, farClip);
+        if (!orthographic_)
+            ret.Define(fov_, aspectRatio_, zoom_, nearClip, farClip);
+        else
+            ret.DefineOrtho(orthoSize_, aspectRatio_, zoom_, nearClip, farClip);
     }
 
     return ret;
@@ -506,8 +505,8 @@ float Camera::GetLodDistance(float distance, float scale, float bias) const
     float d = Max(lodBias_ * bias * scale * zoom_, M_EPSILON);
     if (!orthographic_)
         return distance / d;
-    else
-        return orthoSize_ / d;
+    
+    return orthoSize_ / d;
 }
 
 Quaternion Camera::GetFaceCameraRotation(const Vector3& position, const Quaternion& rotation, FaceCameraMode mode, float minAngle)

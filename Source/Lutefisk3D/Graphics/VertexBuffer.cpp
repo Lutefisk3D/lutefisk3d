@@ -32,7 +32,7 @@ namespace Urho3D
 //VertexBufferManager g_vertexBufferManager;
 
 VertexBuffer::VertexBuffer(Context* context, bool forceHeadless) :
-    GPUObject(forceHeadless ? (Graphics*)nullptr : context->m_Graphics.get()),
+    GPUObject(forceHeadless ? nullptr : context->m_Graphics.get()),
     vertexCount_(0),
     elementMask_(0),
     lockState_(LOCK_NONE),

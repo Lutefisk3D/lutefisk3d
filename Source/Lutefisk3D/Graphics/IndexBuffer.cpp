@@ -34,7 +34,7 @@ namespace Urho3D
 //IndexBufferManager g_indexBufferManager;
 
 IndexBuffer::IndexBuffer(Context* context, bool forceHeadless) :
-    GPUObject(forceHeadless ? (Graphics*)nullptr : context->m_Graphics.get()),
+    GPUObject(forceHeadless ? nullptr : context->m_Graphics.get()),
     indexCount_(0),
     indexSize_(0),
     lockState_(LOCK_NONE),

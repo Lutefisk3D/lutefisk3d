@@ -981,7 +981,7 @@ public:
     /// Return an IntVector3 or empty on type mismatch.
     const IntVector3& GetIntVector3() const    {        return type_ == VAR_INTVECTOR3 ? *reinterpret_cast<const IntVector3*>(&value_) : IntVector3::ZERO;    }
     /// Return a RefCounted pointer or null on type mismatch. Will return null if holding a void pointer, as it can not be safely verified that the object is a RefCounted.
-    RefCounted* GetPtr() const { return type_ == VAR_PTR ? *reinterpret_cast<const WeakPtr<RefCounted>*>(&value_) : (RefCounted*)nullptr; }
+    RefCounted* GetPtr() const { return type_ == VAR_PTR ? *reinterpret_cast<const WeakPtr<RefCounted>*>(&value_) : nullptr; }
     /// Return a Matrix3 or identity on type mismatch.
     const Matrix3& GetMatrix3() const { return type_ == VAR_MATRIX3 ? *(reinterpret_cast<const Matrix3*>(value_.ptr_)) : Matrix3::IDENTITY; }
     /// Return a Matrix3x4 or identity on type mismatch.

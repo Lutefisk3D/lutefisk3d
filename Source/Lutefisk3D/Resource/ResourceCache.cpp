@@ -179,24 +179,26 @@ void ResourceCache::RemoveResourceDir(const QString& pathName)
     QString fixedPath = SanitateResourceDirName(pathName);
     QStringList::iterator i = resourceDirs_.begin(),
             fin = resourceDirs_.end();
-    std::vector<SharedPtr<FileWatcher> >::iterator j,fin_j = fileWatchers_.end();
+    std::vector<SharedPtr<FileWatcher> >::iterator fin_j = fileWatchers_.end();
     for (;i != fin;++i)
     {
-        if (!i->compare(fixedPath, Qt::CaseInsensitive)) {
-            resourceDirs_.erase(i);
-            // Remove the filewatcher with the matching path
-            for (j = fileWatchers_.begin(); j!=fin_j; ++j)
-            {
-                if (!(*j)->GetPath().compare(fixedPath, Qt::CaseInsensitive))
-                {
-                    fileWatchers_.erase(j);
-                    break;
-                }
-            }
-            URHO3D_LOGINFO("Removed resource path " + fixedPath);
-            return;
-        }
+        if (0==i->compare(fixedPath, Qt::CaseInsensitive)) 
+			break;
     }
+	if (i == fin)
+		return;
+
+	resourceDirs_.erase(i);
+	// Remove the filewatcher with the matching path
+	for (auto j = fileWatchers_.begin(); j != fin_j; ++j)
+	{
+		if (0 == (*j)->GetPath().compare(fixedPath, Qt::CaseInsensitive))
+		{
+			fileWatchers_.erase(j);
+			break;
+		}
+	}
+	URHO3D_LOGINFO("Removed resource path " + fixedPath);
 }
 /// Remove a package file. Optionally release the resources loaded from it.
 void ResourceCache::RemovePackageFile(PackageFile* package, bool releaseResources, bool forceRelease)
@@ -438,22 +440,22 @@ void ResourceCache::SetMemoryBudget(StringHash type, uint64_t budget)
 /// Enable or disable automatic reloading of resources as files are modified. Default false.
 void ResourceCache::SetAutoReloadResources(bool enable)
 {
-    if (enable != autoReloadResources_)
-    {
-        if (enable)
-        {
-            for (unsigned i = 0; i < resourceDirs_.size(); ++i)
-            {
-                SharedPtr<FileWatcher> watcher(new FileWatcher(m_context));
-                watcher->StartWatching(resourceDirs_[i], true);
-                fileWatchers_.push_back(watcher);
-            }
-        }
-        else
-            fileWatchers_.clear();
+    if (enable == autoReloadResources_)
+		return;
 
-        autoReloadResources_ = enable;
-    }
+	if (enable)
+	{
+		for (unsigned i = 0; i < resourceDirs_.size(); ++i)
+		{
+			SharedPtr<FileWatcher> watcher(new FileWatcher(m_context));
+			watcher->StartWatching(resourceDirs_[i], true);
+			fileWatchers_.push_back(watcher);
+		}
+	}
+	else
+		fileWatchers_.clear();
+
+	autoReloadResources_ = enable;
 }
 /// Add a resource router object. By default there is none, so the routing process is skipped.
 void ResourceCache::AddResourceRouter(ResourceRouter* router, bool addAsFirst)
@@ -506,7 +508,7 @@ std::unique_ptr<File> ResourceCache::GetFile(const QString& nameIn, bool sendEve
 
     if (name.length())
     {
-        File* file = nullptr;
+        File* file;
 
         if (searchPackagesFirst_)
         {
@@ -548,12 +550,12 @@ Resource* ResourceCache::GetExistingResource(StringHash type, const QString& nam
     if (!Thread::IsMainThread())
     {
         URHO3D_LOGERROR("Attempted to get resource " + name + " from outside the main thread");
-        return 0;
+        return nullptr;
     }
 
     // If empty name, return null pointer immediately
     if (name.isEmpty())
-        return 0;
+        return nullptr;
 
     StringHash nameHash(name);
 
@@ -592,9 +594,8 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
     if (existing)
         return existing;
 
-    SharedPtr<Resource> resource;
-    // Make sure the pointer is non-null and is a Resource subclass
-    resource = DynamicCast<Resource>(m_context->CreateObject(type));
+	// Make sure the pointer is non-null and is a Resource subclass
+    SharedPtr<Resource> resource = DynamicCast<Resource>(m_context->CreateObject(type));
     if (!resource)
     {
         URHO3D_LOGERROR(QString("Could not load unknown resource type ") + type.ToString());
@@ -674,9 +675,8 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QStrin
     if (name.isEmpty())
         return SharedPtr<Resource>();
 
-    SharedPtr<Resource> resource;
-    // Make sure the pointer is non-null and is a Resource subclass
-    resource = DynamicCast<Resource>(m_context->CreateObject(type));
+	// Make sure the pointer is non-null and is a Resource subclass
+    SharedPtr<Resource> resource = DynamicCast<Resource>(m_context->CreateObject(type));
     if (!resource)
     {
         URHO3D_LOGERROR("Could not load unknown resource type " + type.ToString());
@@ -799,7 +799,7 @@ QString ResourceCache::GetResourceFileName(const QString& name) const
 
 ResourceRouter* ResourceCache::GetResourceRouter(unsigned index) const
 {
-    return index < resourceRouters_.size() ? resourceRouters_[index] : (ResourceRouter*)0;
+    return index < resourceRouters_.size() ? resourceRouters_[index] : nullptr;
 }
 
 QString ResourceCache::GetPreferredResourceDir(const QString& path) const
@@ -847,7 +847,7 @@ QString ResourceCache::SanitateResourceName(const QString& nameIn) const
 
     // If the path refers to one of the resource directories, normalize the resource name
     FileSystem* fileSystem = m_context->m_FileSystem.get();
-    if (resourceDirs_.size())
+    if (!resourceDirs_.empty())
     {
         QString namePath = GetPath(name);
         QString exePath = fileSystem->GetProgramDir();
@@ -919,19 +919,19 @@ QString ResourceCache::PrintMemoryUsage() const
     char outputLine[256];
 
     unsigned totalResourceCt = 0;
-    unsigned long long totalLargest = 0;
-    unsigned long long totalAverage = 0;
-    unsigned long long totalUse = GetTotalMemoryUse();
+    uint64_t totalLargest = 0;
+    uint64_t totalAverage = 0;
+    uint64_t totalUse = GetTotalMemoryUse();
 
     for (const auto & entry : resourceGroups_)
     {
         const unsigned resourceCt = ELEMENT_VALUE(entry).resources_.size();
-        unsigned long long average = 0;
+        uint64_t average;
         if (resourceCt > 0)
             average = ELEMENT_VALUE(entry).memoryUse_ / resourceCt;
         else
             average = 0;
-        unsigned long long largest = 0;
+        uint64_t largest = 0;
         for (auto resIt : ELEMENT_VALUE(entry).resources_)
         {
             if (ELEMENT_VALUE(resIt)->GetMemoryUse() > largest)
@@ -956,7 +956,7 @@ QString ResourceCache::PrintMemoryUsage() const
                 qPrintable(memMaxString),
                 qPrintable(memBudgetString), qPrintable(memTotalString));
 
-        output += ((const char*)outputLine);
+        output += outputLine;
     }
 
     if (totalResourceCt > 0)
@@ -971,7 +971,7 @@ QString ResourceCache::PrintMemoryUsage() const
     outputLine[255] = 0;
     sprintf(outputLine, "%-28s %4s %9s %9s %9s %9s\n", "All", qPrintable(countString), qPrintable(memUseString),
             qPrintable(memMaxString), "-", qPrintable(memTotalString));
-    output += ((const char*)outputLine);
+    output += outputLine;
 
     return output;
 }
@@ -1074,15 +1074,15 @@ void ResourceCache::UpdateResourceGroup(StringHash type)
 /// Handle begin frame event. Automatic resource reloads and the finalization of background loaded resources are processed here.
 void ResourceCache::HandleBeginFrame(unsigned FrameNumber,float timeStep)
 {
-    for (unsigned i = 0; i < fileWatchers_.size(); ++i)
+    for (SharedPtr<FileWatcher> & watcher : fileWatchers_)
     {
         QString fileName;
-        while (fileWatchers_[i]->GetNextChange(fileName))
+        while (watcher->GetNextChange(fileName))
         {
             ReloadResourceWithDependencies(fileName);
 
             // Finally send a general file changed event even if the file was not a tracked resource
-            g_resourceSignals.fileChanged.Emit(fileWatchers_[i]->GetPath() + fileName,fileName);
+            g_resourceSignals.fileChanged.Emit(watcher->GetPath() + fileName,fileName);
         }
     }
 

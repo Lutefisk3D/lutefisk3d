@@ -43,9 +43,7 @@ class XMLFile;
 class LUTEFISK3D_EXPORT Texture : public ResourceWithMetadata, public GPUObject, public jl::SignalObserver
 {
 public:
-    /// Construct.
     Texture(Context* context);
-    /// Destruct.
     virtual ~Texture();
 
     /// Set number of requested mip levels. Needs to be called before setting size.

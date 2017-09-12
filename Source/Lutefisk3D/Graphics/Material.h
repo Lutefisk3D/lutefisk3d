@@ -31,7 +31,7 @@
 #include <unordered_map>
 namespace std {
 template<> struct hash<Urho3D::TextureUnit> {
-	size_t operator()(const Urho3D::TextureUnit & key) const
+    inline size_t operator()(const Urho3D::TextureUnit & key) const
     {
         return (unsigned)key;
     }

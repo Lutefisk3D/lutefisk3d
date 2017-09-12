@@ -296,14 +296,10 @@ private:
     Context *context_;
     /// Graphics subsystem.
     Graphics *graphics_; // non-owning pointer
-    /// Renderer subsystem.
-    WeakPtr<Renderer> renderer_;
-    /// Scene to use.
-    Scene* scene_;
-    /// Octree to use.
-    Octree* octree_;
-    /// Viewport (rendering) camera.
-    Camera* camera_;
+    Renderer *renderer_; //!< Renderer subsystem.
+    Scene* scene_;       //!< Scene to use.
+    Octree* octree_; //!< Octree to use.
+    Camera* camera_; //!< Viewport (rendering) camera.
     /// Culling camera. Usually same as the viewport camera.
     Camera* cullCamera_;
     /// Shared source view. Null if this view is using its own culling.

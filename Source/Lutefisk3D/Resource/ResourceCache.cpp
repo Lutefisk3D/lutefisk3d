@@ -983,8 +983,9 @@ const SharedPtr<Resource>& ResourceCache::FindResource(StringHash type, StringHa
     HashMap<StringHash, ResourceGroup>::iterator i = resourceGroups_.find(type);
     if (i == resourceGroups_.end())
         return noResource;
-    HashMap<StringHash, SharedPtr<Resource> >::iterator j = MAP_VALUE(i).resources_.find(nameHash);
-    if (j == MAP_VALUE(i).resources_.end())
+    const ResourceGroup &grp(MAP_VALUE(i));
+    auto j = grp.resources_.find(nameHash);
+    if (j == grp.resources_.end())
         return noResource;
 
     return MAP_VALUE(j);

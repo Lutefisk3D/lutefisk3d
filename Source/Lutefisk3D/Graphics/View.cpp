@@ -2755,7 +2755,7 @@ void View::AddBatchToQueue(BatchQueue& batchQueue, Batch batch, const Technique*
 {
 
     assert(batchQueue.batchGroups_.size()>=batchQueue.batchGroupStorage_.size());
-    Renderer * ren = renderer_.Get();
+    Renderer * ren = renderer_;
     if (batch.material_ == nullptr)
         batch.material_ = ren->GetDefaultMaterial();
 

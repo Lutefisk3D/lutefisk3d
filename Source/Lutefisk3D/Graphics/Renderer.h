@@ -196,8 +196,8 @@ public:
     void SetSpecularLighting(bool enable);
     void SetTextureAnisotropy(int level);
     void SetTextureFilterMode(TextureFilterMode mode);
-    void SetTextureQuality(int quality);
-    void SetMaterialQuality(int quality);
+    void SetTextureQuality(eQuality quality);
+    void SetMaterialQuality(eQuality quality);
     void SetDrawShadows(bool enable);
     void SetShadowMapSize(int size);
     void SetShadowQuality(ShadowQuality quality);

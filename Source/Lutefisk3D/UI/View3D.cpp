@@ -29,6 +29,7 @@
 #include "Lutefisk3D/Graphics/Graphics.h"
 #include "Lutefisk3D/Graphics/GraphicsEvents.h"
 #include "Lutefisk3D/Graphics/Octree.h"
+#include "Lutefisk3D/Graphics/RenderSurface.h"
 #include "Lutefisk3D/Graphics/Texture2D.h"
 #include "Lutefisk3D/Graphics/Zone.h"
 #include "Lutefisk3D/Graphics/Viewport.h"

@@ -26,6 +26,7 @@
 #include "Lutefisk3D/Graphics/Geometry.h"
 #include "Lutefisk3D/Graphics/Graphics.h"
 #include "Lutefisk3D/Graphics/GraphicsEvents.h"
+#include "Lutefisk3D/Graphics/RenderSurface.h"
 #include "Lutefisk3D/Graphics/GraphicsImpl.h"
 #include "Lutefisk3D/Graphics/IndexBuffer.h"
 #include "Lutefisk3D/IO/Log.h"
@@ -49,7 +50,8 @@
 
 
 namespace Urho3D
-{/*!
+{
+/*!
 \var WeakPtr<Graphics> graphics_
 \brief Graphics subsystem.
 \var SharedPtr<RenderPath> defaultRenderPath_
@@ -450,9 +452,9 @@ void Renderer::SetTextureFilterMode(TextureFilterMode mode)
     textureFilterMode_ = mode;
 }
 /// Set texture quality level. See the QUALITY constants in GraphicsDefs.h.
-void Renderer::SetTextureQuality(int quality)
+void Renderer::SetTextureQuality(eQuality quality)
 {
-    quality = Clamp<int>(quality, QUALITY_LOW, QUALITY_HIGH);
+    quality = Clamp<eQuality>(quality, QUALITY_LOW, QUALITY_HIGH);
 
     if (quality != textureQuality_)
     {
@@ -461,9 +463,9 @@ void Renderer::SetTextureQuality(int quality)
     }
 }
 /// Set material quality level. See the QUALITY constants in GraphicsDefs.h.
-void Renderer::SetMaterialQuality(int quality)
+void Renderer::SetMaterialQuality(eQuality quality)
 {
-    quality = Clamp<int>(quality, QUALITY_LOW, QUALITY_MAX);
+    quality = Clamp<eQuality>(quality, QUALITY_LOW, QUALITY_MAX);
 
     if (quality != materialQuality_)
     {
@@ -587,7 +589,8 @@ void Renderer::SetDynamicInstancing(bool enable)
 
     dynamicInstancing_ = enable;
 }
-/// Set number of extra instancing buffer elements. Default is 0. Extra 4-vectors are available through TEXCOORD7 and further.
+/// Set number of extra instancing buffer elements. Default is 0. Extra 4-vectors are available through TEXCOORD7 and
+/// further.
 void Renderer::SetNumExtraInstancingBufferElements(unsigned elements)
 {
     if (numExtraInstancingBufferElements_ != elements)

@@ -468,17 +468,6 @@ Object* Context::GetSubsystem(StringHash type) const
         return nullptr;
 }
 
-/// Return global variable based on key
-const Variant &Context::GetGlobalVar(StringHash key) const
-{
-    auto i = globalVars_.find(key);
-    return i != globalVars_.end() ? MAP_VALUE(i) : Variant::EMPTY;
-}
-/// Set global variable with the respective key and value
-void Context::SetGlobalVar(StringHash key, const Variant &value)
-{
-    globalVars_[key] = value;
-}
 /// Return active event sender. Null outside event handling.
 Object* Context::GetEventSender() const
 {

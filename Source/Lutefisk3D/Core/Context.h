@@ -111,10 +111,6 @@ public:
 
 
     Object* GetSubsystem(StringHash type) const;
-    const Variant &GetGlobalVar(StringHash key) const;
-    const VariantMap& GetGlobalVars() const { return globalVars_; }
-
-    void SetGlobalVar(StringHash key, const Variant &value);
 
     const HashMap<StringHash, SharedPtr<Object> >& GetSubsystems() const { return subsystems_; }
     const HashMap<StringHash, SharedPtr<ObjectFactory> >& GetObjectFactories() const { return factories_; }

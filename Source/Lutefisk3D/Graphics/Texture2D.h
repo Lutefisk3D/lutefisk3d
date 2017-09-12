@@ -23,7 +23,6 @@
 #pragma once
 
 #include "Lutefisk3D/Container/Ptr.h"
-#include "Lutefisk3D/Graphics/RenderSurface.h"
 #include "Lutefisk3D/Graphics/Texture.h"
 
 namespace Urho3D
@@ -31,7 +30,7 @@ namespace Urho3D
 
 class Image;
 class XMLFile;
-
+class LUTEFISK3D_EXPORT RenderSurface;
 /// 2D texture resource.
 class LUTEFISK3D_EXPORT Texture2D : public Texture
 {

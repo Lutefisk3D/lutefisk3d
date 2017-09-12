@@ -153,21 +153,21 @@ void Geometry::SetLodDistance(float distance)
     lodDistance_ = distance;
 }
 
-void Geometry::SetRawVertexData(SharedArrayPtr<unsigned char> data, const std::vector<VertexElement>& elements)
+void Geometry::SetRawVertexData(SharedArrayPtr<uint8_t> data, const std::vector<VertexElement>& elements)
 {
     rawVertexData_ = data;
     rawVertexSize_ = VertexBuffer::GetVertexSize(elements);
     rawElements_ = elements;
 }
 
-void Geometry::SetRawVertexData(SharedArrayPtr<unsigned char> data, unsigned elementMask)
+void Geometry::SetRawVertexData(SharedArrayPtr<uint8_t> data, unsigned elementMask)
 {
     rawVertexData_ = data;
     rawVertexSize_ = VertexBuffer::GetVertexSize(elementMask);
     rawElements_ = VertexBuffer::GetElements(elementMask);
 }
 
-void Geometry::SetRawIndexData(SharedArrayPtr<unsigned char> data, unsigned indexSize)
+void Geometry::SetRawIndexData(SharedArrayPtr<uint8_t> data, unsigned indexSize)
 {
     rawIndexData_ = data;
     rawIndexSize_ = indexSize;
@@ -193,6 +193,7 @@ VertexBuffer* Geometry::GetVertexBuffer(unsigned index) const
     return index < vertexBuffers_.size() ? vertexBuffers_[index] : nullptr;
 }
 
+/// Return buffers' combined hash value for state sorting.
 unsigned short Geometry::GetBufferHash() const
 {
     unsigned short hash = 0;
@@ -209,7 +210,8 @@ unsigned short Geometry::GetBufferHash() const
     return hash;
 }
 
-void Geometry::GetRawData(const unsigned char*& vertexData, unsigned& vertexSize, const unsigned char*& indexData,
+/// Return raw vertex and index data for CPU operations, or null pointers if not available. Will return data of the first vertex buffer if override data not set.
+void Geometry::GetRawData(const uint8_t*& vertexData, unsigned& vertexSize, const uint8_t*& indexData,
     unsigned& indexSize, const std::vector<VertexElement>*& elements) const
 {
     if (rawVertexData_)
@@ -254,8 +256,8 @@ void Geometry::GetRawData(const unsigned char*& vertexData, unsigned& vertexSize
     }
 }
 
-void Geometry::GetRawDataShared(SharedArrayPtr<unsigned char>& vertexData, unsigned& vertexSize,
-    SharedArrayPtr<unsigned char>& indexData, unsigned& indexSize,const std::vector<VertexElement>*& elements) const
+void Geometry::GetRawDataShared(SharedArrayPtr<uint8_t>& vertexData, unsigned& vertexSize,
+    SharedArrayPtr<uint8_t>& indexData, unsigned& indexSize,const std::vector<VertexElement>*& elements) const
 {
     if (rawVertexData_)
     {
@@ -301,8 +303,8 @@ void Geometry::GetRawDataShared(SharedArrayPtr<unsigned char>& vertexData, unsig
 
 float Geometry::GetHitDistance(const Ray& ray, Vector3* outNormal, Vector2 * outUV) const
 {
-    const unsigned char* vertexData;
-    const unsigned char* indexData;
+    const uint8_t* vertexData;
+    const uint8_t* indexData;
     unsigned vertexSize;
     unsigned indexSize;
     const std::vector<VertexElement>* elements;
@@ -327,8 +329,8 @@ float Geometry::GetHitDistance(const Ray& ray, Vector3* outNormal, Vector2 * out
 
 bool Geometry::IsInside(const Ray& ray) const
 {
-    const unsigned char* vertexData;
-    const unsigned char* indexData;
+    const uint8_t* vertexData;
+    const uint8_t* indexData;
     unsigned vertexSize;
     unsigned indexSize;
     const std::vector<VertexElement>* elements;

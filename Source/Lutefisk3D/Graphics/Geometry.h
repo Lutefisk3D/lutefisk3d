@@ -23,19 +23,19 @@
 #pragma once
 
 #include "Lutefisk3D/Container/ArrayPtr.h"
+#include "Lutefisk3D/Container/DataHandle.h"
 #include "Lutefisk3D/Container/Ptr.h"
 #include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
-#include "Lutefisk3D/Container/DataHandle.h"
 #include <vector>
 namespace Urho3D
 {
-class Vector2;
-class IndexBuffer;
-class Ray;
-class Graphics;
-class VertexBuffer;
-class Context;
+class LUTEFISK3D_EXPORT Vector2;
+class LUTEFISK3D_EXPORT IndexBuffer;
+class LUTEFISK3D_EXPORT Ray;
+class LUTEFISK3D_EXPORT Graphics;
+class LUTEFISK3D_EXPORT VertexBuffer;
+class LUTEFISK3D_EXPORT Context;
 using IndexBufferHandle = DataHandle<IndexBuffer,20,20>;
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 /// Defines one or more vertex buffers, an index buffer and a draw range.
@@ -60,11 +60,11 @@ public:
     /// Set the LOD distance.
     void SetLodDistance(float distance);
     /// Override raw vertex data to be returned for CPU-side operations.
-    void SetRawVertexData(SharedArrayPtr<unsigned char> data, const std::vector<VertexElement>& elements);
+    void SetRawVertexData(SharedArrayPtr<uint8_t> data, const std::vector<VertexElement>& elements);
     /// Override raw vertex data to be returned for CPU-side operations using a legacy vertex bitmask.
-    void SetRawVertexData(SharedArrayPtr<unsigned char> data, unsigned elementMask);
+    void SetRawVertexData(SharedArrayPtr<uint8_t> data, unsigned elementMask);
     /// Override raw index data to be returned for CPU-side operations.
-    void SetRawIndexData(SharedArrayPtr<unsigned char> data, unsigned indexSize);
+    void SetRawIndexData(SharedArrayPtr<uint8_t> data, unsigned indexSize);
     /// Draw.
     void Draw(Graphics* graphics);
 
@@ -88,11 +88,9 @@ public:
     unsigned GetVertexCount() const { return vertexCount_; }
     /// Return LOD distance.
     float GetLodDistance() const { return lodDistance_; }
-    /// Return buffers' combined hash value for state sorting.
     unsigned short GetBufferHash() const;
-    /// Return raw vertex and index data for CPU operations, or null pointers if not available. Will return data of the first vertex buffer if override data not set.
-    void GetRawData(const unsigned char*& vertexData, unsigned& vertexSize, const unsigned char*& indexData, unsigned& indexSize, const std::vector<VertexElement>*& elements) const;
-    void GetRawDataShared(SharedArrayPtr<unsigned char>& vertexData, unsigned& vertexSize, SharedArrayPtr<unsigned char>& indexData, unsigned& indexSize, const std::vector<VertexElement>*& elements) const;
+    void GetRawData(const uint8_t*& vertexData, unsigned& vertexSize, const uint8_t*& indexData, unsigned& indexSize, const std::vector<VertexElement>*& elements) const;
+    void GetRawDataShared(SharedArrayPtr<uint8_t>& vertexData, unsigned& vertexSize, SharedArrayPtr<uint8_t>& indexData, unsigned& indexSize, const std::vector<VertexElement>*& elements) const;
     /// Return ray hit distance or infinity if no hit. Requires raw data to be set. Optionally return hit normal and hit uv coordinates at intersect point.
     float GetHitDistance(const Ray& ray, Vector3* outNormal = nullptr,Vector2* outUV = nullptr) const;
     /// Return whether or not the ray is inside geometry.
@@ -101,32 +99,19 @@ public:
     bool IsEmpty() const { return indexCount_ == 0 && vertexCount_ == 0; }
 
 private:
-    /// Vertex buffers.
-    std::vector<SharedPtr<VertexBuffer> > vertexBuffers_;
-    /// Index buffer.
-    SharedPtr<IndexBuffer> indexBuffer_;
-    /// Primitive type.
-    PrimitiveType primitiveType_;
-    /// Start index.
-    unsigned indexStart_;
-    /// Number of indices.
-    unsigned indexCount_;
-    /// First used vertex.
-    unsigned vertexStart_;
-    /// Number of used vertices.
-    unsigned vertexCount_;
-    /// LOD distance.
-    float lodDistance_;
-    /// Raw vertex data elements.
-    std::vector<VertexElement> rawElements_;
-    /// Raw vertex data override.
-    SharedArrayPtr<unsigned char> rawVertexData_;
-    /// Raw index data override.
-    SharedArrayPtr<unsigned char> rawIndexData_;
-    /// Raw vertex data override size.
-    unsigned rawVertexSize_;
-    /// Raw index data override size.
-    unsigned rawIndexSize_;
+    std::vector<SharedPtr<VertexBuffer>> vertexBuffers_; //!< Vertex buffers.
+    SharedPtr<IndexBuffer>               indexBuffer_;   //!< Index buffer.
+    PrimitiveType                        primitiveType_; //!< Primitive type.
+    unsigned                             indexStart_;    //!< Start index.
+    unsigned                             indexCount_;    //!< Number of indices.
+    unsigned                             vertexStart_;   //!< First used vertex.
+    unsigned                             vertexCount_;   //!< Number of used vertices.
+    float                                lodDistance_;   //!< LOD distance.
+    std::vector<VertexElement>           rawElements_;   //!< Raw vertex data elements.
+    SharedArrayPtr<uint8_t>              rawVertexData_; //!< Raw vertex data override.
+    SharedArrayPtr<uint8_t>              rawIndexData_;  //!< Raw index data override.
+    unsigned                             rawVertexSize_; //!< Raw vertex data override size.
+    unsigned                             rawIndexSize_;  //!< Raw index data override size.
 };
 
 }

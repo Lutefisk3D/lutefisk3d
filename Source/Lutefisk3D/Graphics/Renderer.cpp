@@ -394,7 +394,7 @@ void Renderer::SetShadowMapSize(int size)
     if (!graphics_)
         return;
 
-    size = NextPowerOfTwo((unsigned)Max(size, SHADOW_MIN_PIXELS));
+    size = NextPowerOfTwo(std::max<uint32_t>(size, SHADOW_MIN_PIXELS));
     if (size != shadowMapSize_)
     {
         shadowMapSize_ = size;
@@ -535,7 +535,7 @@ void Renderer::SetMobileNormalOffsetMul(float mul)
 
 void Renderer::SetOccluderSizeThreshold(float screenSize)
 {
-    occluderSizeThreshold_ = Max(screenSize, 0.0f);
+    occluderSizeThreshold_ = std::max(screenSize, 0.0f);
 }
 
 void Renderer::SetThreadedOcclusion(bool enable)
@@ -570,11 +570,10 @@ Viewport* Renderer::GetViewportForScene(Scene* scene, unsigned index) const
         {
             if (index == 0)
                 return viewport;
-            else
-                --index;
+            --index;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 RenderPath* Renderer::GetDefaultRenderPath() const
@@ -774,9 +773,8 @@ void Renderer::DrawDebugGeometry(bool depthTest)
     HashSet<Drawable*> processedGeometries;
     HashSet<Light*> processedLights;
 
-    for (unsigned i = 0; i < views_.size(); ++i)
+    for (View* view : views_)
     {
-        View* view = views_[i];
         if (!view || !view->GetDrawDebug())
             continue;
         Octree* octree = view->GetOctree();
@@ -864,7 +862,6 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
         const Matrix3x4& view = camera->GetView();
         const Matrix4& projection = camera->GetProjection();
         BoundingBox lightBox;
-        float lightPixels;
 
         if (type == LIGHT_POINT)
         {
@@ -881,7 +878,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
         }
 
         Vector2 projectionSize = lightBox.Projected(projection).Size();
-        lightPixels = Max(0.5f * (float)viewWidth * projectionSize.x_, 0.5f * (float)viewHeight * projectionSize.y_);
+        float lightPixels = std::max(0.5f * float(viewWidth) * projectionSize.x_, 0.5f * float(viewHeight) * projectionSize.y_);
 
         // Clamp pixel amount to a sufficient minimum to avoid self-shadowing artifacts due to loss of precision
         if (lightPixels < SHADOW_MIN_PIXELS)
@@ -917,18 +914,15 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
         // If shadow maps are reused, always return the first
         if (reuseShadowMaps_)
             return shadowmap[0];
-        else
+        // If not reused, check allocation count and return existing shadow map if possible
+        unsigned allocated = shadowMapAllocations_[searchKey].size();
+        if (allocated < shadowmap.size())
         {
-            // If not reused, check allocation count and return existing shadow map if possible
-            unsigned allocated = shadowMapAllocations_[searchKey].size();
-            if (allocated < shadowmap.size())
-            {
-                shadowMapAllocations_[searchKey].push_back(light);
-                return shadowmap[allocated];
-            }
-            else if ((int)allocated >= maxShadowMaps_)
-                return nullptr;
+            shadowMapAllocations_[searchKey].push_back(light);
+            return shadowmap[allocated];
         }
+        if ((int)allocated >= maxShadowMaps_)
+            return nullptr;
     }
 
     // Find format and usage of the shadow map
@@ -1872,16 +1866,16 @@ void Renderer::CreateInstancingBuffer()
     // Do not create buffer if instancing not supported
     if (!graphics_->GetInstancingSupport())
     {
-        instancingBuffer_.Reset();
+        instancingBuffer_.reset();
         dynamicInstancing_ = false;
         return;
     }
 
-    instancingBuffer_ = new VertexBuffer(m_context);
+    instancingBuffer_.reset(new VertexBuffer(m_context));
     const auto instancingBufferElements(CreateInstancingBufferElements(numExtraInstancingBufferElements_));
     if (!instancingBuffer_->SetSize(INSTANCING_BUFFER_DEFAULT_SIZE, instancingBufferElements, true))
     {
-        instancingBuffer_.Reset();
+        instancingBuffer_.reset();
         dynamicInstancing_ = false;
     }
 }

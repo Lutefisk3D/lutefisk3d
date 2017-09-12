@@ -33,10 +33,6 @@
 #include "Lutefisk3D/IO/MemoryBuffer.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Scene/Node.h"
-#include "Lutefisk3D/Graphics/OctreeQuery.h"
-#include "Lutefisk3D/Core/Profiler.h"
-#include "Lutefisk3D/Resource/ResourceCache.h"
-#include "Lutefisk3D/Graphics/VertexBuffer.h"
 
 namespace Urho3D
 {
@@ -247,8 +243,8 @@ UpdateGeometryType BillboardSet::GetUpdateGeometryType()
     if (bufferDirty_ || bufferSizeDirty_ || vertexBuffer_->IsDataLost() || indexBuffer_->IsDataLost() || sortThisFrame_ ||
             faceCameraMode_ != FC_NONE || fixedScreenSize_)
         return UPDATE_MAIN_THREAD;
-    else
-        return UPDATE_NONE;
+
+    return UPDATE_NONE;
 }
 
 void BillboardSet::SetMaterial(Material* material)

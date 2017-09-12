@@ -37,11 +37,7 @@ class VertexBuffer;
 /// %Decal vertex.
 struct DecalVertex
 {
-    /// Construct with defaults.
-    DecalVertex()
-    {
-    }
-
+    DecalVertex() = default;
     /// Construct with position and normal.
     DecalVertex(const Vector3& position, const Vector3& normal) :
         position_(position),
@@ -50,7 +46,7 @@ struct DecalVertex
     }
 
     /// Construct with position, normal and skinning information.
-    DecalVertex(const Vector3& position, const Vector3& normal, const float* blendWeights, const unsigned char* blendIndices) :
+    DecalVertex(const Vector3& position, const Vector3& normal, const float* blendWeights, const uint8_t* blendIndices) :
         position_(position),
         normal_(normal)
     {
@@ -61,72 +57,53 @@ struct DecalVertex
         }
     }
 
-    /// Position.
-    Vector3 position_;
-    /// Normal.
-    Vector3 normal_;
-    /// Texture coordinates.
-    Vector2 texCoord_;
-    /// Tangent.
-    Vector4 tangent_;
-    /// Blend weights.
-    float blendWeights_[4];
-    /// Blend indices.
-    unsigned char blendIndices_[4];
+    Vector3 position_;        //!< Position.
+    Vector3 normal_;          //!< Normal.
+    Vector2 texCoord_;        //!< Texture coordinates.
+    Vector4 tangent_;         //!< Tangent.
+    float   blendWeights_[4]; //!< Blend weights.
+    uint8_t blendIndices_[4]; //!< Blend indices.
 };
 
 /// One decal in a decal set.
 struct Decal
 {
-    /// Construct with defaults.
-    Decal() :
-        timer_(0.0f),
-        timeToLive_(0.0f)
-    {
-    }
 
     /// Add a vertex.
-    void AddVertex(const DecalVertex& vertex);
+    void AddVertex(const DecalVertex &vertex);
     /// Calculate local-space bounding box.
     void CalculateBoundingBox();
 
-    /// Decal age timer.
-    float timer_;
-    /// Maximum time to live in seconds (0 = infinite)
-    float timeToLive_;
-    /// Local-space bounding box.
-    BoundingBox boundingBox_;
-    /// Decal vertices.
-    std::vector<DecalVertex> vertices_;
-    /// Decal indices.
-    std::vector<unsigned short> indices_;
+    float                       timer_      = 0; //!< Decal age timer.
+    float                       timeToLive_ = 0; //!< Maximum time to live in seconds (0 = infinite)
+    BoundingBox                 boundingBox_;    //!< Local-space bounding box.
+    std::vector<DecalVertex>    vertices_;       //!< Decal vertices.
+    std::vector<unsigned short> indices_;        //!</ Decal indices.
 };
 
 /// %Decal renderer component.
 class LUTEFISK3D_EXPORT DecalSet : public Drawable
 {
-    URHO3D_OBJECT(DecalSet,Drawable);
+    URHO3D_OBJECT(DecalSet,Drawable)
 
 public:
-    /// Construct.
     DecalSet(Context* context);
-    /// Destruct.
     virtual ~DecalSet();
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Apply attribute changes that can not be applied immediately. Called after scene load or a network update.
-    virtual void ApplyAttributes() override;
+    void ApplyAttributes() override;
     /// Handle enabled/disabled state change.
-    virtual void OnSetEnabled() override;
+    void OnSetEnabled() override;
     /// Process octree raycast. May be called from a worker thread.
-    virtual void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
+    void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
     /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
-    virtual void UpdateBatches(const FrameInfo& frame) override;
+    void UpdateBatches(const FrameInfo& frame) override;
     /// Prepare geometry for rendering. Called from a worker thread if possible (no GPU update.)
-    virtual void UpdateGeometry(const FrameInfo& frame) override;
+    void UpdateGeometry(const FrameInfo& frame) override;
     /// Return whether a geometry update is necessary, and if it can happen in a worker thread.
-    virtual UpdateGeometryType GetUpdateGeometryType() override;
+    UpdateGeometryType GetUpdateGeometryType() override;
 
     /// Set material. The material should use a small negative depth bias to avoid Z-fighting.
     void SetMaterial(Material* material);
@@ -169,9 +146,9 @@ public:
 
 protected:
     /// Recalculate the world-space bounding box.
-    virtual void OnWorldBoundingBoxUpdate() override;
+    void OnWorldBoundingBoxUpdate() override;
     /// Handle node transform being dirtied.
-    virtual void OnMarkedDirty(Node* node) override;
+    void OnMarkedDirty(Node* node) override;
 
 private:
     /// Get triangle faces from the target geometry.
@@ -203,40 +180,22 @@ private:
     /// Handle scene post-update event.
     void HandleScenePostUpdate(Scene *, float ts);
 
-    /// Geometry.
-    SharedPtr<Geometry> geometry_;
-    /// Vertex buffer.
+    SharedPtr<Geometry>     geometry_;
     SharedPtr<VertexBuffer> vertexBuffer_;
-    /// Index buffer.
-    SharedPtr<IndexBuffer> indexBuffer_;
-    /// Decals.
-    std::deque<Decal> decals_;
-    /// Bones used for skinned decals.
-    std::vector<Bone> bones_;
-    /// Skinning matrices.
-    std::vector<Matrix3x4> skinMatrices_;
-    /// Vertices in the current decals.
-    unsigned numVertices_;
-    /// Indices in the current decals.
-    unsigned numIndices_;
-    /// Maximum vertices.
-    unsigned maxVertices_;
-    /// Maximum indices.
-    unsigned maxIndices_;
-    /// Optimize buffer sizes flag.
-    bool optimizeBufferSize_;
-    /// Skinned mode flag.
-    bool skinned_;
-    /// Vertex buffer needs rewrite / resizing flag.
-    bool bufferDirty_;
-    /// Bounding box needs update flag.
-    bool boundingBoxDirty_;
-    /// Skinning dirty flag.
-    bool skinningDirty_;
-    /// Bone nodes assignment pending flag.
-    bool assignBonesPending_;
-    /// Subscribed to scene post update event flag.
-    bool subscribed_;
+    SharedPtr<IndexBuffer>  indexBuffer_;
+    std::deque<Decal>       decals_;
+    std::vector<Bone>       bones_;              //!< Bones used for skinned decals.
+    std::vector<Matrix3x4>  skinMatrices_;       //!< Skinning matrices.
+    unsigned                numVertices_;        //!< Vertices in the current decals.
+    unsigned                numIndices_;         //!< Indices in the current decals.
+    unsigned                maxVertices_;        //!< Maximum vertices.
+    unsigned                maxIndices_;         //!< Maximum indices.
+    bool                    optimizeBufferSize_; //!< Optimize buffer sizes flag.
+    bool                    skinned_;            //!< Skinned mode flag.
+    bool                    bufferDirty_;        //!< Vertex buffer needs rewrite / resizing flag.
+    bool                    boundingBoxDirty_;   //!<Bounding box needs update flag.
+    bool                    skinningDirty_;      //!< Skinning dirty flag.
+    bool                    assignBonesPending_; //!< Bone nodes assignment pending flag.
+    bool                    subscribed_;         //!< Subscribed to scene post update event flag.
 };
-
 }

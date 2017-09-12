@@ -837,9 +837,8 @@ void DecalSet::GetFace(std::vector<std::vector<DecalVertex> >& faces, Drawable* 
         return;
 
     // Check if face is culled completely by any of the planes
-    for (unsigned i = PLANE_FAR; i < NUM_FRUSTUM_PLANES; --i)
+    for (const Plane& plane : frustum.planes_)
     {
-        const Plane& plane = frustum.planes_[i];
         if (plane.Distance(v0) < 0.0f && plane.Distance(v1) < 0.0f && plane.Distance(v2) < 0.0f)
             return;
     }
@@ -890,62 +889,60 @@ bool DecalSet::GetBones(Drawable* target, unsigned batchIndex, const float* blen
 
     for (unsigned i = 0; i < 4; ++i)
     {
-        if (blendWeights[i] > 0.0f)
-        {
-            Bone* bone = nullptr;
-            if (geometrySkinMatrices.empty())
-                bone = animatedModel->GetSkeleton().GetBone(blendIndices[i]);
-            else if (blendIndices[i] < geometryBoneMappings[batchIndex].size())
-                bone = animatedModel->GetSkeleton().GetBone(geometryBoneMappings[batchIndex][blendIndices[i]]);
+        if (blendWeights[i] <= 0.0f) {
+            newBlendIndices[i] = 0;
+            continue;
+        }
 
-            if (!bone)
+        Bone* bone = nullptr;
+        if (geometrySkinMatrices.empty())
+            bone = animatedModel->GetSkeleton().GetBone(blendIndices[i]);
+        else if (blendIndices[i] < geometryBoneMappings[batchIndex].size())
+            bone = animatedModel->GetSkeleton().GetBone(geometryBoneMappings[batchIndex][blendIndices[i]]);
+
+        if (!bone)
+        {
+            URHO3D_LOGWARNING("Out of range bone index for skinned decal");
+            return false;
+        }
+
+        bool found = false;
+        unsigned index;
+
+        for (index = 0; index < bones_.size(); ++index)
+        {
+            if (bones_[index].node_ == bone->node_)
             {
-                URHO3D_LOGWARNING("Out of range bone index for skinned decal");
+                // Check also that the offset matrix matches, in case we for example have a separate attachment AnimatedModel
+                // with a different bind pose
+                if (bones_[index].offsetMatrix_.Equals(bone->offsetMatrix_))
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!found)
+        {
+            if (bones_.size() >= Graphics::GetMaxBones())
+            {
+                URHO3D_LOGWARNING("Maximum skinned decal bone count reached");
                 return false;
             }
+            
+            // Copy the bone from the model to the decal
+            index = bones_.size();
+            bones_.resize(bones_.size() + 1);
+            bones_[index] = *bone;
+            skinMatrices_.resize(skinMatrices_.size() + 1);
+            skinningDirty_ = true;
 
-            bool found = false;
-            unsigned index;
-
-            for (index = 0; index < bones_.size(); ++index)
-            {
-                if (bones_[index].node_ == bone->node_)
-                {
-                    // Check also that the offset matrix matches, in case we for example have a separate attachment AnimatedModel
-                    // with a different bind pose
-                    if (bones_[index].offsetMatrix_.Equals(bone->offsetMatrix_))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!found)
-            {
-                if (bones_.size() >= Graphics::GetMaxBones())
-                {
-                    URHO3D_LOGWARNING("Maximum skinned decal bone count reached");
-                    return false;
-                }
-                else
-                {
-                    // Copy the bone from the model to the decal
-                    index = bones_.size();
-                    bones_.resize(bones_.size() + 1);
-                    bones_[index] = *bone;
-                    skinMatrices_.resize(skinMatrices_.size() + 1);
-                    skinningDirty_ = true;
-
-                    // Start listening to bone transform changes to update skinning
-                    bone->node_->AddListener(this);
-                }
-            }
-
-            newBlendIndices[i] = (unsigned char)index;
+            // Start listening to bone transform changes to update skinning
+            bone->node_->AddListener(this);
         }
-        else
-            newBlendIndices[i] = 0;
+
+        newBlendIndices[i] = (unsigned char)index;
     }
 
     // Update amount of shader data in the decal batch
@@ -1025,11 +1022,11 @@ void DecalSet::UpdateBuffers()
     {
         unsigned short indexStart = 0;
 
-        for (std::deque<Decal>::const_iterator i = decals_.begin(); i != decals_.end(); ++i)
+        for (const Decal &d : decals_)
         {
-            for (unsigned j = 0; j < i->vertices_.size(); ++j)
+            for (unsigned j = 0; j < d.vertices_.size(); ++j)
             {
-                const DecalVertex& vertex = i->vertices_[j];
+                const DecalVertex& vertex = d.vertices_[j];
                 *vertices++ = vertex.position_.x_;
                 *vertices++ = vertex.position_.y_;
                 *vertices++ = vertex.position_.z_;
@@ -1052,10 +1049,10 @@ void DecalSet::UpdateBuffers()
                 }
             }
 
-            for (unsigned j = 0; j < i->indices_.size(); ++j)
-                *indices++ = i->indices_[j] + indexStart;
+            for (unsigned j = 0; j < d.indices_.size(); ++j)
+                *indices++ = d.indices_[j] + indexStart;
 
-            indexStart += i->vertices_.size();
+            indexStart += d.vertices_.size();
         }
     }
 

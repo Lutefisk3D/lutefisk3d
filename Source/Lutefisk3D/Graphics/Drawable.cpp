@@ -167,8 +167,7 @@ Geometry* Drawable::GetLodGeometry(unsigned batchIndex, unsigned level)
     // By default return the visible batch geometry
     if (batchIndex < batches_.size())
         return batches_[batchIndex].geometry_;
-    else
-        return nullptr;
+    return nullptr;
 }
 
 /// Draw to occlusion buffer. Return true if did not run out of triangles.
@@ -197,7 +196,7 @@ void Drawable::SetShadowDistance(float distance)
 
 void Drawable::SetLodBias(float bias)
 {
-    lodBias_ = Max(bias, M_EPSILON);
+    lodBias_ = std::max(bias, M_EPSILON);
     MarkNetworkUpdate();
 }
 
@@ -418,17 +417,17 @@ void Drawable::AddToOctree()
 
 void Drawable::RemoveFromOctree()
 {
-    if (octant_)
-    {
-        Octree* octree = octant_->GetRoot();
-        if (updateQueued_)
-            octree->CancelUpdate(this);
+    if (!octant_)
+        return;
 
-        // Perform subclass specific deinitialization if necessary
-        OnRemoveFromOctree();
+    Octree* octree = octant_->GetRoot();
+    if (updateQueued_)
+        octree->CancelUpdate(this);
 
-        octant_->RemoveDrawable(this);
-    }
+    // Perform subclass specific deinitialization if necessary
+    OnRemoveFromOctree();
+
+    octant_->RemoveDrawable(this);
 }
 
 bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, bool asZUp, bool asRightHanded, bool writeLightmapUV)
@@ -496,154 +495,153 @@ bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, boo
             bool hasUV = VertexBuffer::HasElement(*elements, TYPE_VECTOR2, SEM_TEXCOORD, 0);
             bool hasLMUV = VertexBuffer::HasElement(*elements, TYPE_VECTOR2, SEM_TEXCOORD, 1);
 
-            if (elementSize > 0 && indexSize > 0)
+            if (elementSize <= 0 || indexSize <= 0)
+                continue;
+            const unsigned vertexStart = geo->GetVertexStart();
+            const unsigned vertexCount = geo->GetVertexCount();
+            const unsigned indexStart = geo->GetIndexStart();
+            const unsigned indexCount = geo->GetIndexCount();
+
+            // Name NodeID DrawableType DrawableID GeometryIndex ("Geo" is included for clarity as StaticModel_32_2 could easily be misinterpreted or even quickly misread as 322)
+            // Generated object name example: Node_5_StaticModel_32_Geo_0 ... or ... Bob_5_StaticModel_32_Geo_0
+            outputFile->WriteLine(QString("o %1_%2_%3_%4_Geo_%5")
+                                  .arg(node->GetName().isEmpty() ? "Node" : node->GetName())
+                                  .arg(node->GetID()).arg(drawable->GetTypeName()).arg(drawable->GetID())
+                                  .arg(geoIndex));
+
+            // Write vertex position
+            unsigned positionOffset = VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR3, SEM_POSITION);
+            for (unsigned j = 0; j < vertexCount; ++j)
             {
-                const unsigned vertexStart = geo->GetVertexStart();
-                const unsigned vertexCount = geo->GetVertexCount();
-                const unsigned indexStart = geo->GetIndexStart();
-                const unsigned indexCount = geo->GetIndexCount();
+                Vector3 vertexPosition = *((const Vector3*)(&vertexData[(vertexStart + j) * elementSize + positionOffset]));
+                vertexPosition = transMat * vertexPosition;
 
-                // Name NodeID DrawableType DrawableID GeometryIndex ("Geo" is included for clarity as StaticModel_32_2 could easily be misinterpreted or even quickly misread as 322)
-                // Generated object name example: Node_5_StaticModel_32_Geo_0 ... or ... Bob_5_StaticModel_32_Geo_0
-                outputFile->WriteLine(QString("o %1_%2_%3_%4_Geo_%5")
-                                      .arg(node->GetName().isEmpty() ? "Node" : node->GetName())
-                                      .arg(node->GetID()).arg(drawable->GetTypeName()).arg(drawable->GetID())
-                                      .arg(geoIndex));
+                // Convert coordinates as requested
+                if (asRightHanded)
+                    vertexPosition.x_ *= -1;
+                if (asZUp)
+                {
+                    float yVal = vertexPosition.y_;
+                    vertexPosition.y_ = vertexPosition.z_;
+                    vertexPosition.z_ = yVal;
+                }
+                outputFile->WriteLine("v " + vertexPosition.ToString());
+            }
 
-                // Write vertex position
-                unsigned positionOffset = VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR3, SEM_POSITION);
+            if (hasNormals)
+            {
+                unsigned normalOffset = VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR3, SEM_NORMAL);
                 for (unsigned j = 0; j < vertexCount; ++j)
                 {
-                    Vector3 vertexPosition = *((const Vector3*)(&vertexData[(vertexStart + j) * elementSize + positionOffset]));
-                    vertexPosition = transMat * vertexPosition;
+                    Vector3 vertexNormal = *((const Vector3*)(&vertexData[(vertexStart + j) * elementSize + normalOffset]));
+                    vertexNormal = normalMat * vertexNormal;
+                    vertexNormal.Normalize();
 
-                    // Convert coordinates as requested
                     if (asRightHanded)
-                        vertexPosition.x_ *= -1;
+                        vertexNormal.x_ *= -1;
                     if (asZUp)
                     {
-                        float yVal = vertexPosition.y_;
-                        vertexPosition.y_ = vertexPosition.z_;
-                        vertexPosition.z_ = yVal;
+                        float yVal = vertexNormal.y_;
+                        vertexNormal.y_ = vertexNormal.z_;
+                        vertexNormal.z_ = yVal;
                     }
-                    outputFile->WriteLine("v " + vertexPosition.ToString());
+
+                    outputFile->WriteLine("vn " + vertexNormal.ToString());
+                }
+            }
+
+            // Write TEXCOORD1 or TEXCOORD2 if it was chosen
+            if (hasUV || (hasLMUV && writeLightmapUV))
+            {
+                // if writing Lightmap UV is chosen, only use it if TEXCOORD2 exists, otherwise use TEXCOORD1
+                unsigned texCoordOffset = (writeLightmapUV && hasLMUV) ? VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR2, SEM_TEXCOORD, 1) : VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR2, SEM_TEXCOORD, 0);
+                for (unsigned j = 0; j < vertexCount; ++j)
+                {
+                    Vector2 uvCoords = *((const Vector2*)(&vertexData[(vertexStart + j) * elementSize + texCoordOffset]));
+                    outputFile->WriteLine("vt " + uvCoords.ToString());
+                }
+            }
+
+            // If we don't have UV but have normals then must write a double-slash to indicate the absence of UV coords, otherwise use a single slash
+            const QString slashCharacter = hasNormals ? "//" : "/";
+
+            // Amount by which to offset indices in the OBJ vs their values in the Urho3D geometry, basically the lowest index value
+            // Compensates for the above vertex writing which doesn't write ALL vertices, just the used ones
+            unsigned indexOffset = M_MAX_INT;
+            for (unsigned indexIdx = indexStart; indexIdx < indexStart + indexCount; indexIdx++)
+            {
+                if (indexSize == 2)
+                    indexOffset = std::min<int>(indexOffset, *((unsigned short*)(indexData + indexIdx * indexSize)));
+                else
+                    indexOffset = std::min<unsigned>(indexOffset, *((unsigned*)(indexData + indexIdx * indexSize)));
+            }
+
+            for (unsigned indexIdx = indexStart; indexIdx < indexStart + indexCount; indexIdx += 3)
+            {
+                // Deal with 16 or 32 bit indices
+                unsigned longIndices[3];
+                if (indexSize == 2)
+                {
+                    //16 bit indices
+                    unsigned short indices[3];
+                    memcpy(indices, indexData + (indexIdx * indexSize), indexSize * 3);
+                    longIndices[0] = indices[0] - indexOffset;
+                    longIndices[1] = indices[1] - indexOffset;
+                    longIndices[2] = indices[2] - indexOffset;
+                }
+                else
+                {
+                    //32 bit indices
+                    unsigned indices[3];
+                    memcpy(indices, indexData + (indexIdx * indexSize), indexSize * 3);
+                    longIndices[0] = indices[0] - indexOffset;
+                    longIndices[1] = indices[1] - indexOffset;
+                    longIndices[2] = indices[2] - indexOffset;
                 }
 
+                QString output = "f ";
                 if (hasNormals)
                 {
-                    unsigned normalOffset = VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR3, SEM_NORMAL);
-                    for (unsigned j = 0; j < vertexCount; ++j)
-                    {
-                        Vector3 vertexNormal = *((const Vector3*)(&vertexData[(vertexStart + j) * elementSize + normalOffset]));
-                        vertexNormal = normalMat * vertexNormal;
-                        vertexNormal.Normalize();
-
-                        if (asRightHanded)
-                            vertexNormal.x_ *= -1;
-                        if (asZUp)
-                        {
-                            float yVal = vertexNormal.y_;
-                            vertexNormal.y_ = vertexNormal.z_;
-                            vertexNormal.z_ = yVal;
-                        }
-
-                        outputFile->WriteLine("vn " + vertexNormal.ToString());
-                    }
+                    output += QString("%1/%2/%3 %4/%5/%6 %7/%8/%9")
+                            .arg(currentPositionIndex + longIndices[0])
+                            .arg(currentUVIndex + longIndices[0])
+                            .arg(currentNormalIndex + longIndices[0])
+                            .arg(currentPositionIndex + longIndices[1])
+                            .arg(currentUVIndex + longIndices[1])
+                            .arg(currentNormalIndex + longIndices[1])
+                            .arg(currentPositionIndex + longIndices[2])
+                            .arg(currentUVIndex + longIndices[2])
+                            .arg(currentNormalIndex + longIndices[2]);
                 }
-
-                // Write TEXCOORD1 or TEXCOORD2 if it was chosen
-                if (hasUV || (hasLMUV && writeLightmapUV))
+                else if (hasNormals || hasUV)
                 {
-                    // if writing Lightmap UV is chosen, only use it if TEXCOORD2 exists, otherwise use TEXCOORD1
-                    unsigned texCoordOffset = (writeLightmapUV && hasLMUV) ? VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR2, SEM_TEXCOORD, 1) : VertexBuffer::GetElementOffset(*elements, TYPE_VECTOR2, SEM_TEXCOORD, 0);
-                    for (unsigned j = 0; j < vertexCount; ++j)
-                    {
-                        Vector2 uvCoords = *((const Vector2*)(&vertexData[(vertexStart + j) * elementSize + texCoordOffset]));
-                        outputFile->WriteLine("vt " + uvCoords.ToString());
-                    }
+                    unsigned secondTraitIndex = hasNormals ? currentNormalIndex : currentUVIndex;
+                    output += QString("%1%2%3 %4%5%6 %7%8%9")
+                            .arg(currentPositionIndex + longIndices[0])
+                            .arg(slashCharacter)
+                            .arg(secondTraitIndex + longIndices[0])
+                            .arg(currentPositionIndex + longIndices[1])
+                            .arg(slashCharacter)
+                            .arg(secondTraitIndex + longIndices[1])
+                            .arg(currentPositionIndex + longIndices[2])
+                            .arg(slashCharacter)
+                            .arg(secondTraitIndex + longIndices[2]);
                 }
-
-                // If we don't have UV but have normals then must write a double-slash to indicate the absence of UV coords, otherwise use a single slash
-                const QString slashCharacter = hasNormals ? "//" : "/";
-
-                // Amount by which to offset indices in the OBJ vs their values in the Urho3D geometry, basically the lowest index value
-                // Compensates for the above vertex writing which doesn't write ALL vertices, just the used ones
-                unsigned indexOffset = M_MAX_INT;
-                for (unsigned indexIdx = indexStart; indexIdx < indexStart + indexCount; indexIdx++)
+                else
                 {
-                    if (indexSize == 2)
-                        indexOffset = std::min<int>(indexOffset, *((unsigned short*)(indexData + indexIdx * indexSize)));
-                    else
-                        indexOffset = std::min<unsigned>(indexOffset, *((unsigned*)(indexData + indexIdx * indexSize)));
+                    output += QString("%1 %2 %3")
+                            .arg(currentPositionIndex + longIndices[0])
+                            .arg(currentPositionIndex + longIndices[1])
+                            .arg(currentPositionIndex + longIndices[2]);
                 }
-
-                for (unsigned indexIdx = indexStart; indexIdx < indexStart + indexCount; indexIdx += 3)
-                {
-                    // Deal with 16 or 32 bit indices
-                    unsigned longIndices[3];
-                    if (indexSize == 2)
-                    {
-                        //16 bit indices
-                        unsigned short indices[3];
-                        memcpy(indices, indexData + (indexIdx * indexSize), indexSize * 3);
-                        longIndices[0] = indices[0] - indexOffset;
-                        longIndices[1] = indices[1] - indexOffset;
-                        longIndices[2] = indices[2] - indexOffset;
-                    }
-                    else
-                    {
-                        //32 bit indices
-                        unsigned indices[3];
-                        memcpy(indices, indexData + (indexIdx * indexSize), indexSize * 3);
-                        longIndices[0] = indices[0] - indexOffset;
-                        longIndices[1] = indices[1] - indexOffset;
-                        longIndices[2] = indices[2] - indexOffset;
-                    }
-
-                    QString output = "f ";
-                    if (hasNormals)
-                    {
-                        output += QString("%1/%2/%3 %4/%5/%6 %7/%8/%9")
-                                .arg(currentPositionIndex + longIndices[0])
-                                .arg(currentUVIndex + longIndices[0])
-                                .arg(currentNormalIndex + longIndices[0])
-                                .arg(currentPositionIndex + longIndices[1])
-                                .arg(currentUVIndex + longIndices[1])
-                                .arg(currentNormalIndex + longIndices[1])
-                                .arg(currentPositionIndex + longIndices[2])
-                                .arg(currentUVIndex + longIndices[2])
-                                .arg(currentNormalIndex + longIndices[2]);
-                    }
-                    else if (hasNormals || hasUV)
-                    {
-                        unsigned secondTraitIndex = hasNormals ? currentNormalIndex : currentUVIndex;
-                        output += QString("%1%2%3 %4%5%6 %7%8%9")
-                                .arg(currentPositionIndex + longIndices[0])
-                                .arg(slashCharacter)
-                                .arg(secondTraitIndex + longIndices[0])
-                                .arg(currentPositionIndex + longIndices[1])
-                                .arg(slashCharacter)
-                                .arg(secondTraitIndex + longIndices[1])
-                                .arg(currentPositionIndex + longIndices[2])
-                                .arg(slashCharacter)
-                                .arg(secondTraitIndex + longIndices[2]);
-                    }
-                    else
-                    {
-                        output += QString("%1 %2 %3")
-                                .arg(currentPositionIndex + longIndices[0])
-                                .arg(currentPositionIndex + longIndices[1])
-                                .arg(currentPositionIndex + longIndices[2]);
-                    }
-                    outputFile->WriteLine(output);
-                }
-
-                // Increment our positions based on what vertex attributes we have
-                currentPositionIndex += vertexCount;
-                currentNormalIndex += hasNormals ? vertexCount : 0;
-                // is it possible to have TEXCOORD2 but not have TEXCOORD1, assume anything
-                currentUVIndex += (hasUV || hasLMUV) ? vertexCount : 0;
+                outputFile->WriteLine(output);
             }
+
+            // Increment our positions based on what vertex attributes we have
+            currentPositionIndex += vertexCount;
+            currentNormalIndex += hasNormals ? vertexCount : 0;
+            // is it possible to have TEXCOORD2 but not have TEXCOORD1, assume anything
+            currentUVIndex += (hasUV || hasLMUV) ? vertexCount : 0;
         }
     }
     return anythingWritten;

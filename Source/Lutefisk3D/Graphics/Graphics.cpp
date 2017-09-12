@@ -28,7 +28,6 @@
 #include "CustomGeometry.h"
 #include "DebugRenderer.h"
 #include "DecalSet.h"
-#include "Graphics.h"
 #include "GraphicsImpl.h"
 #include "Material.h"
 #include "Octree.h"

@@ -23,11 +23,11 @@
 #pragma once
 
 #include "Lutefisk3D/Graphics/Drawable.h"
-#include "Lutefisk3D/Graphics/Texture.h"
 #include "Lutefisk3D/Math/Color.h"
 
 namespace Urho3D
 {
+class LUTEFISK3D_EXPORT Texture;
 
 /// %Component that describes global rendering properties.
 class LUTEFISK3D_EXPORT Zone : public Drawable
@@ -35,10 +35,8 @@ class LUTEFISK3D_EXPORT Zone : public Drawable
     URHO3D_OBJECT(Zone,Drawable)
 
 public:
-    /// Construct.
     Zone(Context* context);
-    /// Destruct.
-    virtual ~Zone() = default;
+    virtual ~Zone();
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);
 
@@ -109,53 +107,30 @@ public:
     ResourceRef GetZoneTextureAttr() const;
 
 protected:
-    /// Handle node transform being dirtied.
-    virtual void OnMarkedDirty(Node* node) override;
-    /// Recalculate the world-space bounding box.
-    virtual void OnWorldBoundingBoxUpdate() override;
-    /// Handle removal from octree.
-    virtual void OnRemoveFromOctree() override;
-    /// Recalculate the ambient gradient colors from neighbor zones. Not safe to call from worker threads due to octree query.
+    void OnMarkedDirty(Node* node) override;
+    void OnWorldBoundingBoxUpdate() override;
+    void OnRemoveFromOctree() override;
     void UpdateAmbientGradient();
-    /// Clear zone reference from drawables inside the bounding box.
     void ClearDrawablesZone();
 
-    /// Cached inverse world transform matrix.
-    mutable Matrix3x4 inverseWorld_;
-    /// Inverse transform dirty flag.
-    mutable bool inverseWorldDirty_;
-    /// Height fog mode flag.
-    bool heightFog_;
-    /// Override mode flag.
-    bool override_;
-    /// Ambient gradient mode flag.
-    bool ambientGradient_;
-    /// Last world-space bounding box.
-    BoundingBox lastWorldBoundingBox_;
-    /// Ambient color.
-    Color ambientColor_;
-    /// Cached ambient start color.
-    Color ambientStartColor_;
-    /// Cached ambient end color.
-    Color ambientEndColor_;
-    /// Fog color.
-    Color fogColor_;
-    /// Fog start distance.
-    float fogStart_;
-    /// Fog end distance.
-    float fogEnd_;
-    /// Fog height distance.
-    float fogHeight_;
-    /// Fog height cale.
-    float fogHeightScale_;
-    /// Zone priority.
-    int priority_;
-    /// Zone texture.
-    SharedPtr<Texture> zoneTexture_;
-    /// Last zone used for ambient gradient start color.
-    WeakPtr<Zone> lastAmbientStartZone_;
-    /// Last zone used for ambient gradient end color.
-    WeakPtr<Zone> lastAmbientEndZone_;
+    mutable Matrix3x4  inverseWorld_;         //!< Cached inverse world transform matrix.
+    mutable bool       inverseWorldDirty_;    //!< Inverse transform dirty flag.
+    bool               heightFog_;            //!< Height fog mode flag.
+    bool               override_;             //!< Override mode flag.
+    bool               ambientGradient_;      //!< Ambient gradient mode flag.
+    BoundingBox        lastWorldBoundingBox_; //!< Last world-space bounding box.
+    Color              ambientColor_;         //!< Ambient color.
+    Color              ambientStartColor_;    //!< Cached ambient start color.
+    Color              ambientEndColor_;      //!< Cached ambient end color.
+    Color              fogColor_;             //!< Fog color.
+    float              fogStart_;             //!< Fog start distance.
+    float              fogEnd_;               //!< Fog end distance.
+    float              fogHeight_;            //!< Fog height distance.
+    float              fogHeightScale_;       //!< Fog height cale.
+    int                priority_;             //!< Zone priority.
+    SharedPtr<Texture> zoneTexture_;          //!< Zone texture.
+    WeakPtr<Zone>      lastAmbientStartZone_; //!< Last zone used for ambient gradient start color.
+    WeakPtr<Zone>      lastAmbientEndZone_;   //!< Last zone used for ambient gradient end color.
 };
 
 }

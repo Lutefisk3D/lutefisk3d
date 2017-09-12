@@ -35,6 +35,7 @@
 #include "Lutefisk3D/IO/FileSystem.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/Scene/Node.h"
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Resource/ResourceEvents.h"

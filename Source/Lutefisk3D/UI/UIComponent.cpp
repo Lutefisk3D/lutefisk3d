@@ -27,6 +27,7 @@
 #include "../Graphics/Technique.h"
 #include "../Graphics/Material.h"
 #include "../Graphics/Texture2D.h"
+#include "../Graphics/RenderSurface.h"
 #include "../Graphics/StaticModel.h"
 #include "../Graphics/Renderer.h"
 #include "../Graphics/Camera.h"

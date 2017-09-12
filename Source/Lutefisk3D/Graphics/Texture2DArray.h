@@ -28,9 +28,9 @@
 namespace Urho3D
 {
 
-class Deserializer;
-class Image;
-class RenderSurface;
+class LUTEFISK3D_EXPORT Deserializer;
+class LUTEFISK3D_EXPORT Image;
+class LUTEFISK3D_EXPORT RenderSurface;
 /// 2D texture array resource.
 class LUTEFISK3D_EXPORT Texture2DArray : public Texture
 {

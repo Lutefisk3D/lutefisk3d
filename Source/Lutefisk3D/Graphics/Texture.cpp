@@ -59,9 +59,7 @@ static const char* filterModeNames[] =
 Texture::Texture(Context* context) :
     ResourceWithMetadata(context),
     GPUObject(context->m_Graphics.get()),
-    shaderResourceView_(nullptr),
-    sampler_(nullptr),
-    resolveTexture_(nullptr),
+    target_(GL_NONE),
     format_(GL_NONE),
     usage_(TEXTURE_STATIC),
     levels_(0),
@@ -89,6 +87,13 @@ Texture::~Texture()
 {
 }
 
+/**
+ * \brief Set number of requested mip levels. Needs to be called before setting size.
+ *
+ * The default value (0) allocates as many mip levels as necessary to reach 1x1 size. Set value 1 to disable mipmapping.
+ * \note that rendertargets need to regenerate mips dynamically after rendering, which may cost performance.
+ * Screen buffers and shadow maps allocated by Renderer will have mipmaps disabled.
+ */
 void Texture::SetNumLevels(unsigned levels)
 {
     if (usage_ > TEXTURE_RENDERTARGET)

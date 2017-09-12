@@ -20,18 +20,19 @@
 // THE SOFTWARE.
 //
 
-#include "../../Core/Context.h"
-#include "../../Core/Profiler.h"
-#include "../../Graphics/Graphics.h"
-#include "../../Graphics/GraphicsEvents.h"
-#include "../../Graphics/GraphicsImpl.h"
-#include "../../Resource/Image.h"
-#include "../../Graphics/Renderer.h"
-#include "../../Graphics/Texture2D.h"
-#include "../../IO/FileSystem.h"
-#include "../../IO/Log.h"
-#include "../../Resource/ResourceCache.h"
-#include "../../Resource/XMLFile.h"
+#include "Lutefisk3D/Graphics/Texture2D.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Graphics/Graphics.h"
+#include "Lutefisk3D/Graphics/GraphicsEvents.h"
+#include "Lutefisk3D/Graphics/GraphicsImpl.h"
+#include "Lutefisk3D/Resource/Image.h"
+#include "Lutefisk3D/Graphics/Renderer.h"
+#include "Lutefisk3D/Graphics/RenderSurface.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/XMLFile.h"
 
 #include "glbinding/gl33ext/functions.h"
 

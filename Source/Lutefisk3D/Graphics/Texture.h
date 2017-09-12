@@ -46,11 +46,6 @@ public:
     Texture(Context* context);
     virtual ~Texture();
 
-    /// Set number of requested mip levels. Needs to be called before setting size.
-    /** The default value (0) allocates as many mip levels as necessary to reach 1x1 size. Set value 1 to disable mipmapping.
-        Note that rendertargets need to regenerate mips dynamically after rendering, which may cost performance. Screen buffers
-        and shadow maps allocated by Renderer will have mipmaps disabled.
-     */
     void SetNumLevels(unsigned levels);
     /// Set filtering mode.
     void SetFilterMode(TextureFilterMode filter);
@@ -136,15 +131,6 @@ public:
     /// Update dirty parameters to the texture object. Called by Graphics when assigning the texture.
     void UpdateParameters();
 
-    /// Return shader resource view. Only used on Direct3D11.
-    void* GetShaderResourceView() const { return shaderResourceView_; }
-
-    /// Return sampler state object. Only used on Direct3D11.
-    void* GetSampler() const { return sampler_; }
-
-    /// Return resolve texture. Only used on Direct3D11.
-    void* GetResolveTexture() const { return resolveTexture_; }
-
     /// Return texture's target. Only used on OpenGL.
     gl::GLenum GetTarget() const { return target_; }
 
@@ -176,58 +162,26 @@ protected:
     /// Create the GPU texture. Implemented in subclasses.
     virtual bool Create() { return true; }
 
-    union
-    {
-        /// Direct3D11 shader resource view.
-        void* shaderResourceView_;
-        /// OpenGL target.
-        gl::GLenum target_;
-    };
-
-    /// Direct3D11 sampler state object.
-    void* sampler_;
-    /// Direct3D11 resolve texture object when multisample with autoresolve is used.
-    void* resolveTexture_;
-    /// Texture format.
-    gl::GLenum format_;
-    /// Texture usage type.
-    TextureUsage usage_;
-    /// Current mip levels.
-    unsigned levels_;
-    /// Requested mip levels.
-    unsigned requestedLevels_;
-    /// Texture width.
-    int width_;
-    /// Texture height.
-    int height_;
-    /// Texture depth.
-    int depth_;
-    /// Shadow compare mode.
-    bool shadowCompare_;
-    /// Filtering mode.
-    TextureFilterMode filterMode_;
-    /// Addressing mode.
-    TextureAddressMode addressMode_[MAX_COORDS];
-    /// Texture anisotropy level.
-    unsigned anisotropy_;
-    /// Mip levels to skip when loading per texture quality setting.
-    unsigned mipsToSkip_[MAX_TEXTURE_QUALITY_LEVELS];
-    /// Border color.
-    Color borderColor_;
-    /// Multisampling level.
-    int multiSample_;
-    /// sRGB sampling and writing mode flag.
-    bool sRGB_;
-    /// Parameters dirty flag.
-    bool parametersDirty_;
-    /// Multisampling autoresolve flag.
-    bool autoResolve_;
-    /// Multisampling resolve needed -flag.
-    bool resolveDirty_;
-    /// Mipmap levels regeneration needed -flag.
-    bool levelsDirty_;
-    /// Backup texture.
-    SharedPtr<Texture> backupTexture_;
+    gl::GLenum         target_;                       //!< OpenGL target.
+    gl::GLenum         format_;                       //!< Texture format.
+    TextureUsage       usage_;                        //!< Texture usage type.
+    unsigned           levels_;                       //!< Current mip levels.
+    unsigned           requestedLevels_;              //!< Requested mip levels.
+    int                width_;                        //!< Texture width.
+    int                height_;                       //!< Texture height.
+    int                depth_;                        //!< Texture depth.
+    bool               shadowCompare_;                //!< Shadow compare mode.
+    TextureFilterMode  filterMode_;                   //!< Filtering mode.
+    TextureAddressMode addressMode_[MAX_COORDS];      //!< Addressing mode.
+    unsigned           anisotropy_;                   //!< Texture anisotropy level.
+    unsigned mipsToSkip_[MAX_TEXTURE_QUALITY_LEVELS]; //!< Mip levels to skip when loading per texture quality setting.
+    Color    borderColor_;                            //!< Border color.
+    int      multiSample_;                            //!< Multisampling level.
+    bool     sRGB_;                                   //!< sRGB sampling and writing mode flag.
+    bool     parametersDirty_;                        //!< Parameters dirty flag.
+    bool     autoResolve_;                            //!< Multisampling autoresolve flag.
+    bool     resolveDirty_;                           //!< Multisampling resolve needed -flag.
+    bool     levelsDirty_;                            //!< Mipmap levels regeneration needed -flag.
+    SharedPtr<Texture> backupTexture_;                //!< Backup texture.
 };
-
 }

@@ -24,6 +24,7 @@
 
 #include "AnimatedModel.h"
 #include "Animation.h"
+#include "Lutefisk3D/Scene/Node.h"
 #include "Lutefisk3D/IO/Deserializer.h"
 #include "Lutefisk3D/Graphics/DrawableEvents.h"
 #include "Lutefisk3D/IO/Log.h"

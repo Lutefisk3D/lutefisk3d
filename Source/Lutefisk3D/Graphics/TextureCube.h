@@ -23,38 +23,36 @@
 #pragma once
 
 #include "Lutefisk3D/Container/Ptr.h"
-#include "Lutefisk3D/Graphics/RenderSurface.h"
 #include "Lutefisk3D/Graphics/Texture.h"
 
 namespace Urho3D
 {
 
-class Deserializer;
-class Image;
+class LUTEFISK3D_EXPORT Deserializer;
+class LUTEFISK3D_EXPORT Image;
+class LUTEFISK3D_EXPORT RenderSurface;
 
 /// Cube texture resource.
 class LUTEFISK3D_EXPORT TextureCube : public Texture
 {
-    URHO3D_OBJECT(TextureCube,Texture);
+    URHO3D_OBJECT(TextureCube,Texture)
 
 public:
-    /// Construct.
     TextureCube(Context* context);
-    /// Destruct.
     virtual ~TextureCube();
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
+    bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
-    virtual bool EndLoad() override;
+    bool EndLoad() override;
     /// Mark the GPU resource destroyed on context destruction.
-    virtual void OnDeviceLost() override;
+    void OnDeviceLost() override;
     /// Recreate the GPU resource and restore data if applicable.
-    virtual void OnDeviceReset() override;
+    void OnDeviceReset() override;
     /// Release the texture.
-    virtual void Release() override;
+    void Release() override;
 
     /// Set size, format, usage and multisampling parameter for rendertargets. Note that cube textures always use autoresolve when multisampled due to lacking support (on all APIs) to multisample them in a shader. Return true if successful.
     bool SetSize(int size, gl::GLenum format, TextureUsage usage = TEXTURE_STATIC, int multiSample = 1);
@@ -74,7 +72,7 @@ public:
 
 protected:
     /// Create the GPU texture.
-    virtual bool Create() override;
+    bool Create() override;
 
 private:
     /// Handle render surface update event.

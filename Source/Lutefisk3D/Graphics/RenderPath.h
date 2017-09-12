@@ -27,13 +27,12 @@
 #include "Lutefisk3D/Container/Ptr.h"
 #include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Math/Vector4.h"
+#include "Lutefisk3D/Core/Variant.h"
 
 #include <QString>
 #include <vector>
-#include <utility> // pair
 #include <stdint.h>
 
-#include "Lutefisk3D/Core/Variant.h"
 
 namespace gl {
 enum class GLenum : uint32_t;

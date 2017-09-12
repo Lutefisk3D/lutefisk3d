@@ -19,19 +19,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "DebugRenderer.h"
 
-#include "Lutefisk3D/Graphics/AnimatedModel.h"
-#include "Lutefisk3D/Graphics/Camera.h"
+#include "AnimatedModel.h"
+#include "Camera.h"
+#include "Graphics.h"
+#include "Light.h"
+#include "ShaderVariation.h"
+#include "VertexBuffer.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/CoreEvents.h"
-#include "Lutefisk3D/Graphics/DebugRenderer.h"
-#include "Lutefisk3D/Graphics/Graphics.h"
-#include "Lutefisk3D/Graphics/Light.h"
-#include "Lutefisk3D/Math/Polyhedron.h"
 #include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Math/Polyhedron.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
-#include "Lutefisk3D/Graphics/ShaderVariation.h"
-#include "Lutefisk3D/Graphics/VertexBuffer.h"
+#include "Lutefisk3D/Scene/Node.h"
 
 namespace Urho3D
 {

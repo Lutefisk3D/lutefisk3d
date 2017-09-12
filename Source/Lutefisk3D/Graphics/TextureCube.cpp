@@ -24,6 +24,7 @@
 #include "Graphics.h"
 #include "GraphicsEvents.h"
 #include "GraphicsImpl.h"
+#include "RenderSurface.h"
 #include "Renderer.h"
 
 #include "Lutefisk3D/Resource/ResourceCache.h"

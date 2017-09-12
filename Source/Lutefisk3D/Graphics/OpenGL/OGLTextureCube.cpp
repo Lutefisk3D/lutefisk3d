@@ -25,6 +25,7 @@
 #include "../GraphicsEvents.h"
 #include "../GraphicsImpl.h"
 #include "../Renderer.h"
+#include "../RenderSurface.h"
 
 #include "../../Core/StringUtils.h"
 #include "../../Core/Context.h"

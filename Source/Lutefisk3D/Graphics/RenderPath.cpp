@@ -26,6 +26,7 @@
 #include "Lutefisk3D/IO/Log.h"
 #include "Material.h"
 #include "Lutefisk3D/Core/StringUtils.h"
+#include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 
 namespace Urho3D

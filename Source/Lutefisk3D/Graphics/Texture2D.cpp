@@ -26,6 +26,7 @@
 #include "GraphicsEvents.h"
 #include "GraphicsImpl.h"
 #include "Renderer.h"
+#include "RenderSurface.h"
 
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Profiler.h"

@@ -234,7 +234,7 @@ void Sample::HandleKeyDown(int key,int scancode,unsigned buttons,int qualifiers,
             ++quality;
             if (quality > QUALITY_HIGH)
                 quality = QUALITY_LOW;
-            renderer->SetTextureQuality(quality);
+            renderer->SetTextureQuality(eQuality(quality));
         }
         else if (key == '2') // Material quality
         {
@@ -242,7 +242,7 @@ void Sample::HandleKeyDown(int key,int scancode,unsigned buttons,int qualifiers,
             ++quality;
             if (quality > QUALITY_HIGH)
                 quality = QUALITY_LOW;
-            renderer->SetMaterialQuality(quality);
+            renderer->SetMaterialQuality(eQuality(quality));
         }
 
         // Specular lighting

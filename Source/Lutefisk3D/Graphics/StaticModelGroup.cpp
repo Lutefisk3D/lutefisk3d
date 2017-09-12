@@ -38,7 +38,7 @@ namespace Urho3D
 
 extern const char* GEOMETRY_CATEGORY;
 
-const char* instanceNodesStructureElementNames[] =
+static const char* instanceNodesStructureElementNames[] =
 {
     "Instance Count",
     "   NodeID",

@@ -25,6 +25,7 @@
 #include "Lutefisk3D/Graphics/Model.h"
 #include "Lutefisk3D/Graphics/Skeleton.h"
 #include "Lutefisk3D/Graphics/StaticModel.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
 
 namespace Urho3D
 {
@@ -157,11 +158,11 @@ public:
 
 protected:
     /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node) override;
+    void OnNodeSet(Node* node) override;
     /// Handle node transform being dirtied.
-    virtual void OnMarkedDirty(Node* node) override;
+    void OnMarkedDirty(Node* node) override;
     /// Recalculate the world-space bounding box.
-    virtual void OnWorldBoundingBoxUpdate() override;
+    void OnWorldBoundingBoxUpdate() override;
 
 private:
     /// Assign skeleton and animation bone node references as a postprocess. Called by ApplyAttributes.

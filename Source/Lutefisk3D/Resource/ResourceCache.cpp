@@ -182,23 +182,22 @@ void ResourceCache::RemoveResourceDir(const QString& pathName)
     std::vector<SharedPtr<FileWatcher> >::iterator fin_j = fileWatchers_.end();
     for (;i != fin;++i)
     {
-        if (0==i->compare(fixedPath, Qt::CaseInsensitive)) 
-			break;
+        if (0==i->compare(fixedPath, Qt::CaseInsensitive))
+            break;
     }
-	if (i == fin)
-		return;
-
-	resourceDirs_.erase(i);
-	// Remove the filewatcher with the matching path
-	for (auto j = fileWatchers_.begin(); j != fin_j; ++j)
-	{
-		if (0 == (*j)->GetPath().compare(fixedPath, Qt::CaseInsensitive))
-		{
-			fileWatchers_.erase(j);
-			break;
-		}
-	}
-	URHO3D_LOGINFO("Removed resource path " + fixedPath);
+    if (i == fin)
+        return;
+            resourceDirs_.erase(i);
+            // Remove the filewatcher with the matching path
+    for (auto j = fileWatchers_.begin(); j != fin_j; ++j)
+    {
+        if (0 == (*j)->GetPath().compare(fixedPath, Qt::CaseInsensitive))
+        {
+            fileWatchers_.erase(j);
+            break;
+        }
+    }
+    URHO3D_LOGINFO("Removed resource path " + fixedPath);
 }
 /// Remove a package file. Optionally release the resources loaded from it.
 void ResourceCache::RemovePackageFile(PackageFile* package, bool releaseResources, bool forceRelease)
@@ -441,21 +440,21 @@ void ResourceCache::SetMemoryBudget(StringHash type, uint64_t budget)
 void ResourceCache::SetAutoReloadResources(bool enable)
 {
     if (enable == autoReloadResources_)
-		return;
+        return;
 
-	if (enable)
-	{
-		for (unsigned i = 0; i < resourceDirs_.size(); ++i)
-		{
-			SharedPtr<FileWatcher> watcher(new FileWatcher(m_context));
-			watcher->StartWatching(resourceDirs_[i], true);
-			fileWatchers_.push_back(watcher);
-		}
-	}
-	else
-		fileWatchers_.clear();
+    if (enable)
+    {
+        for (unsigned i = 0; i < resourceDirs_.size(); ++i)
+        {
+            SharedPtr<FileWatcher> watcher(new FileWatcher(m_context));
+            watcher->StartWatching(resourceDirs_[i], true);
+            fileWatchers_.push_back(watcher);
+        }
+    }
+    else
+        fileWatchers_.clear();
 
-	autoReloadResources_ = enable;
+    autoReloadResources_ = enable;
 }
 /// Add a resource router object. By default there is none, so the routing process is skipped.
 void ResourceCache::AddResourceRouter(ResourceRouter* router, bool addAsFirst)
@@ -594,7 +593,7 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
     if (existing)
         return existing;
 
-	// Make sure the pointer is non-null and is a Resource subclass
+    // Make sure the pointer is non-null and is a Resource subclass
     SharedPtr<Resource> resource = DynamicCast<Resource>(m_context->CreateObject(type));
     if (!resource)
     {
@@ -675,7 +674,7 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QStrin
     if (name.isEmpty())
         return SharedPtr<Resource>();
 
-	// Make sure the pointer is non-null and is a Resource subclass
+    // Make sure the pointer is non-null and is a Resource subclass
     SharedPtr<Resource> resource = DynamicCast<Resource>(m_context->CreateObject(type));
     if (!resource)
     {

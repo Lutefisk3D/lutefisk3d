@@ -41,7 +41,7 @@ ShaderVariation::ShaderVariation(Shader* owner, ShaderType type) :
 
 ShaderVariation::~ShaderVariation()
 {
-	ShaderVariation::Release();
+    ShaderVariation::Release();
 }
 
 void ShaderVariation::SetName(const QString& name)

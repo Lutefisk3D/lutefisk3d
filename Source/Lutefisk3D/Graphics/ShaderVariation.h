@@ -76,9 +76,9 @@ public:
     virtual ~ShaderVariation();
 
     /// Mark the GPU resource destroyed on graphics context destruction.
-	void OnDeviceLost() override;
+    void OnDeviceLost() override;
     /// Release the shader.
-	void Release() override;
+    void Release() override;
 
     /// Compile the shader. Return true if successful.
     bool Create();

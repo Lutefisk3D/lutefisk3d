@@ -42,9 +42,11 @@ class LUTEFISK3D_EXPORT ShaderProgram : public RefCounted, public GPUObject
 public:
     ShaderProgram(Graphics* graphics, ShaderVariation* vertexShader, ShaderVariation* pixelShader);
     ~ShaderProgram();
-	void OnDeviceLost() override;
-	void Release() override;
+
+    void OnDeviceLost() override;
+    void Release() override;
     bool Link();
+
     ShaderVariation* GetVertexShader() const;
     ShaderVariation* GetPixelShader() const;
     bool HasParameter(StringHash param) const;
@@ -59,8 +61,10 @@ public:
     unsigned GetUsedVertexAttributes() const { return usedVertexAttributes_; }
     /// Return all constant buffers.
     const SharedPtr<ConstantBuffer>* GetConstantBuffers() const { return &constantBuffers_[0]; }
+
     bool NeedParameterUpdate(ShaderParameterGroup group, const void* source);
     void ClearParameterSource(ShaderParameterGroup group);
+
     static void ClearParameterSources();
     static void ClearGlobalParameterSource(ShaderParameterGroup group);
 
@@ -85,6 +89,7 @@ private:
     QString linkerOutput_;
     /// Shader parameter source framenumber.
     unsigned frameNumber_;
+
     /// Global shader parameter source framenumber.
     static unsigned globalFrameNumber;
     /// Remembered global shader parameter sources for constant buffer mode.

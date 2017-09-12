@@ -38,6 +38,7 @@ class VertexBuffer;
 struct DecalVertex
 {
     DecalVertex() = default;
+
     /// Construct with position and normal.
     DecalVertex(const Vector3& position, const Vector3& normal) :
         position_(position),
@@ -70,7 +71,7 @@ struct Decal
 {
 
     /// Add a vertex.
-    void AddVertex(const DecalVertex &vertex);
+    void AddVertex(const DecalVertex& vertex);
     /// Calculate local-space bounding box.
     void CalculateBoundingBox();
 
@@ -180,10 +181,10 @@ private:
     /// Handle scene post-update event.
     void HandleScenePostUpdate(Scene *, float ts);
 
-    SharedPtr<Geometry>     geometry_;
+    SharedPtr<Geometry> geometry_;
     SharedPtr<VertexBuffer> vertexBuffer_;
-    SharedPtr<IndexBuffer>  indexBuffer_;
-    std::deque<Decal>       decals_;
+    SharedPtr<IndexBuffer> indexBuffer_;
+    std::deque<Decal> decals_;
     std::vector<Bone>       bones_;              //!< Bones used for skinned decals.
     std::vector<Matrix3x4>  skinMatrices_;       //!< Skinning matrices.
     unsigned                numVertices_;        //!< Vertices in the current decals.
@@ -198,4 +199,5 @@ private:
     bool                    assignBonesPending_; //!< Bone nodes assignment pending flag.
     bool                    subscribed_;         //!< Subscribed to scene post update event flag.
 };
+
 }

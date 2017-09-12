@@ -66,6 +66,8 @@ Zone::~Zone()
 
 }
 
+
+
 void Zone::RegisterObject(Context* context)
 {
     context->RegisterFactory<Zone>(SCENE_CATEGORY);
@@ -234,7 +236,6 @@ ResourceRef Zone::GetZoneTextureAttr() const
 {
     return GetResourceRef(zoneTexture_, TextureCube::GetTypeStatic());
 }
-
 /// Handle node transform being dirtied.
 void Zone::OnMarkedDirty(Node* node)
 {
@@ -253,13 +254,11 @@ void Zone::OnMarkedDirty(Node* node)
 
     inverseWorldDirty_ = true;
 }
-
 /// Recalculate the world-space bounding box.
 void Zone::OnWorldBoundingBoxUpdate()
 {
     worldBoundingBox_ = boundingBox_.Transformed(node_->GetWorldTransform());
 }
-
 /// Recalculate the ambient gradient colors from neighbor zones. Not safe to call from worker threads due to octree
 /// query.
 void Zone::UpdateAmbientGradient()
@@ -329,13 +328,11 @@ void Zone::UpdateAmbientGradient()
         }
     }
 }
-
 /// Handle removal from octree.
 void Zone::OnRemoveFromOctree()
 {
     ClearDrawablesZone();
 }
-
 /// Clear zone reference from drawables inside the bounding box.
 void Zone::ClearDrawablesZone()
 {

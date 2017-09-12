@@ -46,7 +46,7 @@ public:
     Pass(const QString& passName);
     ~Pass();
 
-	void SetBlendMode(BlendMode mode);
+    void SetBlendMode(BlendMode mode);
     void SetCullMode(CullMode mode);
     void SetDepthTestMode(CompareMode mode);
     void SetLightingMode(PassLightingMode mode);
@@ -160,7 +160,7 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-	bool BeginLoad(Deserializer& source) override;
+    bool BeginLoad(Deserializer& source) override;
 
     /// Create a new pass.
     Pass* CreatePass(const QString& passName);

@@ -625,7 +625,6 @@ btCompoundShape *RigidBody::GetCompoundShape() const
 {
     return private_data->compoundShape_.get();
 }
-
 Vector3 RigidBody::GetPosition() const
 {
     if (private_data->body_)

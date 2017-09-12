@@ -179,6 +179,7 @@ namespace Urho3D
 \var bool     resetViews_
 \brief Flag for views needing reset.
 */
+
 static const float dirLightVertexData[] =
 {
     -1, 1, 0,
@@ -640,6 +641,7 @@ void Renderer::ReloadShaders()
 {
     shadersDirty_ = true;
 }
+
 /// Apply post processing filter to the shadow map. Called by View.
 void Renderer::ApplyShadowMapFilter(View* view, Texture2D* shadowMap, float blurScale)
 {
@@ -797,6 +799,7 @@ void Renderer::Update(float timeStep)
     queuedViewports_.clear();
     resetViews_ = false;
 }
+
 /// Render. Called by Engine.
 void Renderer::Render()
 {
@@ -884,7 +887,7 @@ void Renderer::DrawDebugGeometry(bool depthTest)
         {
             if (!processedGeometries.contains(draw))
             {
-				draw->DrawDebugGeometry(debug, depthTest);
+                draw->DrawDebugGeometry(debug, depthTest);
                 processedGeometries.insert(draw);
             }
         }
@@ -892,12 +895,13 @@ void Renderer::DrawDebugGeometry(bool depthTest)
         {
             if (!processedLights.contains(lght))
             {
-				lght->DrawDebugGeometry(debug, depthTest);
+                lght->DrawDebugGeometry(debug, depthTest);
                 processedLights.insert(lght);
             }
         }
     }
 }
+
 /// Queue a render surface's viewports for rendering. Called by the surface, or by View.
 void Renderer::QueueRenderSurface(RenderSurface* renderTarget)
 {
@@ -909,6 +913,7 @@ void Renderer::QueueRenderSurface(RenderSurface* renderTarget)
             QueueViewport(renderTarget, renderTarget->GetViewport(i));
     }
 }
+
 /// Queue a viewport for rendering. Null surface means backbuffer.
 void Renderer::QueueViewport(RenderSurface* renderTarget, Viewport* viewport)
 {
@@ -922,6 +927,7 @@ void Renderer::QueueViewport(RenderSurface* renderTarget, Viewport* viewport)
             queuedViewports_.push_back(newView);
     }
 }
+
 /// Return volume geometry for a light.
 Geometry* Renderer::GetLightGeometry(Light* light)
 {
@@ -937,11 +943,13 @@ Geometry* Renderer::GetLightGeometry(Light* light)
 
     return nullptr;
 }
+
 /// Return quad geometry used in postprocessing.
 Geometry* Renderer::GetQuadGeometry()
 {
     return dirLightGeometry_.get();
 }
+
 /// Allocate a shadow map. If shadow map reuse is disabled, a different map is returned each time.
 Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWidth, unsigned viewHeight)
 {
@@ -1092,6 +1100,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
 
     return newShadowMap;
 }
+
 /// Allocate a rendertarget or depth-stencil texture for deferred rendering or postprocessing. Should only be called
 /// during actual rendering, not before.
 Texture *Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, int multiSample, bool autoResolve,
@@ -1110,7 +1119,7 @@ Texture *Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, int
     if (multiSample == 1)
         autoResolve = false;
 
-	int64_t searchKey = (int64_t(format) << 32) | (multiSample << 24) | (width << 12) | height;
+    int64_t searchKey = (int64_t(format) << 32) | (multiSample << 24) | (width << 12) | height;
     if (filtered)
         searchKey |= 0x8000000000000000LL;
     if (srgb)
@@ -1181,6 +1190,7 @@ Texture *Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, int
         return buffer;
     }
 }
+
 /// Allocate a depth-stencil surface that does not need to be readable. Should only be called during actual rendering, not before.
 RenderSurface* Renderer::GetDepthStencil(int width, int height, int multiSample, bool autoResolve)
 {
@@ -1188,10 +1198,10 @@ RenderSurface* Renderer::GetDepthStencil(int width, int height, int multiSample,
     // (when using OpenGL Graphics will allocate right size surfaces on demand to emulate Direct3D9)
     if (width == graphics_->GetWidth() && height == graphics_->GetHeight() && multiSample == 1 && graphics_->GetMultiSample() == multiSample)
         return nullptr;
-	
-	return static_cast<Texture2D*>(GetScreenBuffer(width, height, Graphics::GetDepthStencilFormat(), multiSample, autoResolve,
-	                                               false, false, false))->GetRenderSurface();
+    return static_cast<Texture2D*>(GetScreenBuffer(width, height, Graphics::GetDepthStencilFormat(), multiSample, autoResolve,
+        false, false, false))->GetRenderSurface();
 }
+
 /// Allocate an occlusion buffer.
 OcclusionBuffer* Renderer::GetOcclusionBuffer(Camera* camera)
 {
@@ -1212,6 +1222,7 @@ OcclusionBuffer* Renderer::GetOcclusionBuffer(Camera* camera)
 
     return buffer;
 }
+
 /// Allocate a temporary shadow camera and a scene node for it. Is thread-safe.
 Camera* Renderer::GetShadowCamera()
 {
@@ -1231,26 +1242,29 @@ Camera* Renderer::GetShadowCamera()
 
     return camera;
 }
+
 /// Mark a view as prepared by the specified culling camera.
 void Renderer::StorePreparedView(View* view, Camera* camera)
 {
     if (view && camera)
         preparedViews_[camera] = view;
 }
+
 /// Return a prepared view if exists for the specified camera. Used to avoid duplicate view preparation CPU work.
 View* Renderer::GetPreparedView(Camera* camera)
 {
     HashMap<Camera*, WeakPtr<View> >::iterator i = preparedViews_.find(camera);
     return i != preparedViews_.end() ? MAP_VALUE(i) : nullptr;
 }
+
 /// Return a view or its source view if it uses one. Used internally for render statistics.
 View* Renderer::GetActualView(View* view)
 {
     if (view && view->GetSourceView())
         return view->GetSourceView();
-	
-	return view;
+    return view;
 }
+
 /// Choose shaders for a forward rendering batch. The related batch queue is provided in case it has extra shader compilation defines.
 void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, const BatchQueue& queue, bool allowShadows)
 {
@@ -1290,7 +1304,7 @@ void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, const BatchQ
             }
 
             Light* light = lightQueue->light_;
-	        unsigned psi = 0;
+            unsigned psi = 0;
             unsigned vsi = batch.geometryType_ * MAX_LIGHT_VS_VARIATIONS;
 
             bool materialHasSpecular = batch.material_ ? batch.material_->GetSpecular() : true;
@@ -1363,6 +1377,7 @@ void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, const BatchQ
         }
     }
 }
+
 /// Choose shaders for a deferred light volume batch.
 void Renderer::SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const QString& vsName, const QString& psName, const QString& vsDefines, const QString& psDefines)
 {
@@ -1416,6 +1431,7 @@ void Renderer::SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const QS
     else
     batch.pixelShader_ = graphics_->GetShader(PS, psName, deferredLightPSVariations_[psi]);
 }
+
 /// Set cull mode while taking possible projection flipping into account.
 void Renderer::SetCullMode(CullMode mode, const Camera *camera)
 {
@@ -1430,6 +1446,7 @@ void Renderer::SetCullMode(CullMode mode, const Camera *camera)
 
     graphics_->SetCullMode(mode);
 }
+
 /// Ensure sufficient size of the instancing vertex buffer. Return true if successful.
 bool Renderer::ResizeInstancingBuffer(unsigned numInstances)
 {
@@ -1455,6 +1472,7 @@ bool Renderer::ResizeInstancingBuffer(unsigned numInstances)
     URHO3D_LOGDEBUG("Resized instancing buffer to " + QString::number(newSize));
     return true;
 }
+
 /// Optimize a light by scissor rectangle.
 void Renderer::OptimizeLightByScissor(Light* light, Camera* camera)
 {
@@ -1463,77 +1481,78 @@ void Renderer::OptimizeLightByScissor(Light* light, Camera* camera)
     else
         graphics_->SetScissorTest(false);
 }
+
 /// Optimize a light by marking it to the stencil buffer and setting a stencil test.
 void Renderer::OptimizeLightByStencil(Light* light, Camera* camera)
 {
-	if (!light) {
-		graphics_->SetStencilTest(false);
-		return;
-	}
+    if (!light) {
+        graphics_->SetStencilTest(false);
+        return;
+    }
+    LightType type = light->GetLightType();
+    if (type == LIGHT_DIRECTIONAL)
+    {
+        graphics_->SetStencilTest(false);
+        return;
+    }
 
-	LightType type = light->GetLightType();
-	if (type == LIGHT_DIRECTIONAL)
-	{
-		graphics_->SetStencilTest(false);
-		return;
-	}
+    Geometry* geometry = GetLightGeometry(light);
+    const Matrix3x4& view = camera->GetView();
+    const Matrix4& projection = camera->GetGPUProjection();
+    Vector3 cameraPos = camera->GetNode()->GetWorldPosition();
+    float lightDist;
 
-	Geometry* geometry = GetLightGeometry(light);
-	const Matrix3x4& view = camera->GetView();
-	const Matrix4& projection = camera->GetGPUProjection();
-	Vector3 cameraPos = camera->GetNode()->GetWorldPosition();
-	float lightDist;
+    if (type == LIGHT_POINT)
+        lightDist = Sphere(light->GetNode()->GetWorldPosition(), light->GetRange() * 1.25f).Distance(cameraPos);
+    else
+        lightDist = light->GetFrustum().Distance(cameraPos);
 
-	if (type == LIGHT_POINT)
-		lightDist = Sphere(light->GetNode()->GetWorldPosition(), light->GetRange() * 1.25f).Distance(cameraPos);
-	else
-		lightDist = light->GetFrustum().Distance(cameraPos);
+    // If the camera is actually inside the light volume, do not draw to stencil as it would waste fillrate
+    if (lightDist < M_EPSILON)
+    {
+        graphics_->SetStencilTest(false);
+        return;
+    }
 
-	// If the camera is actually inside the light volume, do not draw to stencil as it would waste fillrate
-	if (lightDist < M_EPSILON)
-	{
-		graphics_->SetStencilTest(false);
-		return;
-	}
+    // If the stencil value has wrapped, clear the whole stencil first
+    if (!lightStencilValue_)
+    {
+        graphics_->Clear(CLEAR_STENCIL);
+        lightStencilValue_ = 1;
+    }
 
-	// If the stencil value has wrapped, clear the whole stencil first
-	if (!lightStencilValue_)
-	{
-		graphics_->Clear(CLEAR_STENCIL);
-		lightStencilValue_ = 1;
-	}
+    // If possible, render the stencil volume front faces. However, close to the near clip plane render back faces instead
+    // to avoid clipping.
+    if (lightDist < camera->GetNearClip() * 2.0f)
+    {
+        SetCullMode(CULL_CW, camera);
+        graphics_->SetDepthTest(CMP_GREATER);
+    }
+    else
+    {
+        SetCullMode(CULL_CCW, camera);
+        graphics_->SetDepthTest(CMP_LESSEQUAL);
+    }
 
-	// If possible, render the stencil volume front faces. However, close to the near clip plane render back faces instead
-	// to avoid clipping.
-	if (lightDist < camera->GetNearClip() * 2.0f)
-	{
-		SetCullMode(CULL_CW, camera);
-		graphics_->SetDepthTest(CMP_GREATER);
-	}
-	else
-	{
-		SetCullMode(CULL_CCW, camera);
-		graphics_->SetDepthTest(CMP_LESSEQUAL);
-	}
+    graphics_->SetColorWrite(false);
+    graphics_->SetDepthWrite(false);
+    graphics_->SetStencilTest(true, CMP_ALWAYS, OP_REF, OP_KEEP, OP_KEEP, lightStencilValue_);
+    graphics_->SetShaders(graphics_->GetShader(VS, "Stencil"), graphics_->GetShader(PS, "Stencil"));
+    graphics_->SetShaderParameter(VSP_VIEW, view);
+    graphics_->SetShaderParameter(VSP_VIEWINV, camera->GetEffectiveWorldTransform());
+    graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * view);
+    graphics_->SetShaderParameter(VSP_MODEL, light->GetVolumeTransform(camera));
 
-	graphics_->SetColorWrite(false);
-	graphics_->SetDepthWrite(false);
-	graphics_->SetStencilTest(true, CMP_ALWAYS, OP_REF, OP_KEEP, OP_KEEP, lightStencilValue_);
-	graphics_->SetShaders(graphics_->GetShader(VS, "Stencil"), graphics_->GetShader(PS, "Stencil"));
-	graphics_->SetShaderParameter(VSP_VIEW, view);
-	graphics_->SetShaderParameter(VSP_VIEWINV, camera->GetEffectiveWorldTransform());
-	graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * view);
-	graphics_->SetShaderParameter(VSP_MODEL, light->GetVolumeTransform(camera));
+    geometry->Draw(graphics_);
 
-	geometry->Draw(graphics_);
+    graphics_->ClearTransformSources();
+    graphics_->SetColorWrite(true);
+    graphics_->SetStencilTest(true, CMP_EQUAL, OP_KEEP, OP_KEEP, OP_KEEP, lightStencilValue_);
 
-	graphics_->ClearTransformSources();
-	graphics_->SetColorWrite(true);
-	graphics_->SetStencilTest(true, CMP_EQUAL, OP_KEEP, OP_KEEP, OP_KEEP, lightStencilValue_);
-
-	// Increase stencil value for next light
-	++lightStencilValue_;
+    // Increase stencil value for next light
+    ++lightStencilValue_;
 }
+
 /// Return a scissor rectangle for a light.
 const Rect& Renderer::GetLightScissor(Light* light, Camera* camera)
 {
@@ -1616,6 +1635,7 @@ void Renderer::PrepareViewRender()
     lightScissorCache_.clear();
     lightStencilValue_ = 1;
 }
+
 /// Remove unused occlusion and screen buffers.
 void Renderer::RemoveUnusedBuffers()
 {
@@ -1651,18 +1671,21 @@ void Renderer::RemoveUnusedBuffers()
             ++i;
     }
 }
+
 /// Reset shadow map allocation counts.
 void Renderer::ResetShadowMapAllocations()
 {
     for (auto & elem : shadowMapAllocations_)
         ELEMENT_VALUE(elem).clear();
 }
+
 /// Reset screem buffer allocation counts.
 void Renderer::ResetScreenBufferAllocations()
 {
     for (auto & elem : screenBufferAllocations_)
         ELEMENT_VALUE(elem) = 0;
 }
+
 /// Initialize when screen mode initially set.
 void Renderer::Initialize()
 {
@@ -1702,6 +1725,7 @@ void Renderer::Initialize()
 
     URHO3D_LOGINFO("Initialized renderer");
 }
+
 /// Reload shaders.
 void Renderer::LoadShaders()
 {
@@ -1725,6 +1749,7 @@ void Renderer::LoadShaders()
 
     shadersDirty_ = false;
 }
+
 /// Reload shaders for a material pass. The related batch queue is provided in case it has extra shader compilation defines.
 void Renderer::LoadPassShaders(Pass* pass, std::vector<SharedPtr<ShaderVariation> >& vertexShaders, std::vector<SharedPtr<ShaderVariation> >& pixelShaders, const BatchQueue& queue)
 {
@@ -1826,6 +1851,7 @@ void Renderer::LoadPassShaders(Pass* pass, std::vector<SharedPtr<ShaderVariation
 
     pass->MarkShadersLoaded(shadersChangedFrameNumber_);
 }
+
 /// Release shaders used in materials.
 void Renderer::ReleaseMaterialShaders()
 {
@@ -1837,6 +1863,7 @@ void Renderer::ReleaseMaterialShaders()
     for (unsigned i = 0; i < materials.size(); ++i)
         materials[i]->ReleaseShaders();
 }
+
 /// Reload textures.
 void Renderer::ReloadTextures()
 {
@@ -1851,7 +1878,6 @@ void Renderer::ReloadTextures()
     for (unsigned i = 0; i < textures.size(); ++i)
         cache->ReloadResource(textures[i]);
 }
-
 
 /// Create light volume geometries.
 void Renderer::CreateGeometries()
@@ -1919,6 +1945,7 @@ void Renderer::CreateGeometries()
         SetIndirectionTextureData();
     }
 }
+
 /// Create point light shadow indirection texture data.
 void Renderer::SetIndirectionTextureData()
 {
@@ -1957,6 +1984,7 @@ void Renderer::SetIndirectionTextureData()
     faceSelectCubeMap_->ClearDataLost();
     indirectionCubeMap_->ClearDataLost();
 }
+
 /// Create instancing vertex buffer.
 void Renderer::CreateInstancingBuffer()
 {
@@ -1976,6 +2004,7 @@ void Renderer::CreateInstancingBuffer()
         dynamicInstancing_ = false;
     }
 }
+
 /// Remove all shadow maps. Called when global shadow map resolution or format is changed.
 void Renderer::ResetShadowMaps()
 {
@@ -1983,6 +2012,7 @@ void Renderer::ResetShadowMaps()
     shadowMapAllocations_.clear();
     colorShadowMaps_.clear();
 }
+
 /// Remove all occlusion and screen buffers.
 void Renderer::ResetBuffers()
 {

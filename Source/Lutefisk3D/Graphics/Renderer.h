@@ -215,8 +215,11 @@ public:
     void SetOcclusionBufferSize(int size);
     void SetOccluderSizeThreshold(float screenSize);
     void SetThreadedOcclusion(bool enable);
+
     void ReloadShaders();
+
     void ApplyShadowMapFilter(View* view, Texture2D* shadowMap, float blurScale);
+
     /// Return number of backbuffer viewports.
     unsigned GetNumViewports() const { return viewports_.size(); }
     /// Return backbuffer viewport by index.
@@ -225,8 +228,10 @@ public:
     Viewport* GetViewportForScene(Scene* scene, unsigned index) const;
     /// Return default renderpath.
     RenderPath* GetDefaultRenderPath() const;
+
     /// Return default non-textured material technique.
     Technique* GetDefaultTechnique() const;
+
     /// Return whether HDR rendering is enabled.
     bool GetHDRRendering() const { return hdrRendering_; }
     /// Return whether specular lighting is enabled.
@@ -245,8 +250,10 @@ public:
     int GetShadowMapSize() const { return shadowMapSize_; }
     /// Return shadow quality.
     ShadowQuality GetShadowQuality() const { return shadowQuality_; }
+
     /// Return shadow softness.
     float GetShadowSoftness() const { return shadowSoftness_; }
+
     /// Return VSM shadow parameters.
     Vector2 GetVSMShadowParameters() const { return vsmShadowParams_; }
     /// Return VSM shadow multisample level.
@@ -305,27 +312,28 @@ public:
     void Update(float timeStep);
     void Render();
     void DrawDebugGeometry(bool depthTest);
-    void QueueRenderSurface(RenderSurface *renderTarget);
-    void QueueViewport(RenderSurface *renderTarget, Viewport *viewport);
-    Geometry *GetLightGeometry(Light *light);
-    Geometry * GetQuadGeometry();
-    Texture2D *GetShadowMap(Light *light, Camera *camera, unsigned viewWidth, unsigned viewHeight);
+    void QueueRenderSurface(RenderSurface* renderTarget);
+    void QueueViewport(RenderSurface* renderTarget, Viewport* viewport);
+
+    Geometry* GetLightGeometry(Light* light);
+    Geometry* GetQuadGeometry();
+    Texture2D* GetShadowMap(Light* light, Camera* camera, unsigned viewWidth, unsigned viewHeight);
     Texture *GetScreenBuffer(int width, int height, gl::GLenum format, int multiSample, bool autoResolve, bool cubemap,
                              bool filtered, bool srgb, unsigned persistentKey = 0);
-    RenderSurface *GetDepthStencil(int width, int height, int multiSample, bool autoResolve);
-    OcclusionBuffer *GetOcclusionBuffer(Camera *camera);
-    Camera *GetShadowCamera();
-    void StorePreparedView(View *view, Camera *cullCamera);
-    View *GetPreparedView(Camera *cullCamera);
-    void SetBatchShaders(Batch &batch, const Technique *tech, const BatchQueue &queue, bool allowShadows = true);
+    RenderSurface* GetDepthStencil(int width, int height, int multiSample, bool autoResolve);
+    OcclusionBuffer* GetOcclusionBuffer(Camera* camera);
+    Camera* GetShadowCamera();
+    void StorePreparedView(View* view, Camera* cullCamera);
+    View* GetPreparedView(Camera* cullCamera);
+    void SetBatchShaders(Batch& batch, const Technique* tech, const BatchQueue& queue, bool allowShadows = true);
     void SetLightVolumeBatchShaders(Batch &batch, Camera *camera, const QString &vsName, const QString &psName,
                                     const QString &vsDefines, const QString &psDefines);
     void SetCullMode(CullMode mode, const Urho3D::Camera *camera);
     bool ResizeInstancingBuffer(unsigned numInstances);
-    void OptimizeLightByScissor(Light *light, Camera *camera);
-    void OptimizeLightByStencil(Light *light, Camera *camera);
-    const Rect &GetLightScissor(Light *light, Camera *camera);
-    static View *GetActualView(View *view);
+    void OptimizeLightByScissor(Light* light, Camera* camera);
+    void OptimizeLightByStencil(Light* light, Camera* camera);
+    const Rect& GetLightScissor(Light* light, Camera* camera);
+    static View* GetActualView(View* view);
 
 private:
     void Initialize();
@@ -345,44 +353,43 @@ private:
     void ResetBuffers();
     QString GetShadowVariations() const;
     void HandleScreenMode(int, int, bool, bool, bool, bool, int, int);
-
     void HandleRenderUpdate(float ts);
     /// Blur the shadow map.
     void BlurShadowMap(View* view, Texture2D* shadowMap, float blurScale);
 
-    Context *                               m_context;
-    WeakPtr<Graphics>                       graphics_;
-    SharedPtr<RenderPath>                   defaultRenderPath_;
-    SharedPtr<Technique>                    defaultTechnique_;
-    std::unique_ptr<Zone>                   defaultZone_;
+    Context *m_context;
+    WeakPtr<Graphics> graphics_;
+    SharedPtr<RenderPath> defaultRenderPath_;
+    SharedPtr<Technique> defaultTechnique_;
+    std::unique_ptr<Zone> defaultZone_;
     std::unique_ptr<Geometry>               dirLightGeometry_;
     std::unique_ptr<Geometry>               spotLightGeometry_;
     std::unique_ptr<Geometry>               pointLightGeometry_;
-    std::unique_ptr<VertexBuffer>           instancingBuffer_;
-    std::unique_ptr<Material>               defaultMaterial_;
-    SharedPtr<Texture2D>                    defaultLightRamp_;
-    SharedPtr<Texture2D>                    defaultLightSpot_;
-    SharedPtr<TextureCube>                  faceSelectCubeMap_;
-    SharedPtr<TextureCube>                  indirectionCubeMap_;
-    std::vector<SharedPtr<Node>>            shadowCameraNodes_;
-    std::vector<SharedPtr<OcclusionBuffer>> occlusionBuffers_;
-    HashMap<int, std::vector<SharedPtr<Texture2D>>> shadowMaps_;
-    HashMap<int, SharedPtr<Texture2D>>              colorShadowMaps_;
-    HashMap<int, std::vector<Light *>>              shadowMapAllocations_;
+    std::unique_ptr<VertexBuffer> instancingBuffer_;
+    std::unique_ptr<Material> defaultMaterial_;
+    SharedPtr<Texture2D> defaultLightRamp_;
+    SharedPtr<Texture2D> defaultLightSpot_;
+    SharedPtr<TextureCube> faceSelectCubeMap_;
+    SharedPtr<TextureCube> indirectionCubeMap_;
+    std::vector<SharedPtr<Node> > shadowCameraNodes_;
+    std::vector<SharedPtr<OcclusionBuffer> > occlusionBuffers_;
+    HashMap<int, std::vector<SharedPtr<Texture2D> > > shadowMaps_;
+    HashMap<int, SharedPtr<Texture2D> > colorShadowMaps_;
+    HashMap<int, std::vector<Light*> > shadowMapAllocations_;
     ShadowMapFilter shadowMapFilter_ {nullptr};
     HashMap<int64_t, std::vector<SharedPtr<Texture>>> screenBuffers_;
     HashMap<int64_t, unsigned>                        screenBufferAllocations_;
     HashMap<int64_t, unsigned>                        savedScreenBufferAllocations_;
-    HashMap<std::pair<Light *, Camera *>, Rect> lightScissorCache_;
-    std::vector<SharedPtr<Viewport>> viewports_;
-    std::vector<std::pair<WeakPtr<RenderSurface>, WeakPtr<Viewport>>> queuedViewports_;
-    std::vector<WeakPtr<View>> views_;
-    HashMap<Camera *, WeakPtr<View>> preparedViews_;
-    HashSet<Octree *>          updatedOctrees_;
-    HashSet<const Technique *> shaderErrorDisplayed_;
-    Mutex                      rendererMutex_;
-    QStringList                deferredLightPSVariations_;
-    FrameInfo                  frame_;
+    HashMap<std::pair<Light*, Camera*>, Rect> lightScissorCache_;
+    std::vector<SharedPtr<Viewport> > viewports_;
+    std::vector<std::pair<WeakPtr<RenderSurface>, WeakPtr<Viewport> > > queuedViewports_;
+    std::vector<WeakPtr<View> > views_;
+    HashMap<Camera*, WeakPtr<View> > preparedViews_;
+    HashSet<Octree*> updatedOctrees_;
+    HashSet<const Technique*> shaderErrorDisplayed_;
+    Mutex rendererMutex_;
+    QStringList deferredLightPSVariations_;
+    FrameInfo frame_;
     int                        textureAnisotropy_                = 4;
     TextureFilterMode          textureFilterMode_                = FILTER_TRILINEAR;
     int                        textureQuality_                   = QUALITY_HIGH;
@@ -415,4 +422,5 @@ private:
     bool                       initialized_                      = false;
     bool                       resetViews_                       = false;
 };
+
 }

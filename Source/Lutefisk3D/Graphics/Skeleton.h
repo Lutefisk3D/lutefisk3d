@@ -29,7 +29,6 @@
 #include "Lutefisk3D/Math/Matrix3x4.h"
 #include <vector>
 #include <QtCore/QString>
-
 namespace Urho3D
 {
 class LUTEFISK3D_EXPORT Deserializer;
@@ -70,13 +69,13 @@ public:
     void SetRootBoneIndex(unsigned index);
     void ClearBones();
     void Reset();
-
     /// Return all bones.
     const std::vector<Bone>& GetBones() const { return bones_; }
     /// Return modifiable bones.
     std::vector<Bone>& GetModifiableBones() { return bones_; }
     /// Return number of bones.
     unsigned GetNumBones() const { return bones_.size(); }
+
     Bone* GetRootBone();
     Bone* GetBone(unsigned index);
     Bone* GetBone(StringHash boneNameHash);
@@ -86,5 +85,4 @@ private:
     std::vector<Bone> bones_;                          //!< Bones.
     unsigned          rootBoneIndex_ = M_MAX_UNSIGNED; //!< Root bone index.
 };
-
 }

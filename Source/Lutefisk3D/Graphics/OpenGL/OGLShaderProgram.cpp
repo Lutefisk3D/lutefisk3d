@@ -70,7 +70,7 @@ ShaderProgram::ShaderProgram(Graphics* graphics, ShaderVariation* vertexShader, 
 
 ShaderProgram::~ShaderProgram()
 {
-	ShaderProgram::Release();
+    ShaderProgram::Release();
 }
 /// Mark the GPU resource destroyed on context destruction.
 void ShaderProgram::OnDeviceLost()
@@ -83,31 +83,34 @@ void ShaderProgram::OnDeviceLost()
 
     linkerOutput_.clear();
 }
+
 /// Release shader program.
 void ShaderProgram::Release()
 {
     if (!object_ || !graphics_)
-		return;
+        return;
 
-	if (!graphics_->IsDeviceLost())
-	{
-		if (graphics_->GetShaderProgram() == this)
-			graphics_->SetShaders(nullptr, nullptr);
+    if (!graphics_->IsDeviceLost())
+    {
+        if (graphics_->GetShaderProgram() == this)
+            graphics_->SetShaders(nullptr, nullptr);
 
-		gl::glDeleteProgram(object_);
-	}
+        gl::glDeleteProgram(object_);
+    }
 
-	object_ = 0;
-	linkerOutput_.clear();
-	shaderParameters_.clear();
-	vertexAttributes_.clear();
-	usedVertexAttributes_ = 0;
+    object_ = 0;
+    linkerOutput_.clear();
+    shaderParameters_.clear();
+    vertexAttributes_.clear();
+    usedVertexAttributes_ = 0;
 
-	for (auto & elem : useTextureUnit_)
-		elem = false;
-	for (unsigned i = 0; i < MAX_SHADER_PARAMETER_GROUPS; ++i)
-		constantBuffers_[i].Reset();
+    for (auto & elem : useTextureUnit_)
+        elem = false;
+    for (unsigned i = 0; i < MAX_SHADER_PARAMETER_GROUPS; ++i)
+        constantBuffers_[i].Reset();
+
 }
+
 /// Link the shaders and examine the uniforms and samplers used. Return true if successful.
 bool ShaderProgram::Link()
 {
@@ -332,11 +335,13 @@ ShaderVariation* ShaderProgram::GetPixelShader() const
 {
     return pixelShader_;
 }
+
 /// Return whether uses a shader parameter.
 bool ShaderProgram::HasParameter(StringHash param) const
 {
     return shaderParameters_.contains(param);
 }
+
 /// Return the info for a shader parameter, or null if does not exist.
 const ShaderParameter* ShaderProgram::GetParameter(StringHash param) const
 {
@@ -345,6 +350,7 @@ const ShaderParameter* ShaderProgram::GetParameter(StringHash param) const
         return &(MAP_VALUE(i));
     return nullptr;
 }
+
 /// Check whether a shader parameter group needs update. Does not actually check whether parameters exist in the shaders.
 bool ShaderProgram::NeedParameterUpdate(ShaderParameterGroup group, const void* source)
 {
@@ -375,6 +381,7 @@ bool ShaderProgram::NeedParameterUpdate(ShaderParameterGroup group, const void* 
 
     return needUpdate;
 }
+
 /// Clear a parameter source. Affects only the current shader program if appropriate.
 void ShaderProgram::ClearParameterSource(ShaderParameterGroup group)
 {
@@ -387,6 +394,7 @@ void ShaderProgram::ClearParameterSource(ShaderParameterGroup group)
     if (useIndividual)
         parameterSources_[group] = (const void*)M_MAX_UNSIGNED;
 }
+
 /// Clear all parameter sources from all shader programs by incrementing the global parameter source framenumber.
 void ShaderProgram::ClearParameterSources()
 {
@@ -397,6 +405,7 @@ void ShaderProgram::ClearParameterSources()
     for (auto & globalParameterSource : globalParameterSources)
         globalParameterSource = (const void*)M_MAX_UNSIGNED;
 }
+
 /// Clear a global parameter source when constant buffers change.
 void ShaderProgram::ClearGlobalParameterSource(ShaderParameterGroup group)
 {

@@ -116,11 +116,11 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-	bool BeginLoad(Deserializer& source) override;
+    bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
-	bool EndLoad() override;
+    bool EndLoad() override;
     /// Save resource. Return true if successful.
-	bool Save(Serializer& dest) const override;
+    bool Save(Serializer& dest) const override;
 
     /// Load from an XML element. Return true if successful.
     bool Load(const XMLElement& source);
@@ -272,11 +272,11 @@ private:
     FillMode fillMode_;
     /// Depth bias parameters.
     BiasParameters depthBias_;
-	/// Last auxiliary view rendered frame number.
-	unsigned auxViewFrameNumber_;
-	/// Shader parameter hash value.
-	unsigned shaderParameterHash_;
-	/// Render order value.
+    /// Last auxiliary view rendered frame number.
+    unsigned auxViewFrameNumber_;
+    /// Shader parameter hash value.
+    unsigned shaderParameterHash_;
+    /// Render order value.
     uint8_t renderOrder_;
     /// Alpha-to-coverage flag.
     bool alphaToCoverage_;

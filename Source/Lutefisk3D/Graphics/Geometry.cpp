@@ -192,7 +192,6 @@ VertexBuffer* Geometry::GetVertexBuffer(unsigned index) const
 {
     return index < vertexBuffers_.size() ? vertexBuffers_[index] : nullptr;
 }
-
 /// Return buffers' combined hash value for state sorting.
 unsigned short Geometry::GetBufferHash() const
 {
@@ -209,7 +208,6 @@ unsigned short Geometry::GetBufferHash() const
 
     return hash;
 }
-
 /// Return raw vertex and index data for CPU operations, or null pointers if not available. Will return data of the first vertex buffer if override data not set.
 void Geometry::GetRawData(const uint8_t*& vertexData, unsigned& vertexSize, const uint8_t*& indexData,
     unsigned& indexSize, const std::vector<VertexElement>*& elements) const

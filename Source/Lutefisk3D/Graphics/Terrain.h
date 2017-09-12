@@ -138,13 +138,13 @@ public:
     Vector3 HeightMapToWorld(const IntVector2& pixelPosition) const;
     /// Return north neighbor terrain.
     Terrain* GetNorthNeighbor() const { return north_; }
-    
+
     /// Return south neighbor terrain.
     Terrain* GetSouthNeighbor() const { return south_; }
-    
+
     /// Return west neighbor terrain.
     Terrain* GetWestNeighbor() const { return west_; }
-    
+
     /// Return east neighbor terrain.
     Terrain* GetEastNeighbor() const { return east_; }
     /// Return raw height data.

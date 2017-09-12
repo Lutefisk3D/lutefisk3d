@@ -86,7 +86,6 @@ Texture::Texture(Context* context) :
 Texture::~Texture()
 {
 }
-
 /**
  * \brief Set number of requested mip levels. Needs to be called before setting size.
  *

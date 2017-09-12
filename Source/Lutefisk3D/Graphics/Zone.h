@@ -37,6 +37,7 @@ class LUTEFISK3D_EXPORT Zone : public Drawable
 public:
     Zone(Context* context);
     virtual ~Zone();
+
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);
 
@@ -110,6 +111,7 @@ protected:
     void OnMarkedDirty(Node* node) override;
     void OnWorldBoundingBoxUpdate() override;
     void OnRemoveFromOctree() override;
+
     void UpdateAmbientGradient();
     void ClearDrawablesZone();
 
@@ -132,5 +134,4 @@ protected:
     WeakPtr<Zone>      lastAmbientStartZone_; //!< Last zone used for ambient gradient start color.
     WeakPtr<Zone>      lastAmbientEndZone_;   //!< Last zone used for ambient gradient end color.
 };
-
 }

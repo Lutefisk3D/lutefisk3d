@@ -53,6 +53,7 @@ extern ContactAddedCallback gContactAddedCallback;
 
 namespace Urho3D
 {
+
 extern const char* SUBSYSTEM_CATEGORY;
 const char* PHYSICS_CATEGORY = "Physics";
 
@@ -99,7 +100,6 @@ struct PhysicsWorldPrivate : public btIDebugDraw {
 };
 #define L_D(Classname) Classname##Private *d = (Classname##Private *)private_data
 
-
 PhysicsWorldConfig PhysicsWorld::config;
 namespace {
 const int MAX_SOLVER_ITERATIONS = 256;
@@ -120,6 +120,7 @@ void InternalTickCallback(btDynamicsWorld *world, btScalar timeStep)
 {
     static_cast<PhysicsWorldPrivate*>(world->getWorldUserInfo())->PostStep(timeStep);
 }
+
 bool CustomMaterialCombinerCallback(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0, const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
 {
     btAdjustInternalEdgeContacts(cp, colObj1Wrap, colObj0Wrap, partId1, index1);
@@ -129,6 +130,7 @@ bool CustomMaterialCombinerCallback(btManifoldPoint& cp, const btCollisionObject
 
     return true;
 }
+
 /// Callback for physics world queries.
 struct PhysicsQueryCallback : public btCollisionWorld::ContactResultCallback
 {
@@ -156,8 +158,6 @@ struct PhysicsQueryCallback : public btCollisionWorld::ContactResultCallback
     unsigned collisionMask_;
 };
 }
-
-
 
 PhysicsWorld::PhysicsWorld(Context* context) :
     Component(context),
@@ -190,6 +190,7 @@ PhysicsWorld::~PhysicsWorld()
         for (CollisionShape* elem : collisionShapes_)
             elem->ReleaseShape();
     }
+
     delete private_data;
 }
 
@@ -258,6 +259,7 @@ void PhysicsWorld::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     if (debug)
     {
         URHO3D_PROFILE(PhysicsDrawDebug);
+
         L_D(PhysicsWorld);
         d->debugRenderer_ = debug;
         d->debugDepthTest_ = depthTest;
@@ -295,6 +297,7 @@ void PhysicsWorld::Update(float timeStep)
 
     delayedWorldTransforms_.clear();
     simulating_ = true;
+
     L_D(PhysicsWorld);
     if (interpolation_)
         d->world_->stepSimulation(timeStep, maxSubSteps, internalTimeStep);

@@ -146,7 +146,7 @@ public:
             auto j = MAP_VALUE(i).find(eventType);
             return j != MAP_VALUE(i).end() ? MAP_VALUE(j) : nullptr;
         }
-	    return nullptr;
+        return nullptr;
     }
     EventReceiverGroup* GetEventReceivers(StringHash eventType)
     {

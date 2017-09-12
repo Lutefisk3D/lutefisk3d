@@ -417,22 +417,22 @@ void Octree::Update(const FrameInfo& frame)
         scene->EndThreadedUpdate();
     }
 
-    // If any drawables were inserted during threaded update, update them now from the main thread
-    if (!threadedDrawableUpdates_.empty())
-    {
-        URHO3D_PROFILE_CTX(context_,UpdateDrawablesQueuedDuringUpdate);
-
-        for (Drawable* drawable : threadedDrawableUpdates_)
+        // If any drawables were inserted during threaded update, update them now from the main thread
+        if (!threadedDrawableUpdates_.empty())
         {
-            if (drawable)
-            {
-                drawable->Update(frame);
-                drawableUpdates_.push_back(drawable);
-            }
-        }
+            URHO3D_PROFILE_CTX(context_,UpdateDrawablesQueuedDuringUpdate);
 
-        threadedDrawableUpdates_.clear();
-    }
+            for (Drawable* drawable : threadedDrawableUpdates_)
+            {
+                if (drawable)
+                {
+                    drawable->Update(frame);
+                    drawableUpdates_.push_back(drawable);
+                }
+            }
+
+            threadedDrawableUpdates_.clear();
+        }
 
     // Notify drawable update being finished. Custom animation (eg. IK) can be done at this point
     Scene* scene = GetScene();

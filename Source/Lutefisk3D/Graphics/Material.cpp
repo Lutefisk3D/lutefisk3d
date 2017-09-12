@@ -287,49 +287,49 @@ bool Material::BeginLoadXML(Deserializer& source)
     ResetToDefaults();
     loadXMLFile_ = new XMLFile(context_);
     if (!loadXMLFile_->Load(source))
-		return false;
-	// If async loading, scan the XML content beforehand for technique & texture resources
-	// and request them to also be loaded. Can not do anything else at this point
-	if (GetAsyncLoadState() == ASYNC_LOADING)
-	{
-		ResourceCache* cache =context_->m_ResourceCache.get();
-		XMLElement rootElem = loadXMLFile_->GetRoot();
-		XMLElement techniqueElem = rootElem.GetChild("technique");
-		while (techniqueElem)
-		{
-			cache->BackgroundLoadResource<Technique>(techniqueElem.GetAttribute("name"), true, this);
-			techniqueElem = techniqueElem.GetNext("technique");
-		}
+        return false;
+    // If async loading, scan the XML content beforehand for technique & texture resources
+    // and request them to also be loaded. Can not do anything else at this point
+    if (GetAsyncLoadState() == ASYNC_LOADING)
+    {
+        ResourceCache* cache =context_->m_ResourceCache.get();
+        XMLElement rootElem = loadXMLFile_->GetRoot();
+        XMLElement techniqueElem = rootElem.GetChild("technique");
+        while (techniqueElem)
+        {
+            cache->BackgroundLoadResource<Technique>(techniqueElem.GetAttribute("name"), true, this);
+            techniqueElem = techniqueElem.GetNext("technique");
+        }
 
-		XMLElement textureElem = rootElem.GetChild("texture");
-		while (textureElem)
-		{
-			QString name = textureElem.GetAttribute("name");
-			// Detect cube maps and arrays by file extension: they are defined by an XML file
-			if (GetExtension(name) == ".xml")
-			{
-				StringHash type = ParseTextureTypeXml(cache, name);
-				if (!type && textureElem.HasAttribute("unit"))
-				{
-					TextureUnit unit = ParseTextureUnitName(textureElem.GetAttribute("unit"));
-					if (unit == TU_VOLUMEMAP)
-						type = Texture3D::GetTypeStatic();
-				}
+        XMLElement textureElem = rootElem.GetChild("texture");
+        while (textureElem)
+        {
+            QString name = textureElem.GetAttribute("name");
+            // Detect cube maps and arrays by file extension: they are defined by an XML file
+            if (GetExtension(name) == ".xml")
+            {
+                StringHash type = ParseTextureTypeXml(cache, name);
+                if (!type && textureElem.HasAttribute("unit"))
+                {
+                    TextureUnit unit = ParseTextureUnitName(textureElem.GetAttribute("unit"));
+                    if (unit == TU_VOLUMEMAP)
+                        type = Texture3D::GetTypeStatic();
+                }
 
-				if (type == Texture3D::GetTypeStatic())
-					cache->BackgroundLoadResource<Texture3D>(name, true, this);
-				else if (type == Texture2DArray::GetTypeStatic())
-					cache->BackgroundLoadResource<Texture2DArray>(name, true, this);
-				else
-					cache->BackgroundLoadResource<TextureCube>(name, true, this);
-			}
-			else
-				cache->BackgroundLoadResource<Texture2D>(name, true, this);
-			textureElem = textureElem.GetNext("texture");
-		}
-	}
+                if (type == Texture3D::GetTypeStatic())
+                    cache->BackgroundLoadResource<Texture3D>(name, true, this);
+                else if (type == Texture2DArray::GetTypeStatic())
+                    cache->BackgroundLoadResource<Texture2DArray>(name, true, this);
+                else
+                    cache->BackgroundLoadResource<TextureCube>(name, true, this);
+            }
+            else
+                cache->BackgroundLoadResource<Texture2D>(name, true, this);
+            textureElem = textureElem.GetNext("texture");
+        }
+    }
 
-	return true;
+    return true;
 }
 /// Helper function for loading JSON files.
 bool Material::BeginLoadJSON(Deserializer& source)
@@ -341,51 +341,51 @@ bool Material::BeginLoadJSON(Deserializer& source)
     // Attempt to load from JSON file instead
     loadJSONFile_ = new JSONFile(context_);
     if (!loadJSONFile_->Load(source))
-		return false;
+        return false;
 
-	// If async loading, scan the XML content beforehand for technique & texture resources
-	// and request them to also be loaded. Can not do anything else at this point
-	if (GetAsyncLoadState() == ASYNC_LOADING)
-	{
-		ResourceCache* cache =context_->m_ResourceCache.get();
-		const JSONValue& rootVal = loadJSONFile_->GetRoot();
+    // If async loading, scan the XML content beforehand for technique & texture resources
+    // and request them to also be loaded. Can not do anything else at this point
+    if (GetAsyncLoadState() == ASYNC_LOADING)
+    {
+        ResourceCache* cache =context_->m_ResourceCache.get();
+        const JSONValue& rootVal = loadJSONFile_->GetRoot();
 
-		JSONArray techniqueArray = rootVal.Get("techniques").GetArray();
-		for (const JSONValue &techVal : techniqueArray)
-		{
-			cache->BackgroundLoadResource<Technique>(techVal.Get("name").GetString(), true, this);
-		}
+        JSONArray techniqueArray = rootVal.Get("techniques").GetArray();
+        for (const JSONValue &techVal : techniqueArray)
+        {
+            cache->BackgroundLoadResource<Technique>(techVal.Get("name").GetString(), true, this);
+        }
 
-		JSONObject textureObject = rootVal.Get("textures").GetObject();
-		for (JSONObject::const_iterator it = textureObject.begin(); it != textureObject.end(); ++it)
-		{
-			QString  unitString = it->first;
-			QString  name = it->second.GetString();
-			// Detect cube maps and arrays by file extension: they are defined by an XML file
-			if (GetExtension(name) == ".xml")
-			{
-				StringHash type = ParseTextureTypeXml(cache, name);
-				if (!type && !unitString.isEmpty())
-				{
-					TextureUnit unit = ParseTextureUnitName(unitString);
-					if (unit == TU_VOLUMEMAP)
-						type = Texture3D::GetTypeStatic();
-				}
+        JSONObject textureObject = rootVal.Get("textures").GetObject();
+        for (JSONObject::const_iterator it = textureObject.begin(); it != textureObject.end(); ++it)
+        {
+            QString  unitString = it->first;
+            QString  name = it->second.GetString();
+            // Detect cube maps and arrays by file extension: they are defined by an XML file
+            if (GetExtension(name) == ".xml")
+            {
+                StringHash type = ParseTextureTypeXml(cache, name);
+                if (!type && !unitString.isEmpty())
+                {
+                    TextureUnit unit = ParseTextureUnitName(unitString);
+                    if (unit == TU_VOLUMEMAP)
+                        type = Texture3D::GetTypeStatic();
+                }
 
-				if (type == Texture3D::GetTypeStatic())
-					cache->BackgroundLoadResource<Texture3D>(name, true, this);
-				else if (type == Texture2DArray::GetTypeStatic())
-					cache->BackgroundLoadResource<Texture2DArray>(name, true, this);
-				else
-					cache->BackgroundLoadResource<TextureCube>(name, true, this);
-			}
-			else
-				cache->BackgroundLoadResource<Texture2D>(name, true, this);
-		}
-	}
+                if (type == Texture3D::GetTypeStatic())
+                    cache->BackgroundLoadResource<Texture3D>(name, true, this);
+                else if (type == Texture2DArray::GetTypeStatic())
+                    cache->BackgroundLoadResource<Texture2DArray>(name, true, this);
+                else
+                    cache->BackgroundLoadResource<TextureCube>(name, true, this);
+            }
+            else
+                cache->BackgroundLoadResource<Texture2D>(name, true, this);
+        }
+    }
 
-	// JSON material was successfully loaded
-	return true;
+    // JSON material was successfully loaded
+    return true;
 }
 
 bool Material::Save(Serializer& dest) const
@@ -1129,22 +1129,22 @@ SharedPtr<Material> Material::Clone(const QString& cloneName) const
 {
     SharedPtr<Material> ret(new Material(context_));
 
-	ret->SetName(cloneName);
-	ret->techniques_ = techniques_;
-	ret->vertexShaderDefines_ = vertexShaderDefines_;
-	ret->pixelShaderDefines_ = pixelShaderDefines_;
-	ret->shaderParameters_ = shaderParameters_;
-	ret->shaderParameterHash_ = shaderParameterHash_;
-	ret->textures_ = textures_;
-	ret->depthBias_ = depthBias_;
-	ret->alphaToCoverage_ = alphaToCoverage_;
-	ret->lineAntiAlias_ = lineAntiAlias_;
-	ret->occlusion_ = occlusion_;
-	ret->specular_ = specular_;
-	ret->cullMode_ = cullMode_;
-	ret->shadowCullMode_ = shadowCullMode_;
-	ret->fillMode_ = fillMode_;
-	ret->renderOrder_ = renderOrder_;
+    ret->SetName(cloneName);
+    ret->techniques_ = techniques_;
+    ret->vertexShaderDefines_ = vertexShaderDefines_;
+    ret->pixelShaderDefines_ = pixelShaderDefines_;
+    ret->shaderParameters_ = shaderParameters_;
+    ret->shaderParameterHash_ = shaderParameterHash_;
+    ret->textures_ = textures_;
+    ret->depthBias_ = depthBias_;
+    ret->alphaToCoverage_ = alphaToCoverage_;
+    ret->lineAntiAlias_ = lineAntiAlias_;
+    ret->occlusion_ = occlusion_;
+    ret->specular_ = specular_;
+    ret->cullMode_ = cullMode_;
+    ret->shadowCullMode_ = shadowCullMode_;
+    ret->fillMode_ = fillMode_;
+    ret->renderOrder_ = renderOrder_;
 
     ret->RefreshMemoryUse();
 

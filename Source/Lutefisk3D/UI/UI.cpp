@@ -31,7 +31,6 @@
 #include "MessageBox.h"
 #include "ScrollBar.h"
 #include "Slider.h"
-
 #include "UIComponent.h"
 #include "Sprite.h"
 #include "Text.h"

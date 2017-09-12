@@ -27,7 +27,9 @@
 #include "Lutefisk3D/Container/Ptr.h"
 #include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
+
 #include <vector>
+
 namespace Urho3D
 {
 class LUTEFISK3D_EXPORT Vector2;
@@ -38,6 +40,7 @@ class LUTEFISK3D_EXPORT VertexBuffer;
 class LUTEFISK3D_EXPORT Context;
 using IndexBufferHandle = DataHandle<IndexBuffer,20,20>;
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
+
 /// Defines one or more vertex buffers, an index buffer and a draw range.
 class LUTEFISK3D_EXPORT Geometry : public RefCounted
 {
@@ -113,5 +116,4 @@ private:
     unsigned                             rawVertexSize_; //!< Raw vertex data override size.
     unsigned                             rawIndexSize_;  //!< Raw index data override size.
 };
-
 }

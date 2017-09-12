@@ -69,7 +69,6 @@ bool Skeleton::Load(Deserializer& source)
 
     return true;
 }
-
 /// Write to a stream. Return true if successful.
 bool Skeleton::Save(Serializer& dest) const
 {
@@ -96,7 +95,6 @@ bool Skeleton::Save(Serializer& dest) const
 
     return true;
 }
-
 /// Define from another skeleton.
 void Skeleton::Define(const Skeleton& src)
 {
@@ -109,7 +107,6 @@ void Skeleton::Define(const Skeleton& src)
         elem.node_.Reset();
     rootBoneIndex_ = src.rootBoneIndex_;
 }
-
 /// Set root bone's index.
 void Skeleton::SetRootBoneIndex(unsigned index)
 {
@@ -124,7 +121,6 @@ void Skeleton::ClearBones()
     bones_.clear();
     rootBoneIndex_ = M_MAX_UNSIGNED;
 }
-
 /// Reset all animating bones to initial positions.
 void Skeleton::Reset()
 {
@@ -134,7 +130,6 @@ void Skeleton::Reset()
             elem.node_->SetTransform(elem.initialPosition_, elem.initialRotation_, elem.initialScale_);
     }
 }
-
 /// Reset all animating bones to initial positions without marking the nodes dirty. Requires the node dirtying to be
 /// performed later.
 void Skeleton::ResetSilent()
@@ -146,19 +141,16 @@ void Skeleton::ResetSilent()
     }
 }
 
-
 /// Return root bone.
 Bone* Skeleton::GetRootBone()
 {
     return GetBone(rootBoneIndex_);
 }
-
 /// Return bone by index.
 Bone* Skeleton::GetBone(unsigned index)
 {
     return index < bones_.size() ? &bones_[index] : nullptr;
 }
-
 /// Return bone by name hash.
 Bone* Skeleton::GetBone(StringHash nameHash)
 {

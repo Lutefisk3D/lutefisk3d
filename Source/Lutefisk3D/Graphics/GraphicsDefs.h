@@ -413,16 +413,16 @@ extern LUTEFISK3D_EXPORT const StringHash PSP_ZONEMAX;
 extern LUTEFISK3D_EXPORT const Vector3 DOT_SCALE;
 
 enum eQuality : int {
-	QUALITY_LOW = 0,
-	QUALITY_MEDIUM = 1,
-	QUALITY_HIGH = 2,
-	QUALITY_MAX = 15
+    QUALITY_LOW = 0,
+    QUALITY_MEDIUM = 1,
+    QUALITY_HIGH = 2,
+    QUALITY_MAX = 15
 };
 enum eClearBF : uint32_t
 {
-	CLEAR_COLOR = 0x1,
-	CLEAR_DEPTH = 0x2,
-	CLEAR_STENCIL = 0x4,
+    CLEAR_COLOR = 0x1,
+    CLEAR_DEPTH = 0x2,
+    CLEAR_STENCIL = 0x4,
 };
 
 // Legacy vertex element bitmasks.

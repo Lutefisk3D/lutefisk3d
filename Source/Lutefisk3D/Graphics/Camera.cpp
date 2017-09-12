@@ -505,7 +505,7 @@ float Camera::GetLodDistance(float distance, float scale, float bias) const
     float d = Max(lodBias_ * bias * scale * zoom_, M_EPSILON);
     if (!orthographic_)
         return distance / d;
-    
+
     return orthoSize_ / d;
 }
 

@@ -132,6 +132,7 @@ class LUTEFISK3D_EXPORT PhysicsWorld : public Component, public PhysicsSignals
 {
     URHO3D_OBJECT(PhysicsWorld,Component)
     friend struct PhysicsWorldPrivate;
+
 public:
     /// Construct.
     PhysicsWorld(Context* scontext);
@@ -301,7 +302,6 @@ private:
     bool applyingTransforms_;
     /// Simulating flag.
     bool simulating_;
-
     struct PhysicsWorldPrivate *private_data = nullptr;
 };
 

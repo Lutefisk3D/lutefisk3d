@@ -25,8 +25,9 @@
 #include "Lutefisk3D/Input/InputEvents.h"
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
-#include <QtCore/QSet>
+#include "Lutefisk3D/Math/Vector2.h"
 #include <jlsignal/SignalBase.h>
+#include <QtCore/QSet>
 //#include "Lutefisk3D/UI/Cursor.h"
 
 namespace Urho3D

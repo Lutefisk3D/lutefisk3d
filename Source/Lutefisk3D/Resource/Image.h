@@ -24,7 +24,8 @@
 
 #include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Resource/Resource.h"
-
+#include "Lutefisk3D/Math/Rect.h"
+#include "Lutefisk3D/Math/Color.h"
 struct SDL_Surface;
 
 namespace Urho3D

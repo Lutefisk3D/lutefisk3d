@@ -26,6 +26,7 @@
 #include "Lutefisk3D/Core/Timer.h"
 #include "Lutefisk3D/Resource/JSONValue.h"
 #include "Lutefisk3D/Resource/ResourceEvents.h"
+
 namespace Urho3D
 {
 
@@ -48,6 +49,86 @@ enum AsyncLoadState
     ASYNC_FAIL = 4
 };
 
+/// Typed resource reference.
+struct LUTEFISK3D_EXPORT ResourceRef
+{
+    /// Construct.
+    ResourceRef()
+    {
+    }
+
+    /// Construct with type only and empty id.
+    ResourceRef(StringHash type) :
+        type_(type)
+    {
+    }
+
+    /// Construct with type and resource name.
+    ResourceRef(StringHash type, const QString& name) :
+        type_(type),
+        name_(name)
+    {
+    }
+    /// Construct with type and resource name.
+    ResourceRef(const QString& type, const QString& name) :
+        type_(type),
+        name_(name)
+    {
+    }
+
+    /// Construct with type and resource name.
+    ResourceRef(const char* type, const char* name) :
+        type_(type),
+        name_(name)
+    {
+    }
+    // Construct from another ResourceRef.
+    ResourceRef(const ResourceRef& rhs) :
+        type_(rhs.type_),
+        name_(rhs.name_)
+    {
+    }
+
+    /// Object type.
+    StringHash type_;
+    /// Object name.
+    QString name_;
+
+    /// Test for equality with another reference.
+    bool operator == (const ResourceRef& rhs) const { return type_ == rhs.type_ && name_ == rhs.name_; }
+    /// Test for inequality with another reference.
+    bool operator != (const ResourceRef& rhs) const { return type_ != rhs.type_ || name_ != rhs.name_; }
+};
+/// %List of typed resource references.
+struct LUTEFISK3D_EXPORT ResourceRefList
+{
+    /// Construct.
+    ResourceRefList()
+    {
+    }
+
+    /// Construct with type only.
+    ResourceRefList(StringHash type) :
+        type_(type)
+    {
+    }
+    /// Construct with type and id list.
+    ResourceRefList(StringHash type, const std::vector<QString>& names) :
+        type_(type),
+        names_(names)
+    {
+    }
+
+    /// Object type.
+    StringHash type_;
+    /// List of object names.
+    std::vector<QString> names_;
+    ResourceRefList &operator=(const ResourceRefList &rhs) = default;
+    /// Test for equality with another reference list.
+    bool operator == (const ResourceRefList& rhs) const { return type_ == rhs.type_ && names_ == rhs.names_; }
+    /// Test for inequality with another reference list.
+    bool operator != (const ResourceRefList& rhs) const { return type_ != rhs.type_ || names_ != rhs.names_; }
+};
 /// Base class for resources.
 class LUTEFISK3D_EXPORT Resource : public Object, public SingleResourceSignals
 {
@@ -121,7 +202,7 @@ private:
 };
 inline QString GetResourceName(Resource* resource)
 {
-    return resource ? resource->GetName() : QString::null;
+    return resource ? resource->GetName() : QLatin1Literal("");
 }
 
 inline StringHash GetResourceType(Resource* resource, StringHash defaultType)

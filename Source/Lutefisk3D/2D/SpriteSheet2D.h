@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Math/Rect.h"
 
 namespace Urho3D
 {
@@ -36,7 +37,7 @@ class JSONFile;
 /// Sprite sheet.
 class LUTEFISK3D_EXPORT SpriteSheet2D : public Resource
 {
-    URHO3D_OBJECT(SpriteSheet2D,Resource);
+    URHO3D_OBJECT(SpriteSheet2D,Resource)
 
 public:
     /// Construct.

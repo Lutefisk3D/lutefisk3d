@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/Str.h"
 
 namespace Urho3D
 {

@@ -24,7 +24,9 @@
 
 #include "Lutefisk3D/Container/Ptr.h"
 #include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Math/Quaternion.h"
 #include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Core/Variant.h"
 
 namespace Urho3D
 {

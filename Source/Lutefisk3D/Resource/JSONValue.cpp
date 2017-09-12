@@ -24,6 +24,7 @@
 #include "Lutefisk3D/Core/StringUtils.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Variant.h"
+#include "Lutefisk3D/Resource/Resource.h"
 #include "Lutefisk3D/IO/Log.h"
 
 #include <QtCore/QVector>

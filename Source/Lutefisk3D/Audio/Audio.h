@@ -98,7 +98,7 @@ private:
     bool interpolation_;///< Mixing interpolation flag.
     bool stereo_;       ///< Stereo flag.
     bool playing_;      ///< Playing flag.
-    HashMap<StringHash, Variant> masterGain_;///< Master gain by sound source type.
+    HashMap<StringHash, float> masterGain_;///< Master gain by sound source type.
     HashSet<StringHash> pausedSoundTypes_;///< Paused sound types.
     std::vector<SoundSource*> soundSources_; ///< Sound sources. TODO: consider std::set ?
     WeakPtr<SoundListener> listener_; ///< Sound listener.

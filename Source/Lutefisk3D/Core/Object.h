@@ -25,8 +25,6 @@
 #include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Container/Ptr.h"
-#include "Lutefisk3D/Container/Str.h"
-#include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/Math/StringHash.h"
 
 #include <QtCore/QString>
@@ -34,12 +32,9 @@
 #include <deque>
 #include <functional>
 
-template<typename T>
-constexpr unsigned ptrHash(T *v) {
-    return unsigned(uintptr_t(v)/sizeof(T));
-}
 namespace Urho3D
 {
+class Variant;
 typedef HashMap<StringHash, Variant> VariantMap;
 
 class Context;
@@ -149,10 +144,10 @@ public:
     /// Return a preallocated map for event data. Used for optimization to avoid constant re-allocation of event data maps.
     VariantMap& GetEventDataMap() const;
     /// Send event with variadic parameter pairs to all subscribers. The parameter pairs is a list of paramID and paramValue separated by comma, one pair after another.
-    template <typename... Args> void SendEvent(StringHash eventType, Args... args)
-    {
-        SendEvent(eventType, PopulateEventDataMap(GetEventDataMap(), args...));
-    }
+//    template <typename... Args> void SendEvent(StringHash eventType, Args... args)
+//    {
+//        SendEvent(eventType, PopulateEventDataMap(GetEventDataMap(), args...));
+//    }
 
     /// Return execution context.
     Context* GetContext() const { return context_; }
@@ -183,17 +178,17 @@ private:
     cilEventHandler FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous = 0) const;
     void RemoveEventSender(Object* sender);
     /// Populate event data map using variadic template. This handles the base case.
-    template <typename T> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue)
-    {
-        eventData[paramID] = paramValue;
-        return eventData;
-    }
+//    template <typename T> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue)
+//    {
+//        eventData[paramID] = paramValue;
+//        return eventData;
+//    }
     /// Populate event data map using variadic template.
-    template <typename T, typename... Args> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue, Args... args)
-    {
-        eventData[paramID] = paramValue;
-        return PopulateEventDataMap(eventData, args...);
-    }
+//    template <typename T, typename... Args> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue, Args... args)
+//    {
+//        eventData[paramID] = paramValue;
+//        return PopulateEventDataMap(eventData, args...);
+//    }
     /// Event handlers. Sender is null for non-specific handlers.
     std::deque<EventHandler *> eventHandlers_;
 };
@@ -314,28 +309,6 @@ public:
 private:
     /// Class-specific pointer to handler function.
     HandlerFunctionPtr function_;
-};
-/// Template implementation of the event handler invoke helper (std::function instance).
-class EventHandler11Impl final : public EventHandler
-{
-public:
-    /// Construct with receiver and function pointers and userdata.
-    EventHandler11Impl(std::function<void(StringHash, VariantMap&)> function, void* userData = 0) :
-        EventHandler(0, userData),
-        function_(function)
-    {
-        assert(function_);
-    }
-
-    /// Invoke event handler function.
-    void Invoke(VariantMap& eventData)  override
-    {
-        function_(eventType_, eventData);
-    }
-
-private:
-    /// Class-specific pointer to handler function.
-    std::function<void(StringHash, VariantMap&)> function_;
 };
 
 

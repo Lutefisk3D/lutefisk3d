@@ -22,6 +22,7 @@
 
 #include "Application.h"
 #include "Engine.h"
+#include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/IO/IOEvents.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Core/ProcessUtils.h"
@@ -59,6 +60,7 @@ Application::Application(const QString &appName, Context* context) :
 // a SharedPtr<Engine>::~SharedPtr<Engine>  when Application.h was included.
 Application::~Application()
 {
+    delete engine_;
 }
 
 int Application::Run()

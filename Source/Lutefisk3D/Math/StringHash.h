@@ -26,6 +26,7 @@
 #include <functional>
 class QString;
 class QStringRef;
+class QLatin1String;
 namespace Urho3D
 {
 
@@ -43,11 +44,6 @@ public:
     {
     }
 
-    /// Copy-construct from another hash.
-    StringHash(StringHash&& rhs) : value_(rhs.value_)
-    {
-        rhs.value_=0;
-    }
     /// Construct with an initial value.
     explicit StringHash(unsigned value) : value_(value)
     {
@@ -57,6 +53,8 @@ public:
     StringHash(const char* str);
     /// Construct from a string case-insensitively.
     StringHash(const QString& str);
+    /// Construct from a string case-insensitively.
+    StringHash(const QLatin1String& str);
     /// Construct from a QString ref case-insensitively.
     StringHash(const QStringRef& str);
 

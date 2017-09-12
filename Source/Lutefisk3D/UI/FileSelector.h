@@ -24,6 +24,9 @@
 
 #include "Lutefisk3D/Core/Object.h"
 #include "jlsignal/SignalBase.h"
+
+#include <QtCore/QStringList>
+
 namespace Urho3D
 {
 

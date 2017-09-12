@@ -23,7 +23,9 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Math/Vector2.h"
 #include "jlsignal/Signal.h"
+
 namespace Urho3D
 {
 class UIElement;
@@ -141,19 +143,11 @@ struct UISliderSignals {
     jl::Signal<UIElement *,int,bool> sliderPaged; // UIElement *,int offset,bool pressed
 };
 
+struct UIScrollbarSignals {
+    /// UI scrollbar value changed.
+    jl::Signal<UIElement *,float> scrollBarChanged; // UIElement *,float
 
-/// UI progressbar value changed
-URHO3D_EVENT(E_PROGRESSBARCHANGED, ProgressBarChanged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_VALUE, Value);                  // float
-}
-/// UI scrollbar value changed.
-URHO3D_EVENT(E_SCROLLBARCHANGED, ScrollBarChanged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_VALUE, Value);                  // float
-}
+};
 
 /// UI scrollview position changed.
 URHO3D_EVENT(E_VIEWCHANGED, ViewChanged)

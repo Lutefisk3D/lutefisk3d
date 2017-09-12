@@ -73,10 +73,9 @@ ScrollView::ScrollView(Context* context) :
     scrollPanel_->SetInternal(true);
     scrollPanel_->SetEnabled(true);
     scrollPanel_->SetClipChildren(true);
-
-    SubscribeToEvent(horizontalScrollBar_, E_SCROLLBARCHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarChanged));
+    horizontalScrollBar_->scrollBarChanged.Connect(this,&ScrollView::HandleScrollBarChanged);
     SubscribeToEvent(horizontalScrollBar_, E_VISIBLECHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarVisibleChanged));
-    SubscribeToEvent(verticalScrollBar_, E_SCROLLBARCHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarChanged));
+    verticalScrollBar_->scrollBarChanged.Connect(this,&ScrollView::HandleScrollBarChanged);
     SubscribeToEvent(verticalScrollBar_, E_VISIBLECHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarVisibleChanged));
     g_inputSignals.touchBegun.Connect(this,&ScrollView::HandleTouchBegin);
     g_inputSignals.touchEnd.Connect(this,&ScrollView::HandleTouchEnd);
@@ -495,7 +494,7 @@ void ScrollView::UpdateView(const IntVector2& position)
     }
 }
 
-void ScrollView::HandleScrollBarChanged(StringHash eventType, VariantMap &eventData)
+void ScrollView::HandleScrollBarChanged(UIElement *el, float v)
 {
     if (!ignoreEvents_)
     {

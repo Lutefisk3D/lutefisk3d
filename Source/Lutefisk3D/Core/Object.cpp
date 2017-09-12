@@ -27,6 +27,29 @@
 using namespace Urho3D;
 namespace
 {
+/// Template implementation of the event handler invoke helper (std::function instance).
+class EventHandler11Impl final : public EventHandler
+{
+public:
+    /// Construct with receiver and function pointers and userdata.
+    EventHandler11Impl(std::function<void(StringHash, VariantMap&)> function, void* userData = 0) :
+        EventHandler(0, userData),
+        function_(function)
+    {
+        assert(function_);
+    }
+
+    /// Invoke event handler function.
+    void Invoke(VariantMap& eventData)  override
+    {
+        function_(eventType_, eventData);
+    }
+
+private:
+    /// Class-specific pointer to handler function.
+    std::function<void(StringHash, VariantMap&)> function_;
+};
+
 // RAII based Begin/End SendEvent guard
 class EventReceiverGroup_Guard
 {

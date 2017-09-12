@@ -24,6 +24,7 @@
 
 #include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Math/Vector2.h"
 
 namespace Urho3D
 {

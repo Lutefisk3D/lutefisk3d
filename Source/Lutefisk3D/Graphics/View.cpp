@@ -55,6 +55,13 @@
 #include <QDebug>
 #include <algorithm>
 
+namespace {
+template<typename T>
+constexpr unsigned ptrHash(T *v) {
+    return unsigned(uintptr_t(v)/sizeof(T));
+}
+
+}
 namespace Urho3D
 {
 

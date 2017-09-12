@@ -111,97 +111,18 @@ struct VariantValue
 #endif
 };
 static_assert(sizeof(VariantValue)>=sizeof(QStringList),"Variant value to small");
-/// Typed resource reference.
-struct LUTEFISK3D_EXPORT ResourceRef
-{
-    /// Construct.
-    ResourceRef()
-    {
-    }
-
-    /// Construct with type only and empty id.
-    ResourceRef(StringHash type) :
-        type_(type)
-    {
-    }
-
-    /// Construct with type and resource name.
-    ResourceRef(StringHash type, const QString& name) :
-        type_(type),
-        name_(name)
-    {
-    }
-    /// Construct with type and resource name.
-    ResourceRef(const QString& type, const QString& name) :
-        type_(type),
-        name_(name)
-    {
-    }
-
-    /// Construct with type and resource name.
-    ResourceRef(const char* type, const char* name) :
-        type_(type),
-        name_(name)
-    {
-    }
-    // Construct from another ResourceRef.
-    ResourceRef(const ResourceRef& rhs) :
-        type_(rhs.type_),
-        name_(rhs.name_)
-    {
-    }
-
-    /// Object type.
-    StringHash type_;
-    /// Object name.
-    QString name_;
-
-    /// Test for equality with another reference.
-    bool operator == (const ResourceRef& rhs) const { return type_ == rhs.type_ && name_ == rhs.name_; }
-    /// Test for inequality with another reference.
-    bool operator != (const ResourceRef& rhs) const { return type_ != rhs.type_ || name_ != rhs.name_; }
-};
-
-/// %List of typed resource references.
-struct LUTEFISK3D_EXPORT ResourceRefList
-{
-    /// Construct.
-    ResourceRefList()
-    {
-    }
-
-    /// Construct with type only.
-    ResourceRefList(StringHash type) :
-        type_(type)
-    {
-    }
-    /// Construct with type and id list.
-    ResourceRefList(StringHash type, const std::vector<QString>& names) :
-        type_(type),
-        names_(names)
-    {
-    }
-
-    /// Object type.
-    StringHash type_;
-    /// List of object names.
-    std::vector<QString> names_;
-    ResourceRefList &operator=(const ResourceRefList &rhs) = default;
-    /// Test for equality with another reference list.
-    bool operator == (const ResourceRefList& rhs) const { return type_ == rhs.type_ && names_ == rhs.names_; }
-    /// Test for inequality with another reference list.
-    bool operator != (const ResourceRefList& rhs) const { return type_ != rhs.type_ || names_ != rhs.names_; }
-};
+struct ResourceRef;
+struct ResourceRefList;
 
 class Variant;
 
 /// Vector of variants.
-typedef std::vector<Variant> VariantVector;
+using VariantVector = std::vector<Variant>;
 static_assert(sizeof(VariantValue)>=sizeof(VariantVector),"Variant value must be large enough to hold VariantVector");
 
 
 /// Map of variants.
-typedef HashMap<StringHash, Variant> VariantMap;
+using VariantMap = HashMap<StringHash, Variant> ;
 
 /// Variable that supports a fixed set of types.
 class LUTEFISK3D_EXPORT Variant
@@ -280,15 +201,13 @@ public:
     }
 
     /// Construct from a quaternion.
-    Variant(const Quaternion& value) :
-        type_(VAR_NONE)
+    Variant(const Quaternion& value) : type_(VAR_NONE)
     {
         *this = value;
     }
 
     /// Construct from a color.
-    Variant(const Color& value) :
-        type_(VAR_NONE)
+    Variant(const Color& value) : type_(VAR_NONE)
     {
         *this = value;
     }
@@ -593,20 +512,10 @@ public:
     }
 
     /// Assign from a resource reference.
-    Variant& operator = (const ResourceRef& rhs)
-    {
-        SetType(VAR_RESOURCEREF);
-        *(reinterpret_cast<ResourceRef*>(&value_)) = rhs;
-        return *this;
-    }
+    Variant& operator= (const ResourceRef& rhs);
 
     /// Assign from a resource reference list.
-    Variant& operator = (const ResourceRefList& rhs)
-    {
-        SetType(VAR_RESOURCEREFLIST);
-        *(reinterpret_cast<ResourceRefList*>(&value_)) = rhs;
-        return *this;
-    }
+    Variant& operator = (const ResourceRefList& rhs);
 
     /// Assign from a variant vector.
     Variant& operator = (const VariantVector& rhs)
@@ -736,9 +645,9 @@ public:
     }
 
     /// Test for equality with a resource reference. To return true, both the type and value must match.
-    bool operator == (const ResourceRef& rhs) const { return type_ == VAR_RESOURCEREF ? *(reinterpret_cast<const ResourceRef*>(&value_)) == rhs : false; }
+    bool operator == (const ResourceRef& rhs) const;
     /// Test for equality with a resource reference list. To return true, both the type and value must match.
-    bool operator == (const ResourceRefList& rhs) const { return type_ == VAR_RESOURCEREFLIST ? *(reinterpret_cast<const ResourceRefList*>(&value_)) == rhs : false; }
+    bool operator == (const ResourceRefList& rhs) const;
     /// Test for equality with a variant vector. To return true, both the type and value must match.
     bool operator == (const VariantVector& rhs) const { return type_ == VAR_VARIANTVECTOR ? *(reinterpret_cast<const VariantVector*>(&value_)) == rhs : false; }
    /// Test for equality with a string vector. To return true, both the type and value must match.
@@ -1050,8 +959,8 @@ template<typename T> VariantType GetVariantType();
 // Return variant type from concrete types
 template<> inline VariantType GetVariantType<int>() { return VAR_INT; }
 template<> inline VariantType GetVariantType<unsigned>() { return VAR_INT; }
-template <> inline VariantType GetVariantType<long long>() { return VAR_INT64; }
-template <> inline VariantType GetVariantType<unsigned long long>() { return VAR_INT64; }
+template<> inline VariantType GetVariantType<long long>() { return VAR_INT64; }
+template<> inline VariantType GetVariantType<unsigned long long>() { return VAR_INT64; }
 template<> inline VariantType GetVariantType<bool>() { return VAR_BOOL; }
 template<> inline VariantType GetVariantType<float>() { return VAR_FLOAT; }
 template<> inline VariantType GetVariantType<double>() { return VAR_DOUBLE; }
@@ -1066,17 +975,17 @@ template<> inline VariantType GetVariantType<std::vector<unsigned char> >() { re
 template<> inline VariantType GetVariantType<ResourceRef>() { return VAR_RESOURCEREF; }
 template<> inline VariantType GetVariantType<ResourceRefList>() { return VAR_RESOURCEREFLIST; }
 template<> inline VariantType GetVariantType<VariantVector>() { return VAR_VARIANTVECTOR; }
-template <> inline VariantType GetVariantType<QStringList >() { return VAR_STRINGVECTOR; }
+template<> inline VariantType GetVariantType<QStringList >() { return VAR_STRINGVECTOR; }
 template<> inline VariantType GetVariantType<VariantMap>() { return VAR_VARIANTMAP; }
-template <> inline VariantType GetVariantType<Rect>() { return VAR_RECT; }
+template<> inline VariantType GetVariantType<Rect>() { return VAR_RECT; }
 template<> inline VariantType GetVariantType<IntRect>() { return VAR_INTRECT; }
 template<> inline VariantType GetVariantType<IntVector2>() { return VAR_INTVECTOR2; }
-template <> inline VariantType GetVariantType<IntVector3>() { return VAR_INTVECTOR3; }
+template<> inline VariantType GetVariantType<IntVector3>() { return VAR_INTVECTOR3; }
 template<> inline VariantType GetVariantType<Matrix3>() { return VAR_MATRIX3; }
 template<> LUTEFISK3D_EXPORT inline VariantType GetVariantType<Matrix3x4>() { return VAR_MATRIX3X4; }
 template<> LUTEFISK3D_EXPORT inline VariantType GetVariantType<Matrix4>() { return VAR_MATRIX4; }
-template <> LUTEFISK3D_EXPORT Rect Variant::Get<Rect>() const;
-template <> LUTEFISK3D_EXPORT IntRect Variant::Get<IntRect>() const;
+template<> LUTEFISK3D_EXPORT Rect Variant::Get<Rect>() const;
+template<> LUTEFISK3D_EXPORT IntRect Variant::Get<IntRect>() const;
 
 static_assert(sizeof(VariantValue)>=sizeof(QString),"Variant value must be large enough to hold VariantMap");
 }

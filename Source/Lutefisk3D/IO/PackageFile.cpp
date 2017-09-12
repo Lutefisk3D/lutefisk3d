@@ -23,7 +23,7 @@
 #include "Lutefisk3D/IO/File.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/PackageFile.h"
-
+#include "Lutefisk3D/Core/Variant.h"
 namespace Urho3D
 {
 

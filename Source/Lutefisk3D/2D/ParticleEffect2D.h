@@ -24,6 +24,7 @@
 
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Math/Color.h"
 
 namespace Urho3D
 {
@@ -41,7 +42,7 @@ enum EmitterType2D
 /// 2D particle effect resource.
 class LUTEFISK3D_EXPORT ParticleEffect2D : public Resource
 {
-    URHO3D_OBJECT(ParticleEffect2D,Resource);
+    URHO3D_OBJECT(ParticleEffect2D,Resource)
 
 public:
     /// Construct.

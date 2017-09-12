@@ -26,6 +26,7 @@
 #include "Lutefisk3D/Math/Rect.h"
 #include "Lutefisk3D/Math/BoundingBox.h"
 #include "Lutefisk3D/Core/Variant.h"
+#include "Lutefisk3D/Resource/Resource.h"
 
 namespace Urho3D
 {

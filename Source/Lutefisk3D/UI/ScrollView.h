@@ -179,7 +179,7 @@ protected:
 
 private:
     /// Handle scrollbar value changed.
-    void HandleScrollBarChanged(StringHash eventType, VariantMap& eventData);
+    void HandleScrollBarChanged(UIElement *el, float v);
     /// Handle scrollbar visibility changed.
     void HandleScrollBarVisibleChanged(StringHash eventType, VariantMap& eventData);
     /// Handle content element resized.

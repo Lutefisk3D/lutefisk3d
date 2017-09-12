@@ -24,6 +24,7 @@
 
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Core/Main.h"
+#include "Lutefisk3D/Core/Variant.h"
 #include "jlsignal/Signal.h"
 
 namespace Urho3D
@@ -53,17 +54,12 @@ protected:
     /// Handle log message.
     void HandleLogMessage(LogLevels level, const QString &message);
 
-    Context* m_context;
-    /// Application name.
-    QString m_appName;
-    /// Urho3D engine.
-    SharedPtr<Engine> engine_;
-    /// Engine parameters map.
-    VariantMap engineParameters_;
-    /// Collected startup error log messages.
-    QString startupErrors_;
-    /// Application exit code.
-    int exitCode_;
+    Context *         m_context;
+    QString           m_appName; //!< Application name.
+    Engine *          engine_;
+    VariantMap        engineParameters_; //!< Engine parameters map.
+    QString           startupErrors_;    //!< Collected startup error log messages.
+    int               exitCode_;         //!< Application exit code.
 };
 
 // Macro for defining a main function which creates a Context and the application, then runs it

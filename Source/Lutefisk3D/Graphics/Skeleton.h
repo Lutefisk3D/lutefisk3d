@@ -22,81 +22,53 @@
 
 #pragma once
 
+#include "Lutefisk3D/Container/Ptr.h"
 #include "Lutefisk3D/Math/BoundingBox.h"
-#include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Math/Quaternion.h"
+#include "Lutefisk3D/Math/Matrix3x4.h"
+#include <vector>
+#include <QtCore/QString>
 
 namespace Urho3D
 {
+class LUTEFISK3D_EXPORT Deserializer;
+class LUTEFISK3D_EXPORT ResourceCache;
+class LUTEFISK3D_EXPORT Serializer;
+class LUTEFISK3D_EXPORT Node;
 
-static const unsigned BONECOLLISION_NONE = 0x0;
-static const unsigned BONECOLLISION_SPHERE = 0x1;
-static const unsigned BONECOLLISION_BOX = 0x2;
-
-class Deserializer;
-class ResourceCache;
-class Serializer;
+enum eBoneCollision : unsigned {
+    BONECOLLISION_NONE = 0,
+    BONECOLLISION_SPHERE = 1,
+    BONECOLLISION_BOX = 2,
+};
 
 /// %Bone in a skeleton.
-struct Bone
+struct LUTEFISK3D_EXPORT Bone
 {
-    /// Construct with defaults.
-    Bone() :
-        parentIndex_(0),
-        initialPosition_(Vector3::ZERO),
-        initialRotation_(Quaternion::IDENTITY),
-        initialScale_(Vector3::ONE),
-        animated_(true),
-        collisionMask_(0),
-        radius_(0.0f)
-    {
-    }
-
-    /// Bone name.
-    QString name_;
-    /// Bone name hash.
-    StringHash nameHash_;
-    /// Parent bone index.
-    unsigned parentIndex_;
-    /// Reset position.
-    Vector3 initialPosition_;
-    /// Reset rotation.
-    Quaternion initialRotation_;
-    /// Reset scale.
-    Vector3 initialScale_;
-    /// Offset matrix.
-    Matrix3x4 offsetMatrix_;
-    /// Animation enable flag.
-    bool animated_;
-    /// Supported collision types.
-    unsigned char collisionMask_;
-    /// Radius.
-    float radius_;
-    /// Local-space bounding box.
-    BoundingBox boundingBox_;
-    /// Scene node.
-    WeakPtr<Node> node_;
+    QString       name_;                                   //!< Bone name.
+    StringHash    nameHash_;                               //!< Bone name hash.
+    unsigned      parentIndex_     = 0;                    //!< Parent bone index.
+    Vector3       initialPosition_ = Vector3::ZERO;        //!< Reset position.
+    Quaternion    initialRotation_ = Quaternion::IDENTITY; //!< Reset rotation.
+    Vector3       initialScale_    = Vector3::ONE;         //!< Reset scale.
+    Matrix3x4     offsetMatrix_;                           //!< Offset matrix.
+    BoundingBox   boundingBox_;                            //!< Local-space bounding box.
+    WeakPtr<Node> node_;                                   //!< Scene node.
+    float         radius_        = 0.0f;                   //!< Radius.
+    bool          animated_      = true;                   //!< Animation enable flag.
+    unsigned char collisionMask_ = 0;                      //!< Supported collision types.
 };
 
 /// Hierarchical collection of bones.
 class LUTEFISK3D_EXPORT Skeleton
 {
 public:
-    /// Construct an empty skeleton.
-    Skeleton();
-    /// Destruct.
-    ~Skeleton();
-
-    /// Read from a stream. Return true if successful.
     bool Load(Deserializer& source);
-    /// Write to a stream. Return true if successful.
     bool Save(Serializer& dest) const;
-    /// Define from another skeleton.
     void Define(const Skeleton& src);
-    /// Set root bone's index.
     void SetRootBoneIndex(unsigned index);
-    /// Clear bones.
     void ClearBones();
-    /// Reset all animating bones to initial positions.
     void Reset();
 
     /// Return all bones.
@@ -105,25 +77,14 @@ public:
     std::vector<Bone>& GetModifiableBones() { return bones_; }
     /// Return number of bones.
     unsigned GetNumBones() const { return bones_.size(); }
-    /// Return root bone.
     Bone* GetRootBone();
-    /// Return bone by index.
     Bone* GetBone(unsigned index);
-    /// Return bone by name.
-    Bone* GetBone(const QString& boneName);
-    /// Return bone by name.
-    Bone* GetBone(const char* boneName);
-    /// Return bone by name hash.
     Bone* GetBone(StringHash boneNameHash);
-
-    /// Reset all animating bones to initial positions without marking the nodes dirty. Requires the node dirtying to be performed later.
     void ResetSilent();
 
 private:
-    /// Bones.
-    std::vector<Bone> bones_;
-    /// Root bone index.
-    unsigned rootBoneIndex_;
+    std::vector<Bone> bones_;                          //!< Bones.
+    unsigned          rootBoneIndex_ = M_MAX_UNSIGNED; //!< Root bone index.
 };
 
 }

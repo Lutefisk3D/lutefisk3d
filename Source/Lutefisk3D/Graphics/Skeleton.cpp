@@ -20,25 +20,19 @@
 // THE SOFTWARE.
 //
 
+#include "Skeleton.h"
+
+#include "Lutefisk3D/Scene/Node.h"
 #include "Lutefisk3D/IO/Deserializer.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/Serializer.h"
-#include "Lutefisk3D/Graphics/Skeleton.h"
 
 
 
 namespace Urho3D
 {
 
-Skeleton::Skeleton() :
-    rootBoneIndex_(M_MAX_UNSIGNED)
-{
-}
-
-Skeleton::~Skeleton()
-{
-}
-
+/// Read from a stream. Return true if successful.
 bool Skeleton::Load(Deserializer& source)
 {
     ClearBones();
@@ -76,6 +70,7 @@ bool Skeleton::Load(Deserializer& source)
     return true;
 }
 
+/// Write to a stream. Return true if successful.
 bool Skeleton::Save(Serializer& dest) const
 {
     if (!dest.WriteUInt(bones_.size()))
@@ -102,6 +97,7 @@ bool Skeleton::Save(Serializer& dest) const
     return true;
 }
 
+/// Define from another skeleton.
 void Skeleton::Define(const Skeleton& src)
 {
     ClearBones();
@@ -114,6 +110,7 @@ void Skeleton::Define(const Skeleton& src)
     rootBoneIndex_ = src.rootBoneIndex_;
 }
 
+/// Set root bone's index.
 void Skeleton::SetRootBoneIndex(unsigned index)
 {
     if (index < bones_.size())
@@ -128,6 +125,7 @@ void Skeleton::ClearBones()
     rootBoneIndex_ = M_MAX_UNSIGNED;
 }
 
+/// Reset all animating bones to initial positions.
 void Skeleton::Reset()
 {
     for (Bone & elem : bones_)
@@ -137,6 +135,8 @@ void Skeleton::Reset()
     }
 }
 
+/// Reset all animating bones to initial positions without marking the nodes dirty. Requires the node dirtying to be
+/// performed later.
 void Skeleton::ResetSilent()
 {
     for (Bone & elem : bones_)
@@ -147,26 +147,19 @@ void Skeleton::ResetSilent()
 }
 
 
+/// Return root bone.
 Bone* Skeleton::GetRootBone()
 {
     return GetBone(rootBoneIndex_);
 }
 
+/// Return bone by index.
 Bone* Skeleton::GetBone(unsigned index)
 {
     return index < bones_.size() ? &bones_[index] : nullptr;
 }
 
-Bone* Skeleton::GetBone(const QString& name)
-{
-    return GetBone(StringHash(name));
-}
-
-Bone* Skeleton::GetBone(const char* name)
-{
-    return GetBone(StringHash(name));
-}
-
+/// Return bone by name hash.
 Bone* Skeleton::GetBone(StringHash nameHash)
 {
     for (Bone & elem : bones_)

@@ -27,7 +27,6 @@
 #include "Lutefisk3D/Math/Matrix3x4.h"
 #include "Lutefisk3D/Container/Ptr.h"
 
-#include <functional>
 #include <cstdio>
 #include <stdint.h>
 
@@ -252,7 +251,7 @@ template<> struct hash<Urho3D::BatchGroupKey> {
 namespace Urho3D {
 
 /// Queue that contains both instanced and non-instanced draw calls.
-struct BatchQueue
+struct LUTEFISK3D_EXPORT BatchQueue
 {
 public:
     typedef FasterHashMap<BatchGroupKey, uint32_t> BatchGroupMap; //FasterHashMap<BatchGroupKey, int>

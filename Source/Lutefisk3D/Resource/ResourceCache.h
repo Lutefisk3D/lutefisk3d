@@ -199,36 +199,30 @@ private:
 
 template <class T> T* ResourceCache::GetExistingResource(const QString& name)
 {
-    StringHash type = T::GetTypeStatic();
-    return static_cast<T*>(GetExistingResource(type, name));
+    return static_cast<T*>(GetExistingResource(T::GetTypeStatic(), name));
 }
 template <class T> T* ResourceCache::GetResource(const QString& name, bool sendEventOnFailure)
 {
-    StringHash type = T::GetTypeStatic();
-    return static_cast<T*>(GetResource(type, name, sendEventOnFailure));
+    return static_cast<T*>(GetResource(T::GetTypeStatic(), name, sendEventOnFailure));
 }
 template <class T> void ResourceCache::ReleaseResource(const QString& name, bool force)
 {
-    StringHash type = T::GetTypeStatic();
-    ReleaseResource(type, name, force);
+    ReleaseResource(T::GetTypeStatic(), name, force);
 }
 template <class T> SharedPtr<T> ResourceCache::GetTempResource(const QString& name, bool sendEventOnFailure)
 {
-    StringHash type = T::GetTypeStatic();
-    return StaticCast<T>(GetTempResource(type, name, sendEventOnFailure));
+    return StaticCast<T>(GetTempResource(T::GetTypeStatic(), name, sendEventOnFailure));
 }
 
 template <class T> bool ResourceCache::BackgroundLoadResource(const QString& name, bool sendEventOnFailure, Resource* caller)
 {
-    StringHash type = T::GetTypeStatic();
-    return BackgroundLoadResource(type, name, sendEventOnFailure, caller);
+    return BackgroundLoadResource(T::GetTypeStatic(), name, sendEventOnFailure, caller);
 }
 
 template <class T> void ResourceCache::GetResources(std::vector<T*>& result) const
 {
     std::vector<Resource*>& resources = reinterpret_cast<std::vector<Resource*>&>(result);
-    StringHash type = T::GetTypeStatic();
-    GetResources(resources, type);
+    GetResources(resources, T::GetTypeStatic());
 
     // Perform conversion of the returned pointers
     for (unsigned i = 0; i < result.size(); ++i)

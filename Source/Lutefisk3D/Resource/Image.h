@@ -34,7 +34,7 @@ namespace Urho3D
 static const int COLOR_LUT_SIZE = 16;
 
 /// Supported compressed image formats.
-enum CompressedFormat
+enum CompressedFormat : unsigned
 {
     CF_NONE = 0,
     CF_RGBA,
@@ -141,7 +141,7 @@ public:
     /// Return number of color components.
     unsigned GetComponents() const { return components_; }
     /// Return pixel data.
-    unsigned char* GetData() const { return data_; }
+    uint8_t* GetData() const { return data_.get(); }
     /// Return whether is compressed.
     bool IsCompressed() const { return compressedFormat_ != CF_NONE; }
     /// Return compressed format.
@@ -175,7 +175,7 @@ private:
     bool                          array_;               ///< Texture array status if DDS.
     bool                          sRGB_;                ///< Data is sRGB.
     CompressedFormat              compressedFormat_;    ///< Compressed format.
-    SharedArrayPtr<unsigned char> data_;                ///< Pixel data.
+    std::unique_ptr<uint8_t[]>    data_;                ///< Pixel data.
     SharedPtr<Image>              nextLevel_;           ///< Precalculated mip level image.
     SharedPtr<Image>              nextSibling_;         ///< Next texture array or cube map image.
 };

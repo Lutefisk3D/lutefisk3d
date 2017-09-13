@@ -95,7 +95,7 @@ void BufferedSoundStream::AddData(SharedArrayPtr<signed short> data, unsigned nu
     {
         MutexLock lock(bufferMutex_);
 
-        buffers_.emplace_back(ReinterpretCast<signed char>(data), numBytes);
+        buffers_.emplace_back(ReinterpretCast<int8_t>(data), numBytes);
     }
 }
 

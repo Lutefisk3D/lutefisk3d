@@ -62,7 +62,7 @@ Font::~Font()
 {
     // To ensure FreeType deallocates properly, first clear all faces, then release the raw font data
     ReleaseFaces();
-    fontData_.Reset();
+    fontData_.reset();
 }
 
 void Font::RegisterObject(Context* context)
@@ -83,13 +83,13 @@ bool Font::BeginLoad(Deserializer& source)
     fontDataSize_ = source.GetSize();
     if (fontDataSize_)
     {
-        fontData_ = new unsigned char[fontDataSize_];
-        if (source.Read(&fontData_[0], fontDataSize_) != fontDataSize_)
+        fontData_.reset(new unsigned char[fontDataSize_]);
+        if (source.Read(fontData_.get(), fontDataSize_) != fontDataSize_)
             return false;
     }
     else
     {
-        fontData_.Reset();
+        fontData_.reset();
         return false;
     }
 
@@ -185,7 +185,7 @@ void Font::ReleaseFaces()
 {
     faces_.clear();
 }
-
+/// Load font glyph offset parameters from an optional XML file. Called internally when loading TrueType fonts.
 void Font::LoadParameters()
 {
     QString xmlName = ReplaceExtension(GetName(), ".xml");
@@ -215,22 +215,24 @@ void Font::LoadParameters()
         scaledOffset_.y_ = scaledElem.GetFloat("y");
     }
 }
-
+/// Return font face using FreeType. Called internally.
+/// \returns nullptr on error.
 FontFace* Font::GetFaceFreeType(float pointSize)
 {
     SharedPtr<FontFace> newFace(new FontFaceFreeType(this));
-    if (!newFace->Load(&fontData_[0], fontDataSize_, pointSize))
+    if (!newFace->Load(fontData_.get(), fontDataSize_, pointSize))
         return nullptr;
 
     int key = FloatToFixed(pointSize);
     faces_[key] = newFace;
     return newFace;
 }
-
+/// Return bitmap font face. Called internally.
+/// \returns nullptr on error.
 FontFace* Font::GetFaceBitmap(float pointSize)
 {
     SharedPtr<FontFace> newFace(new FontFaceBitmap(this));
-    if (!newFace->Load(&fontData_[0], fontDataSize_, pointSize))
+    if (!newFace->Load(fontData_.get(), fontDataSize_, pointSize))
         return nullptr;
 
     int key = FloatToFixed(pointSize);

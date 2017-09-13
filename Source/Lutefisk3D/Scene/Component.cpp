@@ -41,14 +41,6 @@ const char* autoRemoveModeNames[] = {
     "Node",
     nullptr
 };
-Component::Component(Context* context) :
-    Animatable(context),
-    node_(nullptr),
-    id_(0),
-    networkUpdate_(false),
-    enabled_(true)
-{
-}
 
 bool Component::Save(Serializer& dest) const
 {
@@ -203,22 +195,6 @@ void Component::OnAttributeAnimationRemoved()
         GetScene()->attributeAnimationUpdate.Disconnect(this,&Component::HandleAttributeAnimationUpdate);
 }
 
-void Component::OnNodeSet(Node* node)
-{
-}
-
-void Component::OnSceneSet(Scene* scene)
-{
-}
-
-void Component::OnMarkedDirty(Node* node)
-{
-}
-
-void Component::OnNodeSetEnabled(Node* node)
-{
-}
-
 void Component::SetID(unsigned id)
 {
     id_ = id;
@@ -273,19 +249,18 @@ Component* Component::GetFixedUpdateSource()
 PhysicsSignals* Component::GetFixedSignalSource()
 {
     Scene* scene = GetScene();
-    if (scene != nullptr)
-    {
+    if (scene == nullptr)
+        return nullptr;
 #ifdef LUTEFISK3D_PHYSICS
-        PhysicsWorld *retw = scene->GetComponent<PhysicsWorld>();
-        if(retw)
-            return static_cast<PhysicsSignals *>(retw);
+    PhysicsWorld *retw = scene->GetComponent<PhysicsWorld>();
+    if(retw)
+        return static_cast<PhysicsSignals *>(retw);
 #endif
 #ifdef LUTEFISK3D_URHO2D
-        PhysicsWorld2D *ret2d = scene->GetComponent<PhysicsWorld2D>();
-        if(ret2d)
-            return static_cast<PhysicsSignals *>(ret2d);
+    PhysicsWorld2D *ret2d = scene->GetComponent<PhysicsWorld2D>();
+    if(ret2d)
+        return static_cast<PhysicsSignals *>(ret2d);
 #endif
-    }
 
     return nullptr;
 }

@@ -19,31 +19,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "View.h"
 
+#include "Light.h"
+#include "Camera.h"
+#include "DebugRenderer.h"
+#include "Geometry.h"
+#include "Graphics.h"
+#include "GraphicsEvents.h"
+#include "GraphicsImpl.h"
+#include "Material.h"
+#include "OcclusionBuffer.h"
+#include "Octree.h"
+#include "Renderer.h"
+#include "RenderPath.h"
+#include "ShaderVariation.h"
+#include "Technique.h"
+#include "Texture2D.h"
+#include "Texture2DArray.h"
+#include "Texture3D.h"
+#include "TextureCube.h"
+#include "VertexBuffer.h"
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Core/WorkQueue.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Math/Polyhedron.h"
-#include "Lutefisk3D/Graphics/Camera.h"
-#include "Lutefisk3D/Graphics/DebugRenderer.h"
-#include "Lutefisk3D/Graphics/Geometry.h"
-#include "Lutefisk3D/Graphics/Graphics.h"
-#include "Lutefisk3D/Graphics/GraphicsEvents.h"
-#include "Lutefisk3D/Graphics/GraphicsImpl.h"
-#include "Lutefisk3D/Graphics/Material.h"
-#include "Lutefisk3D/Graphics/OcclusionBuffer.h"
-#include "Lutefisk3D/Graphics/Octree.h"
-#include "Lutefisk3D/Graphics/Renderer.h"
-#include "Lutefisk3D/Graphics/RenderPath.h"
-#include "Lutefisk3D/Graphics/ShaderVariation.h"
-#include "Lutefisk3D/Graphics/Skybox.h"
-#include "Lutefisk3D/Graphics/Technique.h"
-#include "Lutefisk3D/Graphics/Texture2D.h"
-#include "Lutefisk3D/Graphics/Texture2DArray.h"
-#include "Lutefisk3D/Graphics/Texture3D.h"
-#include "Lutefisk3D/Graphics/TextureCube.h"
-#include "Lutefisk3D/Graphics/VertexBuffer.h"
-#include "Lutefisk3D/Graphics/View.h"
 #include "Lutefisk3D/IO/FileSystem.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
@@ -55,16 +55,10 @@
 #include <QDebug>
 #include <algorithm>
 
-namespace {
-template<typename T>
-constexpr unsigned ptrHash(T *v) {
-    return unsigned(uintptr_t(v)/sizeof(T));
-}
-
-}
 namespace Urho3D
 {
 
+namespace {
 static constexpr const Vector3* directions[] =
 {
     &Vector3::RIGHT,
@@ -74,9 +68,13 @@ static constexpr const Vector3* directions[] =
     &Vector3::FORWARD,
     &Vector3::BACK
 };
+template<typename T>
+constexpr unsigned ptrHash(T *v) {
+    return unsigned(uintptr_t(v)/sizeof(T));
+}
 
 /// %Frustum octree query for shadowcasters.
-class ShadowCasterOctreeQuery : public FrustumOctreeQuery
+class ShadowCasterOctreeQuery final : public FrustumOctreeQuery
 {
 public:
     /// Construct with frustum and query parameters.
@@ -104,7 +102,7 @@ public:
 };
 
 /// %Frustum octree query for zones and occluders.
-class ZoneOccluderOctreeQuery : public FrustumOctreeQuery
+class ZoneOccluderOctreeQuery final : public FrustumOctreeQuery
 {
 public:
     /// Construct with frustum and query parameters.
@@ -133,7 +131,7 @@ public:
 };
 
 /// %Frustum octree query with occlusion.
-class OccludedFrustumOctreeQuery : public FrustumOctreeQuery
+class OccludedFrustumOctreeQuery final : public FrustumOctreeQuery
 {
 public:
     /// Construct with frustum, occlusion buffer and query parameters.
@@ -176,6 +174,53 @@ public:
     /// Occlusion buffer.
     OcclusionBuffer* buffer_;
 };
+
+void UpdateDrawableGeometriesWork(const WorkItem* item, unsigned threadIndex)
+{
+    const FrameInfo& frame = *(reinterpret_cast<FrameInfo*>(item->aux_));
+    Drawable** start = reinterpret_cast<Drawable**>(item->start_);
+    Drawable** end = reinterpret_cast<Drawable**>(item->end_);
+
+    while (start != end)
+    {
+        Drawable* drawable = *start++;
+        // We may leave null pointer holes in the queue if a drawable is found out to require a main thread update
+        if (drawable != nullptr)
+            drawable->UpdateGeometry(frame);
+    }
+}
+
+void SortBatchQueueFrontToBackWork(const WorkItem* item, unsigned threadIndex)
+{
+    BatchQueue* queue = reinterpret_cast<BatchQueue*>(item->start_);
+
+    queue->SortFrontToBack();
+}
+
+void SortBatchQueueBackToFrontWork(const WorkItem* item, unsigned threadIndex)
+{
+    BatchQueue* queue = reinterpret_cast<BatchQueue*>(item->start_);
+
+    queue->SortBackToFront();
+}
+
+void SortLightQueueWork(const WorkItem* item, unsigned threadIndex)
+{
+    LightBatchQueue* start = reinterpret_cast<LightBatchQueue*>(item->start_);
+    start->litBaseBatches_.SortFrontToBack();
+    start->litBatches_.SortFrontToBack();
+}
+
+void SortShadowQueueWork(const WorkItem *item, unsigned threadIndex)
+{
+    LightBatchQueue *start = reinterpret_cast<LightBatchQueue *>(item->start_);
+    for (auto &split : start->shadowSplits_)
+        split.shadowBatches_.SortFrontToBack();
+}
+/////////////////////////////////////////////////////////////////////
+} // anonymous namespace
+/////////////////////////////////////////////////////////////////////
+
 void CheckVisibilityWork(const WorkItem *item, unsigned threadIndex)
 {
     View *                 view = reinterpret_cast<View *>(item->aux_);
@@ -256,51 +301,6 @@ void ProcessLightWork(const WorkItem* item, unsigned threadIndex)
 
     view->ProcessLight(*query, threadIndex);
 }
-namespace {
-
-void UpdateDrawableGeometriesWork(const WorkItem* item, unsigned threadIndex)
-{
-    const FrameInfo& frame = *(reinterpret_cast<FrameInfo*>(item->aux_));
-    Drawable** start = reinterpret_cast<Drawable**>(item->start_);
-    Drawable** end = reinterpret_cast<Drawable**>(item->end_);
-
-    while (start != end)
-    {
-        Drawable* drawable = *start++;
-        // We may leave null pointer holes in the queue if a drawable is found out to require a main thread update
-        if (drawable != nullptr)
-            drawable->UpdateGeometry(frame);
-    }
-}
-
-void SortBatchQueueFrontToBackWork(const WorkItem* item, unsigned threadIndex)
-{
-    BatchQueue* queue = reinterpret_cast<BatchQueue*>(item->start_);
-
-    queue->SortFrontToBack();
-}
-
-void SortBatchQueueBackToFrontWork(const WorkItem* item, unsigned threadIndex)
-{
-    BatchQueue* queue = reinterpret_cast<BatchQueue*>(item->start_);
-
-    queue->SortBackToFront();
-}
-
-void SortLightQueueWork(const WorkItem* item, unsigned threadIndex)
-{
-    LightBatchQueue* start = reinterpret_cast<LightBatchQueue*>(item->start_);
-    start->litBaseBatches_.SortFrontToBack();
-    start->litBatches_.SortFrontToBack();
-}
-
-void SortShadowQueueWork(const WorkItem *item, unsigned threadIndex)
-{
-    LightBatchQueue *start = reinterpret_cast<LightBatchQueue *>(item->start_);
-    for (auto &split : start->shadowSplits_)
-        split.shadowBatches_.SortFrontToBack();
-}
-} // anonymous namespace
 
 StringHash ParseTextureTypeXml(ResourceCache* cache, QString filename);
 View::View(Context *context)
@@ -2371,7 +2371,7 @@ bool View::IsShadowCasterVisible(Drawable* drawable, BoundingBox lightViewBox, C
 
         // For perspective lights, extrusion direction depends on the position of the shadow caster
         Vector3 center = lightViewBox.Center();
-        Ray extrusionRay(center, center);
+        Ray extrusionRay {center, center};
 
         float extrusionDistance = shadowCamera->GetFarClip();
         float originalDistance = Clamp(center.Length(), M_EPSILON, extrusionDistance);

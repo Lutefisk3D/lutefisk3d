@@ -34,6 +34,9 @@ URHO3D_EVENT(E_BONEHIERARCHYCREATED, BoneHierarchyCreated)
 {
     URHO3D_PARAM(P_NODE, Node);                    // Node pointer
 }
+struct BoneHierarchySignals {
+    jl::Signal<Node *> boneHierarchyCreated;
+};
 struct AnimatedModelSignals
 {
     jl::Signal<Node *,const SharedPtr<Animation> &,const QString &,float,Variant> triggered;

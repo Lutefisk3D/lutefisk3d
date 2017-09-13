@@ -29,7 +29,10 @@
 #include "Lutefisk3D/Graphics/Skeleton.h"
 #include "Lutefisk3D/Math/BoundingBox.h"
 #include "Lutefisk3D/Resource/Resource.h"
-
+namespace std {
+extern template
+class unique_ptr<uint8_t[]>;
+}
 namespace Urho3D
 {
 
@@ -42,14 +45,17 @@ using IndexBufferHandle = DataHandle<IndexBuffer,20,20>;
 /// Vertex buffer morph data.
 struct VertexBufferMorph
 {
+    ~VertexBufferMorph() {
+        delete []  morphData_;
+    }
+    /// Morphed vertices. Stored packed as <index, data> pairs.
+    uint8_t * morphData_ = nullptr;
     /// Vertex elements.
     unsigned elementMask_;
     /// Number of vertices.
     unsigned vertexCount_;
     /// Morphed vertices data size as bytes.
     unsigned dataSize_;
-    /// Morphed vertices. Stored packed as <index, data> pairs.
-    SharedArrayPtr<unsigned char> morphData_;
 };
 
 /// Definition of a model's vertex morph.
@@ -68,14 +74,10 @@ struct ModelMorph
 /// Description of vertex buffer data for asynchronous loading.
 struct VertexBufferDesc
 {
-    /// Vertex count.
-    unsigned vertexCount_;
-    /// Vertex declaration.
-    std::vector<VertexElement> vertexElements_;
-    /// Vertex data size.
-    unsigned dataSize_;
-    /// Vertex data.
-    SharedArrayPtr<unsigned char> data_;
+    unsigned                   vertexCount_;    //!< Vertex count.
+    std::vector<VertexElement> vertexElements_; //!< Vertex declaration.
+    unsigned                   dataSize_;       //!< Vertex data size.
+    std::unique_ptr<uint8_t[]> data_;           //!< Vertex data.
 };
 
 /// Description of index buffer data for asynchronous loading.
@@ -88,7 +90,7 @@ struct IndexBufferDesc
     /// Index data size.
     unsigned dataSize_;
     /// Index data.
-    SharedArrayPtr<unsigned char> data_;
+    std::unique_ptr<uint8_t[]> data_;
 };
 
 /// Description of a geometry for asynchronous loading.

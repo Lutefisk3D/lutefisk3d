@@ -31,6 +31,7 @@
 #include "GraphicsImpl.h"
 #include "Material.h"
 #include "Octree.h"
+#include "Light.h"
 #include "ParticleEffect.h"
 #include "ParticleEmitter.h"
 #include "RibbonTrail.h"
@@ -152,7 +153,7 @@ void Graphics::SetShaderParameter(StringHash param, const Variant& value)
 
     case VAR_BUFFER:
         {
-            const std::vector<unsigned char>& buffer = value.GetBuffer();
+            const std::vector<uint8_t>& buffer = value.GetBuffer();
             if (buffer.size() >= sizeof(float))
                 SetShaderParameter(param, reinterpret_cast<const float*>(buffer.data()), buffer.size() / sizeof(float));
         }
@@ -285,7 +286,7 @@ void* Graphics::ReserveScratchBuffer(unsigned size)
         if (!elem.reserved_ && elem.size_ >= size)
         {
             elem.reserved_ = true;
-            return elem.data_.Get();
+            return elem.data_.get();
         }
     }
 
@@ -294,22 +295,19 @@ void* Graphics::ReserveScratchBuffer(unsigned size)
     {
         if (!elem.reserved_)
         {
-            elem.data_ = new unsigned char[size];
+            elem.data_.reset(new uint8_t[size]);
             elem.size_ = size;
             elem.reserved_ = true;
             URHO3D_LOGDEBUG("Resized scratch buffer to size " + QString::number(size));
-            return elem.data_.Get();
+            return elem.data_.get();
         }
     }
 
     // Finally allocate a new buffer
-    ScratchBuffer newBuffer;
-    newBuffer.data_ = new unsigned char[size];
-    newBuffer.size_ = size;
-    newBuffer.reserved_ = true;
-    scratchBuffers_.push_back(newBuffer);
+    ScratchBuffer newBuffer{std::unique_ptr<uint8_t[]>(new uint8_t[size]), size, true};
+    scratchBuffers_.emplace_back(std::move(newBuffer));
     URHO3D_LOGDEBUG("Allocated scratch buffer with size " + QString::number(size));
-    return newBuffer.data_.Get();
+    return scratchBuffers_.back().data_.get();
 }
 
 void Graphics::FreeScratchBuffer(void* buffer)
@@ -319,7 +317,7 @@ void Graphics::FreeScratchBuffer(void* buffer)
 
     for (ScratchBuffer & elem : scratchBuffers_)
     {
-        if (elem.reserved_ && elem.data_.Get() == buffer)
+        if (elem.reserved_ && elem.data_.get() == buffer)
         {
             elem.reserved_ = false;
             return;
@@ -335,7 +333,7 @@ void Graphics::CleanupScratchBuffers()
     {
         if (!elem.reserved_ && elem.size_ > maxScratchBufferRequest_ * 2 && elem.size_ >= 1024 * 1024)
         {
-            elem.data_ = maxScratchBufferRequest_ > 0 ? new unsigned char[maxScratchBufferRequest_] : nullptr;
+            elem.data_.reset(maxScratchBufferRequest_ > 0 ? new uint8_t[maxScratchBufferRequest_] : nullptr);
             elem.size_ = maxScratchBufferRequest_;
             URHO3D_LOGDEBUG("Resized scratch buffer to size " + QString::number(maxScratchBufferRequest_));
         }

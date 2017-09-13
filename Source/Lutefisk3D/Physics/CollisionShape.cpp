@@ -282,14 +282,14 @@ void ConvexData::BuildHull(const std::vector<Vector3>& vertices)
         lib.CreateConvexHull(desc, result);
 
         vertexCount_ = result.mNumOutputVertices;
-        vertexData_ = new Vector3[vertexCount_];
+        vertexData_.reset(new Vector3[vertexCount_]);
 
         indexCount_ = result.mNumIndices;
-        indexData_ = new unsigned[indexCount_];
+        indexData_.reset(new unsigned[indexCount_]);
 
         // Copy vertex data & index data
-        memcpy(vertexData_.Get(), result.mOutputVertices, vertexCount_ * sizeof(Vector3));
-        memcpy(indexData_.Get(), result.mIndices, indexCount_ * sizeof(unsigned));
+        memcpy(vertexData_.get(), result.mOutputVertices, vertexCount_ * sizeof(Vector3));
+        memcpy(indexData_.get(), result.mIndices, indexCount_ * sizeof(unsigned));
 
         lib.ReleaseResult(result);
     }
@@ -1117,7 +1117,7 @@ void CollisionShape::UpdateShape()
                 {
                     geometry_ = new ConvexData(custom);
                     ConvexData* convex = static_cast<ConvexData*>(geometry_.Get());
-                    shape_.reset(new btConvexHullShape((btScalar*)convex->vertexData_.Get(), convex->vertexCount_, sizeof(Vector3)));
+                    shape_.reset(new btConvexHullShape((btScalar*)convex->vertexData_.get(), convex->vertexCount_, sizeof(Vector3)));
                     shape_->setLocalScaling(ToBtVector3(newWorldScale * size_));
                 }
                 else
@@ -1141,7 +1141,7 @@ void CollisionShape::UpdateShape()
                 }
 
                 ConvexData* convex = static_cast<ConvexData*>(geometry_.Get());
-                shape_ .reset(new btConvexHullShape((btScalar*)convex->vertexData_.Get(), convex->vertexCount_, sizeof(Vector3)));
+                shape_ .reset(new btConvexHullShape((btScalar*)convex->vertexData_.get(), convex->vertexCount_, sizeof(Vector3)));
                 shape_->setLocalScaling(ToBtVector3(newWorldScale * size_));
                 model_->reloadFinished.Connect(this,&CollisionShape::HandleModelReloadFinished);
             }

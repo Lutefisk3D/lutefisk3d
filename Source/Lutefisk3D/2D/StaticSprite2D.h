@@ -26,7 +26,7 @@
 
 namespace Urho3D
 {
-
+enum BlendMode : unsigned;
 class Sprite2D;
 /// Static sprite component.
 class LUTEFISK3D_EXPORT StaticSprite2D : public Drawable2D

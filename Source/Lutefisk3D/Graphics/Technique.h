@@ -22,17 +22,19 @@
 
 #pragma once
 
-#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Resource/Resource.h"
 #include "Lutefisk3D/Math/StringHash.h"
 
 namespace Urho3D
 {
+enum BlendMode : unsigned;
+enum CullMode : unsigned;
+enum CompareMode : unsigned;
 
 class ShaderVariation;
 
 /// Lighting mode of a pass.
-enum PassLightingMode
+enum PassLightingMode : unsigned
 {
     LIGHTING_UNLIT = 0,
     LIGHTING_PERVERTEX,

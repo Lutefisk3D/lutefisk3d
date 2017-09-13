@@ -26,8 +26,9 @@
 #include "Lutefisk3D/Scene/Node.h"
 #include "Lutefisk3D/Scene/SceneResolver.h"
 #include "Lutefisk3D/Resource/XMLElement.h"
-#include <jlsignal/SignalBase.h>
 #include "Lutefisk3D/Scene/SceneEvents.h"
+
+#include <jlsignal/SignalBase.h>
 #include <QtCore/QSet>
 namespace Urho3D
 {
@@ -39,6 +40,9 @@ static const unsigned FIRST_REPLICATED_ID = 0x1;
 static const unsigned LAST_REPLICATED_ID = 0xffffff;
 static const unsigned FIRST_LOCAL_ID = 0x01000000;
 static const unsigned LAST_LOCAL_ID = 0xffffffff;
+extern const char* SCENE_CATEGORY;
+extern const char* LOGIC_CATEGORY;
+extern const char* SUBSYSTEM_CATEGORY;
 
 /// Asynchronous scene loading mode.
 enum LoadMode
@@ -81,7 +85,7 @@ struct AsyncProgress
 /// Root scene node, represents the whole scene.
 class LUTEFISK3D_EXPORT Scene : public Node, public SingularSceneSignals
 {
-    URHO3D_OBJECT(Scene,Node);
+    URHO3D_OBJECT(Scene,Node)
 
     using Node::GetComponent;
     using Node::SaveXML;

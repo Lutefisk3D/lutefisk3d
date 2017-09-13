@@ -31,6 +31,7 @@
 #include "Lutefisk3D/IO/File.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/PackageFile.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Resource/ResourceEvents.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
@@ -40,6 +41,7 @@
 #include "SplinePath.h"
 #include "UnknownComponent.h"
 #include "ValueAnimation.h"
+
 
 namespace Urho3D
 {

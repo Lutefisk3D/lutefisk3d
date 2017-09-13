@@ -21,6 +21,7 @@
 //
 
 #include "Batch.h"
+#include "Light.h"
 
 #include "Camera.h"
 #include "Geometry.h"

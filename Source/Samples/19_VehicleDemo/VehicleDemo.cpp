@@ -282,7 +282,7 @@ void VehicleDemo::HandlePostUpdate(float ts)
 
     // Raycast camera against static objects (physics collision mask 2)
     // and move it closer to the vehicle if something in between
-    Ray cameraRay(cameraStartPos, cameraTargetPos - cameraStartPos);
+    Ray cameraRay {cameraStartPos, cameraTargetPos - cameraStartPos};
     float cameraRayLength = (cameraTargetPos - cameraStartPos).Length();
     PhysicsRaycastResult result;
     scene_->GetComponent<PhysicsWorld>()->RaycastSingle(result, cameraRay, cameraRayLength, 2);

@@ -55,11 +55,6 @@ bool ToBool(const char* source)
     return false;
 }
 
-int ToInt(const QString& source)
-{
-    return source.toInt();
-}
-
 int ToInt(const char* source)
 {
     if (!source)

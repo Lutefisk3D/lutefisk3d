@@ -221,13 +221,13 @@ unsigned File::Read(void* dest, unsigned size)
     if (compressed_)
     {
         unsigned sizeLeft = size;
-        unsigned char* destPtr = (unsigned char*)dest;
+        uint8_t* destPtr = (uint8_t*)dest;
 
         while (sizeLeft)
         {
             if (!readBuffer_ || readBufferOffset_ >= readBufferSize_)
             {
-                unsigned char blockHeaderBytes[4];
+                uint8_t blockHeaderBytes[4];
                 ((QFile *)handle_)->read((char *)blockHeaderBytes, sizeof blockHeaderBytes);
 
                 MemoryBuffer blockHeader(&blockHeaderBytes[0], sizeof blockHeaderBytes);
@@ -236,20 +236,20 @@ unsigned File::Read(void* dest, unsigned size)
 
                 if (!readBuffer_)
                 {
-                    readBuffer_ = new unsigned char[unpackedSize];
-                    inputBuffer_ = new unsigned char[LZ4_compressBound(unpackedSize)];
+                    readBuffer_.reset(new uint8_t[unpackedSize]);
+                    inputBuffer_.reset(new uint8_t[LZ4_compressBound(unpackedSize)]);
                 }
 
                 /// \todo Handle errors
-                ((QFile *)handle_)->read((char *)inputBuffer_.Get(), packedSize);
-                LZ4_decompress_fast((const char*)inputBuffer_.Get(), (char *)readBuffer_.Get(), unpackedSize);
+                ((QFile *)handle_)->read((char *)inputBuffer_.get(), packedSize);
+                LZ4_decompress_fast((const char*)inputBuffer_.get(), (char *)readBuffer_.get(), unpackedSize);
 
                 readBufferSize_ = unpackedSize;
                 readBufferOffset_ = 0;
             }
 
             unsigned copySize = std::min((int)(readBufferSize_ - readBufferOffset_), (int)sizeLeft);
-            memcpy(destPtr, readBuffer_.Get() + readBufferOffset_, copySize);
+            memcpy(destPtr, readBuffer_.get() + readBufferOffset_, copySize);
             destPtr += copySize;
             sizeLeft -= copySize;
             readBufferOffset_ += copySize;
@@ -305,7 +305,7 @@ unsigned File::Seek(unsigned position)
         // Skip bytes
         else if (position >= position_)
         {
-            unsigned char skipBuffer[SKIP_BUFFER_SIZE];
+            uint8_t skipBuffer[SKIP_BUFFER_SIZE];
             while (position > position_)
                 Read(skipBuffer, std::min((int)(position - position_), (int)SKIP_BUFFER_SIZE));
         }
@@ -377,7 +377,7 @@ unsigned File::GetChecksum()
     Seek(0);
     while (!IsEof())
     {
-        unsigned char block[1024];
+        uint8_t block[1024];
         unsigned readBytes = Read(block, 1024);
         for (unsigned i = 0; i < readBytes; ++i)
             checksum_ = SDBMHash(checksum_, block[i]);
@@ -389,8 +389,8 @@ unsigned File::GetChecksum()
 
 void File::Close()
 {
-    readBuffer_.Reset();
-    inputBuffer_.Reset();
+    readBuffer_.reset();
+    inputBuffer_.reset();
 
     if (handle_)
     {

@@ -32,6 +32,7 @@
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/MemoryBuffer.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Resource/JSONFile.h"
 #ifdef LUTEFISK3D_PHYSICS
@@ -39,7 +40,22 @@
 #endif
 namespace Urho3D
 {
-
+/// Internal implementation structure for less performance-critical Node variables.
+struct LUTEFISK3D_EXPORT NodeImpl
+{
+    /// Nodes this node depends on for network updates.
+    std::vector<Node*> dependencyNodes_;
+    /// Network owner connection.
+    Connection* owner_;
+    /// Name.
+    QString name_;
+    /// Tag strings.
+    QStringList tags_;
+    /// Name hash.
+    StringHash nameHash_;
+    /// Attribute buffer for network updates.
+    mutable VectorBuffer attrBuffer_;
+};
 Node::Node(Context* context) :
     Animatable(context),
     worldTransform_(Matrix3x4::IDENTITY),
@@ -1113,6 +1129,11 @@ void Node::RemoveListener(Component* component)
         }
     }
 }
+
+const QString &Node::GetName() const
+{
+    return impl_->name_;
+}
 Vector3 Node::GetSignedWorldScale() const
 {
     if (dirty_)
@@ -1313,6 +1334,11 @@ bool Node::IsChildOf(Node* node) const
         parent = parent->parent_;
     }
     return false;
+}
+
+Connection *Node::GetOwner() const
+{
+    return impl_->owner_;
 }
 
 const Variant& Node::GetVar(StringHash key) const
@@ -1602,6 +1628,11 @@ bool Node::LoadJSON(const JSONValue& source, SceneResolver& resolver, bool readC
     }
 
     return true;
+}
+
+const std::vector<Node *> &Node::GetDependencyNodes() const
+{
+    return impl_->dependencyNodes_;
 }
 
 void Node::PrepareNetworkUpdate()
@@ -2131,4 +2162,13 @@ void Node::HandleAttributeAnimationUpdate(Scene*s,float ts)
     UpdateAttributeAnimations(ts);
 }
 
+StringHash Urho3D::Node::GetNameHash() const
+{
+    return impl_->nameHash_;
+}
+
+const QStringList &Node::GetTags() const
+{
+    return impl_->tags_;
+}
 }

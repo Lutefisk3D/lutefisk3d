@@ -102,28 +102,10 @@ struct LUTEFISK3D_EXPORT ResourceRef
 /// %List of typed resource references.
 struct LUTEFISK3D_EXPORT ResourceRefList
 {
-    /// Construct.
-    ResourceRefList()
-    {
-    }
-
-    /// Construct with type only.
-    ResourceRefList(StringHash type) :
-        type_(type)
-    {
-    }
-    /// Construct with type and id list.
-    ResourceRefList(StringHash type, const std::vector<QString>& names) :
-        type_(type),
-        names_(names)
-    {
-    }
-
     /// Object type.
     StringHash type_;
     /// List of object names.
     std::vector<QString> names_;
-    ResourceRefList &operator=(const ResourceRefList &rhs) = default;
     /// Test for equality with another reference list.
     bool operator == (const ResourceRefList& rhs) const { return type_ == rhs.type_ && names_ == rhs.names_; }
     /// Test for inequality with another reference list.
@@ -212,7 +194,7 @@ inline StringHash GetResourceType(Resource* resource, StringHash defaultType)
 
 inline ResourceRef GetResourceRef(Resource* resource, StringHash defaultType)
 {
-    return ResourceRef(GetResourceType(resource, defaultType), GetResourceName(resource));
+    return {GetResourceType(resource, defaultType), GetResourceName(resource)};
 }
 
 template <class T> QStringList GetResourceNames(const std::vector<SharedPtr<T> >& resources)

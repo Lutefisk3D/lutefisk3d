@@ -24,7 +24,8 @@
 
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Graphics/Batch.h"
-#include "Lutefisk3D/Graphics/Light.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
+//#include "Lutefisk3D/Graphics/Light.h"
 #include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Graphics/Zone.h"
 #include <array>

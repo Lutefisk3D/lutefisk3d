@@ -24,11 +24,8 @@
 
 #include "Lutefisk3D/2D/StaticSprite2D.h"
 
-#ifdef LUTEFISK3D_SPINE
-struct spAnimationState;
-struct spAnimationStateData;
-struct spSkeleton;
-#endif
+namespace Urho3D {
+class LUTEFISK3D_EXPORT AnimationSet2D;
 
 /// Loop mode.
 enum LoopMode2D
@@ -37,15 +34,10 @@ enum LoopMode2D
     LM_FORCE_LOOPED, ///< Force looped.
     LM_FORCE_CLAMPED ///< Force clamped.
 };
-
-namespace Urho3D
-{
-
 namespace Spriter
 {
     class SpriterInstance;
 }
-class AnimationSet2D;
 
 /// Animated sprite component, it uses to play animation created by Spine (http://www.esotericsoftware.com) and Spriter (http://www.brashmonkey.com/).
 class LUTEFISK3D_EXPORT AnimatedSprite2D : public StaticSprite2D
@@ -53,15 +45,12 @@ class LUTEFISK3D_EXPORT AnimatedSprite2D : public StaticSprite2D
     URHO3D_OBJECT(AnimatedSprite2D,StaticSprite2D)
 
 public:
-    /// Construct.
     AnimatedSprite2D(Context* context);
-    /// Destruct.
     virtual ~AnimatedSprite2D();
     /// Register object factory.
     static void RegisterObject(Context* context);
-
     /// Handle enabled/disabled state change.
-    virtual void OnSetEnabled() override;
+    void OnSetEnabled() override;
 
     /// Set animation set.
     void SetAnimationSet(AnimationSet2D* animationSet);
@@ -83,7 +72,6 @@ public:
     LoopMode2D GetLoopMode() const { return loopMode_; }
     /// Return speed.
     float GetSpeed() const { return speed_; }
-
     /// Set animation set attribute.
     void SetAnimationSetAttr(const ResourceRef& value);
     /// Return animation set attribute.
@@ -93,51 +81,25 @@ public:
 
 protected:
     /// Handle scene being assigned.
-    virtual void OnSceneSet(Scene* scene) override;
+    void OnSceneSet(Scene* scene) override;
     /// Handle update vertices.
-    virtual void UpdateSourceBatches() override;
+    void UpdateSourceBatches() override;
     /// Handle scene post update.
     void HandleScenePostUpdate(Scene *, float ts);
     /// Update animation.
     void UpdateAnimation(float timeStep);
-#ifdef LUTEFISK3D_SPINE
-    /// Handle set spine animation.
-    void SetSpineAnimation();
-    /// Update spine animation.
-    void UpdateSpineAnimation(float timeStep);
-    /// Update vertices for spine animation;
-    void UpdateSourceBatchesSpine();
-#endif
     /// Handle set spriter animation.
     void SetSpriterAnimation();
     /// Update spriter animation.
     void UpdateSpriterAnimation(float timeStep);
     /// Update vertices for spriter animation.
     void UpdateSourceBatchesSpriter();
-    /// Dispose.
-    void Dispose();
 
-    /// Speed.
-    float speed_;
-    /// Entity name.
-    QString entity_;
-    /// Animation set.
-    SharedPtr<AnimationSet2D> animationSet_;
-    /// Animation name.
-    QString animationName_;
-    /// Loop mode.
-    LoopMode2D loopMode_;
-#ifdef LUTEFISK3D_SPINE
-    /// Skeleton.
-    spSkeleton* skeleton_;
-    /// Animation state data.
-    spAnimationStateData* animationStateData_;
-    /// Animation state.
-    spAnimationState* animationState_;
-#endif
-
-    /// Spriter instance.
-    std::unique_ptr<Spriter::SpriterInstance> spriterInstance_;
+    float                                     speed_ = 1.0f;          //!< Speed.
+    QString                                   entity_;                //!< Entity name.
+    SharedPtr<AnimationSet2D>                 animationSet_;          //!< Animation set.
+    QString                                   animationName_;         //!< Animation name.
+    LoopMode2D                                loopMode_ = LM_DEFAULT; //!< Loop mode.
+    std::unique_ptr<Spriter::SpriterInstance> spriterInstance_;       //!< Spriter instance.
 };
-
 }

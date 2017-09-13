@@ -29,6 +29,7 @@
 #include <Lutefisk3D/Input/Input.h>
 #include <Lutefisk3D/Graphics/Material.h>
 #include <Lutefisk3D/Graphics/Model.h>
+#include <Lutefisk3D/Graphics/Light.h>
 #include <Lutefisk3D/Graphics/Octree.h>
 #include <Lutefisk3D/Core/Profiler.h>
 #include <Lutefisk3D/Graphics/Renderer.h>

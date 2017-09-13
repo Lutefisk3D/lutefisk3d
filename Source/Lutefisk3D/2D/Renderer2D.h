@@ -29,7 +29,7 @@
 
 namespace Urho3D
 {
-
+enum BlendMode : unsigned;
 class Drawable2D;
 class IndexBuffer;
 class Material;

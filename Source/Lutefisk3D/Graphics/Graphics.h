@@ -22,20 +22,22 @@
 
 #pragma once
 
-#include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Container/DataHandle.h"
 #include "Lutefisk3D/Math/Color.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
-#include "Lutefisk3D/Resource/Image.h"
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Math/Plane.h"
 #include "Lutefisk3D/Math/Rect.h"
-
+#include "Lutefisk3D/Container/Str.h"
 #include <utility>
 #include <functional>
 #include <array>
 
+namespace std {
+extern template
+class unique_ptr<uint8_t[]>;
+}
 namespace gl {
 enum class GLenum : uint32_t;
 }
@@ -43,6 +45,8 @@ struct SDL_Window;
 
 namespace Urho3D
 {
+enum CompressedFormat : unsigned;
+class LUTEFISK3D_EXPORT Deserializer;
 class LUTEFISK3D_EXPORT ConstantBuffer;
 class LUTEFISK3D_EXPORT File;
 class LUTEFISK3D_EXPORT Image;
@@ -67,18 +71,12 @@ using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 /// CPU-side scratch buffer for vertex data updates.
 struct ScratchBuffer
 {
-    ScratchBuffer() :
-        size_(0),
-        reserved_(false)
-    {
-    }
-
     /// Buffer data.
-    SharedArrayPtr<unsigned char> data_;
+    std::unique_ptr<uint8_t[]> data_;
     /// Data size.
-    unsigned size_;
+    unsigned size_=0;
     /// Reserved flag.
-    bool reserved_;
+    bool reserved_=false;
 };
 
 /// %Graphics subsystem. Manages the application window, rendering state and GPU resources.

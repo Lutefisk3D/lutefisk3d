@@ -111,7 +111,7 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
     fragmentSize_ = std::min<unsigned>(NextPowerOfTwo(mixRate >> 6), obtained.samples);
     mixRate_ = obtained.freq;
     interpolation_ = interpolation;
-    clipBuffer_ = new int[stereo ? fragmentSize_ << 1 : fragmentSize_];
+    clipBuffer_.reset(new int[stereo ? fragmentSize_ << 1 : fragmentSize_]);
 
     URHO3D_LOGINFO("Set audio mode " + QString::number(mixRate_) + " Hz " + (stereo_ ? "stereo" : "mono") + " " +
                    (interpolation_ ? "interpolated" : ""));
@@ -290,7 +290,7 @@ void Audio::MixOutput(void *dest, unsigned samples)
             clipSamples <<= 1;
 
         // Clear clip buffer
-        int* clipPtr = clipBuffer_.Get();
+        int* clipPtr = clipBuffer_.get();
         memset(clipPtr, 0, clipSamples * sizeof(int));
 
         // Mix samples to clip buffer
@@ -324,7 +324,7 @@ void Audio::Release()
     {
         SDL_CloseAudioDevice(deviceID_);
         deviceID_ = 0;
-        clipBuffer_.Reset();
+        clipBuffer_.reset();
     }
 }
 /// Actually update sound sources with the specific timestep. Called internally.

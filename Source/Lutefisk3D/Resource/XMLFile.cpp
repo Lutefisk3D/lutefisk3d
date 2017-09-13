@@ -85,11 +85,11 @@ bool XMLFile::BeginLoad(Deserializer& source)
         return false;
     }
 
-    SharedArrayPtr<char> buffer(new char[dataSize]);
-    if (source.Read(buffer.Get(), dataSize) != dataSize)
+    std::unique_ptr<char> buffer(new char[dataSize]);
+    if (source.Read(buffer.get(), dataSize) != dataSize)
         return false;
 
-    if (!document_->load_buffer(buffer.Get(), dataSize))
+    if (!document_->load_buffer(buffer.get(), dataSize))
     {
         URHO3D_LOGERROR("Could not parse XML data from " + source.GetName());
         document_->reset();

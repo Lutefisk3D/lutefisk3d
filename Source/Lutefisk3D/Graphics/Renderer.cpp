@@ -47,6 +47,7 @@
 #include "Lutefisk3D/Graphics/View.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Graphics/Zone.h"
+#include "Light.h"
 
 
 namespace Urho3D

@@ -23,10 +23,11 @@
 #pragma once
 
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
-#include "Lutefisk3D/Graphics/Light.h"
+#include "Lutefisk3D/Graphics/BiasParameters.h"
 #include "Lutefisk3D/Resource/Resource.h"
 #include "Lutefisk3D/Scene/ValueAnimationInfo.h"
 #include "Lutefisk3D/Math/Vector4.h"
+#include "Lutefisk3D/Core/Variant.h"
 
 #include <unordered_map>
 namespace std {

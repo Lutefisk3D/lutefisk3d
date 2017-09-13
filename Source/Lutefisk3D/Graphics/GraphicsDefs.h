@@ -29,10 +29,8 @@ namespace Urho3D
 
 class Vector3;
 
-/// Graphics capability support level. Web platform (Emscripten) also uses OpenGL ES, but is considered a desktop platform capability-wise
-#define DESKTOP_GRAPHICS
 /// Primitive type.
-enum PrimitiveType
+enum PrimitiveType : unsigned
 {
     TRIANGLE_LIST = 0,
     LINE_LIST,
@@ -43,7 +41,7 @@ enum PrimitiveType
 };
 
 /// %Geometry type for vertex shader geometry variations.
-enum GeometryType
+enum GeometryType : unsigned
 {
     GEOM_STATIC = 0,
     GEOM_SKINNED = 1,
@@ -74,7 +72,7 @@ enum BlendMode : unsigned
 };
 
 /// Depth or stencil compare mode.
-enum CompareMode
+enum CompareMode : unsigned
 {
     CMP_ALWAYS = 0,
     CMP_EQUAL,
@@ -86,8 +84,9 @@ enum CompareMode
     MAX_COMPAREMODES
 };
 
+//TODO: make the common case = 0, and move CULL_NONE to the end of the enum
 /// Culling mode.
-enum CullMode
+enum CullMode : unsigned
 {
     CULL_NONE = 0,
     CULL_CCW,
@@ -96,7 +95,7 @@ enum CullMode
 };
 
 /// Fill mode.
-enum FillMode
+enum FillMode : unsigned
 {
     FILL_SOLID = 0,
     FILL_WIREFRAME,
@@ -331,7 +330,7 @@ enum TextureUnit : unsigned
 };
 
 /// Billboard camera facing modes.
-enum FaceCameraMode
+enum FaceCameraMode : unsigned
 {
     FC_NONE = 0,
     FC_ROTATE_XYZ,
@@ -351,6 +350,8 @@ enum ShadowQuality
     SHADOWQUALITY_VSM,
     SHADOWQUALITY_BLUR_VSM
 };
+// Light constants
+static constexpr const unsigned MAX_LIGHT_SPLITS = 6;
 
 // Inbuilt shader parameters.
 extern LUTEFISK3D_EXPORT const StringHash VSP_AMBIENTSTARTCOLOR;
@@ -447,4 +448,5 @@ static const unsigned MAX_VERTEX_STREAMS = 4;
 static const unsigned MAX_CONSTANT_REGISTERS = 256;
 
 static const unsigned BITS_PER_COMPONENT = 8;
+
 }

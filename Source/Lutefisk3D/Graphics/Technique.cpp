@@ -24,6 +24,7 @@
 
 #include "Lutefisk3D/Core/Context.h"
 #include "Graphics.h"
+#include "GraphicsDefs.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Core/ProcessUtils.h"
 #include "Lutefisk3D/Core/StringUtils.h"

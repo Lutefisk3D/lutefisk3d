@@ -24,6 +24,7 @@
 #include <Lutefisk3D/Core/CoreEvents.h>
 #include <Lutefisk3D/Core/Context.h>
 #include <Lutefisk3D/Engine/Engine.h>
+#include <Lutefisk3D/Graphics/Light.h>
 #include <Lutefisk3D/Graphics/AnimatedModel.h>
 #include <Lutefisk3D/Graphics/AnimationController.h>
 #include <Lutefisk3D/Graphics/Camera.h>

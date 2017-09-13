@@ -46,7 +46,7 @@ CustomGeometry::CustomGeometry(Context* context) :
     vertexBuffer_(new VertexBuffer(context)),
     elementMask_(MASK_POSITION),
     geometryIndex_(0),
-    materialsAttr_(Material::GetTypeStatic()),
+    materialsAttr_{Material::GetTypeStatic()},
     dynamic_(false)
 {
     vertexBuffer_->SetShadowed(true);
@@ -63,7 +63,7 @@ void CustomGeometry::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Dynamic Vertex Buffer", bool, dynamic_, false, AM_DEFAULT);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Geometry Data", GetGeometryDataAttr, SetGeometryDataAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_FILE|AM_NOEDIT);
-    URHO3D_ACCESSOR_ATTRIBUTE("Materials", GetMaterialsAttr, SetMaterialsAttr, ResourceRefList, ResourceRefList(Material::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Materials", GetMaterialsAttr, SetMaterialsAttr, ResourceRefList, ResourceRefList{Material::GetTypeStatic()}, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Is Occluder", bool, occluder_, false, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Cast Shadows", bool, castShadows_, false, AM_DEFAULT);

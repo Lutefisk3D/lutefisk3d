@@ -44,9 +44,9 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
+    bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
-    virtual bool EndLoad() override;
+    bool EndLoad() override;
 
     /// Set texture.
     void SetTexture(Texture2D* texture);

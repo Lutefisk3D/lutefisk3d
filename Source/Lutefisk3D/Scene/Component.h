@@ -33,7 +33,8 @@ class Scene;
 struct PhysicsSignals;
 struct ComponentReplicationState;
 
-/// Autoremove is used by some components for automatic removal from the scene hierarchy upon completion of an action, for example sound or particle effect.
+/// Autoremove is used by some components for automatic removal from the scene hierarchy upon completion of an action,
+/// for example sound or particle effect.
 enum AutoRemoveMode
 {
     REMOVE_DISABLED = 0,
@@ -49,9 +50,7 @@ class LUTEFISK3D_EXPORT Component : public Animatable
     friend class Scene;
 
 public:
-    /// Construct.
-    Component(Context* context);
-    /// Destruct.
+    Component(Context* context) : Animatable(context) {}
     virtual ~Component() = default;
 
     /// Handle enabled/disabled state change.
@@ -102,17 +101,17 @@ public:
 
 protected:
     /// Handle attribute animation added.
-    virtual void OnAttributeAnimationAdded() override;
+    void OnAttributeAnimationAdded() override;
     /// Handle attribute animation removed.
-    virtual void OnAttributeAnimationRemoved() override;
+    void OnAttributeAnimationRemoved() override;
     /// Handle scene node being assigned at creation.
-    virtual void OnNodeSet(Node* node);
+    virtual void OnNodeSet(Node* node) {}
     /// Handle scene being assigned. This may happen several times during the component's lifetime. Scene-wide subsystems and events are subscribed to here.
-    virtual void OnSceneSet(Scene * scene);
+    virtual void OnSceneSet(Scene * scene) {}
     /// Handle scene node transform dirtied.
-    virtual void OnMarkedDirty(Node* node);
+    virtual void OnMarkedDirty(Node* node) {}
     /// Handle scene node enabled status changing.
-    virtual void OnNodeSetEnabled(Node* node);
+    virtual void OnNodeSetEnabled(Node* node) {}
     /// Set ID. Called by Scene.
     void SetID(unsigned id);
     /// Set scene node. Called by Node when creating the component.
@@ -126,14 +125,10 @@ protected:
     /// Perform autoremove. Called by subclasses. Caller should keep a weak pointer to itself to check whether was actually removed, and return immediately without further member operations in that case.
     void DoAutoRemove(AutoRemoveMode mode);
 
-    /// Scene node.
-    Node* node_;
-    /// Unique ID within the scene.
-    unsigned id_;
-    /// Network update queued flag.
-    bool networkUpdate_;
-    /// Enabled flag.
-    bool enabled_;
+    Node *   node_          = nullptr; //!< Scene node.
+    unsigned id_            = 0;       //!< Unique ID within the scene.
+    bool     networkUpdate_ = false;   //!< Network update queued flag.
+    bool     enabled_       = true;    //!< Enabled flag.
 };
 
 template <class T> T* Component::GetComponent() const { return static_cast<T*>(GetComponent(T::GetTypeStatic())); }

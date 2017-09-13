@@ -313,10 +313,10 @@ bool FileSystem::Copy(const QString& srcFileName, const QString& destFileName)
         return false;
 
     unsigned fileSize = srcFile->GetSize();
-    SharedArrayPtr<unsigned char> buffer(new unsigned char[fileSize]);
+    std::unique_ptr<uint8_t> buffer(new unsigned char[fileSize]);
 
-    unsigned bytesRead = srcFile->Read(buffer.Get(), fileSize);
-    unsigned bytesWritten = destFile->Write(buffer.Get(), fileSize);
+    unsigned bytesRead = srcFile->Read(buffer.get(), fileSize);
+    unsigned bytesWritten = destFile->Write(buffer.get(), fileSize);
     return bytesRead == fileSize && bytesWritten == fileSize;
 }
 

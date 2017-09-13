@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include "Lutefisk3D/IO/VectorBuffer.h"
 #include "Lutefisk3D/Math/Matrix3x4.h"
 #include "Lutefisk3D/Scene/Animatable.h"
 #include <QtCore/QStringList>
@@ -36,7 +35,7 @@ class Scene;
 class SceneResolver;
 
 struct NodeReplicationState;
-
+struct NodeImpl;
 /// Component and child node creation mode for networking.
 enum CreateMode
 {
@@ -52,22 +51,7 @@ enum TransformSpace
     TS_WORLD
 };
 
-/// Internal implementation structure for less performance-critical Node variables.
-struct LUTEFISK3D_EXPORT NodeImpl
-{
-    /// Nodes this node depends on for network updates.
-    std::vector<Node*> dependencyNodes_;
-    /// Network owner connection.
-    Connection* owner_;
-    /// Name.
-    QString name_;
-    /// Tag strings.
-    QStringList tags_;
-    /// Name hash.
-    StringHash nameHash_;
-    /// Attribute buffer for network updates.
-    mutable VectorBuffer attrBuffer_;
-};
+
 /// %Scene node that may contain components and child nodes.
 class LUTEFISK3D_EXPORT Node : public Animatable
 {
@@ -76,7 +60,6 @@ class LUTEFISK3D_EXPORT Node : public Animatable
     friend class Connection;
 
 public:
-    /// Construct.
     Node(Context* context);
     /// Destruct. Any child nodes are detached.
     virtual ~Node();
@@ -282,11 +265,11 @@ public:
     /// Return ID.
     unsigned GetID() const { return id_; }
     /// Return name.
-    const QString& GetName() const { return impl_->name_; }
+    const QString& GetName() const;
     /// Return name hash.
-    StringHash GetNameHash() const { return impl_->nameHash_; }
+    StringHash GetNameHash() const;
     /// Return all tags.
-    const QStringList& GetTags() const { return impl_->tags_; }
+    const QStringList& GetTags() const;
 
     /// Return whether has a specific tag.
     bool HasTag(const QString &tag) const;
@@ -301,7 +284,7 @@ public:
     /// Returns the node's last own enabled state. May be different than the value returned by IsEnabled when SetDeepEnabled has been used.
     bool IsEnabledSelf() const { return enabledPrev_; }
     /// Return owner connection in networking.
-    Connection* GetOwner() const { return impl_->owner_; }
+    Connection* GetOwner() const;
     /// Return position in parent space.
     const Vector3& GetPosition() const { return position_; }
     /// Return position in parent space (for Urho2D).
@@ -510,7 +493,7 @@ public:
     /// Load components from XML data and optionally load child nodes.
     bool LoadJSON(const JSONValue& source, SceneResolver& resolver, bool loadChildren = true, bool rewriteIDs = false, CreateMode mode = REPLICATED);
     /// Return the depended on nodes to order network updates.
-    const std::vector<Node*>& GetDependencyNodes() const { return impl_->dependencyNodes_; }
+    const std::vector<Node*>& GetDependencyNodes() const;
     /// Prepare network update by comparing attributes and marking replication states dirty as necessary.
     void PrepareNetworkUpdate();
     /// Clean up all references to a network connection that is about to be removed.

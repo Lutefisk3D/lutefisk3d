@@ -22,6 +22,7 @@
 
 #include "Lutefisk3D/Graphics/Camera.h"
 #include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Graphics/DebugRenderer.h"
 #include "Lutefisk3D/Graphics/Drawable.h"
 #include "Lutefisk3D/Scene/Node.h"

@@ -30,7 +30,7 @@
 
 namespace Urho3D
 {
-
+enum FaceCameraMode : unsigned;
 class IndexBuffer;
 class VertexBuffer;
 

@@ -23,7 +23,6 @@
 #pragma once
 
 #include "Lutefisk3D/Math/Vector3.h"
-#include "Lutefisk3D/Math/Matrix3x4.h"
 
 namespace Urho3D
 {
@@ -32,37 +31,11 @@ class BoundingBox;
 class Frustum;
 class Plane;
 class Sphere;
-
+class Matrix3x4;
 /// Infinite straight line in three-dimensional space.
 class LUTEFISK3D_EXPORT Ray
 {
 public:
-    /// Construct a degenerate ray with zero origin and direction.
-    Ray()
-    {
-    }
-
-    /// Construct from origin and direction. The direction will be normalized.
-    Ray(const Vector3& origin, const Vector3& direction)
-    {
-        Define(origin, direction);
-    }
-
-    /// Copy-construct from another ray.
-    Ray(const Ray& ray) :
-        origin_(ray.origin_),
-        direction_(ray.direction_)
-    {
-    }
-
-    /// Assign from another ray.
-    Ray& operator = (const Ray& rhs)
-    {
-        origin_ = rhs.origin_;
-        direction_ = rhs.direction_;
-        return *this;
-    }
-
     /// Check for equality with another ray.
     bool operator == (const Ray& rhs) const { return origin_ == rhs.origin_ && direction_ == rhs.direction_; }
     /// Check for inequality with another ray.

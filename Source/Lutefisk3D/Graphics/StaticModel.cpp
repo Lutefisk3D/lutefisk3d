@@ -50,7 +50,7 @@ extern const char* GEOMETRY_CATEGORY;
 StaticModel::StaticModel(Context* context) :
     Drawable(context, DRAWABLE_GEOMETRY),
     occlusionLodLevel_(M_MAX_UNSIGNED),
-    materialsAttr_(Material::GetTypeStatic())
+    materialsAttr_{Material::GetTypeStatic()}
 {
 }
 
@@ -64,7 +64,7 @@ void StaticModel::RegisterObject(Context* context)
 
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Model", GetModelAttr, SetModelAttr, ResourceRef, ResourceRef(Model::GetTypeStatic()), AM_DEFAULT);
-    URHO3D_ACCESSOR_ATTRIBUTE("Material", GetMaterialsAttr, SetMaterialsAttr, ResourceRefList, ResourceRefList(Material::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Material", GetMaterialsAttr, SetMaterialsAttr, ResourceRefList, ResourceRefList{Material::GetTypeStatic()}, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Is Occluder", bool, occluder_, false, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Cast Shadows", bool, castShadows_, false, AM_DEFAULT);
@@ -344,7 +344,7 @@ bool StaticModel::IsInsideLocal(const Vector3& point) const
     if (boundingBox_.IsInside(point) == OUTSIDE)
         return false;
 
-    Ray localRay(point, Vector3(1.0f, -1.0f, 1.0f));
+    Ray localRay {point, Vector3(1.0f, -1.0f, 1.0f)};
 
     for (unsigned i = 0; i < batches_.size(); ++i)
     {

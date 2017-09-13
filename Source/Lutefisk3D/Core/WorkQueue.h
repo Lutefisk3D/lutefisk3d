@@ -25,35 +25,27 @@
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Container/Ptr.h"
 #include "jlsignal/Signal.h"
-#include <queue>
+#include <vector>
+#include <deque>
 #include <set>
-#include <list>
 namespace Urho3D
 {
 class Context;
 class WorkerThread;
+struct LUTEFISK3D_EXPORT WorkItem;
 
 struct WorkQueueSignals {
     /// Work item completed event.
-    jl::Signal<struct WorkItem *> workItemCompleted; //WorkItem ptr
+    jl::Signal<WorkItem *> workItemCompleted; //WorkItem ptr
 };
 
 
 /// Work queue item.
-struct WorkItem : public RefCounted
+struct LUTEFISK3D_EXPORT WorkItem : public RefCounted
 {
     friend class WorkQueue;
 
 public:
-    // Construct
-    WorkItem() :
-        priority_(0),
-        sendEvent_(false),
-        completed_(false),
-        pooled_(false)
-    {
-    }
-
     /// Work function. Called with the work item and thread index (0 = main thread) as parameters.
     void (*workFunction_)(const WorkItem*, unsigned);
     /// Data start pointer.
@@ -63,14 +55,14 @@ public:
     /// Auxiliary data pointer.
     void* aux_;
     /// Priority. Higher value = will be completed first.
-    unsigned priority_;
+    unsigned priority_=0;
     /// Whether to send event on completion.
-    bool sendEvent_;
+    bool sendEvent_=false;
     /// Completed flag.
-    volatile bool completed_;
+    volatile bool completed_=false;
 
 private:
-    bool pooled_;
+    bool pooled_=false;
 };
 struct comparePriority {
     bool operator()(const WorkItem *a,const WorkItem *b) const {
@@ -97,9 +89,7 @@ class WorkQueue : public RefCounted,public jl::SignalObserver,public WorkQueueSi
     friend class WorkerThread;
 
 public:
-    /// Construct.
     WorkQueue(Context* context);
-    /// Destruct.
     ~WorkQueue();
 
     /// Create worker threads. Can only be called once.
@@ -150,7 +140,7 @@ private:
     /// Worker threads.
     std::vector<SharedPtr<WorkerThread> > threads_;
     /// Work item pool for reuse to cut down on allocation. The bool is a flag for item pooling and whether it is available or not.
-    std::list<SharedPtr<WorkItem> > poolItems_;
+    std::deque<SharedPtr<WorkItem> > poolItems_;
     /// Work item collection. Accessed only by the main thread.
     std::multiset<SharedPtr<WorkItem>,comparePrioritySharedPtr> workItems_;
     /// Work item prioritized queue for worker threads. Pointers are guaranteed to be valid (point to workItems.)

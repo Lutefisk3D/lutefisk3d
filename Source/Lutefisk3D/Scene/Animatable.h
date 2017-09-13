@@ -24,7 +24,7 @@
 
 #include "Lutefisk3D/Scene/Serializable.h"
 #include "Lutefisk3D/Container/HashMap.h"
-#include "jlsignal/Signal.h"
+#include "jlsignal/SignalBase.h"
 
 namespace Urho3D
 {
@@ -35,15 +35,14 @@ class AttributeAnimationInfo;
 class ObjectAnimation;
 enum WrapMode : int;
 
-/// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an object animation to it.
+/// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an
+/// object animation to it.
 class LUTEFISK3D_EXPORT Animatable : public Serializable, public jl::SignalObserver
 {
     URHO3D_OBJECT(Animatable,Serializable)
 
 public:
-    /// Construct.
     Animatable(Context* context);
-    /// Destruct.
     virtual ~Animatable();
     /// Register object factory.
     static void RegisterObject(Context* context);

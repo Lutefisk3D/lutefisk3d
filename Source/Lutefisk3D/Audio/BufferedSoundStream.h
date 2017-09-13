@@ -59,7 +59,7 @@ public:
 
 private:
     /// Buffers and their sizes.
-    std::deque<std::pair<SharedArrayPtr<signed char>, unsigned> > buffers_;
+    std::deque<std::pair<SharedArrayPtr<int8_t>, unsigned> > buffers_;
     /// Byte position in the frontmost buffer.
     unsigned position_;
     /// Mutex for buffer data.

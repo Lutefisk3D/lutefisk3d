@@ -58,25 +58,22 @@ void VertexBuffer::Release()
 {
     Unlock();
 
-    if (object_)
+    if (!object_ || !graphics_)
+        return;
+
+    if (!graphics_->IsDeviceLost())
     {
-        if (!graphics_)
-            return;
-
-        if (!graphics_->IsDeviceLost())
+        for (unsigned i = 0; i < MAX_VERTEX_STREAMS; ++i)
         {
-            for (unsigned i = 0; i < MAX_VERTEX_STREAMS; ++i)
-            {
-                if (graphics_->GetVertexBuffer(i) == this)
-                    graphics_->SetVertexBuffer(nullptr);
-            }
-
-            graphics_->SetVBO(0);
-            glDeleteBuffers(1, &object_);
+            if (graphics_->GetVertexBuffer(i) == this)
+                graphics_->SetVertexBuffer(nullptr);
         }
 
-        object_ = 0;
+        graphics_->SetVBO(0);
+        glDeleteBuffers(1, &object_);
     }
+
+    object_ = 0;
 }
 
 bool VertexBuffer::SetData(const void* data)

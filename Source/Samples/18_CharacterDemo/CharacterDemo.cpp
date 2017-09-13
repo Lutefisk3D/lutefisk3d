@@ -372,7 +372,7 @@ void CharacterDemo::HandlePostUpdate(float ts)
         Vector3 rayDir = dir * Vector3::BACK;
         float rayDistance = touch_ ? touch_->cameraDistance_ : CAMERA_INITIAL_DIST;
         PhysicsRaycastResult result;
-        scene_->GetComponent<PhysicsWorld>()->RaycastSingle(result, Ray(aimPoint, rayDir), rayDistance, 2);
+        scene_->GetComponent<PhysicsWorld>()->RaycastSingle(result, Ray{aimPoint, rayDir}, rayDistance, 2);
         if (result.body_)
             rayDistance = Min(rayDistance, result.distance_);
         rayDistance = Clamp(rayDistance, CAMERA_MIN_DIST, CAMERA_MAX_DIST);

@@ -23,7 +23,6 @@
 #pragma once
 
 #include "Lutefisk3D/Audio/AudioDefs.h"
-#include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Container/HashMap.h"
@@ -35,6 +34,7 @@ class AudioImpl;
 class Sound;
 class SoundListener;
 class SoundSource;
+extern const char* AUDIO_CATEGORY;
 
 /// %Audio subsystem.
 class LUTEFISK3D_EXPORT Audio : public Object, public jl::SignalObserver
@@ -89,7 +89,7 @@ private:
     void Release();
     void UpdateInternal(float timeStep);
 
-    SharedArrayPtr<int> clipBuffer_; ///< Clipping buffer for mixing.
+    std::unique_ptr<int[]> clipBuffer_; ///< Clipping buffer for mixing.
     Mutex audioMutex_;  ///< Audio thread mutex.
     unsigned deviceID_; ///< SDL audio device ID.
     unsigned sampleSize_; ///< Sample size.

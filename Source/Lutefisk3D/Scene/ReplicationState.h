@@ -165,14 +165,6 @@ struct LUTEFISK3D_EXPORT ComponentReplicationState : public ReplicationState
 /// Per-user node network replication state.
 struct LUTEFISK3D_EXPORT NodeReplicationState : public ReplicationState
 {
-    /// Construct.
-    NodeReplicationState() :
-        ReplicationState(),
-        priorityAcc_(0.0f),
-        markedDirty_(false)
-    {
-    }
-
     /// Parent scene replication state.
     SceneReplicationState* sceneState_;
     /// Link to the actual node.
@@ -184,9 +176,9 @@ struct LUTEFISK3D_EXPORT NodeReplicationState : public ReplicationState
     /// Components by ID.
     HashMap<unsigned, ComponentReplicationState> componentStates_;
     /// Interest management priority accumulator.
-    float priorityAcc_;
+    float priorityAcc_ = 0.0f;
     /// Whether exists in the SceneState's dirty set.
-    bool markedDirty_;
+    bool markedDirty_ = false;
 };
 
 /// Per-user scene network replication state.

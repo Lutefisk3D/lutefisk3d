@@ -22,14 +22,13 @@
 
 #pragma once
 
-#include "Lutefisk3D/Core/Mutex.h"
-#include "Lutefisk3D/Scene/Node.h"
-#include "Lutefisk3D/Scene/SceneResolver.h"
 #include "Lutefisk3D/Resource/XMLElement.h"
+#include "Lutefisk3D/Scene/Node.h"
 #include "Lutefisk3D/Scene/SceneEvents.h"
 
 #include <jlsignal/SignalBase.h>
 #include <QtCore/QSet>
+
 namespace Urho3D
 {
 class LUTEFISK3D_EXPORT JSONFile;
@@ -81,7 +80,7 @@ struct AsyncProgress
     /// Total root-level nodes.
     unsigned totalNodes_;
 };
-
+class ScenePrivate;
 /// Root scene node, represents the whole scene.
 class LUTEFISK3D_EXPORT Scene : public Node, public SingularSceneSignals
 {
@@ -92,9 +91,7 @@ class LUTEFISK3D_EXPORT Scene : public Node, public SingularSceneSignals
     using Node::SaveJSON;
 
 public:
-    /// Construct.
     Scene(Context* context);
-    /// Destruct.
     virtual ~Scene();
     /// Register object factory. Node must be registered first.
     static void RegisterObject(Context* context);
@@ -238,6 +235,7 @@ public:
     void MarkReplicationDirty(Node* node);
 
 private:
+    std::unique_ptr<ScenePrivate> d;
     /// Handle the logic update event to update the scene, if active.
     void HandleUpdate(float ts);
     /// Handle a background loaded resource completing.
@@ -257,42 +255,12 @@ private:
     /// Preload resources from a JSON scene or object prefab file.
     void PreloadResourcesJSON(const JSONValue& value);
 
-    /// Replicated scene nodes by ID.
-    HashMap<unsigned, Node*> replicatedNodes_;
-    /// Local scene nodes by ID.
-    HashMap<unsigned, Node*> localNodes_;
-    /// Replicated components by ID.
-    HashMap<unsigned, Component*> replicatedComponents_;
-    /// Local components by ID.
-    HashMap<unsigned, Component*> localComponents_;
-    /// Cached tagged nodes by tag.
-    HashMap<StringHash, std::vector<Node*> > taggedNodes_;
     /// Asynchronous loading progress.
     AsyncProgress asyncProgress_;
-    /// Node and component ID resolver for asynchronous loading.
-    SceneResolver resolver_;
     /// Source file name.
     mutable QString fileName_;
     /// Required package files for networking.
     std::vector<SharedPtr<PackageFile> > requiredPackageFiles_;
-    /// Registered node user variable reverse mappings.
-    HashMap<StringHash, QString> varNames_;
-    /// Nodes to check for attribute changes on the next network update.
-    QSet<unsigned> networkUpdateNodes_;
-    /// Components to check for attribute changes on the next network update.
-    QSet<unsigned> networkUpdateComponents_;
-    /// Delayed dirty notification queue for components.
-    std::vector<Component*> delayedDirtyComponents_;
-    /// Mutex for the delayed dirty notification queue.
-    Mutex sceneMutex_;
-    /// Next free non-local node ID.
-    unsigned replicatedNodeID_;
-    /// Next free non-local component ID.
-    unsigned replicatedComponentID_;
-    /// Next free local node ID.
-    unsigned localNodeID_;
-    /// Next free local component ID.
-    unsigned localComponentID_;
     /// Scene source file checksum.
     mutable unsigned checksum_;
     /// Maximum milliseconds per frame to spend on async scene loading.

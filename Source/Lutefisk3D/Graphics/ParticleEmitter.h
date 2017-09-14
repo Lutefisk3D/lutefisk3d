@@ -53,7 +53,7 @@ struct Particle
 /// %Particle emitter component.
 class LUTEFISK3D_EXPORT ParticleEmitter : public BillboardSet
 {
-    URHO3D_OBJECT(ParticleEmitter,BillboardSet);
+    URHO3D_OBJECT(ParticleEmitter,BillboardSet)
 
 public:
     /// Construct.

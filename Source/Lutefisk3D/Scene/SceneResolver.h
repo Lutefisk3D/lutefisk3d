@@ -22,29 +22,27 @@
 
 #pragma once
 #include "Lutefisk3D/Core/Lutefisk3D.h"
-#include "Lutefisk3D/Container/HashMap.h"
-
-
+#include <memory>
+//TODO: make this header private ?
 namespace Urho3D
 {
-template <class T> class WeakPtr;
-class Component;
-class Node;
+class LUTEFISK3D_EXPORT Component;
+class LUTEFISK3D_EXPORT Node;
+class SceneResolverPrivate;
 
 /// Utility class that resolves node & component IDs after a scene or partial scene load.
+/// \note This class only holds weak references to the nodes and components
 class LUTEFISK3D_EXPORT SceneResolver
 {
 public:
     SceneResolver();
     ~SceneResolver();
-
     void Reset();
     void AddNode(unsigned oldID, Node *node);
     void AddComponent(unsigned oldID, Component *component);
     void Resolve();
 
 private:
-    HashMap<unsigned, WeakPtr<Node>>      nodes_;      ///< Nodes.
-    HashMap<unsigned, WeakPtr<Component>> components_; ///< Components.
+    std::unique_ptr<SceneResolverPrivate> d;
 };
 }

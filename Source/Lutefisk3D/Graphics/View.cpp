@@ -72,6 +72,32 @@ template<typename T>
 constexpr unsigned ptrHash(T *v) {
     return unsigned(uintptr_t(v)/sizeof(T));
 }
+/// Scene render pass info.
+struct ScenePassInfo
+{
+    /// Pass index.
+    unsigned passIndex_;
+    /// Allow instancing flag.
+    bool allowInstancing_;
+    /// Mark to stencil flag.
+    bool markToStencil_;
+    /// Vertex light flag.
+    bool vertexLights_;
+    /// Batch queue.
+    uint32_t batchQueueIdx_;
+};
+/// Per-thread geometry, light and scene range collection structure.
+struct PerThreadSceneResult
+{
+    /// Geometry objects.
+    std::vector<Drawable*> geometries_;
+    /// Lights.
+    std::vector<Light*> lights_;
+    /// Scene minimum Z value.
+    float minZ_;
+    /// Scene maximum Z value.
+    float maxZ_;
+};
 
 /// %Frustum octree query for shadowcasters.
 class ShadowCasterOctreeQuery final : public FrustumOctreeQuery
@@ -221,6 +247,56 @@ void SortShadowQueueWork(const WorkItem *item, unsigned threadIndex)
 } // anonymous namespace
 /////////////////////////////////////////////////////////////////////
 
+class ViewPrivate
+{
+public:
+    friend void CheckVisibilityWork(const WorkItem *item, unsigned threadIndex);
+    using BatchQueueMap = HashMap<uint32_t, uint32_t>;
+
+    /// Drawables that limit their maximum light count.
+    HashSet<Drawable*> maxLightsDrawables_;
+    /// Info for scene render passes defined by the renderpath.
+    std::vector<ScenePassInfo> scenePasses_;
+    /// Intermediate light processing results.
+    std::vector<LightQueryResult> lightQueryResults_;
+    /// Per-vertex light queues.
+    HashMap<uint64_t, LightBatchQueue> vertexLightQueues_;
+    /// Per-thread geometries, lights and Z range collection results.
+    std::vector<PerThreadSceneResult> sceneResults_;
+    /// Per-thread octree query results.
+    std::vector<std::vector<Drawable*> > tempDrawables_;
+    /// Visible zones.
+    std::vector<Zone*> zones_;
+    /// Geometry objects that will be updated in the main thread.
+    std::vector<Drawable*> nonThreadedGeometries_;
+    /// Geometry objects that will be updated in worker threads.
+    std::vector<Drawable*> threadedGeometries_;
+    /// Batch queues by pass index.
+    BatchQueueMap batchQueues_;
+    /// actual storage for batch queues
+    std::deque<BatchQueue> batchQueueStorage_;
+
+    /// Rendertargets defined by the renderpath.
+    HashMap<StringHash, Texture*> renderTargets_;
+    /// \returns index of the BatchQueue in the storage
+    uint32_t getOrCreateBatchQueue(uint32_t passIdx)
+    {
+        auto j = batchQueues_.find(passIdx);
+        if (j != batchQueues_.end())
+            return j->first;
+        batchQueueStorage_.emplace_back();
+        batchQueues_.emplace(passIdx, batchQueueStorage_.size()-1);
+        return uint32_t(batchQueueStorage_.size()-1);
+    }
+    void prepareForUpdate(int maxSortedInstances)
+    {
+        renderTargets_.clear();
+        zones_.clear();
+        vertexLightQueues_.clear();
+        for (BatchQueue &elem : batchQueueStorage_)
+            elem.Clear(maxSortedInstances);
+    }
+};
 void CheckVisibilityWork(const WorkItem *item, unsigned threadIndex)
 {
     View *                 view = reinterpret_cast<View *>(item->aux_);
@@ -233,7 +309,7 @@ void CheckVisibilityWork(const WorkItem *item, unsigned threadIndex)
     Vector3                absViewZ           = viewZ.Abs();
     unsigned               cameraViewMask     = view->GetCullCamera()->GetViewMask();
     bool                   cameraZoneOverride = view->cameraZoneOverride_;
-    PerThreadSceneResult & result             = view->sceneResults_[threadIndex];
+    PerThreadSceneResult & result             = view->d->sceneResults_[threadIndex];
     result.geometries_.reserve(std::distance(start, end));
     while (start != end)
     {
@@ -303,8 +379,11 @@ void ProcessLightWork(const WorkItem* item, unsigned threadIndex)
 }
 
 StringHash ParseTextureTypeXml(ResourceCache* cache, QString filename);
+
+
 View::View(Context *context)
     : context_(context),
+      d(new ViewPrivate),
       graphics_(context->m_Graphics.get()),
       renderer_(context->m_Renderer.get()),
       scene_(nullptr),
@@ -320,9 +399,13 @@ View::View(Context *context)
 {
     // Create octree query and scene results vector for each thread
     unsigned numThreads = context->m_WorkQueueSystem->GetNumThreads() + 1; // Worker threads + main thread
-    tempDrawables_.resize(numThreads);
-    sceneResults_.resize(numThreads);
+    d->tempDrawables_.resize(numThreads);
+    d->sceneResults_.resize(numThreads);
     frame_.camera_ = nullptr;
+}
+
+View::~View()
+{
 }
 
 bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
@@ -402,7 +485,7 @@ bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
     noStencil_          = false;
     lightVolumeCommand_ = nullptr;
 
-    scenePasses_.clear();
+    d->scenePasses_.clear();
     geometriesUpdated_ = false;
 
     for (const RenderPathCommand& command : renderPath_->commands_)
@@ -450,18 +533,12 @@ bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
                     litAlphaPassIndex_ = Technique::GetPassIndex("lit" + command.pass_);
                 }
             }
+            uint32_t queue_idx = d->getOrCreateBatchQueue(info.passIndex_);
+            if(info.passIndex_==alphaPassIndex_)
+                alphaPassQueueIdx_ = queue_idx;
+            info.batchQueueIdx_ = queue_idx;
 
-            BatchQueueMap::iterator j = batchQueues_.find(info.passIndex_);
-            if (j == batchQueues_.end()) {
-                batchQueueStorage_.emplace_back();
-                if(-1==alphaPassQueueIdx_ && info.passIndex_==alphaPassIndex_)
-                    alphaPassQueueIdx_ = batchQueueStorage_.size()-1;
-                j = batchQueues_.emplace(info.passIndex_, batchQueueStorage_.size()-1).first;
-            } else if(info.passIndex_==alphaPassIndex_)
-                alphaPassQueueIdx_ = j->second;
-            info.batchQueueIdx_ = MAP_VALUE(j);
-
-            scenePasses_.push_back(info);
+            d->scenePasses_.push_back(info);
         }
         // Allow a custom forward light pass
         else if (command.type_ == CMD_FORWARDLIGHTS && !command.pass_.isEmpty())
@@ -554,15 +631,11 @@ void View::Update(const FrameInfo& frame)
     int maxSortedInstances = renderer_->GetMaxSortedInstances();
 
     // Clear buffers, geometry, light, occluder & batch list
-    renderTargets_.clear();
+    d->prepareForUpdate(maxSortedInstances);
     geometries_.clear();
     lights_.clear();
-    zones_.clear();
     occluders_.clear();
     activeOccluders_ = 0;
-    vertexLightQueues_.clear();
-    for (BatchQueue &elem : batchQueueStorage_)
-        elem.Clear(maxSortedInstances);
 
     if (hasScenePasses_ && ((cullCamera_ == nullptr) || (octree_ == nullptr)))
     {
@@ -760,7 +833,7 @@ void View::GetDrawables()
     URHO3D_PROFILE(GetDrawables);
 
     WorkQueue* queue = context_->m_WorkQueueSystem.get();
-    std::vector<Drawable*>& tempDrawables(tempDrawables_[0]);
+    std::vector<Drawable*>& tempDrawables(d->tempDrawables_.front());
 
     // Get zones and occluders first
     {
@@ -780,7 +853,7 @@ void View::GetDrawables()
         if ((flags & DRAWABLE_ZONE) != 0u)
         {
             Zone* zone = static_cast<Zone*>(drawable);
-            zones_.push_back(zone);
+            d->zones_.push_back(zone);
             int priority = zone->GetPriority();
             if (priority > highestZonePriority_)
                 highestZonePriority_ = priority;
@@ -801,7 +874,7 @@ void View::GetDrawables()
         Vector3 farClipPos = cameraPos + cameraNode->GetWorldDirection() * Vector3(0.0f, 0.0f, cullCamera_->GetFarClip());
         bestPriority = M_MIN_INT;
 
-        for (Zone* elem : zones_)
+        for (Zone* elem : d->zones_)
         {
             int priority = elem->GetPriority();
             if (priority > bestPriority && elem->IsInside(farClipPos))
@@ -845,7 +918,7 @@ void View::GetDrawables()
 
     // Check drawable occlusion, find zones for moved drawables and collect geometries & lights in worker threads
     {
-        for (PerThreadSceneResult& result : sceneResults_)
+        for (PerThreadSceneResult& result : d->sceneResults_)
         {
 
             result.geometries_.clear();
@@ -890,9 +963,9 @@ void View::GetDrawables()
     minZ_ = M_INFINITY;
     maxZ_ = 0.0f;
 
-    if (sceneResults_.size() > 1)
+    if (d->sceneResults_.size() > 1)
     {
-        for (PerThreadSceneResult& result : sceneResults_)
+        for (PerThreadSceneResult& result : d->sceneResults_)
         {
             geometries_.insert(geometries_.end(),result.geometries_.begin(),result.geometries_.end());
             lights_.insert(lights_.end(),result.lights_.begin(),result.lights_.end());
@@ -903,7 +976,7 @@ void View::GetDrawables()
     else
     {
         // If just 1 thread, copy the results directly
-        PerThreadSceneResult& result = sceneResults_[0];
+        PerThreadSceneResult& result = d->sceneResults_[0];
         minZ_ = result.minZ_;
         maxZ_ = result.maxZ_;
         geometries_.swap(result.geometries_);
@@ -928,8 +1001,8 @@ void View::GetBatches()
     if ((octree_ == nullptr) || (cullCamera_ == nullptr))
         return;
 
-    nonThreadedGeometries_.clear();
-    threadedGeometries_.clear();
+    d->nonThreadedGeometries_.clear();
+    d->threadedGeometries_.clear();
     // retrieve default technique.
     const std::vector<TechniqueEntry>& techniques(renderer_->GetDefaultMaterial()->GetTechniques());
     Technique *default_tech = techniques.empty() ? nullptr : techniques.back().technique_;
@@ -945,16 +1018,16 @@ void View::ProcessLights()
     URHO3D_PROFILE(ProcessLights);
 
     WorkQueue* queue = context_->m_WorkQueueSystem.get();
-    lightQueryResults_.resize(lights_.size());
+    d->lightQueryResults_.resize(lights_.size());
 
-    for (unsigned i = 0; i < lightQueryResults_.size(); ++i)
+    for (unsigned i = 0; i < d->lightQueryResults_.size(); ++i)
     {
         SharedPtr<WorkItem> item = queue->GetFreeItem();
         item->priority_ = M_MAX_UNSIGNED;
         item->workFunction_ = ProcessLightWork;
         item->aux_ = this;
 
-        LightQueryResult& query = lightQueryResults_[i];
+        LightQueryResult& query = d->lightQueryResults_[i];
         query.light_ = lights_[i];
 
         item->start_ = &query;
@@ -967,7 +1040,7 @@ void View::ProcessLights()
 
 void View::GetLightBatches(Technique *default_tech)
 {
-    BatchQueue * alphaQueue = (alphaPassQueueIdx_ == -1) ? nullptr : &batchQueueStorage_[alphaPassQueueIdx_];
+    BatchQueue * alphaQueue = (alphaPassQueueIdx_ == -1) ? nullptr : &d->batchQueueStorage_[alphaPassQueueIdx_];
     // Build light queues and lit batches
     {
         URHO3D_PROFILE(GetLightBatches);
@@ -975,17 +1048,17 @@ void View::GetLightBatches(Technique *default_tech)
         // Preallocate light queues: per-pixel lights which have lit geometries
         unsigned numLightQueues = 0;
         unsigned usedLightQueues = 0;
-        for (LightQueryResult & i : lightQueryResults_)
+        for (LightQueryResult & i : d->lightQueryResults_)
         {
             if (!i.light_->GetPerVertex() && !i.litGeometries_.empty())
                 ++numLightQueues;
         }
 
         lightQueues_.resize(numLightQueues);
-        maxLightsDrawables_.clear();
+        d->maxLightsDrawables_.clear();
         unsigned maxSortedInstances = renderer_->GetMaxSortedInstances();
 
-        for (LightQueryResult & query : lightQueryResults_)
+        for (LightQueryResult & query : d->lightQueryResults_)
         {
 
             // If light has no affected geometries, no need to process further
@@ -1056,9 +1129,9 @@ void View::GetLightBatches(Technique *default_tech)
                         drawable->MarkInView(frame_.frameNumber_);
                         UpdateGeometryType type = drawable->GetUpdateGeometryType();
                         if (type == UPDATE_MAIN_THREAD)
-                            nonThreadedGeometries_.push_back(drawable);
+                            d->nonThreadedGeometries_.push_back(drawable);
                         else if (type == UPDATE_WORKER_THREAD)
-                            threadedGeometries_.push_back(drawable);
+                            d->threadedGeometries_.push_back(drawable);
                     }
 
                     Zone* zone = GetZone(drawable);
@@ -1094,7 +1167,7 @@ void View::GetLightBatches(Technique *default_tech)
                 if (drawable->GetMaxLights() == 0u)
                     GetLitBatches(drawable, GetZone(drawable),lightQueue, availableQueues,default_tech);
                 else
-                    maxLightsDrawables_.insert(drawable);
+                    d->maxLightsDrawables_.insert(drawable);
             }
 
             // In deferred modes, store the light volume batch now
@@ -1119,11 +1192,11 @@ void View::GetLightBatches(Technique *default_tech)
     }
 
     // Process drawables with limited per-pixel light count
-    if (!maxLightsDrawables_.empty())
+    if (!d->maxLightsDrawables_.empty())
     {
         URHO3D_PROFILE(GetMaxLightsBatches);
 
-        for (Drawable* drawable : maxLightsDrawables_)
+        for (Drawable* drawable : d->maxLightsDrawables_)
         {
             Zone *zone=GetZone(drawable);
             drawable->LimitLights();
@@ -1153,9 +1226,9 @@ void View::GetBaseBatches(Technique *default_tech)
 
         UpdateGeometryType type = drawable->GetUpdateGeometryType();
         if (type == UPDATE_MAIN_THREAD)
-            nonThreadedGeometries_.push_back(drawable);
+            d->nonThreadedGeometries_.push_back(drawable);
         else if (type == UPDATE_WORKER_THREAD)
-            threadedGeometries_.push_back(drawable);
+            d->threadedGeometries_.push_back(drawable);
 
         Zone* zone = GetZone(drawable);
 
@@ -1178,7 +1251,7 @@ void View::GetBaseBatches(Technique *default_tech)
 
             bool drawableHasBasePass = j < 32 && drawable->HasBasePass(j);
             // Check each of the scene passes
-            for (ScenePassInfo& info : scenePasses_)
+            for (ScenePassInfo& info : d->scenePasses_)
             {
                 LightBatchQueue* lq = nullptr;
                 // Skip forward base pass if the corresponding litbase pass already exists
@@ -1203,10 +1276,10 @@ void View::GetBaseBatches(Technique *default_tech)
                     if (!drawableVertexLights.empty() ) {
                         uint64_t vertex_lights_hash = GetVertexLightQueueHash(drawableVertexLights);
                         // Find a vertex light queue. If not found, create new
-                        HashMap<uint64_t, LightBatchQueue>::iterator i = vertexLightQueues_.find(vertex_lights_hash);
-                        if (i == vertexLightQueues_.end())
+                        HashMap<uint64_t, LightBatchQueue>::iterator i = d->vertexLightQueues_.find(vertex_lights_hash);
+                        if (i == d->vertexLightQueues_.end())
                         {
-                            i = vertexLightQueues_.emplace(vertex_lights_hash, LightBatchQueue()).first;
+                            i = d->vertexLightQueues_.emplace(vertex_lights_hash, LightBatchQueue()).first;
                             MAP_VALUE(i).light_ = nullptr;
                             MAP_VALUE(i).shadowMap_ = nullptr;
                             MAP_VALUE(i).vertexLights_ = drawableVertexLights;
@@ -1214,7 +1287,7 @@ void View::GetBaseBatches(Technique *default_tech)
                         lq = &MAP_VALUE(i);
                     }
                 }
-                BatchQueue & que(batchQueueStorage_[info.batchQueueIdx_]);
+                BatchQueue & que(d->batchQueueStorage_[info.batchQueueIdx_]);
 
                 bool allowInstancing = info.allowInstancing_;
                 if (allowInstancing && info.markToStencil_ && drawableLightMask != (zone->GetLightMask() & 0xff))
@@ -1251,7 +1324,7 @@ void View::UpdateGeometries()
                 SharedPtr<WorkItem> item = queue->GetFreeItem();
                 item->priority_ = M_MAX_UNSIGNED;
                 item->workFunction_ = command.sortMode_ == SORT_FRONTTOBACK ? SortBatchQueueFrontToBackWork : SortBatchQueueBackToFrontWork;
-                item->start_ = &batchQueueStorage_[batchQueues_[command.passIndex_]];
+                item->start_ = &d->batchQueueStorage_[d->batchQueues_[command.passIndex_]];
                 queue->AddWorkItem(item);
             }
         }
@@ -1277,25 +1350,25 @@ void View::UpdateGeometries()
 
     // Update geometries. Split into threaded and non-threaded updates.
     {
-        if (!threadedGeometries_.empty())
+        if (!d->threadedGeometries_.empty())
         {
             // In special cases (context loss, multi-view) a drawable may theoretically first have reported a threaded update, but will actually
             // require a main thread update. Check these cases first and move as applicable. The threaded work routine will tolerate the null
             // pointer holes that we leave to the threaded update queue.
-            for (Drawable *& drwbl : threadedGeometries_)
+            for (Drawable *& drwbl : d->threadedGeometries_)
             {
                 if (drwbl->GetUpdateGeometryType() == UPDATE_MAIN_THREAD)
                 {
-                    nonThreadedGeometries_.push_back(drwbl);
+                    d->nonThreadedGeometries_.push_back(drwbl);
                     drwbl = nullptr;
                 }
             }
 
             int numWorkItems = queue->GetNumThreads() + 1; // Worker threads + main thread
-            int drawablesPerItem = threadedGeometries_.size() / numWorkItems;
+            int drawablesPerItem = d->threadedGeometries_.size() / numWorkItems;
 
-            Drawable ** start_ptr = &threadedGeometries_.front();
-            Drawable ** fin_ptr = start_ptr + threadedGeometries_.size();
+            Drawable ** start_ptr = &d->threadedGeometries_.front();
+            Drawable ** fin_ptr = start_ptr + d->threadedGeometries_.size();
             for (int i = 0; i < numWorkItems; ++i)
             {
                 Drawable ** end_ptr = fin_ptr;
@@ -1315,7 +1388,7 @@ void View::UpdateGeometries()
         }
 
         // While the work queue is processed, update non-threaded geometries
-        for (Drawable* drwbl : nonThreadedGeometries_)
+        for (Drawable* drwbl : d->nonThreadedGeometries_)
             drwbl->UpdateGeometry(frame_);
     }
 
@@ -1547,7 +1620,7 @@ void View::ExecuteRenderPathCommands()
 
             case CMD_SCENEPASS:
             {
-                BatchQueue& queue = actualView->batchQueueStorage_[actualView->batchQueues_[command.passIndex_]];
+                BatchQueue& queue = actualView->d->batchQueueStorage_[actualView->d->batchQueues_[command.passIndex_]];
                 if (!queue.IsEmpty())
                 {
                     URHO3D_PROFILE(RenderScenePass);
@@ -1794,13 +1867,13 @@ void View::RenderQuad(RenderPathCommand& command)
             continue;
 
         StringHash nameHash(rtInfo.name_);
-        if (!renderTargets_.contains(nameHash))
+        if (!d->renderTargets_.contains(nameHash))
             continue;
 
         QString invSizeName = rtInfo.name_ + "InvSize";
         QString offsetsName = rtInfo.name_ + "Offsets";
-        float width = (float)renderTargets_[nameHash]->GetWidth();
-        float height = (float)renderTargets_[nameHash]->GetHeight();
+        float width = d->renderTargets_[nameHash]->GetWidth();
+        float height = d->renderTargets_[nameHash]->GetHeight();
 
         const Vector2& pixelUVOffset = Graphics::GetPixelUVOffset();
         graphics_->SetShaderParameter(invSizeName, Vector2(1.0f / width, 1.0f / height));
@@ -1828,7 +1901,7 @@ bool View::IsNecessary(const RenderPathCommand& command)
 {
 
     return command.enabled_ && !command.outputs_.empty() && (command.type_ != CMD_SCENEPASS ||
-            !batchQueueStorage_[batchQueues_[command.passIndex_]].IsEmpty());
+            !d->batchQueueStorage_[d->batchQueues_[command.passIndex_]].IsEmpty());
 }
 
 bool View::CheckViewportRead(const RenderPathCommand& command)
@@ -2004,9 +2077,9 @@ void View::AllocateScreenBuffers()
         int intHeight = (int)(height + 0.5f);
 
         // If the rendertarget is persistent, key it with a hash derived from the RT name and the view's pointer
-        renderTargets_[rtInfo.name_] = renderer_->GetScreenBuffer(intWidth, intHeight, rtInfo.format_, rtInfo.multiSample_, rtInfo.autoResolve_,
-                rtInfo.cubemap_, rtInfo.filtered_, rtInfo.sRGB_, rtInfo.persistent_ ? StringHash(rtInfo.name_).Value()
-                + ptrHash(this) : 0);
+        d->renderTargets_[rtInfo.name_] = renderer_->GetScreenBuffer(
+            intWidth, intHeight, rtInfo.format_, rtInfo.multiSample_, rtInfo.autoResolve_, rtInfo.cubemap_,
+            rtInfo.filtered_, rtInfo.sRGB_, rtInfo.persistent_ ? StringHash(rtInfo.name_).Value() + ptrHash(this) : 0);
     }
 }
 
@@ -2194,7 +2267,7 @@ void View::ProcessLight(LightQueryResult& query, unsigned threadIndex)
         isShadowed = false;
 
     // Get lit geometries. They must match the light mask and be inside the main camera frustum to be considered
-    std::vector<Drawable*>& tempDrawables = tempDrawables_[threadIndex];
+    std::vector<Drawable*>& tempDrawables = d->tempDrawables_[threadIndex];
     query.litGeometries_.clear();
 
     switch (type)
@@ -2682,7 +2755,7 @@ void View::FindZone(Drawable* drawable)
         newZone = lastZone;
     else
     {
-        for (Zone* zone : zones_)
+        for (Zone* zone : d->zones_)
         {
             int priority = zone->GetPriority();
             if (priority > bestPriority && ((drawable->GetZoneMask() & zone->GetZoneMask()) != 0u) && zone->IsInside(center))
@@ -2836,7 +2909,7 @@ void View::PrepareInstancingBuffer()
 
     unsigned totalInstances = 0;
 
-    for (const BatchQueue &elem : batchQueueStorage_)
+    for (const BatchQueue &elem : d->batchQueueStorage_)
         totalInstances += elem.GetNumInstances();
 
     for (const LightBatchQueue & elem : lightQueues_)
@@ -2857,7 +2930,7 @@ void View::PrepareInstancingBuffer()
         return;
 
     const unsigned stride = instancingBuffer->GetVertexSize();
-    for (BatchQueue &elem : batchQueueStorage_)
+    for (BatchQueue &elem : d->batchQueueStorage_)
         elem.SetInstancingData(dest, stride, freeIndex);
 
     for (LightBatchQueue & elem : lightQueues_)
@@ -3037,8 +3110,8 @@ Texture *View::FindNamedTexture(const QString &name, bool isRenderTarget, bool i
 {
     // Check rendertargets first
     StringHash nameHash(name);
-    if (renderTargets_.contains(nameHash))
-        return renderTargets_[nameHash];
+    if (d->renderTargets_.contains(nameHash))
+        return d->renderTargets_[nameHash];
 
     // Then the resource system
     ResourceCache* cache =context_->m_ResourceCache.get();

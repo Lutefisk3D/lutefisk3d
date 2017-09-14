@@ -22,21 +22,20 @@
 
 #pragma once
 #include "Lutefisk3D/Core/Lutefisk3D.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/DataHandle.h"
+#include "Lutefisk3D/Math/Color.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Graphics/Drawable.h"
 #include "Lutefisk3D/Graphics/Viewport.h"
-#include "Lutefisk3D/Math/Color.h"
-#include "Lutefisk3D/Container/HashMap.h"
-#include "Lutefisk3D/Core/Mutex.h"
-#include "Lutefisk3D/Container/DataHandle.h"
 #include "jlsignal/SignalBase.h"
-#include <QtCore/QSet>
 
 namespace gl {
 enum class GLenum : uint32_t;
 }
 namespace Urho3D
 {
-
 class LUTEFISK3D_EXPORT Geometry;
 class LUTEFISK3D_EXPORT Drawable;
 class LUTEFISK3D_EXPORT Light;

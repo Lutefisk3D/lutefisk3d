@@ -171,18 +171,6 @@ private:
     cilEventHandler FindSpecificEventHandler(Object* sender) const;
     cilEventHandler FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous = 0) const;
     void RemoveEventSender(Object* sender);
-    /// Populate event data map using variadic template. This handles the base case.
-//    template <typename T> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue)
-//    {
-//        eventData[paramID] = paramValue;
-//        return eventData;
-//    }
-    /// Populate event data map using variadic template.
-//    template <typename T, typename... Args> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue, Args... args)
-//    {
-//        eventData[paramID] = paramValue;
-//        return PopulateEventDataMap(eventData, args...);
-//    }
     /// Event handlers. Sender is null for non-specific handlers.
     std::deque<EventHandler *> eventHandlers_;
 };

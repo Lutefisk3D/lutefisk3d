@@ -150,15 +150,7 @@ void SpriterInstance::Update(float deltaTime)
             Node* senderNode = owner_->GetNode();
             if (senderNode)
             {
-                using namespace AnimationFinished;
-
-                VariantMap& eventData = senderNode->GetEventDataMap();
-                eventData[P_NODE] = senderNode;
-                eventData[P_ANIMATION] = animation_;
-                eventData[P_NAME] = animation_->name_;
-                eventData[P_LOOPED] = looping_;
-    
-                senderNode->SendEvent(E_ANIMATIONFINISHED, eventData);
+                animationFinished.Emit(senderNode,animation_,animation_->name_,looping_);
             }
         }
     }

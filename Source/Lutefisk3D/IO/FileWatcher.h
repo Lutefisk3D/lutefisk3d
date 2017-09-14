@@ -31,7 +31,7 @@
 namespace Urho3D
 {
 class FileSystem;
-
+#define LUTEFISK3D_FILEWATCHER
 /// Watches a directory and its subdirectories for files being modified.
 class LUTEFISK3D_EXPORT FileWatcher : public Object, public Thread
 {
@@ -44,7 +44,7 @@ public:
     virtual ~FileWatcher();
 
     /// Directory watching loop.
-    virtual void ThreadFunction();
+    void ThreadFunction() override;
 
     /// Start watching a directory. Return true if successful.
     bool StartWatching(const QString& pathName, bool watchSubDirs);

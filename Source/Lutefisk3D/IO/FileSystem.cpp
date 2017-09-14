@@ -23,6 +23,7 @@
 #include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/CoreEvents.h"
+#include "Lutefisk3D/Math/MathDefs.h"
 #include "Lutefisk3D/Engine/EngineEvents.h"
 #include "Lutefisk3D/IO/File.h"
 #include "Lutefisk3D/IO/FileSystem.h"

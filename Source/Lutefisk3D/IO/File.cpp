@@ -24,6 +24,7 @@
 
 #include "FileSystem.h"
 #include "Log.h"
+#include "Lutefisk3D/Math/MathDefs.h"
 #include "MemoryBuffer.h"
 #include "PackageFile.h"
 #include "Lutefisk3D/Core/Profiler.h"

@@ -19,7 +19,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "Object.h"
+
 #include "Context.h"
+#include "Variant.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Thread.h"
 #include <QSet>
@@ -349,44 +352,43 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
 
     // Then the non-specific receivers
     group = context->GetEventReceivers(eventType);
-    if (group)
+    if (!group)
+        return;
+
+    EventReceiverGroup_Guard event_guard(*group);
+    if (processed.isEmpty())
     {
-        EventReceiverGroup_Guard event_guard(*group);
-        if (processed.isEmpty())
+        //Prevent sending events for subscribers added during event handling.
+        const size_t receiver_count = group->receivers_.size();
+        for (size_t i = 0; i < receiver_count; ++i)
         {
-            //Prevent sending events for subscribers added during event handling.
-            const size_t receiver_count = group->receivers_.size();
-            for (size_t i = 0; i < receiver_count; ++i)
-            {
-                Object* receiver = group->receivers_[i];
-                if (!receiver)
-                    continue;
+            Object* receiver = group->receivers_[i];
+            if (!receiver)
+                continue;
 
-                receiver->OnEvent(this, eventType, eventData);
+            receiver->OnEvent(this, eventType, eventData);
 
-                if (self.Expired())
-                    return;
-            }
-        }
-        else
-        {
-            //Prevent sending events for subscribers added during event handling.
-            const size_t receiver_count = group->receivers_.size();
-            // If there were specific receivers, check that the event is not sent doubly to them
-            for (size_t i = 0; i < receiver_count; ++i)
-            {
-                Object* receiver = group->receivers_[i];
-                if (!receiver || processed.contains(receiver))
-                    continue;
-
-                receiver->OnEvent(this, eventType, eventData);
-
-                if (self.Expired())
-                    return;
-            }
+            if (self.Expired())
+                return;
         }
     }
+    else
+    {
+        //Prevent sending events for subscribers added during event handling.
+        const size_t receiver_count = group->receivers_.size();
+        // If there were specific receivers, check that the event is not sent doubly to them
+        for (size_t i = 0; i < receiver_count; ++i)
+        {
+            Object* receiver = group->receivers_[i];
+            if (!receiver || processed.contains(receiver))
+                continue;
 
+            receiver->OnEvent(this, eventType, eventData);
+
+            if (self.Expired())
+                return;
+        }
+    }
 }
 
 VariantMap& Object::GetEventDataMap() const
@@ -424,22 +426,13 @@ bool Object::HasSubscribedToEvent(Object* sender, StringHash eventType) const
 
 const QString& Object::GetCategory() const
 {
-    const HashMap<QString, std::vector<StringHash> >& objectCategories = context_->GetObjectCategories();
-    StringHash myType = GetType();
-    for (auto iter = objectCategories.begin(),fin=objectCategories.end(); iter!=fin; ++iter)
-    {
-        const std::vector<StringHash> &entries(MAP_VALUE(iter));
-        if(entries.end() != std::find(entries.begin(),entries.end(),myType))
-            return MAP_KEY(iter);
-    }
-
-    return s_dummy;
+    return context_->GetObjectCategory(GetType());
 }
 /// Find the first event handler with no specific sender.
 cilEventHandler Object::FindEventHandler(StringHash eventType) const
 {
-    cilEventHandler handler = eventHandlers_.begin();
-    while (handler!=eventHandlers_.end())
+    cilEventHandler handler = eventHandlers_.cbegin();
+    while (handler!=eventHandlers_.cend())
     {
         if ((*handler)->GetEventType() == eventType)
             return handler;

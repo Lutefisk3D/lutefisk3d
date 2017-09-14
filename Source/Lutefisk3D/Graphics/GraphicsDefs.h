@@ -215,7 +215,7 @@ extern LUTEFISK3D_EXPORT const unsigned ELEMENT_TYPESIZES[];
 extern LUTEFISK3D_EXPORT const VertexElement LEGACY_VERTEXELEMENTS[];
 
 /// Texture filtering mode.
-enum TextureFilterMode
+enum TextureFilterMode : unsigned
 {
     FILTER_NEAREST = 0,
     FILTER_BILINEAR,
@@ -341,7 +341,7 @@ enum FaceCameraMode : unsigned
     FC_DIRECTION,
 };
 /// Shadow type.
-enum ShadowQuality
+enum ShadowQuality : unsigned
 {
     SHADOWQUALITY_SIMPLE_16BIT = 0,
     SHADOWQUALITY_SIMPLE_24BIT,

@@ -22,14 +22,18 @@
 
 #pragma once
 
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 #include "Lutefisk3D/2D/SpriterData2D.h"
+
+#include <jlsignal/Signal.h>
 
 #include <vector>
 namespace Urho3D
 {
 
 class Component;
-
+class LUTEFISK3D_EXPORT Node;
+template <class T> class SharedPtr;
 namespace Spriter
 {
 
@@ -47,7 +51,6 @@ class SpriterInstance
 public:
     /// Constructor with spriter data.
     SpriterInstance(Component* owner, SpriterData* spriteData);
-    /// Destructor.
     ~SpriterInstance();
 
     /// Set current entity.
@@ -73,6 +76,9 @@ public:
     const SpatialInfo& GetSpatialInfo() const { return spatialInfo_; }
     /// Return animation result timeline keys.
     const std::vector<SpatialTimelineKey*>& GetTimelineKeys() const { return timelineKeys_; }
+
+    /// AnimatedModel animation finished or looped. (Node,Animation,Name,Looped)
+    jl::Signal<Node *,Animation *,const QString &,bool> animationFinished;
 
 private:
     /// Handle set entity.

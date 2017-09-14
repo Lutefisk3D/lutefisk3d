@@ -25,6 +25,7 @@
 #include "ObjectAnimation.h"
 #include "ReplicationState.h"
 #include "Scene.h"
+#include "SceneResolver.h"
 #include "SceneEvents.h"
 #include "SmoothedTransform.h"
 #include "UnknownComponent.h"

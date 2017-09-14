@@ -55,7 +55,6 @@ private:
     void SubscribeToEvents();
     /// Handle mouse move event.
     void HandleMouseMove(int x, int y, int, int, unsigned, int);
-    void HandleTouchMove(unsigned, int x, int y, int dx, int dy, float);
 
     /// Particle scene node.
     SharedPtr<Node> particleNode_;

@@ -48,7 +48,6 @@ Sample::Sample(const QString& sampleName,Urho3D::Context* context) :
     Application(sampleName,context),
     yaw_(0.0f),
     pitch_(0.0f),
-    touchEnabled_(false),
     useMouseMode_(Urho3D::MM_ABSOLUTE),
     paused_(false)
 {
@@ -72,10 +71,6 @@ void Sample::Setup()
 
 void Sample::Start()
 {
-    // On desktop platform, do not detect touch when we already got a joystick
-    if (m_context->m_InputSystem->GetNumJoysticks() == 0)
-        g_inputSignals.touchBegun.Connect(this,&Sample::HandleTouchBegin);
-
     // Create logo
     CreateLogo();
 
@@ -224,11 +219,7 @@ void Sample::HandleKeyDown(int key,int scancode,unsigned buttons,int qualifiers,
         Renderer* renderer = m_context->m_Renderer.get();
 
         // Preferences / Pause
-        if (key == KEY_SELECT && touchEnabled_)
-        {
-            paused_ = !paused_;
-        }
-        else if (key == '1') // Texture quality
+        if (key == '1') // Texture quality
         {
             int quality = renderer->GetTextureQuality();
             ++quality;
@@ -300,41 +291,5 @@ void Sample::HandleKeyDown(int key,int scancode,unsigned buttons,int qualifiers,
 
 void Sample::HandleSceneUpdate(Scene *scene,float timeStep)
 {
-    // Move the camera by touch, if the camera node is initialized by descendant sample class
-    if (touchEnabled_ && cameraNode_)
-    {
-        Input* input = m_context->m_InputSystem.get();
-        for (unsigned i = 0; i < input->GetNumTouches(); ++i)
-        {
-            TouchState* state = input->GetTouch(i);
-            if (!state->touchedElement_)    // Touch on empty space
-            {
-                if (state->delta_.x_ ||state->delta_.y_)
-                {
-                    Camera* camera = cameraNode_->GetComponent<Camera>();
-                    if (!camera)
-                        return;
-
-                    Graphics* graphics = m_context->m_Graphics.get();
-                    yaw_ += TOUCH_SENSITIVITY * camera->GetFov() / graphics->GetHeight() * state->delta_.x_;
-                    pitch_ += TOUCH_SENSITIVITY * camera->GetFov() / graphics->GetHeight() * state->delta_.y_;
-
-                    // Construct new orientation for the camera scene node from yaw and pitch; roll is fixed to zero
-                    cameraNode_->SetRotation(Urho3D::Quaternion(pitch_, yaw_, 0.0f));
-                }
-                else
-                {
-                    // Move the cursor to the touch position
-                    Cursor* cursor = m_context->m_UISystem->GetCursor();
-                    if (cursor && cursor->IsVisible())
-                        cursor->SetPosition(state->position_);
-                }
-            }
-        }
-    }
 }
 
-void Sample::HandleTouchBegin(unsigned touchId,int x,int y,float pressure)
-{
-    g_inputSignals.touchBegun.Disconnect(this,&Sample::HandleTouchBegin);
-}

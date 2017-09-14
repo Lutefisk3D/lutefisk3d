@@ -22,10 +22,10 @@
 
 #pragma once
 
+#include "Lutefisk3D/Container/RefCounted.h"
 #include <cassert>
 #include <cstddef>
 #include <memory>
-#include "Lutefisk3D/Container/RefCounted.h"
 namespace Urho3D
 {
 

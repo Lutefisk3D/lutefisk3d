@@ -25,7 +25,6 @@
 #include "Lutefisk3D/Core/Attribute.h"
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Core/Object.h"
-#include <QtCore/QSet>
 #include <QtCore/QString>
 #include <memory>
 #ifdef _MSC_VER
@@ -37,19 +36,19 @@ class ScopedAllocator;
 namespace Urho3D
 {
 #ifndef LUTEFISK3D_UILESS
-class UI;
+class LUTEFISK3D_EXPORT UI;
 #else
-class UI {};
+class LUTEFISK3D_EXPORT UI {};
 #endif
-class Log;
-class FileSystem;
-class Input;
-class ResourceCache;
-class Graphics;
+class LUTEFISK3D_EXPORT Log;
+class LUTEFISK3D_EXPORT FileSystem;
+class LUTEFISK3D_EXPORT Input;
+class LUTEFISK3D_EXPORT ResourceCache;
+class LUTEFISK3D_EXPORT Graphics;
 class Time;
-class Profiler;
+class LUTEFISK3D_EXPORT Profiler;
 class EventProfiler;
-class Renderer;
+class LUTEFISK3D_EXPORT Renderer;
 class WorkQueue;
 class LUTEFISK3D_EXPORT EventReceiverGroup : public RefCounted
 {

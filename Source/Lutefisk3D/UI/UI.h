@@ -197,8 +197,6 @@ public:
         int dragButtons;
         /// How many buttons initiated the drag.
         int numDragButtons;
-        /// Sum of all touch locations
-        IntVector2 sumPos;
         /// Flag for a drag start event pending.
         bool dragBeginPending;
         /// Timer used to trigger drag begin event.
@@ -231,13 +229,13 @@ private:
     void SetCursorShape(CursorShape shape);
     /// Force release of font faces when global font properties change.
     void ReleaseFontFaces();
-    /// Handle button or touch hover.
+    /// Handle button hover.
     void ProcessHover(const IntVector2& windowCursorPos, int buttons, int qualifiers, Cursor* cursor);
-    /// Handle button or touch begin.
+    /// Handle button begin.
     void ProcessClickBegin(const IntVector2& windowCursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
-    /// Handle button or touch end.
+    /// Handle button end.
     void ProcessClickEnd(const IntVector2& windowCursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
-    /// Handle mouse or touch move.
+    /// Handle mouse move.
     void ProcessMove(const IntVector2& windowCursorPos, const IntVector2& cursorDeltaPos, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle screen mode event.
     void HandleScreenMode(int, int, bool, bool, bool, bool, int, int);
@@ -249,12 +247,6 @@ private:
     void HandleMouseMove(int x, int y, int DX, int DY, unsigned, int quals);
     /// Handle mouse wheel event.
     void HandleMouseWheel(int Wheel, unsigned Buttons, int Qualifiers);
-    /// Handle touch begin event.
-    void HandleTouchBegin(unsigned touchID, int x, int y, float pressure);
-    /// Handle touch end event.
-    void HandleTouchEnd(unsigned touchID, int x, int y);
-    /// Handle touch move event.
-    void HandleTouchMove(unsigned touchID, int x, int y, int dX, int dY, float Pressure);
     /// Handle keypress event.
     void HandleKeyDown(int key, int, unsigned buttons, int qualifiers, bool);
     /// Handle text input event.
@@ -269,8 +261,6 @@ private:
     HashMap<WeakPtr<UIElement>, DragData*>::iterator DragElementErase(HashMap<WeakPtr<UIElement>, DragData*>::iterator dragElement);
     /// Handle clean up on a drag cancel.
     void ProcessDragCancel();
-    /// Sum touch positions and return the begin position ready to send.
-    IntVector2 SumTouchPositions(UI::DragData* dragData, const IntVector2& oldSendPos);
     /// Resize root element to effective size.
     void ResizeRootElement();
     /// Return effective size of the root element, according to UI scale and resolution / custom size.
@@ -321,8 +311,6 @@ private:
     int maxFontTextureSize_;
     /// Initialized flag.
     bool initialized_;
-    /// Touch used flag.
-    bool usingTouchInput_;
     /// Flag to switch mouse wheel event to be sent to non-focused element at cursor.
     bool nonFocusedMouseWheel_;
     /// Flag for using operating system clipboard instead of internal.
@@ -355,8 +343,6 @@ private:
     int dragElementsCount_;
     /// Number of elements in dragElements_ with dragPending = false.
     int dragConfirmedCount_;
-    /// UI elements that are being touched with touch input.
-    HashMap<WeakPtr<UIElement>, int> touchDragElements_;
     /// Confirmed drag elements cache.
     std::vector<UIElement*> dragElementsConfirmed_;
     /// Current scale of UI.

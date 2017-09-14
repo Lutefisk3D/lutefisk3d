@@ -79,8 +79,6 @@ protected:
     float yaw_;
     /// Camera pitch angle.
     float pitch_;
-    /// Flag to indicate whether touch input has been enabled.
-    bool touchEnabled_;
     /// Mouse mode option to use in the sample.
     Urho3D::MouseMode useMouseMode_;
 private:
@@ -96,8 +94,6 @@ private:
     void HandleKeyUp(int key,int scancode,unsigned buttons,int qualifiers);
     /// Handle scene update event to control camera's pitch and yaw for all samples.
     void HandleSceneUpdate(Urho3D::Scene *scene,float timeStep);
-    /// Handle touch begin event to initialize touch input on desktop platform.
-    void HandleTouchBegin(unsigned touchId,int x,int y,float pressure);
 
     /// Pause flag.
     bool paused_;

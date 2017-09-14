@@ -189,26 +189,6 @@ void UIDrag::HandleUpdate(float timeStep)
 
     Input* input = m_context->m_InputSystem.get();
 
-    unsigned n = input->GetNumTouches();
-    for (unsigned i = 0; i < n; i++)
-    {
-        Text* t = (Text*)root->GetChild("Touch " + QString::number(i));
-        TouchState* ts = input->GetTouch(i);
-        t->SetText("Touch " + QString::number(ts->touchID_));
-
-        IntVector2 pos = ts->position_;
-        pos.y_ -= 30;
-
-        t->SetPosition(pos);
-        t->SetVisible(true);
-    }
-
-    for (unsigned i = n; i < 10; i++)
-    {
-        Text* t = (Text*)root->GetChild("Touch " + QString::number(i));
-        t->SetVisible(false);
-    }
-
     if (input->GetKeyPress(KEY_SPACE))
     {
         std::vector<UIElement*> elements;

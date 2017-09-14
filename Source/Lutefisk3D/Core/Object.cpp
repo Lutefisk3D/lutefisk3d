@@ -22,6 +22,7 @@
 #include "Context.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Thread.h"
+#include <QSet>
 #include <algorithm>
 
 using namespace Urho3D;
@@ -353,21 +354,18 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
         EventReceiverGroup_Guard event_guard(*group);
         if (processed.isEmpty())
         {
-        //Prevent sending events for subscribers added during event handling.
-        const size_t receiver_count = group->receivers_.size();
-        for (size_t i = 0; i < receiver_count; ++i)
-        {
-            Object* receiver = group->receivers_[i];
+            //Prevent sending events for subscribers added during event handling.
+            const size_t receiver_count = group->receivers_.size();
+            for (size_t i = 0; i < receiver_count; ++i)
+            {
+                Object* receiver = group->receivers_[i];
                 if (!receiver)
                     continue;
 
                 receiver->OnEvent(this, eventType, eventData);
 
                 if (self.Expired())
-                {
                     return;
-                }
-
             }
         }
         else
@@ -384,10 +382,7 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
                 receiver->OnEvent(this, eventType, eventData);
 
                 if (self.Expired())
-                {
                     return;
-                }
-
             }
         }
     }

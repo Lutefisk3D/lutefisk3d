@@ -69,8 +69,6 @@ void CharacterDemo::Start()
 {
     // Execute base class startup
     Sample::Start();
-    if (touchEnabled_)
-        touch_ = new Touch(m_context, TOUCH_SENSITIVITY);
 
     // Create static scene content
     CreateScene();
@@ -280,29 +278,9 @@ void CharacterDemo::HandleUpdate(float timeStep)
             }
             character_->controls_.Set(CTRL_JUMP, input->GetKeyDown(KEY_SPACE));
 
-            // Add character yaw & pitch from the mouse motion or touch input
-            if (touchEnabled_)
-            {
-                for (unsigned i = 0; i < input->GetNumTouches(); ++i)
-                {
-                    TouchState* state = input->GetTouch(i);
-                    if (!state->touchedElement_)    // Touch on empty space
-                    {
-                        Camera* camera = cameraNode_->GetComponent<Camera>();
-                        if (!camera)
-                            return;
-
-                        Graphics* graphics = m_context->m_Graphics.get();
-                        character_->controls_.yaw_ += TOUCH_SENSITIVITY * camera->GetFov() / graphics->GetHeight() * state->delta_.x_;
-                        character_->controls_.pitch_ += TOUCH_SENSITIVITY * camera->GetFov() / graphics->GetHeight() * state->delta_.y_;
-                    }
-                }
-            }
-            else
-            {
-                character_->controls_.yaw_ += (float)input->GetMouseMoveX() * YAW_SENSITIVITY;
-                character_->controls_.pitch_ += (float)input->GetMouseMoveY() * YAW_SENSITIVITY;
-            }
+            // Add character yaw & pitch from the mouse motion
+            character_->controls_.yaw_ += (float)input->GetMouseMoveX() * YAW_SENSITIVITY;
+            character_->controls_.pitch_ += (float)input->GetMouseMoveY() * YAW_SENSITIVITY;
             // Limit pitch
             character_->controls_.pitch_ = Clamp(character_->controls_.pitch_, -80.0f, 80.0f);
 

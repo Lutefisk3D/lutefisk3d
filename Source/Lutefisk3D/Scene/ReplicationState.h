@@ -125,11 +125,6 @@ struct LUTEFISK3D_EXPORT DirtyBits
 /// Per-object attribute state for network replication, allocated on demand.
 struct LUTEFISK3D_EXPORT NetworkState
 {
-    /// Construct with defaults.
-    NetworkState() :
-        interceptMask_(0)
-    {
-    }
     /// Cached network attribute infos.
     const std::vector<AttributeInfo>* attributes_;
     /// Current network attribute values.
@@ -141,7 +136,7 @@ struct LUTEFISK3D_EXPORT NetworkState
     /// Previous user variables.
     VariantMap previousVars_;
     /// Bitmask for intercepting network messages. Used on the client only.
-    uint64_t interceptMask_;
+    uint64_t interceptMask_=0;
 };
 
 /// Base class for per-user network replication states.

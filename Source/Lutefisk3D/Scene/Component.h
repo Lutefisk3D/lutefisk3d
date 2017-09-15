@@ -47,6 +47,7 @@ class LUTEFISK3D_EXPORT Component : public Animatable
     URHO3D_OBJECT(Component,Animatable)
 
     friend class Node;
+    friend struct NodePrivate;
     friend class Scene;
 
 public:
@@ -56,13 +57,13 @@ public:
     /// Handle enabled/disabled state change.
     virtual void OnSetEnabled() {}
     /// Save as binary data. Return true if successful.
-    virtual bool Save(Serializer& dest) const override;
+    bool Save(Serializer& dest) const override;
     /// Save as XML data. Return true if successful.
-    virtual bool SaveXML(XMLElement& dest) const override;
+    bool SaveXML(XMLElement& dest) const override;
     /// Save as JSON data. Return true if successful.
-    virtual bool SaveJSON(JSONValue& dest) const override;
+    bool SaveJSON(JSONValue& dest) const override;
     /// Mark for attribute check on the next network update.
-    virtual void MarkNetworkUpdate() override;
+    void MarkNetworkUpdate() override;
     /// Return the depended on nodes to order network updates.
     virtual void GetDependencyNodes(std::vector<Node*>& /*dest*/) {}
     /// Visualize the component as debug geometry.

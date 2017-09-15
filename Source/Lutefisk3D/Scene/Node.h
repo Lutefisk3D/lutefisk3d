@@ -35,7 +35,7 @@ class Scene;
 class SceneResolver;
 
 struct NodeReplicationState;
-struct NodeImpl;
+struct NodePrivate;
 /// Component and child node creation mode for networking.
 enum CreateMode
 {
@@ -393,61 +393,36 @@ public:
         return worldTransform_;
     }
 
-    /// Convert a local space position to world space.
     Vector3 LocalToWorld(const Vector3& position) const;
-    /// Convert a local space position or rotation to world space.
     Vector3 LocalToWorld(const Vector4& vector) const;
-    /// Convert a local space position or rotation to world space (for Urho2D).
     Vector2 LocalToWorld2D(const Vector2& vector) const;
-    /// Convert a world space position to local space.
     Vector3 WorldToLocal(const Vector3& position) const;
-    /// Convert a world space position or rotation to local space.
     Vector3 WorldToLocal(const Vector4& vector) const;
-    /// Convert a world space position or rotation to local space (for Urho2D).
     Vector2 WorldToLocal2D(const Vector2& vector) const;
     /// Return whether transform has changed and world transform needs recalculation.
     bool IsDirty() const { return dirty_; }
-    /// Return number of child scene nodes.
     unsigned GetNumChildren(bool recursive = false) const;
     /// Return immediate child scene nodes.
     const std::vector<SharedPtr<Node> >& GetChildren() const { return children_; }
-    /// Return child scene nodes, optionally recursive.
     void GetChildren(std::vector<Node*>& dest, bool recursive = false) const;
-    /// Return child scene nodes, optionally recursive.
     std::vector<Node*> GetChildren(bool recursive) const;
-    /// Return child scene nodes with a specific component.
     void GetChildrenWithComponent(std::vector<Node*>& dest, StringHash type, bool recursive = false) const;
-    /// Return child scene nodes with a specific component.
     std::vector<Node*> GetChildrenWithComponent(StringHash type, bool recursive = false) const;
-    /// Return child scene nodes with a specific tag.
     void GetChildrenWithTag(std::vector<Node *> &dest, const QString &tag, bool recursive = false) const;
-    /// Return child scene nodes with a specific tag.
     std::vector<Node*> GetChildrenWithTag(const QString& tag, bool recursive = false) const;
-    /// Return child scene node by index.
     Node* GetChild(unsigned index) const;
-    /// Return child scene node by name.
     Node* GetChild(const QStringRef& name, bool recursive = false) const;
-    /// Return child scene node by name.
     Node* GetChild(const char* name, bool recursive = false) const;
-    /// Return child scene node by name hash.
     Node* GetChild(StringHash nameHash, bool recursive = false) const;
     /// Return number of components.
     unsigned GetNumComponents() const { return components_.size(); }
-    /// Return number of non-local components.
     unsigned GetNumNetworkComponents() const;
     /// Return all components.
     const std::vector<SharedPtr<Component> >& GetComponents() const { return components_; }
-    /// Return all components of type. Optionally recursive.
     void GetComponents(std::vector<Component*>& dest, StringHash type, bool recursive = false) const;
-    /// Return component by type. If there are several, returns the first.
     Component* GetComponent(StringHash type, bool recursive = false) const;
-    /// Return component in parent node. If there are several, returns the first. May optional traverse up to the root node.
     Component* GetParentComponent(StringHash type, bool fullTraversal = false) const;
-    /// Return whether has a specific component.
     bool HasComponent(StringHash type) const;
-    /// Return listener components.
-    const std::vector<WeakPtr<Component> > GetListeners() const { return listeners_; }
-    /// Return a user variable.
     const Variant& GetVar(StringHash key) const;
     /// Return all user variables.
     const VariantMap& GetVars() const { return vars_; }
@@ -567,28 +542,16 @@ protected:
     /// Network update queued flag.
     bool networkUpdate_;
 private:
-    /// Parent scene node.
-    Node* parent_;
-    /// Scene (root node.)
-    Scene* scene_;
-    /// Unique ID within the scene.
-    unsigned id_;
-    /// Position.
-    Vector3 position_;
-    /// Rotation.
-    Quaternion rotation_;
-    /// Scale.
-    Vector3 scale_;
-    /// World-space rotation.
-    mutable Quaternion worldRotation_;
-    /// Components.
-    std::vector<SharedPtr<Component> > components_;
-    /// Child scene nodes.
-    std::vector<SharedPtr<Node> > children_;
-    /// Node listeners.
-    std::vector<WeakPtr<Component> > listeners_;
-    /// Pointer to implementation.
-    std::unique_ptr<NodeImpl> impl_;
+    Node *                             parent_;        //!< Parent scene node.
+    Scene *                            scene_;         //!< Scene (root node.)
+    unsigned                           id_;            //!< Unique ID within the scene.
+    Vector3                            position_;      //!< Position.
+    Quaternion                         rotation_;      //!< Rotation.
+    Vector3                            scale_;         //!< Scale.
+    mutable Quaternion                 worldRotation_; //!< World-space rotation.
+    std::vector<SharedPtr<Component>>  components_;    //!< Components.
+    std::vector<SharedPtr<Node>>       children_;      //!< Child scene nodes.
+    const std::unique_ptr<NodePrivate> impl_;          //!< Pointer to implementation.
 
 protected:
     /// User variables.

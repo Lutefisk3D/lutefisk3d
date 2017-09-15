@@ -42,10 +42,14 @@
 namespace Urho3D
 {
 /// Internal implementation structure for less performance-critical Node variables.
-struct LUTEFISK3D_EXPORT NodeImpl
+struct LUTEFISK3D_EXPORT NodePrivate
 {
     /// Nodes this node depends on for network updates.
     std::vector<Node*> dependencyNodes_;
+    /// Attribute buffer for network updates.
+    mutable VectorBuffer attrBuffer_;
+    /// Node listeners.
+    std::vector<WeakPtr<Component> > listeners_;
     /// Network owner connection.
     Connection* owner_;
     /// Name.
@@ -54,8 +58,62 @@ struct LUTEFISK3D_EXPORT NodeImpl
     QStringList tags_;
     /// Name hash.
     StringHash nameHash_;
-    /// Attribute buffer for network updates.
-    mutable VectorBuffer attrBuffer_;
+    void notifyListeners(Node *n) {
+        // Notify listener components first, then mark child nodes
+        for (std::vector<WeakPtr<Component> >::iterator i = listeners_.begin(); i != listeners_.end();)
+        {
+            Component *c = *i;
+            if (c != nullptr)
+            {
+                c->OnMarkedDirty(n);
+                ++i;
+            }
+            // If listener has expired, erase from list (swap with the last element to avoid O(n^2) behavior)
+            else
+            {
+                *i = listeners_.back();
+                listeners_.pop_back();
+            }
+        }
+    }
+    void notifyListenersEnabled(Node *holder) {
+        // Notify listener components of the state change
+        for (std::vector<WeakPtr<Component> >::iterator i = listeners_.begin(); i != listeners_.end();)
+        {
+            if (*i != nullptr)
+            {
+                (*i)->OnNodeSetEnabled(holder);
+                ++i;
+            }
+            // If listener has expired, erase from list (swap and pop since we don't care about order)
+            else
+            {
+                *i = listeners_.back();
+                listeners_.pop_back();
+            }
+        }
+    }
+    void addListener(Component *component)
+    {
+        // Check for not adding twice
+        for (auto & elem : listeners_)
+        {
+            if (elem == component)
+                return;
+        }
+        listeners_.push_back(WeakPtr<Component>(component));
+    }
+    void removeListener(Component *component)
+    {
+        for (std::vector<WeakPtr<Component> >::iterator i = listeners_.begin(); i != listeners_.end(); ++i)
+        {
+            if (*i == component)
+            {
+                listeners_.erase(i);
+                return;
+            }
+        }
+    }
 };
 Node::Node(Context* context) :
     Animatable(context),
@@ -71,7 +129,7 @@ Node::Node(Context* context) :
     rotation_(Quaternion::IDENTITY),
     scale_(Vector3::ONE),
     worldRotation_(Quaternion::IDENTITY),
-    impl_(new NodeImpl)
+    impl_(new NodePrivate)
 {
     impl_->owner_ = 0;
 }
@@ -545,18 +603,18 @@ void Node::Translate(const Vector3& delta, TransformSpace space)
 {
     switch (space)
     {
-    case TS_LOCAL:
-        // Note: local space translation disregards local scale for scale-independent movement speed
-        position_ += rotation_ * delta;
-        break;
+        case TS_LOCAL:
+            // Note: local space translation disregards local scale for scale-independent movement speed
+            position_ += rotation_ * delta;
+            break;
 
-    case TS_PARENT:
-        position_ += delta;
-        break;
+        case TS_PARENT:
+            position_ += delta;
+            break;
 
-    case TS_WORLD:
-        position_ += (parent_ == scene_ || (parent_ == nullptr)) ? delta : parent_->GetWorldTransform().Inverse() * Vector4(delta, 0.0f);
-        break;
+        case TS_WORLD:
+            position_ += (parent_ == scene_ || (parent_ == nullptr)) ? delta : parent_->GetWorldTransform().Inverse() * Vector4(delta, 0.0f);
+            break;
     }
 
     MarkDirty();
@@ -568,23 +626,23 @@ void Node::Rotate(const Quaternion& delta, TransformSpace space)
 {
     switch (space)
     {
-    case TS_LOCAL:
-        rotation_ = (rotation_ * delta).Normalized();
-        break;
+        case TS_LOCAL:
+            rotation_ = (rotation_ * delta).Normalized();
+            break;
 
-    case TS_PARENT:
-        rotation_ = (delta * rotation_).Normalized();
-        break;
-
-    case TS_WORLD:
-        if (parent_ == scene_ || (parent_ == nullptr))
+        case TS_PARENT:
             rotation_ = (delta * rotation_).Normalized();
-        else
-        {
-            Quaternion worldRotation = GetWorldRotation();
-            rotation_ = rotation_ * worldRotation.Inverse() * delta * worldRotation;
-        }
-        break;
+            break;
+
+        case TS_WORLD:
+            if (parent_ == scene_ || (parent_ == nullptr))
+                rotation_ = (delta * rotation_).Normalized();
+            else
+            {
+                Quaternion worldRotation = GetWorldRotation();
+                rotation_ = rotation_ * worldRotation.Inverse() * delta * worldRotation;
+            }
+            break;
     }
 
     MarkDirty();
@@ -599,29 +657,29 @@ void Node::RotateAround(const Vector3& point, const Quaternion& delta, Transform
 
     switch (space)
     {
-    case TS_LOCAL:
-        parentSpacePoint = GetTransform() * point;
-        rotation_ = (rotation_ * delta).Normalized();
-        break;
+        case TS_LOCAL:
+            parentSpacePoint = GetTransform() * point;
+            rotation_ = (rotation_ * delta).Normalized();
+            break;
 
-    case TS_PARENT:
-        parentSpacePoint = point;
-        rotation_ = (delta * rotation_).Normalized();
-        break;
-
-    case TS_WORLD:
-        if (parent_ == scene_ || (parent_ == nullptr))
-        {
+        case TS_PARENT:
             parentSpacePoint = point;
             rotation_ = (delta * rotation_).Normalized();
-        }
-        else
-        {
-            parentSpacePoint = parent_->GetWorldTransform().Inverse() * point;
-            Quaternion worldRotation = GetWorldRotation();
-            rotation_ = rotation_ * worldRotation.Inverse() * delta * worldRotation;
-        }
-        break;
+            break;
+
+        case TS_WORLD:
+            if (parent_ == scene_ || (parent_ == nullptr))
+            {
+                parentSpacePoint = point;
+                rotation_ = (delta * rotation_).Normalized();
+            }
+            else
+            {
+                parentSpacePoint = parent_->GetWorldTransform().Inverse() * point;
+                Quaternion worldRotation = GetWorldRotation();
+                rotation_ = rotation_ * worldRotation.Inverse() * delta * worldRotation;
+            }
+            break;
     }
 
     Vector3 oldRelativePos = oldRotation.Inverse() * (position_ - parentSpacePoint);
@@ -653,17 +711,17 @@ bool Node::LookAt(const Vector3& target, const Vector3& up, TransformSpace space
 
     switch (space)
     {
-    case TS_LOCAL:
-        worldSpaceTarget = GetWorldTransform() * target;
-        break;
+        case TS_LOCAL:
+            worldSpaceTarget = GetWorldTransform() * target;
+            break;
 
-    case TS_PARENT:
-        worldSpaceTarget = (parent_ == scene_ || (parent_ == nullptr)) ? target : parent_->GetWorldTransform() * target;
-        break;
+        case TS_PARENT:
+            worldSpaceTarget = (parent_ == scene_ || (parent_ == nullptr)) ? target : parent_->GetWorldTransform() * target;
+            break;
 
-    case TS_WORLD:
-        worldSpaceTarget = target;
-        break;
+        case TS_WORLD:
+            worldSpaceTarget = target;
+            break;
     }
 
     Vector3 lookDir = worldSpaceTarget - GetWorldPosition();
@@ -736,22 +794,7 @@ void Node::MarkDirty()
             return;
         cur->dirty_ = true;
 
-        // Notify listener components first, then mark child nodes
-        for (std::vector<WeakPtr<Component> >::iterator i = cur->listeners_.begin(); i != cur->listeners_.end();)
-        {
-            Component *c = *i;
-            if (c != nullptr)
-            {
-                c->OnMarkedDirty(cur);
-                ++i;
-            }
-            // If listener has expired, erase from list (swap with the last element to avoid O(n^2) behavior)
-            else
-            {
-                *i = cur->listeners_.back();
-                cur->listeners_.pop_back();
-            }
-        }
+        cur->impl_->notifyListeners(cur);
 
         // Tail call optimization: Don't recurse to mark the first child dirty, but
         // instead process it in the context of the current function. If there are more
@@ -788,7 +831,7 @@ void Node::AddChild(Node* node, unsigned index)
         return;
     // Check for possible cyclic parent assignment
     if (IsChildOf(node))
-            return;
+        return;
     auto location = (index != M_MAX_UNSIGNED) ? children_.begin()+index : children_.end();
     // Keep a shared ptr to the node while transfering
     SharedPtr<Node> nodeShared(node);
@@ -1106,29 +1149,14 @@ void Node::AddListener(Component* component)
     if (component == nullptr)
         return;
 
-    // Check for not adding twice
-    for (auto & elem : listeners_)
-    {
-        if (elem == component)
-            return;
-    }
-
-    listeners_.push_back(WeakPtr<Component>(component));
-    // If the node is currently dirty, notify immediately
+    impl_->addListener(component);
     if (dirty_)
         component->OnMarkedDirty(this);
 }
 
 void Node::RemoveListener(Component* component)
 {
-    for (std::vector<WeakPtr<Component> >::iterator i = listeners_.begin(); i != listeners_.end(); ++i)
-    {
-        if (*i == component)
-        {
-            listeners_.erase(i);
-            return;
-        }
-    }
+    impl_->removeListener(component);
 }
 
 const QString &Node::GetName() const
@@ -1141,38 +1169,39 @@ Vector3 Node::GetSignedWorldScale() const
         UpdateWorldTransform();
     return worldTransform_.SignedScale(worldRotation_.RotationMatrix());
 }
+/// Convert a local space position to world space.
 Vector3 Node::LocalToWorld(const Vector3& position) const
 {
     return GetWorldTransform() * position;
 }
-
+/// Convert a local space position or rotation to world space.
 Vector3 Node::LocalToWorld(const Vector4& vector) const
 {
     return GetWorldTransform() * vector;
 }
-
+/// Convert a local space position or rotation to world space (for Urho2D).
 Vector2 Node::LocalToWorld2D(const Vector2& vector) const
 {
     Vector3 result = LocalToWorld(Vector3(vector));
     return Vector2(result.x_, result.y_);
 }
-
+/// Convert a world space position to local space.
 Vector3 Node::WorldToLocal(const Vector3& position) const
 {
     return GetWorldTransform().Inverse() * position;
 }
-
+/// Convert a world space position or rotation to local space.
 Vector3 Node::WorldToLocal(const Vector4& vector) const
 {
     return GetWorldTransform().Inverse() * vector;
 }
-
+/// Convert a world space position or rotation to local space (for Urho2D).
 Vector2 Node::WorldToLocal2D(const Vector2& vector) const
 {
     Vector3 result = WorldToLocal(Vector3(vector));
     return Vector2(result.x_, result.y_);
 }
-
+/// Return number of child scene nodes.
 unsigned Node::GetNumChildren(bool recursive) const
 {
     if (!recursive)
@@ -1186,7 +1215,7 @@ unsigned Node::GetNumChildren(bool recursive) const
     return allChildren;
 
 }
-
+//! Return child scene nodes, optionally recursive.
 void Node::GetChildren(std::vector<Node*>& dest, bool recursive) const
 {
     dest.clear();
@@ -1199,12 +1228,14 @@ void Node::GetChildren(std::vector<Node*>& dest, bool recursive) const
     else
         GetChildrenRecursive(dest);
 }
+//! Return child scene nodes, optionally recursive.
 std::vector<Node*> Node::GetChildren(bool recursive) const
 {
     std::vector<Node*> dest;
     GetChildren(dest, recursive);
     return dest;
 }
+//! Return child scene nodes with a specific component type.
 void Node::GetChildrenWithComponent(std::vector<Node*>& dest, StringHash type, bool recursive) const
 {
     dest.clear();
@@ -1220,14 +1251,14 @@ void Node::GetChildrenWithComponent(std::vector<Node*>& dest, StringHash type, b
     else
         GetChildrenWithComponentRecursive(dest, type);
 }
-
+//! Return child scene nodes with a specific component.
 std::vector<Node*> Node::GetChildrenWithComponent(StringHash type, bool recursive) const
 {
     std::vector<Node*> dest;
     GetChildrenWithComponent(dest, type, recursive);
     return dest;
 }
-
+//! Return child scene nodes with a specific tag.
 void Node::GetChildrenWithTag(std::vector<Node*>& dest, const QString & tag, bool recursive /*= true*/) const
 {
     dest.clear();
@@ -1243,27 +1274,29 @@ void Node::GetChildrenWithTag(std::vector<Node*>& dest, const QString & tag, boo
     else
         GetChildrenWithTagRecursive(dest, tag);
 }
+//! Return child scene nodes with a specific tag.
 std::vector<Node*> Node::GetChildrenWithTag(const QString& tag, bool recursive) const
 {
     std::vector<Node*> dest;
     GetChildrenWithTag(dest, tag, recursive);
     return dest;
 }
+//! Return child scene node by index.
 Node* Node::GetChild(unsigned index) const
 {
     return index < children_.size() ? children_[index].Get() : nullptr;
 }
-
+//! Return child scene node by name.
 Node* Node::GetChild(const QStringRef& name, bool recursive) const
 {
     return GetChild(StringHash(name), recursive);
 }
-
+//! Return child scene node by name.
 Node* Node::GetChild(const char* name, bool recursive) const
 {
     return GetChild(StringHash(name), recursive);
 }
-
+//! Return child scene node by name hash.
 Node* Node::GetChild(StringHash nameHash, bool recursive) const
 {
     for (const auto & elem : children_)
@@ -1281,7 +1314,7 @@ Node* Node::GetChild(StringHash nameHash, bool recursive) const
 
     return nullptr;
 }
-
+/// Return number of non-local components.
 unsigned Node::GetNumNetworkComponents() const
 {
     unsigned num = 0;
@@ -1293,7 +1326,7 @@ unsigned Node::GetNumNetworkComponents() const
 
     return num;
 }
-
+/// Return all components of type. Optionally recursive.
 void Node::GetComponents(std::vector<Component*>& dest, StringHash type, bool recursive) const
 {
     dest.clear();
@@ -1309,7 +1342,7 @@ void Node::GetComponents(std::vector<Component*>& dest, StringHash type, bool re
     else
         GetComponentsRecursive(dest, type);
 }
-
+/// Return whether has a specific component.
 bool Node::HasComponent(StringHash type) const
 {
     for (const auto & elem : components_)
@@ -1341,13 +1374,13 @@ Connection *Node::GetOwner() const
 {
     return impl_->owner_;
 }
-
+/// Return a user variable.
 const Variant& Node::GetVar(StringHash key) const
 {
     auto i = vars_.find(key);
     return i != vars_.end() ? MAP_VALUE(i) : Variant::EMPTY;
 }
-
+/// Return component by type. If there are several, returns the first.
 Component* Node::GetComponent(StringHash type, bool recursive) const
 {
     for (const auto & elem : components_)
@@ -1367,7 +1400,7 @@ Component* Node::GetComponent(StringHash type, bool recursive) const
 
     return nullptr;
 }
-
+/// Return component in parent node. If there are several, returns the first. May optional traverse up to the root node.
 Component* Node::GetParentComponent(StringHash type, bool fullTraversal) const
 {
     Node* current = GetParent();
@@ -1648,7 +1681,7 @@ void Node::PrepareNetworkUpdate()
         while (current->id_ >= FIRST_LOCAL_ID)
             current = current->parent_;
         if ((current != nullptr) && current != scene_)
-           impl_->dependencyNodes_.push_back(current);
+            impl_->dependencyNodes_.push_back(current);
     }
 
     // Let the components add their dependencies
@@ -1948,18 +1981,7 @@ void Node::SetEnabled(bool enable, bool recursive, bool storeSelf)
         enabled_ = enable;
         MarkNetworkUpdate();
 
-        // Notify listener components of the state change
-        for (std::vector<WeakPtr<Component> >::iterator i = listeners_.begin(); i != listeners_.end();)
-        {
-            if (*i != nullptr)
-            {
-                (*i)->OnNodeSetEnabled(this);
-                ++i;
-            }
-            // If listener has expired, erase from list
-            else
-                i = listeners_.erase(i);
-        }
+        impl_->notifyListenersEnabled(this);
 
         // Send change event
         if (scene_ != nullptr)

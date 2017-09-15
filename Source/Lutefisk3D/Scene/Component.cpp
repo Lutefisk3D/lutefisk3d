@@ -173,13 +173,16 @@ void Component::PrepareNetworkUpdate()
 
 void Component::CleanupConnection(Connection* connection)
 {
-    if (networkState_ != nullptr)
+    if (networkState_ == nullptr)
+        return;
+    auto iter=networkState_->replicationStates_.begin();
+    auto fin=networkState_->replicationStates_.end();
+    for ( ; iter!=fin; )
     {
-        for (unsigned i = networkState_->replicationStates_.size() - 1; i < networkState_->replicationStates_.size(); --i)
-        {
-            if (networkState_->replicationStates_[i]->connection_ == connection)
-                networkState_->replicationStates_.erase(networkState_->replicationStates_.begin() + i);
-        }
+        if ((*iter)->connection_ == connection)
+            iter = networkState_->replicationStates_.erase(iter);
+        else
+            ++iter;
     }
 }
 

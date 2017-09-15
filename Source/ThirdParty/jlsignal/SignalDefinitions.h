@@ -4,11 +4,6 @@
 #include "Utils.h"
 #include "SignalBase.h"
 #include <utility>
-/**
- * The content of the following classes (Signal0 -> Signal8) is identical,
- * except for the number of parameters specified in the Connect() and Emit()
- * functions.
- */
 
 #ifdef JL_SIGNAL_ENABLE_LOGSPAM
 #include <stdio.h>
@@ -28,14 +23,14 @@
 namespace jl {
 
 /**
- * Signal1: signals with 1 argument
+ * signals with arguments
  */
 template< class ... Types >
 class Signal final : public SignalBase
 {
 public:
     //typedef fastdelegate::FastDelegate1< _P1 > Delegate;
-    typedef ssvu::FastFunc< void(Types...) > Delegate;
+    using Delegate = ssvu::FastFunc< void(Types...) > ;
     struct Connection
     {
         Delegate d;
@@ -58,7 +53,7 @@ public:
 
     virtual ~Signal()
     {
-        JL_SIGNAL_LOG( "Destroying Signal1 %p\n", this );
+        JL_SIGNAL_LOG( "Destroying Signal %p\n", this );
         DisconnectAll();
     }
 
@@ -69,7 +64,7 @@ public:
     void Connect( void (*fpFunction)(Types...) )
     {
         JL_SIGNAL_DOUBLE_CONNECTED_FUNCTION_ASSERT( fpFunction );
-        JL_SIGNAL_LOG( "Signal1 %p connection to non-instance function %p", this, BruteForceCast<void*>(fpFunction) );
+        JL_SIGNAL_LOG( "Signal %p connection to non-instance function %p", this, BruteForceCast<void*>(fpFunction) );
 
         Connection c = { Delegate(fpFunction), NULL };
         JL_CHECKED_CALL( m_oConnections.Add( c ) );
@@ -80,13 +75,11 @@ public:
     void Connect( Y* pObject, void (X::*fpMethod)(Types...) )
     {
         if ( ! pObject )
-        {
             return;
-        }
 
         JL_SIGNAL_DOUBLE_CONNECTED_INSTANCE_METHOD_ASSERT( pObject, fpMethod );
         SignalObserver* pObserver = static_cast<SignalObserver*>( pObject );
-        JL_SIGNAL_LOG( "Signal1 %p connecting to Observer %p (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
+        JL_SIGNAL_LOG( "Signal %p connecting to Observer %p (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
 
         Connection c = { Delegate(pObject, fpMethod), pObserver };
         JL_CHECKED_CALL( m_oConnections.Add( c ) );
@@ -102,7 +95,7 @@ public:
 
         JL_SIGNAL_DOUBLE_CONNECTED_INSTANCE_METHOD_ASSERT( pObject, fpMethod );
         SignalObserver* pObserver = static_cast<SignalObserver*>( pObject );
-        JL_SIGNAL_LOG( "Signal1 %p connecting to Observer %p (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
+        JL_SIGNAL_LOG( "Signal %p connecting to Observer %p (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
 
         Connection c = { Delegate(pObject, fpMethod), pObserver };
         JL_CHECKED_CALL( m_oConnections.Add( c ) );
@@ -136,13 +129,18 @@ public:
             conn.d( std::forward<Types>(p1)... );
         }
     }
-
-    //void operator()( Types... p1 ) const { Emit( p1... ); }
+    // Emits a signal with specific source, all generic Observers and those registered for a specific source will
+    // get notified
+    void EmitSpecific(void *source,Types... p1 ) const
+    {
+        // notify all Observers interested in the given source
+        Emit(std::forward<Types>(p1)...);
+    }
 
     // Disconnects a non-instance method.
     void Disconnect( void (*fpFunction)(Types...) )
     {
-        JL_SIGNAL_LOG( "Signal1 %p removing connections to non-instance method %p\n", this, BruteForceCast<void*>(fpFunction) );
+        JL_SIGNAL_LOG( "Signal %p removing connections to non-instance method %p\n", this, BruteForceCast<void*>(fpFunction) );
         const Delegate d(fpFunction);
 
         for ( ConnectionIter i = m_oConnections.begin(); i.isValid(); )
@@ -170,7 +168,7 @@ public:
         }
 
         SignalObserver* pObserver = static_cast<SignalObserver*>( pObject );
-        JL_SIGNAL_LOG( "Signal1 %p removing connections to Observer %p, instance method (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
+        JL_SIGNAL_LOG( "Signal %p removing connections to Observer %p, instance method (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
         DisconnectObserverDelegate( pObserver, Delegate(pObject, fpMethod) );
     }
 
@@ -184,7 +182,7 @@ public:
         }
 
         SignalObserver* pObserver = static_cast<SignalObserver*>( pObject );
-        JL_SIGNAL_LOG( "Signal1 %p removing connections to Observer %p, const instance method (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
+        JL_SIGNAL_LOG( "Signal %p removing connections to Observer %p, const instance method (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
         DisconnectObserverDelegate( pObserver, Delegate(pObject, fpMethod) );
     }
 
@@ -197,7 +195,7 @@ public:
             return;
         }
 
-        JL_SIGNAL_LOG( "Signal1 %p removing all connections to Observer %p\n", this, pObserver );
+        JL_SIGNAL_LOG( "Signal %p removing all connections to Observer %p\n", this, pObserver );
         unsigned nDisconnections = 0;
 
         for ( ConnectionIter i = m_oConnections.begin(); i.isValid(); )
@@ -222,7 +220,7 @@ public:
 
     void DisconnectAll()
     {
-        JL_SIGNAL_LOG( "Signal1 %p disconnecting all observers\n", this );
+        JL_SIGNAL_LOG( "Signal %p disconnecting all observers\n", this );
 
         for ( ConnectionIter i = m_oConnections.begin(); i.isValid(); ++i )
         {
@@ -290,7 +288,7 @@ private:
 
     void OnObserverDisconnect( SignalObserver* pObserver ) override
     {
-        JL_SIGNAL_LOG( "Signal1 %p received disconnect message from observer %p\n", this, pObserver );
+        JL_SIGNAL_LOG( "Signal %p received disconnect message from observer %p\n", this, pObserver );
 
         for ( ConnectionIter i = m_oConnections.begin(); i.isValid(); )
         {
@@ -332,7 +330,7 @@ public:
 
     virtual ~Signal()
     {
-        JL_SIGNAL_LOG( "Destroying Signal1 %p\n", this );
+        JL_SIGNAL_LOG( "Destroying Signal %p\n", this );
         DisconnectAll();
     }
 
@@ -343,7 +341,7 @@ public:
     void Connect( void (*fpFunction)(void) )
     {
         JL_SIGNAL_DOUBLE_CONNECTED_FUNCTION_ASSERT( fpFunction );
-        JL_SIGNAL_LOG( "Signal1 %p connection to non-instance function %p", this, BruteForceCast<void*>(fpFunction) );
+        JL_SIGNAL_LOG( "Signal %p connection to non-instance function %p", this, BruteForceCast<void*>(fpFunction) );
 
         Connection c = { Delegate(fpFunction), nullptr };
         JL_CHECKED_CALL( m_oConnections.Add( c ) );
@@ -358,7 +356,7 @@ public:
 
         JL_SIGNAL_DOUBLE_CONNECTED_INSTANCE_METHOD_ASSERT( pObject, fpMethod );
         SignalObserver* pObserver = static_cast<SignalObserver*>( pObject );
-        JL_SIGNAL_LOG( "Signal1 %p connecting to Observer %p (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
+        JL_SIGNAL_LOG( "Signal %p connecting to Observer %p (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
 
         Connection c = { Delegate(pObject, fpMethod), pObserver };
         JL_CHECKED_CALL( m_oConnections.Add( c ) );
@@ -374,7 +372,7 @@ public:
 
         JL_SIGNAL_DOUBLE_CONNECTED_INSTANCE_METHOD_ASSERT( pObject, fpMethod );
         SignalObserver* pObserver = static_cast<SignalObserver*>( pObject );
-        JL_SIGNAL_LOG( "Signal1 %p connecting to Observer %p (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
+        JL_SIGNAL_LOG( "Signal %p connecting to Observer %p (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
 
         Connection c = { Delegate(pObject, fpMethod), pObserver };
         JL_CHECKED_CALL( m_oConnections.Add( c ) );
@@ -406,13 +404,16 @@ public:
         for ( const Connection &conn : m_oConnections )
             conn.d();
     }
-
-    void operator()( void ) const { Emit( ); }
-
+    // Emits a signal with specific source, all generic Observers and those registered for a specific source will
+    // get notified
+    void EmitSpecific(void *source) const
+    {
+        Emit();
+    }
     // Disconnects a non-instance method.
     void Disconnect( void (*fpFunction)(void) )
     {
-        JL_SIGNAL_LOG( "Signal1 %p removing connections to non-instance method %p\n", this, BruteForceCast<void*>(fpFunction) );
+        JL_SIGNAL_LOG( "Signal %p removing connections to non-instance method %p\n", this, BruteForceCast<void*>(fpFunction) );
         const Delegate d(fpFunction);
 
         for ( ConnectionIter i = m_oConnections.begin(); i.isValid(); )
@@ -440,7 +441,7 @@ public:
         }
 
         SignalObserver* pObserver = static_cast<SignalObserver*>( pObject );
-        JL_SIGNAL_LOG( "Signal1 %p removing connections to Observer %p, instance method (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
+        JL_SIGNAL_LOG( "Signal %p removing connections to Observer %p, instance method (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
         DisconnectObserverDelegate( pObserver, Delegate(pObject, fpMethod) );
     }
 
@@ -454,7 +455,7 @@ public:
         }
 
         SignalObserver* pObserver = static_cast<SignalObserver*>( pObject );
-        JL_SIGNAL_LOG( "Signal1 %p removing connections to Observer %p, const instance method (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
+        JL_SIGNAL_LOG( "Signal %p removing connections to Observer %p, const instance method (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
         DisconnectObserverDelegate( pObserver, Delegate(pObject, fpMethod) );
     }
 
@@ -467,7 +468,7 @@ public:
             return;
         }
 
-        JL_SIGNAL_LOG( "Signal1 %p removing all connections to Observer %p\n", this, pObserver );
+        JL_SIGNAL_LOG( "Signal %p removing all connections to Observer %p\n", this, pObserver );
         unsigned nDisconnections = 0;
 
         for ( ConnectionIter i = m_oConnections.begin(); i.isValid(); )
@@ -492,7 +493,7 @@ public:
 
     void DisconnectAll()
     {
-        JL_SIGNAL_LOG( "Signal1 %p disconnecting all observers\n", this );
+        JL_SIGNAL_LOG( "Signal %p disconnecting all observers\n", this );
 
         for ( ConnectionIter i = m_oConnections.begin(); i.isValid(); ++i )
         {
@@ -560,7 +561,7 @@ private:
 
     void OnObserverDisconnect( SignalObserver* pObserver )
     {
-        JL_SIGNAL_LOG( "Signal1 %p received disconnect message from observer %p\n", this, pObserver );
+        JL_SIGNAL_LOG( "Signal %p received disconnect message from observer %p\n", this, pObserver );
 
         for ( ConnectionIter i = m_oConnections.begin(); i.isValid(); )
         {
@@ -575,7 +576,6 @@ private:
             }
         }
     }
-
 };
 
 } // namespace jl

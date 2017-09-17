@@ -27,11 +27,11 @@ set(INCLUDES
     UI.h
     View3D.h
     Window.h
+    Console.h
+    DebugHud.h
 )
 set(UI_COMPONENTS
-    Console.h
     Console.cpp
-    DebugHud.h
     DebugHud.cpp
 )
 set(SOURCE

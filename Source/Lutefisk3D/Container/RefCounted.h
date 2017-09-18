@@ -29,13 +29,6 @@ namespace Urho3D
 /// Reference count structure.
 struct RefCount
 {
-    /// Construct.
-    RefCount() :
-        refs_(0),
-        weakRefs_(0)
-    {
-    }
-
     /// Destruct.
     ~RefCount()
     {
@@ -43,11 +36,8 @@ struct RefCount
         refs_ = -1;
         weakRefs_ = -1;
     }
-
-    /// Reference count. If below zero, the object has been destroyed.
-    int refs_;
-    /// Weak reference count.
-    int weakRefs_;
+    int refs_     = 0; //!< Reference count. If below zero, the object has been destroyed.
+    int weakRefs_ = 0; //!< Weak reference count.
 };
 
 /// Base class for intrusively reference-counted objects. These are noncopyable and non-assignable.

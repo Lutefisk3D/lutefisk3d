@@ -85,7 +85,7 @@ bool XMLFile::BeginLoad(Deserializer& source)
         return false;
     }
 
-    std::unique_ptr<char> buffer(new char[dataSize]);
+    std::unique_ptr<char[]> buffer(new char[dataSize]);
     if (source.Read(buffer.get(), dataSize) != dataSize)
         return false;
 

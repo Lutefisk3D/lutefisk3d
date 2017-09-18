@@ -33,9 +33,7 @@ class LUTEFISK3D_EXPORT AbstractFile : public Deserializer, public Serializer
 {
 public:
     /// Construct.
-    AbstractFile() : Deserializer() { }
-    /// Construct.
-    AbstractFile(unsigned int size) : Deserializer(size) { }
+    AbstractFile(unsigned int size=0) : Deserializer(size) { }
     /// Destruct.
     virtual ~AbstractFile() = default;
 };

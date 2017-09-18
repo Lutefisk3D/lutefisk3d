@@ -65,7 +65,7 @@ public:
 
 protected:
     /// Graphics subsystem.
-    Graphics * graphics_; // non-owning pointer
+    WeakPtr<Graphics> graphics_; // non-owning pointer
     /// Object handle.
     unsigned object_;
     /// Data lost flag.

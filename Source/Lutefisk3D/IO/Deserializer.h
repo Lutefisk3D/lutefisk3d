@@ -48,6 +48,7 @@ class Matrix4;
 class Vector2;
 class Vector3;
 class Vector4;
+
 /// Abstract stream for reading.
 class LUTEFISK3D_EXPORT Deserializer
 {

@@ -246,7 +246,7 @@ enum TextureCoordinate
 };
 
 /// Texture usage types.
-enum TextureUsage
+enum TextureUsage : uint8_t
 {
     TEXTURE_STATIC = 0,
     TEXTURE_DYNAMIC,
@@ -277,7 +277,7 @@ enum CubeMapLayout
 };
 
 /// Update mode for render surface viewports.
-enum RenderSurfaceUpdateMode
+enum RenderSurfaceUpdateMode : uint8_t
 {
     SURFACE_MANUALUPDATE = 0,
     SURFACE_UPDATEVISIBLE,

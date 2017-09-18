@@ -22,10 +22,9 @@
 
 #pragma once
 
-#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Container/Ptr.h"
-#include <vector>
+#include <memory>
 
 namespace gl {
 enum class GLenum : uint32_t;
@@ -35,7 +34,9 @@ namespace Urho3D
 {
 class Viewport;
 class Texture;
-
+enum RenderSurfaceUpdateMode : uint8_t;
+enum TextureUsage : uint8_t;
+struct RenderSurfacePrivate;
 /// %Color or depth-stencil surface that can be rendered into.
 class LUTEFISK3D_EXPORT RenderSurface : public RefCounted
 {
@@ -80,32 +81,22 @@ public:
     /// Return multisampling autoresolve mode.
     bool GetAutoResolve() const;
     /// Return number of viewports.
-    unsigned GetNumViewports() const { return viewports_.size(); }
+    unsigned GetNumViewports() const;
     /// Return viewport by index.
     Viewport* GetViewport(unsigned index) const;
     /// Return viewport update mode.
     RenderSurfaceUpdateMode GetUpdateMode() const { return updateMode_; }
     /// Return linked color rendertarget.
-    RenderSurface* GetLinkedRenderTarget() const { return linkedRenderTarget_; }
+    RenderSurface* GetLinkedRenderTarget() const;
     /// Return linked depth-stencil surface.
-    RenderSurface* GetLinkedDepthStencil() const { return linkedDepthStencil_; }
+    RenderSurface* GetLinkedDepthStencil() const;
 
     /// Return whether manual update queued. Called internally.
     bool IsUpdateQueued() const { return updateQueued_; }
-    /// Reset update queued flag. Called internally.
     void ResetUpdateQueued();
 
     /// Return parent texture.
     Texture* GetParentTexture() const { return parentTexture_; }
-
-    /// Return Direct3D9 surface.
-    void* GetSurface() const { return surface_; }
-
-    /// Return Direct3D11 rendertarget or depth-stencil view. Not valid on OpenGL.
-    void* GetRenderTargetView() const { return renderTargetView_; }
-
-    /// Return Direct3D11 read-only depth-stencil view. May be null if not applicable. Not valid on OpenGL.
-    void* GetReadOnlyView() const { return readOnlyView_; }
 
     /// Return surface's OpenGL target.
     gl::GLenum GetTarget() const { return target_; }
@@ -119,35 +110,17 @@ public:
     /// Set or clear the need resolve flag. Called internally by Graphics.
     void SetResolveDirty(bool enable) { resolveDirty_ = enable; }
 private:
+    std::unique_ptr<RenderSurfacePrivate> d;
     /// Parent texture.
     Texture* parentTexture_;
-    union
-    {
-        /// Direct3D9 surface.
-        void* surface_;
-        /// Direct3D11 rendertarget or depth-stencil view.
-        void* renderTargetView_;
-        /// OpenGL renderbuffer name.
-        unsigned renderBuffer_;
-    };
-
-    union
-    {
-        /// Direct3D11 read-only depth-stencil view. Present only on depth-stencil surfaces.
-        void* readOnlyView_;
-        /// OpenGL target.
-        gl::GLenum target_;
-    };
-    /// Viewports.
-    std::vector<SharedPtr<Viewport> > viewports_;
-    /// Linked color buffer.
-    WeakPtr<RenderSurface> linkedRenderTarget_;
-    /// Linked depth buffer.
-    WeakPtr<RenderSurface> linkedDepthStencil_;
+    /// OpenGL renderbuffer name.
+    unsigned renderBuffer_=0;
+    /// OpenGL target.
+    gl::GLenum target_;
     /// Update mode for viewports.
     RenderSurfaceUpdateMode updateMode_;
     /// Update queued flag.
-    bool updateQueued_;
+    bool updateQueued_=false;
     /// Multisampled resolve dirty flag.
     bool resolveDirty_;
 };

@@ -42,17 +42,17 @@ static const unsigned DEFAULT_ZONEMASK = M_MAX_UNSIGNED;
 static const int MAX_VERTEX_LIGHTS = 4;
 static const float ANIMATION_LOD_BASESCALE = 2500.0f;
 
-class LUTEFISK3D_EXPORT Camera;
-class LUTEFISK3D_EXPORT File;
-class LUTEFISK3D_EXPORT Geometry;
-class LUTEFISK3D_EXPORT Light;
-class LUTEFISK3D_EXPORT Material;
-class LUTEFISK3D_EXPORT OcclusionBuffer;
-class LUTEFISK3D_EXPORT Octant;
-class LUTEFISK3D_EXPORT RayOctreeQuery;
-class LUTEFISK3D_EXPORT Zone;
-struct LUTEFISK3D_EXPORT RayQueryResult;
-struct LUTEFISK3D_EXPORT WorkItem;
+class Camera;
+class File;
+class Geometry;
+class Light;
+class Material;
+class OcclusionBuffer;
+class Octant;
+class RayOctreeQuery;
+class Zone;
+struct RayQueryResult;
+struct WorkItem;
 
 /// Geometry update type.
 enum UpdateGeometryType

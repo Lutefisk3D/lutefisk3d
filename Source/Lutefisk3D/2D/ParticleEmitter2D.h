@@ -137,7 +137,7 @@ private:
     /// Handle scene post update.
     void HandleScenePostUpdate(Scene *, float ts);
     /// Update.
-    void Update(float timeStep);
+    void Update(float timeStep) ;
     /// Emit particle.
     bool EmitParticle(const Vector3& worldPosition, float worldAngle, float worldScale);
     /// Update particle.

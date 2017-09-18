@@ -47,45 +47,25 @@ enum CompressedFormat : unsigned
     CF_PVRTC_RGB_4BPP,
     CF_PVRTC_RGBA_4BPP,
 };
-
+enum class ImageSet : uint8_t {
+    SINGLE,
+    ARRAY,   //!< Texture array status if DDS.
+    CUBEMAP, //!< Cubemap status if DDS.
+};
 /// Compressed image mip level.
 struct CompressedLevel
 {
-    /// Construct empty.
-    CompressedLevel() :
-        data_(nullptr),
-        format_(CF_NONE),
-        width_(0),
-        height_(0),
-        depth_(0),
-        blockSize_(0),
-        dataSize_(0),
-        rowSize_(0),
-        rows_(0)
-    {
-    }
-
     /// Decompress to RGBA. The destination buffer required is width * height * 4 bytes. Return true if successful.
-    bool Decompress(unsigned char* dest);
-
-    /// Compressed image data.
-    unsigned char* data_;
-    /// Compression format.
-    CompressedFormat format_;
-    /// Width.
-    int width_;
-    /// Height.
-    int height_;
-    /// Depth.
-    int depth_;
-    /// Block size in bytes.
-    unsigned blockSize_;
-    /// Total data size in bytes.
-    unsigned dataSize_;
-    /// Row size in bytes.
-    unsigned rowSize_;
-    /// Number of rows.
-    unsigned rows_;
+    bool Decompress(uint8_t* dest);
+    uint8_t *        data_      = nullptr; //!< Compressed image data.
+    CompressedFormat format_    = CF_NONE; //!< Compression format.
+    int              width_     = 0;       //!< Width.
+    int              height_    = 0;       //!< Height.
+    int              depth_     = 0;       //!< Depth.
+    unsigned         blockSize_ = 0;       //!< Block size in bytes.
+    unsigned         dataSize_  = 0;       //!< Total data size in bytes.
+    unsigned         rowSize_   = 0;       //!< Row size in bytes.
+    unsigned         rows_      = 0;       //!< Number of rows.
 };
 
 /// %Image resource.
@@ -104,7 +84,7 @@ public:
 
     bool SetSize(int width, int height, unsigned components);
     bool SetSize(int width, int height, int depth, unsigned components);
-    void SetData(const unsigned char* pixelData);
+    void SetData(const uint8_t* pixelData);
     void SetPixel(int x, int y, const Color& color);
     void SetPixel(int x, int y, int z, const Color& color);
     void SetPixelInt(int x, int y, unsigned uintColor);
@@ -119,12 +99,11 @@ public:
     bool SavePNG(const QString& fileName) const;
     bool SaveJPG(const QString& fileName, int quality) const;
     /// Whether this texture is detected as a cubemap, only relevant for DDS.
-    bool IsCubemap() const { return cubemap_; }
+    bool IsCubemap() const { return imageset_==ImageSet::CUBEMAP; }
     /// Whether this texture has been detected as a volume, only relevant for DDS.
-    bool IsArray() const { return array_; }
+    bool IsArray() const { return imageset_==ImageSet::ARRAY; }
     /// Whether this texture is in sRGB, only relevant for DDS.
     bool IsSRGB() const { return sRGB_; }
-
 
     Color GetPixel(int x, int y) const;
     Color GetPixel(int x, int y, int z) const;
@@ -163,20 +142,19 @@ public:
 
 private:
     bool saveImageCommon(const QString &fileName, const char *format, int quality = -1) const;
-    static unsigned char *GetImageData(Deserializer &source, int &width, int &height, unsigned &components);
-    static void FreeImageData(unsigned char *pixelData);
+    static uint8_t *GetImageData(Deserializer &source, int &width, int &height, unsigned &components);
+    static void FreeImageData(uint8_t *pixelData);
 
-    int                           width_;               ///< Width.
-    int                           height_;              ///< Height.
-    int                           depth_;               ///< Depth.
-    unsigned                      components_;          ///< Number of color components.
-    unsigned                      numCompressedLevels_; ///< Number of compressed mip levels.
-    bool                          cubemap_;             ///< Cubemap status if DDS.
-    bool                          array_;               ///< Texture array status if DDS.
-    bool                          sRGB_;                ///< Data is sRGB.
-    CompressedFormat              compressedFormat_;    ///< Compressed format.
-    std::unique_ptr<uint8_t[]>    data_;                ///< Pixel data.
-    SharedPtr<Image>              nextLevel_;           ///< Precalculated mip level image.
-    SharedPtr<Image>              nextSibling_;         ///< Next texture array or cube map image.
+    int                        width_               = 0;       ///< Width.
+    int                        height_              = 0;       ///< Height.
+    int                        depth_               = 0;       ///< Depth.
+    unsigned                   components_          = 0;       ///< Number of color components.
+    unsigned                   numCompressedLevels_ = 0;       ///< Number of compressed mip levels.
+    CompressedFormat           compressedFormat_    = CF_NONE; ///< Compressed format.
+    std::unique_ptr<uint8_t[]> data_;                          ///< Pixel data.
+    SharedPtr<Image>           nextLevel_;                     ///< Precalculated mip level image.
+    SharedPtr<Image>           nextSibling_;                   ///< Next texture array or cube map image.
+    ImageSet                   imageset_=ImageSet::SINGLE;
+    bool                       sRGB_    = false;               ///< Data is sRGB.
 };
 }

@@ -205,7 +205,7 @@ struct DDSurfaceDesc2
     unsigned dwTextureStage_;
 };
 
-bool CompressedLevel::Decompress(unsigned char* dest)
+bool CompressedLevel::Decompress(uint8_t* dest)
 {
     if (!data_)
         return false;
@@ -236,16 +236,7 @@ bool CompressedLevel::Decompress(unsigned char* dest)
 }
 /// Construct empty.
 Image::Image(Context* context) :
-    Resource(context),
-    width_(0),
-    height_(0),
-    depth_(0),
-    components_(0),
-    numCompressedLevels_(0),
-    cubemap_(false),
-    array_(false),
-    sRGB_(false),
-    compressedFormat_(CF_NONE)
+    Resource(context)
 {
 }
 
@@ -359,14 +350,17 @@ bool Image::BeginLoad(Deserializer& source)
         }
 
         // Is it a cube map or texture array? If so determine the size of the image chain.
-        cubemap_ = (ddsd.ddsCaps_.dwCaps2_ & DDSCAPS2_CUBEMAP_ALL_FACES) != 0 || (hasDXGI && (dxgiHeader.miscFlag & DDS_RESOURCE_MISC_TEXTURECUBE) != 0);
+        imageset_ = (ddsd.ddsCaps_.dwCaps2_ & DDSCAPS2_CUBEMAP_ALL_FACES) != 0 ||
+                            (hasDXGI && (dxgiHeader.miscFlag & DDS_RESOURCE_MISC_TEXTURECUBE) != 0)
+                        ? ImageSet::SINGLE
+                        : ImageSet::CUBEMAP;
         unsigned imageChainCount = 1;
-        if (cubemap_)
+        if (imageset_==ImageSet::CUBEMAP)
             imageChainCount = 6;
         else if (hasDXGI && dxgiHeader.arraySize > 1)
         {
             imageChainCount = dxgiHeader.arraySize;
-            array_ = true;
+            imageset_       = ImageSet::ARRAY;
         }
 
         // Calculate the size of the data
@@ -406,9 +400,8 @@ bool Image::BeginLoad(Deserializer& source)
         Image* currentImage = this;
         for (unsigned faceIndex = 0; faceIndex < imageChainCount; ++faceIndex)
         {
-            currentImage->data_.reset(new unsigned char[dataSize]);
-            currentImage->cubemap_ = cubemap_;
-            currentImage->array_ = array_;
+            currentImage->data_.reset(new uint8_t[dataSize]);
+            currentImage->imageset_ = imageset_;
             currentImage->components_ = components_;
             currentImage->compressedFormat_ = compressedFormat_;
             currentImage->width_ = ddsd.dwWidth_;
@@ -458,14 +451,14 @@ bool Image::BeginLoad(Deserializer& source)
                 ADJUSTSHIFT(bMask, bShiftL, bShiftR)
                 ADJUSTSHIFT(aMask, aShiftL, aShiftR)
 
-                std::unique_ptr<uint8_t[]> rgbaData(new unsigned char[numPixels * 4]);
+                std::unique_ptr<uint8_t[]> rgbaData(new uint8_t[numPixels * 4]);
 
                 switch (sourcePixelByteSize)
                 {
                 case 4:
                 {
                     unsigned* src = (unsigned*)currentImage->data_.get();
-                    unsigned char* dest = rgbaData.get();
+                    uint8_t* dest = rgbaData.get();
 
                     while (numPixels--)
                     {
@@ -480,8 +473,8 @@ bool Image::BeginLoad(Deserializer& source)
 
                 case 3:
                 {
-                    unsigned char* src = currentImage->data_.get();
-                    unsigned char* dest = rgbaData.get();
+                    uint8_t* src = currentImage->data_.get();
+                    uint8_t* dest = rgbaData.get();
 
                     while (numPixels--)
                     {
@@ -498,7 +491,7 @@ bool Image::BeginLoad(Deserializer& source)
                 default:
                 {
                     unsigned short* src = (unsigned short*)currentImage->data_.get();
-                    unsigned char* dest = rgbaData.get();
+                    uint8_t* dest = rgbaData.get();
 
                     while (numPixels--)
                     {
@@ -614,7 +607,7 @@ bool Image::BeginLoad(Deserializer& source)
         source.Seek(source.GetPosition() + keyValueBytes);
         unsigned dataSize = source.GetSize() - source.GetPosition() - mipmaps * sizeof(unsigned);
 
-        data_.reset(new unsigned char[dataSize]);
+        data_.reset(new uint8_t[dataSize]);
         width_ = width;
         height_ = height;
         numCompressedLevels_ = mipmaps;
@@ -719,7 +712,7 @@ bool Image::BeginLoad(Deserializer& source)
         source.Seek(source.GetPosition() + metaDataSize);
         unsigned dataSize = source.GetSize() - source.GetPosition();
 
-        data_.reset(new unsigned char[dataSize]);
+        data_.reset(new uint8_t[dataSize]);
         width_ = width;
         height_ = height;
         numCompressedLevels_ = mipmapCount;
@@ -733,7 +726,7 @@ bool Image::BeginLoad(Deserializer& source)
         source.Seek(0);
         int width, height;
         unsigned components;
-        unsigned char* pixelData = GetImageData(source, width, height, components);
+        uint8_t* pixelData = GetImageData(source, width, height, components);
         if (!pixelData)
         {
             URHO3D_LOGERROR("Could not load image " + source.GetName() + ": ");
@@ -824,7 +817,7 @@ bool Image::SetSize(int width, int height, int depth, unsigned components)
         return false;
     }
 
-    data_.reset(new unsigned char[width * height * depth * components]);
+    data_.reset(new uint8_t[width * height * depth * components]);
     width_ = width;
     height_ = height;
     depth_ = depth;
@@ -857,8 +850,8 @@ void Image::SetPixelInt(int x, int y, int z, unsigned uintColor)
     if (!data_ || x < 0 || x >= width_ || y < 0 || y >= height_ || z < 0 || z >= depth_ || IsCompressed())
         return;
 
-    unsigned char* dest = data_.get() + (z * width_ * height_ + y * width_ + x) * components_;
-    unsigned char* src = (unsigned char*)&uintColor;
+    uint8_t* dest = data_.get() + (z * width_ * height_ + y * width_ + x) * components_;
+    uint8_t* src = (uint8_t*)&uintColor;
 
     switch (components_)
     {
@@ -877,7 +870,7 @@ void Image::SetPixelInt(int x, int y, int z, unsigned uintColor)
     }
 }
 /// Set new image data.
-void Image::SetData(const unsigned char* pixelData)
+void Image::SetData(const uint8_t* pixelData)
 {
     if (!data_)
         return;
@@ -905,7 +898,7 @@ bool Image::LoadColorLUT(Deserializer& source)
     source.Seek(0);
     int width, height;
     unsigned components;
-    unsigned char* pixelDataIn = GetImageData(source, width, height, components);
+    uint8_t* pixelDataIn = GetImageData(source, width, height, components);
     if (!pixelDataIn)
     {
         URHO3D_LOGERROR("Could not load image " + source.GetName() + ": ");
@@ -920,14 +913,14 @@ bool Image::LoadColorLUT(Deserializer& source)
     SetSize(COLOR_LUT_SIZE, COLOR_LUT_SIZE, COLOR_LUT_SIZE, components);
     SetMemoryUse(width_ * height_ * depth_ * components);
 
-    unsigned char* pixelDataOut = GetData();
+    uint8_t* pixelDataOut = GetData();
 
     for (int z = 0; z < depth_; ++z)
     {
         for (int y = 0; y < height_; ++y)
         {
-            unsigned char* in = &pixelDataIn[z * width_ * 3 + y * width * 3];
-            unsigned char* out = &pixelDataOut[z * width_ * height_ * 3 + y * width_ * 3];
+            uint8_t* in = &pixelDataIn[z * width_ * 3 + y * width * 3];
+            uint8_t* out = &pixelDataOut[z * width_ * height_ * 3 + y * width_ * 3];
 
             for (int x = 0; x < width_ * 3; x += 3)
             {
@@ -959,7 +952,7 @@ bool Image::FlipHorizontal()
 
     if (!IsCompressed())
     {
-        std::unique_ptr<uint8_t[]> newData(new unsigned char[width_ * height_ * components_]);
+        std::unique_ptr<uint8_t[]> newData(new uint8_t[width_ * height_ * components_]);
         unsigned rowSize = width_ * components_;
 
         for (int y = 0; y < height_; ++y)
@@ -982,7 +975,7 @@ bool Image::FlipHorizontal()
         }
 
         // Memory use = combined size of the compressed mip levels
-        std::unique_ptr<uint8_t[]> newData(new unsigned char[GetMemoryUse()]);
+        std::unique_ptr<uint8_t[]> newData(new uint8_t[GetMemoryUse()]);
         unsigned dataOffset = 0;
 
         for (unsigned i = 0; i < numCompressedLevels_; ++i)
@@ -998,8 +991,8 @@ bool Image::FlipHorizontal()
             {
                 for (unsigned x = 0; x < level.rowSize_; x += level.blockSize_)
                 {
-                    unsigned char* src = level.data_ + y * level.rowSize_ + (level.rowSize_ - level.blockSize_ - x);
-                    unsigned char* dest = newData.get() + y * level.rowSize_ + x;
+                    uint8_t* src = level.data_ + y * level.rowSize_ + (level.rowSize_ - level.blockSize_ - x);
+                    uint8_t* dest = newData.get() + y * level.rowSize_ + x;
                     FlipBlockHorizontal(dest, src, compressedFormat_);
                 }
             }
@@ -1030,7 +1023,7 @@ bool Image::FlipVertical()
 
     if (!IsCompressed())
     {
-        std::unique_ptr<uint8_t[]> newData(new unsigned char[width_ * height_ * components_]);
+        std::unique_ptr<uint8_t[]> newData(new uint8_t[width_ * height_ * components_]);
         unsigned rowSize = width_ * components_;
 
         for (int y = 0; y < height_; ++y)
@@ -1047,7 +1040,7 @@ bool Image::FlipVertical()
         }
 
         // Memory use = combined size of the compressed mip levels
-        std::unique_ptr<uint8_t[]> newData(new unsigned char[GetMemoryUse()]);
+        std::unique_ptr<uint8_t[]> newData(new uint8_t[GetMemoryUse()]);
         unsigned dataOffset = 0;
 
         for (unsigned i = 0; i < numCompressedLevels_; ++i)
@@ -1061,8 +1054,8 @@ bool Image::FlipVertical()
 
             for (unsigned y = 0; y < level.rows_; ++y)
             {
-                unsigned char* src = level.data_ + y * level.rowSize_;
-                unsigned char* dest = newData.get() + dataOffset + (level.rows_ - y - 1) * level.rowSize_;
+                uint8_t* src = level.data_ + y * level.rowSize_;
+                uint8_t* dest = newData.get() + dataOffset + (level.rows_ - y - 1) * level.rowSize_;
 
                 for (unsigned x = 0; x < level.rowSize_; x += level.blockSize_)
                     FlipBlockVertical(dest + x, src + x, compressedFormat_);
@@ -1102,7 +1095,7 @@ bool Image::Resize(int width, int height)
         return false;
 
     /// \todo Reducing image size does not sample all needed pixels
-    std::unique_ptr<uint8_t[]> newData(new unsigned char[width * height * components_]);
+    std::unique_ptr<uint8_t[]> newData(new uint8_t[width * height * components_]);
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
@@ -1111,8 +1104,8 @@ bool Image::Resize(int width, int height)
             float xF = (width_ > 1) ? (float)x / (float)(width - 1) : 0.0f;
             float yF = (height_ > 1) ? (float)y / (float)(height - 1) : 0.0f;
             unsigned uintColor = GetPixelBilinear(xF, yF).ToUInt();
-            unsigned char* dest = newData.get() + (y * width + x) * components_;
-            unsigned char* src = (unsigned char*)&uintColor;
+            uint8_t* dest = newData.get() + (y * width + x) * components_;
+            uint8_t* src = (uint8_t*)&uintColor;
 
             switch (components_)
             {
@@ -1157,7 +1150,7 @@ void Image::ClearInt(unsigned uintColor)
         return;
     }
 
-    unsigned char* src = (unsigned char*)&uintColor;
+    uint8_t* src = (uint8_t*)&uintColor;
     for (unsigned i = 0; i < width_ * height_ * depth_ * components_; ++i)
         data_[i] = src[i % components_];
 }
@@ -1253,7 +1246,7 @@ Color Image::GetPixel(int x, int y, int z) const
     x = Clamp(x, 0, width_ - 1);
     y = Clamp(y, 0, height_ - 1);
 
-    unsigned char* src = data_.get() + (z * width_ * height_ + y * width_ + x) * components_;
+    uint8_t* src = data_.get() + (z * width_ * height_ + y * width_ + x) * components_;
     Color ret;
 
     switch (components_)
@@ -1288,7 +1281,7 @@ unsigned Image::GetPixelInt(int x, int y, int z) const
     x = Clamp(x, 0, width_ - 1);
     y = Clamp(y, 0, height_ - 1);
 
-    unsigned char* src = data_.get() + (z * width_ * height_ + y * width_ + x) * components_;
+    uint8_t* src = data_.get() + (z * width_ * height_ + y * width_ + x) * components_;
     unsigned ret = 0;
     if (components_ < 4)
         ret |= 0xff000000;
@@ -1393,8 +1386,8 @@ SharedPtr<Image> Image::GetNextLevel() const
     else
         mipImage->SetSize(widthOut, heightOut, components_);
 
-    const unsigned char* pixelDataIn = data_.get();
-    unsigned char* pixelDataOut = mipImage->data_.get();
+    const uint8_t* pixelDataIn = data_.get();
+    uint8_t* pixelDataOut = mipImage->data_.get();
 
     // 1D case
     if (depth_ == 1 && (height_ == 1 || width_ == 1))
@@ -1449,9 +1442,9 @@ SharedPtr<Image> Image::GetNextLevel() const
         case 1:
             for (int y = 0; y < heightOut; ++y)
             {
-                const unsigned char* inUpper = &pixelDataIn[(y*2)*width_];
-                const unsigned char* inLower = &pixelDataIn[(y*2+1)*width_];
-                unsigned char* out = &pixelDataOut[y*widthOut];
+                const uint8_t* inUpper = &pixelDataIn[(y*2)*width_];
+                const uint8_t* inLower = &pixelDataIn[(y*2+1)*width_];
+                uint8_t* out = &pixelDataOut[y*widthOut];
 
                 for (int x = 0; x < widthOut; ++x)
                 {
@@ -1463,9 +1456,9 @@ SharedPtr<Image> Image::GetNextLevel() const
         case 2:
             for (int y = 0; y < heightOut; ++y)
             {
-                const unsigned char* inUpper = &pixelDataIn[(y*2)*width_*2];
-                const unsigned char* inLower = &pixelDataIn[(y*2+1)*width_*2];
-                unsigned char* out = &pixelDataOut[y*widthOut*2];
+                const uint8_t* inUpper = &pixelDataIn[(y*2)*width_*2];
+                const uint8_t* inLower = &pixelDataIn[(y*2+1)*width_*2];
+                uint8_t* out = &pixelDataOut[y*widthOut*2];
 
                 for (int x = 0; x < widthOut*2; x += 2)
                 {
@@ -1478,9 +1471,9 @@ SharedPtr<Image> Image::GetNextLevel() const
         case 3:
             for (int y = 0; y < heightOut; ++y)
             {
-                const unsigned char* inUpper = &pixelDataIn[(y*2)*width_*3];
-                const unsigned char* inLower = &pixelDataIn[(y*2+1)*width_*3];
-                unsigned char* out = &pixelDataOut[y*widthOut*3];
+                const uint8_t* inUpper = &pixelDataIn[(y*2)*width_*3];
+                const uint8_t* inLower = &pixelDataIn[(y*2+1)*width_*3];
+                uint8_t* out = &pixelDataOut[y*widthOut*3];
 
                 for (int x = 0; x < widthOut*3; x += 3)
                 {
@@ -1494,9 +1487,9 @@ SharedPtr<Image> Image::GetNextLevel() const
         case 4:
             for (int y = 0; y < heightOut; ++y)
             {
-                const unsigned char* inUpper = &pixelDataIn[(y*2)*width_*4];
-                const unsigned char* inLower = &pixelDataIn[(y*2+1)*width_*4];
-                unsigned char* out = &pixelDataOut[y*widthOut*4];
+                const uint8_t* inUpper = &pixelDataIn[(y*2)*width_*4];
+                const uint8_t* inLower = &pixelDataIn[(y*2+1)*width_*4];
+                uint8_t* out = &pixelDataOut[y*widthOut*4];
 
                 for (int x = 0; x < widthOut*4; x += 4)
                 {
@@ -1520,16 +1513,16 @@ SharedPtr<Image> Image::GetNextLevel() const
         case 1:
             for (int z = 0; z < depthOut; ++z)
             {
-                const unsigned char* inOuter = &pixelDataIn[(z*2)*width_*height_];
-                const unsigned char* inInner = &pixelDataIn[(z*2+1)*width_*height_];
+                const uint8_t* inOuter = &pixelDataIn[(z*2)*width_*height_];
+                const uint8_t* inInner = &pixelDataIn[(z*2+1)*width_*height_];
 
                 for (int y = 0; y < heightOut; ++y)
                 {
-                    const unsigned char* inOuterUpper = &inOuter[(y*2)*width_];
-                    const unsigned char* inOuterLower = &inOuter[(y*2+1)*width_];
-                    const unsigned char* inInnerUpper = &inInner[(y*2)*width_];
-                    const unsigned char* inInnerLower = &inInner[(y*2+1)*width_];
-                    unsigned char* out = &pixelDataOut[z*widthOut*heightOut + y*widthOut];
+                    const uint8_t* inOuterUpper = &inOuter[(y*2)*width_];
+                    const uint8_t* inOuterLower = &inOuter[(y*2+1)*width_];
+                    const uint8_t* inInnerUpper = &inInner[(y*2)*width_];
+                    const uint8_t* inInnerLower = &inInner[(y*2+1)*width_];
+                    uint8_t* out = &pixelDataOut[z*widthOut*heightOut + y*widthOut];
 
                     for (int x = 0; x < widthOut; ++x)
                     {
@@ -1543,16 +1536,16 @@ SharedPtr<Image> Image::GetNextLevel() const
         case 2:
             for (int z = 0; z < depthOut; ++z)
             {
-                const unsigned char* inOuter = &pixelDataIn[(z*2)*width_*height_*2];
-                const unsigned char* inInner = &pixelDataIn[(z*2+1)*width_*height_*2];
+                const uint8_t* inOuter = &pixelDataIn[(z*2)*width_*height_*2];
+                const uint8_t* inInner = &pixelDataIn[(z*2+1)*width_*height_*2];
 
                 for (int y = 0; y < heightOut; ++y)
                 {
-                    const unsigned char* inOuterUpper = &inOuter[(y*2)*width_*2];
-                    const unsigned char* inOuterLower = &inOuter[(y*2+1)*width_*2];
-                    const unsigned char* inInnerUpper = &inInner[(y*2)*width_*2];
-                    const unsigned char* inInnerLower = &inInner[(y*2+1)*width_*2];
-                    unsigned char* out = &pixelDataOut[z*widthOut*heightOut*2 + y*widthOut*2];
+                    const uint8_t* inOuterUpper = &inOuter[(y*2)*width_*2];
+                    const uint8_t* inOuterLower = &inOuter[(y*2+1)*width_*2];
+                    const uint8_t* inInnerUpper = &inInner[(y*2)*width_*2];
+                    const uint8_t* inInnerLower = &inInner[(y*2+1)*width_*2];
+                    uint8_t* out = &pixelDataOut[z*widthOut*heightOut*2 + y*widthOut*2];
 
                     for (int x = 0; x < widthOut*2; x += 2)
                     {
@@ -1568,16 +1561,16 @@ SharedPtr<Image> Image::GetNextLevel() const
         case 3:
             for (int z = 0; z < depthOut; ++z)
             {
-                const unsigned char* inOuter = &pixelDataIn[(z*2)*width_*height_*3];
-                const unsigned char* inInner = &pixelDataIn[(z*2+1)*width_*height_*3];
+                const uint8_t* inOuter = &pixelDataIn[(z*2)*width_*height_*3];
+                const uint8_t* inInner = &pixelDataIn[(z*2+1)*width_*height_*3];
 
                 for (int y = 0; y < heightOut; ++y)
                 {
-                    const unsigned char* inOuterUpper = &inOuter[(y*2)*width_*3];
-                    const unsigned char* inOuterLower = &inOuter[(y*2+1)*width_*3];
-                    const unsigned char* inInnerUpper = &inInner[(y*2)*width_*3];
-                    const unsigned char* inInnerLower = &inInner[(y*2+1)*width_*3];
-                    unsigned char* out = &pixelDataOut[z*widthOut*heightOut*3 + y*widthOut*3];
+                    const uint8_t* inOuterUpper = &inOuter[(y*2)*width_*3];
+                    const uint8_t* inOuterLower = &inOuter[(y*2+1)*width_*3];
+                    const uint8_t* inInnerUpper = &inInner[(y*2)*width_*3];
+                    const uint8_t* inInnerLower = &inInner[(y*2+1)*width_*3];
+                    uint8_t* out = &pixelDataOut[z*widthOut*heightOut*3 + y*widthOut*3];
 
                     for (int x = 0; x < widthOut*3; x += 3)
                     {
@@ -1595,16 +1588,16 @@ SharedPtr<Image> Image::GetNextLevel() const
         case 4:
             for (int z = 0; z < depthOut; ++z)
             {
-                const unsigned char* inOuter = &pixelDataIn[(z*2)*width_*height_*4];
-                const unsigned char* inInner = &pixelDataIn[(z*2+1)*width_*height_*4];
+                const uint8_t* inOuter = &pixelDataIn[(z*2)*width_*height_*4];
+                const uint8_t* inInner = &pixelDataIn[(z*2+1)*width_*height_*4];
 
                 for (int y = 0; y < heightOut; ++y)
                 {
-                    const unsigned char* inOuterUpper = &inOuter[(y*2)*width_*4];
-                    const unsigned char* inOuterLower = &inOuter[(y*2+1)*width_*4];
-                    const unsigned char* inInnerUpper = &inInner[(y*2)*width_*4];
-                    const unsigned char* inInnerLower = &inInner[(y*2+1)*width_*4];
-                    unsigned char* out = &pixelDataOut[z*widthOut*heightOut*4 + y*widthOut*4];
+                    const uint8_t* inOuterUpper = &inOuter[(y*2)*width_*4];
+                    const uint8_t* inOuterLower = &inOuter[(y*2+1)*width_*4];
+                    const uint8_t* inInnerUpper = &inInner[(y*2)*width_*4];
+                    const uint8_t* inInnerLower = &inInner[(y*2+1)*width_*4];
+                    uint8_t* out = &pixelDataOut[z*widthOut*heightOut*4 + y*widthOut*4];
 
                     for (int x = 0; x < widthOut*4; x += 4)
                     {
@@ -1649,15 +1642,15 @@ SharedPtr<Image> Image::ConvertToRGBA() const
     SharedPtr<Image> ret(new Image(context_));
     ret->SetSize(width_, height_, depth_, 4);
 
-    const unsigned char* src = data_.get();
-    unsigned char* dest = ret->GetData();
+    const uint8_t* src = data_.get();
+    uint8_t* dest = ret->GetData();
 
     switch (components_)
     {
     case 1:
         for (unsigned i = 0; i < width_ * height_ * depth_; ++i)
         {
-            unsigned char pixel = *src++;
+            uint8_t pixel = *src++;
             *dest++ = pixel;
             *dest++ = pixel;
             *dest++ = pixel;
@@ -1668,7 +1661,7 @@ SharedPtr<Image> Image::ConvertToRGBA() const
     case 2:
         for (unsigned i = 0; i < width_ * height_ * depth_; ++i)
         {
-            unsigned char pixel = *src++;
+            uint8_t pixel = *src++;
             *dest++ = pixel;
             *dest++ = pixel;
             *dest++ = pixel;
@@ -1860,8 +1853,8 @@ Image* Image::GetSubimage(const IntRect& rect) const
         Image* image = new Image(context_);
         image->SetSize(width, height, components_);
 
-        unsigned char* dest = image->GetData();
-        unsigned char* src = data_.get() + (y * width_ + x) * components_;
+        uint8_t* dest = image->GetData();
+        uint8_t* src = data_.get() + (y * width_ + x) * components_;
         for (int i = 0; i < height; ++i)
         {
             memcpy(dest, src, width * components_);
@@ -1881,7 +1874,7 @@ Image* Image::GetSubimage(const IntRect& rect) const
         paddedRect.bottom_ = (rect.bottom_ / 4) * 4;
         IntRect currentRect = paddedRect;
 
-        std::vector<unsigned char> subimageData;
+        std::vector<uint8_t> subimageData;
         unsigned subimageLevels = 0;
 
         // Save as many mips as possible until the next mip would cross a block boundary
@@ -1899,11 +1892,11 @@ Image* Image::GetSubimage(const IntRect& rect) const
                 break;
 
             subimageData.resize(destStartOffset + destSize);
-            unsigned char* dest = &subimageData[destStartOffset];
+            uint8_t* dest = &subimageData[destStartOffset];
 
             for (int y = currentRect.top_; y < currentRect.bottom_; y += 4)
             {
-                unsigned char* src = level.data_ + level.rowSize_ * (y / 4) + currentRect.left_ / 4 * level.blockSize_;
+                uint8_t* src = level.data_ + level.rowSize_ * (y / 4) + currentRect.left_ / 4 * level.blockSize_;
                 memcpy(dest, src, destRowSize);
                 dest += destRowSize;
             }
@@ -1933,7 +1926,7 @@ Image* Image::GetSubimage(const IntRect& rect) const
         image->compressedFormat_ = compressedFormat_;
         image->numCompressedLevels_ = subimageLevels;
         image->components_ = components_;
-        image->data_.reset(new unsigned char[subimageData.size()]);
+        image->data_.reset(new uint8_t[subimageData.size()]);
         memcpy(image->data_.get(), &subimageData[0], subimageData.size());
         image->SetMemoryUse(subimageData.size());
 
@@ -1996,8 +1989,8 @@ SDL_Surface* Image::GetSDLSurface(const IntRect& rect) const
     {
         SDL_LockSurface(surface);
 
-        unsigned char* destination = reinterpret_cast<unsigned char*>(surface->pixels);
-        unsigned char* source = data_.get() + components_ * (imageWidth * imageRect.top_ + imageRect.left_);
+        uint8_t* destination = reinterpret_cast<uint8_t*>(surface->pixels);
+        uint8_t* source = data_.get() + components_ * (imageWidth * imageRect.top_ + imageRect.left_);
         for (int i = 0; i < height; ++i)
         {
             memcpy(destination, source, components_ * width);
@@ -2064,11 +2057,11 @@ void Image::GetLevels(std::vector<const Image*>& levels) const
     }
 }
 /// Decode an image using QImage.
-unsigned char* Image::GetImageData(Deserializer& source, int& width, int& height, unsigned& components)
+uint8_t* Image::GetImageData(Deserializer& source, int& width, int& height, unsigned& components)
 {
     unsigned dataSize = source.GetSize();
 
-    std::unique_ptr<uint8_t[]> buffer(new unsigned char[dataSize]);
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[dataSize]);
     source.Read(buffer.get(), dataSize);
     QString srcname = QFileInfo(source.GetName()).suffix();
     QImage img(QImage::fromData(buffer.get(),dataSize,qPrintable(srcname.toUpper())));
@@ -2094,7 +2087,7 @@ unsigned char* Image::GetImageData(Deserializer& source, int& width, int& height
     return res;
 }
 /// Free an image file's pixel data.
-void Image::FreeImageData(unsigned char* pixelData)
+void Image::FreeImageData(uint8_t* pixelData)
 {
     delete [] pixelData;
 }

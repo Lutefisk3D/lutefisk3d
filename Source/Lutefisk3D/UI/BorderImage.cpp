@@ -53,7 +53,7 @@ void BorderImage::RegisterObject(Context* context)
     context->RegisterFactory<BorderImage>(UI_CATEGORY);
 
     URHO3D_COPY_BASE_ATTRIBUTES(UIElement);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Texture", GetTextureAttr, SetTextureAttr, ResourceRef, ResourceRef(Texture2D::GetTypeStatic()), AM_FILE);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Texture", GetTextureAttr, SetTextureAttr, ResourceRef, {Texture2D::GetTypeStatic()}, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Image Rect", GetImageRect, SetImageRect, IntRect, IntRect::ZERO, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Border", GetBorder, SetBorder, IntRect, IntRect::ZERO, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Image Border", GetImageBorder, SetImageBorder, IntRect, IntRect::ZERO, AM_FILE);
@@ -88,18 +88,18 @@ void BorderImage::SetFullImageRect()
 
 void BorderImage::SetBorder(const IntRect& rect)
 {
-    border_.left_ = Max(rect.left_, 0);
-    border_.top_ = Max(rect.top_, 0);
-    border_.right_ = Max(rect.right_, 0);
-    border_.bottom_ = Max(rect.bottom_, 0);
+    border_.left_ = std::max(rect.left_, 0);
+    border_.top_ = std::max(rect.top_, 0);
+    border_.right_ = std::max(rect.right_, 0);
+    border_.bottom_ = std::max(rect.bottom_, 0);
 }
 
 void BorderImage::SetImageBorder(const IntRect& rect)
 {
-    imageBorder_.left_ = Max(rect.left_, 0);
-    imageBorder_.top_ = Max(rect.top_, 0);
-    imageBorder_.right_ = Max(rect.right_, 0);
-    imageBorder_.bottom_ = Max(rect.bottom_, 0);
+    imageBorder_.left_ = std::max(rect.left_, 0);
+    imageBorder_.top_ = std::max(rect.top_, 0);
+    imageBorder_.right_ = std::max(rect.right_, 0);
+    imageBorder_.bottom_ = std::max(rect.bottom_, 0);
 }
 
 void BorderImage::SetHoverOffset(const IntVector2& offset)

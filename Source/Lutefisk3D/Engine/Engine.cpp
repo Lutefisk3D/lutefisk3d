@@ -206,6 +206,9 @@ Engine::Engine(Context* context) :
 #endif
 }
 
+Engine::~Engine() {
+}
+
 /// Initialize engine using parameters given and show the application window. Return true if successful.
 bool Engine::Initialize(const VariantMap& parameters)
 {

@@ -111,10 +111,8 @@ set(OPENGL2_3_RENDERER
     OpenGL/OGLGraphics.cpp
     OpenGL/OGLGraphicsImpl.cpp
     OpenGL/OGLIndexBuffer.cpp
-    OpenGL/OGLRenderSurface.cpp
     OpenGL/OGLShaderProgram.cpp
     OpenGL/OGLShaderVariation.cpp
-    OpenGL/OGLTexture2D.cpp
     OpenGL/OGLTexture2DArray.cpp
     OpenGL/OGLTexture3D.cpp
     OpenGL/OGLTexture.cpp

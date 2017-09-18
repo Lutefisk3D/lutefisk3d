@@ -51,7 +51,6 @@ Application::Application(const QString &appName, Context* context) :
 
     // Create the Engine, but do not initialize it yet. Subsystems except Graphics & Renderer are registered at this point
     engine_ = new Engine(context);
-
     // Subscribe to log messages so that can show errors if ErrorExit() is called with empty message
     g_LogSignals.logMessageSignal.Connect(this, &Application::HandleLogMessage);
 
@@ -60,7 +59,7 @@ Application::Application(const QString &appName, Context* context) :
 // a SharedPtr<Engine>::~SharedPtr<Engine>  when Application.h was included.
 Application::~Application()
 {
-    delete engine_;
+    //engine_ was registered in context_ as a subsystem, it will be destroyed when context_ is destroyed
 }
 
 int Application::Run()

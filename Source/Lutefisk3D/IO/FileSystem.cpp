@@ -30,8 +30,11 @@
 #include "Lutefisk3D/IO/IOEvents.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Core/Thread.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/Str.h"
+#include "Lutefisk3D/Math/StringHash.h"
 
-//#include <SDL/SDL_filesystem.h>
+#include <jlsignal/SignalBase.h>
 #include <QtCore/QProcess>
 #include <QtCore/QDir>
 #include <QtCore/QDirIterator>
@@ -45,8 +48,8 @@
 
 namespace Urho3D
 {
-
-int DoSystemCommand(const QString& commandLine, bool redirectToLog, Context* context)
+namespace {
+int DoSystemCommand(const QString& commandLine, bool redirectToLog)
 {
     if (!redirectToLog)
         return system(qPrintable(commandLine));
@@ -63,15 +66,13 @@ int DoSystemRun(const QString& fileName, const QStringList& arguments)
 {
     return QProcess::execute(fileName,arguments);
 }
-
 /// Base class for async execution requests.
 class AsyncExecRequest : public Thread
 {
 public:
     /// Construct.
     AsyncExecRequest(unsigned& requestID) :
-        requestID_(requestID),
-        completed_(false)
+        requestID_(requestID)
     {
         // Increment ID for next request
         ++requestID;
@@ -92,11 +93,10 @@ protected:
     /// Exit code.
     int exitCode_;
     /// Completed flag.
-    volatile bool completed_;
+    volatile bool completed_=false;
 };
-
 /// Async system command operation.
-class AsyncSystemCommand : public AsyncExecRequest
+class AsyncSystemCommand final : public AsyncExecRequest
 {
 public:
     /// Construct and run.
@@ -110,7 +110,7 @@ public:
     /// The function to run in the thread.
     virtual void ThreadFunction() override
     {
-        exitCode_ = DoSystemCommand(commandLine_, false, nullptr);
+        exitCode_ = DoSystemCommand(commandLine_, false);
         completed_ = true;
     }
 
@@ -118,9 +118,8 @@ private:
     /// Command line.
     QString commandLine_;
 };
-
 /// Async system run operation.
-class AsyncSystemRun : public AsyncExecRequest
+class AsyncSystemRun final : public AsyncExecRequest
 {
 public:
     /// Construct and run.
@@ -146,27 +145,101 @@ private:
     const QStringList& arguments_;
 };
 
-FileSystem::FileSystem(Context* context) :
-    m_context(context),
-    nextAsyncExecID_(1),
-    executeConsoleCommands_(false)
+}
+struct FileSystemPrivate : public jl::SignalObserver
 {
-    g_coreSignals.beginFrame.Connect(this,&FileSystem::HandleBeginFrame);
+    /// Allowed directories.
+    HashSet<QString> allowedPaths_;
+    /// Async execution queue.
+    std::list<AsyncExecRequest*> asyncExecQueue_;
+    /// Next async execution ID.
+    unsigned nextAsyncExecID_=1;
+    /// Flag for executing engine console commands as OS-specific system command. set to true in constructor.
+    bool executeConsoleCommands_=false;
+
+    ~FileSystemPrivate() {
+        // If any async exec items pending, delete them
+        if (!asyncExecQueue_.empty())
+        {
+            for (auto & elem : asyncExecQueue_)
+                delete(elem);
+
+            asyncExecQueue_.clear();
+        }
+    }
+    unsigned addAsyncSysCommand(const QString &commandLine)
+    {
+        unsigned requestID = nextAsyncExecID_;
+        AsyncSystemCommand* cmd = new AsyncSystemCommand(nextAsyncExecID_, commandLine);
+        asyncExecQueue_.push_back(cmd);
+        return requestID;
+    }
+    unsigned addAsyncSysRun(const QString &fileName,const QStringList &arguments)
+    {
+        unsigned requestID = nextAsyncExecID_;
+        AsyncSystemRun* cmd = new AsyncSystemRun(nextAsyncExecID_, fileName, arguments);
+        asyncExecQueue_.push_back(cmd);
+        return requestID;
+    }
+    //////////////////////////////////////////////////////
+    // Signal handlers
+    //////////////////////////////////////////////////////
+    void HandleBeginFrame(unsigned /*frameNumber*/,float /*timeStep*/)
+    {
+        /// Go through the execution queue and post + remove completed requests
+        for (std::list<AsyncExecRequest*>::iterator i = asyncExecQueue_.begin(); i != asyncExecQueue_.end();)
+        {
+            AsyncExecRequest* request = *i;
+            if (request->IsCompleted())
+            {
+                g_ioSignals.asyncExecFinished.Emit(request->GetRequestID(),request->GetExitCode());
+                delete request;
+                i = asyncExecQueue_.erase(i);
+            }
+            else
+                ++i;
+        }
+    }
+    void HandleConsoleCommand(const QString &cmd, const QString &id)
+    {
+        if (id == "FileSystem")
+            SystemCommand(cmd, true);
+    }
+    void SetExecuteConsoleCommands(bool enable)
+    {
+        if (enable == executeConsoleCommands_)
+            return;
+
+        executeConsoleCommands_ = enable;
+        if (enable)
+            g_consoleSignals.consoleCommand.Connect(this,&FileSystemPrivate::HandleConsoleCommand);
+        else
+            g_consoleSignals.consoleCommand.Disconnect(this,&FileSystemPrivate::HandleConsoleCommand);
+    }
+    int SystemCommand(const QString& commandLine, bool redirectStdOutToLog)
+    {
+        if (allowedPaths_.isEmpty())
+            return DoSystemCommand(commandLine, redirectStdOutToLog);
+        else
+        {
+            URHO3D_LOGERROR("Executing an external command is not allowed");
+            return -1;
+        }
+    }
+};
+
+
+
+FileSystem::FileSystem(Context* context) : m_context(context), d(new FileSystemPrivate)
+{
+    g_coreSignals.beginFrame.Connect(d.get(),&FileSystemPrivate::HandleBeginFrame);
 
     // Subscribe to console commands
-    SetExecuteConsoleCommands(true);
+    d->SetExecuteConsoleCommands(true);
 }
 
 FileSystem::~FileSystem()
 {
-    // If any async exec items pending, delete them
-    if (asyncExecQueue_.size())
-    {
-        for (auto & elem : asyncExecQueue_)
-            delete(elem);
-
-        asyncExecQueue_.clear();
-    }
 }
 
 bool FileSystem::SetCurrentDir(const QString& pathName)
@@ -207,30 +280,17 @@ bool FileSystem::CreateDir(const QString& pathName)
 
 void FileSystem::SetExecuteConsoleCommands(bool enable)
 {
-    if (enable == executeConsoleCommands_)
-        return;
-
-    executeConsoleCommands_ = enable;
-    if (enable)
-        g_consoleSignals.consoleCommand.Connect(this,&FileSystem::HandleConsoleCommand);
-    else
-        g_consoleSignals.consoleCommand.Disconnect(this,&FileSystem::HandleConsoleCommand);
+    d->SetExecuteConsoleCommands(enable);
 }
 
 int FileSystem::SystemCommand(const QString& commandLine, bool redirectStdOutToLog)
 {
-    if (allowedPaths_.isEmpty())
-        return DoSystemCommand(commandLine, redirectStdOutToLog, m_context);
-    else
-    {
-        URHO3D_LOGERROR("Executing an external command is not allowed");
-        return -1;
-    }
+    return d->SystemCommand(commandLine,redirectStdOutToLog);
 }
 
 int FileSystem::SystemRun(const QString& fileName, const QStringList& arguments)
 {
-    if (allowedPaths_.isEmpty())
+    if (d->allowedPaths_.isEmpty())
         return DoSystemRun(fileName, arguments);
     else
     {
@@ -241,12 +301,9 @@ int FileSystem::SystemRun(const QString& fileName, const QStringList& arguments)
 
 unsigned FileSystem::SystemCommandAsync(const QString& commandLine)
 {
-    if (allowedPaths_.isEmpty())
+    if (d->allowedPaths_.isEmpty())
     {
-        unsigned requestID = nextAsyncExecID_;
-        AsyncSystemCommand* cmd = new AsyncSystemCommand(nextAsyncExecID_, commandLine);
-        asyncExecQueue_.push_back(cmd);
-        return requestID;
+        return d->addAsyncSysCommand(commandLine);
     }
     else
     {
@@ -257,12 +314,9 @@ unsigned FileSystem::SystemCommandAsync(const QString& commandLine)
 
 unsigned FileSystem::SystemRunAsync(const QString& fileName, const QStringList& arguments)
 {
-    if (allowedPaths_.isEmpty())
+    if (d->allowedPaths_.isEmpty())
     {
-        unsigned requestID = nextAsyncExecID_;
-        AsyncSystemRun* cmd = new AsyncSystemRun(nextAsyncExecID_, fileName, arguments);
-        asyncExecQueue_.push_back(cmd);
-        return requestID;
+        return d->addAsyncSysRun(fileName,arguments);
     }
     else
     {
@@ -273,7 +327,7 @@ unsigned FileSystem::SystemRunAsync(const QString& fileName, const QStringList& 
 
 bool FileSystem::SystemOpen(const QString& fileName, const QString& mode)
 {
-    if (allowedPaths_.isEmpty())
+    if (d->allowedPaths_.isEmpty())
     {
         if (!FileExists(fileName) && !DirExists(fileName))
         {
@@ -353,12 +407,22 @@ QString FileSystem::GetCurrentDir() const
     return AddTrailingSlash(QDir::currentPath());
 }
 
+bool FileSystem::GetExecuteConsoleCommands() const
+{
+    return d->executeConsoleCommands_;
+}
+
+bool FileSystem::HasRegisteredPaths() const
+{
+    return !d->allowedPaths_.empty();
+}
+
 bool FileSystem::CheckAccess(const QString& pathName) const
 {
     QString fixedPath = AddTrailingSlash(pathName);
 
     // If no allowed directories defined, succeed always
-    if (allowedPaths_.isEmpty())
+    if (d->allowedPaths_.isEmpty())
         return true;
 
     // If there is any attempt to go to a parent directory, disallow
@@ -366,7 +430,7 @@ bool FileSystem::CheckAccess(const QString& pathName) const
         return false;
 
     // Check if the path is a partial match of any of the allowed directories
-    for (const QString &i : allowedPaths_)
+    for (const QString &i : d->allowedPaths_)
     {
         if (fixedPath.startsWith(i))
             return true;
@@ -454,24 +518,7 @@ void FileSystem::RegisterPath(const QString& pathName)
     if (pathName.isEmpty())
         return;
 
-    allowedPaths_.insert(AddTrailingSlash(pathName));
-}
-
-void FileSystem::HandleBeginFrame(unsigned /*frameNumber*/,float /*timeStep*/)
-{
-    /// Go through the execution queue and post + remove completed requests
-    for (std::list<AsyncExecRequest*>::iterator i = asyncExecQueue_.begin(); i != asyncExecQueue_.end();)
-    {
-        AsyncExecRequest* request = *i;
-        if (request->IsCompleted())
-        {
-            g_ioSignals.asyncExecFinished.Emit(request->GetRequestID(),request->GetExitCode());
-            delete request;
-            i = asyncExecQueue_.erase(i);
-        }
-        else
-            ++i;
-    }
+    d->allowedPaths_.insert(AddTrailingSlash(pathName));
 }
 
 void FileSystem::HandleConsoleCommand(const QString &cmd, const QString &id)
@@ -565,7 +612,7 @@ QString RemoveTrailingSlash(const QString& pathName)
 
 QString GetParentPath(const QString& path)
 {
-    unsigned pos = RemoveTrailingSlash(path).lastIndexOf('/');
+    int pos = RemoveTrailingSlash(path).lastIndexOf('/');
     if (pos != -1)
         return path.mid(0, pos + 1);
     else

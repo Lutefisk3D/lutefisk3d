@@ -52,47 +52,8 @@ enum AsyncLoadState
 /// Typed resource reference.
 struct LUTEFISK3D_EXPORT ResourceRef
 {
-    /// Construct.
-    ResourceRef()
-    {
-    }
-
-    /// Construct with type only and empty id.
-    ResourceRef(StringHash type) :
-        type_(type)
-    {
-    }
-
-    /// Construct with type and resource name.
-    ResourceRef(StringHash type, const QString& name) :
-        type_(type),
-        name_(name)
-    {
-    }
-    /// Construct with type and resource name.
-    ResourceRef(const QString& type, const QString& name) :
-        type_(type),
-        name_(name)
-    {
-    }
-
-    /// Construct with type and resource name.
-    ResourceRef(const char* type, const char* name) :
-        type_(type),
-        name_(name)
-    {
-    }
-    // Construct from another ResourceRef.
-    ResourceRef(const ResourceRef& rhs) :
-        type_(rhs.type_),
-        name_(rhs.name_)
-    {
-    }
-
-    /// Object type.
-    StringHash type_;
-    /// Object name.
-    QString name_;
+    StringHash type_; //!< Object type.
+    QString    name_; //!< Object name.
 
     /// Test for equality with another reference.
     bool operator == (const ResourceRef& rhs) const { return type_ == rhs.type_ && name_ == rhs.name_; }
@@ -102,10 +63,8 @@ struct LUTEFISK3D_EXPORT ResourceRef
 /// %List of typed resource references.
 struct LUTEFISK3D_EXPORT ResourceRefList
 {
-    /// Object type.
-    StringHash type_;
-    /// List of object names.
-    std::vector<QString> names_;
+    StringHash type_; //!< Object type.
+    std::vector<QString> names_; //!< List of object names.
     /// Test for equality with another reference list.
     bool operator == (const ResourceRefList& rhs) const { return type_ == rhs.type_ && names_ == rhs.names_; }
     /// Test for inequality with another reference list.

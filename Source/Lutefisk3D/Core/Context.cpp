@@ -169,7 +169,14 @@ namespace Urho3D
 class ContextPrivate
 {
 public:
-    ~ContextPrivate() {
+    ~ContextPrivate()
+    {
+        factories_.clear();
+        subsystems_.clear();
+        eventReceivers_.clear();
+        specificEventReceivers_.clear();
+        attributes_.clear();
+        networkAttributes_.clear();
         // Delete allocated event data maps
         for (VariantMap* elem : eventDataMaps_)
             delete elem;
@@ -277,13 +284,13 @@ Context::~Context()
 {
     // Remove subsystems that use SDL in reverse order of construction, so that Graphics can shut down SDL last
     /// \todo Context should not need to know about subsystems
-    m_ResourceCache.release();
+    m_ResourceCache.reset();
     RemoveSubsystem("Audio");
 #ifndef LUTEFISK3D_UILESS
-    m_UISystem.release();
+    m_UISystem.reset();
 #endif
-    m_InputSystem.release();
-    m_Renderer.release();
+    m_InputSystem.reset();
+    m_Renderer.reset();
     m_Graphics.reset();
 }
 /// Create an object by type hash. Return pointer to it or null if no factory found.

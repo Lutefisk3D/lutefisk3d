@@ -49,45 +49,18 @@ QFile::OpenMode openMode[] = {
 static const unsigned SKIP_BUFFER_SIZE = 1024;
 
 File::File(Context* context) :
-    context_(context),
-    mode_(FILE_READ),
-    handle_(nullptr),
-    readBufferOffset_(0),
-    readBufferSize_(0),
-    offset_(0),
-    checksum_(0),
-    compressed_(false),
-    readSyncNeeded_(false),
-    writeSyncNeeded_(false)
+    context_(context)
 {
 }
 
 File::File(Context* context, const QString& fileName, FileMode mode) :
-    context_(context),
-    mode_(FILE_READ),
-    handle_(nullptr),
-    readBufferOffset_(0),
-    readBufferSize_(0),
-    offset_(0),
-    checksum_(0),
-    compressed_(false),
-    readSyncNeeded_(false),
-    writeSyncNeeded_(false)
+    context_(context)
 {
     Open(fileName, mode);
 }
 
 File::File(Context* context, PackageFile* package, const QString& fileName) :
-    context_(context),
-    mode_(FILE_READ),
-    handle_(nullptr),
-    readBufferOffset_(0),
-    readBufferSize_(0),
-    offset_(0),
-    checksum_(0),
-    compressed_(false),
-    readSyncNeeded_(false),
-    writeSyncNeeded_(false)
+    context_(context)
 {
     Open(package, fileName);
 }

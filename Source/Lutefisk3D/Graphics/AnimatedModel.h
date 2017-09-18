@@ -69,8 +69,9 @@ public:
     /// Visualize the component as debug geometry.
     virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
-    /// Set model.
-    void SetModel(Model* model, bool createBones = true);
+    /// Set model, will autocreate the bones
+    void SetModel(Model* model) override { SetModelWithBones(model); }
+    void SetModelWithBones(Model* model, bool createBones = true);
     /// Add an animation.
     AnimationState* AddAnimationState(Animation* animation);
     /// Remove an animation by animation pointer.

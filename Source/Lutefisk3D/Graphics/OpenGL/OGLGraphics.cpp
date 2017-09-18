@@ -2387,8 +2387,7 @@ void Graphics::CheckFeatureSupport()
     deferredSupport_ = false;
 
     int numSupportedRTs = 1;
-    // Work around GLEW failure to check extensions properly from a GL3 context
-    instancingSupport_ = glDrawElementsInstanced != 0 && glVertexAttribDivisor != 0;
+    instancingSupport_ = true;
 
     glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &numSupportedRTs);
 

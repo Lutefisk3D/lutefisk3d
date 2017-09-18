@@ -102,8 +102,8 @@ void AnimatedModel::RegisterObject(Context* context)
     context->RegisterFactory<AnimatedModel>(GEOMETRY_CATEGORY);
 
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Model", GetModelAttr, SetModelAttr, ResourceRef, ResourceRef(Model::GetTypeStatic()), AM_DEFAULT);
-    URHO3D_ACCESSOR_ATTRIBUTE("Material", GetMaterialsAttr, SetMaterialsAttr, ResourceRefList, ResourceRefList{Material::GetTypeStatic()}, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Model", GetModelAttr, SetModelAttr, ResourceRef, {Model::GetTypeStatic()}, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Material", GetMaterialsAttr, SetMaterialsAttr, ResourceRefList, {Material::GetTypeStatic()}, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Is Occluder", bool, occluder_, false, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Cast Shadows", bool, castShadows_, false, AM_DEFAULT);
@@ -322,7 +322,7 @@ void AnimatedModel::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     }
 }
 
-void AnimatedModel::SetModel(Model* model, bool createBones)
+void AnimatedModel::SetModelWithBones(Model* model, bool createBones)
 {
     if (model == model_)
         return;
@@ -785,7 +785,7 @@ void AnimatedModel::SetModelAttr(const ResourceRef& value)
 {
     ResourceCache* cache =context_->m_ResourceCache.get();
     // When loading a scene, set model without creating the bone nodes (will be assigned later during post-load)
-    SetModel(cache->GetResource<Model>(value.name_), !loading_);
+    SetModelWithBones(cache->GetResource<Model>(value.name_), !loading_);
 }
 
 void AnimatedModel::SetBonesEnabledAttr(const VariantVector& value)

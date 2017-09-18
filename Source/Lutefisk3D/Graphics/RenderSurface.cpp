@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,25 +28,106 @@
 #include "Renderer.h"
 #include "Texture.h"
 
+using namespace gl;
 namespace Urho3D
 {
+struct RenderSurfacePrivate
+{
+    /// Viewports.
+    std::vector<SharedPtr<Viewport> > viewports_;
+    /// Linked color buffer.
+    WeakPtr<RenderSurface> linkedRenderTarget_;
+    /// Linked depth buffer.
+    WeakPtr<RenderSurface> linkedDepthStencil_;
 
+};
+RenderSurface::RenderSurface(Texture* parentTexture) :
+    d(new RenderSurfacePrivate),
+    parentTexture_(parentTexture),
+    target_(GL_TEXTURE_2D),
+    updateMode_(SURFACE_UPDATEVISIBLE)
+{
+}
 RenderSurface::~RenderSurface()
 {
     Release();
 }
 
+bool RenderSurface::CreateRenderBuffer(unsigned width, unsigned height, GLenum format, int multiSample)
+{
+    Graphics* graphics = parentTexture_->GetGraphics();
+    if (!graphics)
+        return false;
+
+    Release();
+
+    glGenRenderbuffers(1, &renderBuffer_);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer_);
+    if (multiSample > 1)
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, multiSample, format, width, height);
+    else
+        glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    return true;
+}
+void RenderSurface::OnDeviceLost()
+{
+    Graphics* graphics = parentTexture_->GetGraphics();
+    if (!graphics)
+        return;
+
+    for (unsigned i = 0; i < MAX_RENDERTARGETS; ++i)
+    {
+        if (graphics->GetRenderTarget(i) == this)
+            graphics->ResetRenderTarget(i);
+    }
+
+    if (graphics->GetDepthStencil() == this)
+        graphics->ResetDepthStencil();
+
+    // Clean up also from non-active FBOs
+    graphics->CleanupRenderSurface(this);
+
+    renderBuffer_ = 0;
+}
+
+void RenderSurface::Release()
+{
+    Graphics* graphics = parentTexture_->GetGraphics();
+    if (!graphics)
+        return;
+
+    if (!graphics->IsDeviceLost())
+    {
+        for (unsigned i = 0; i < MAX_RENDERTARGETS; ++i)
+        {
+            if (graphics->GetRenderTarget(i) == this)
+                graphics->ResetRenderTarget(i);
+        }
+
+        if (graphics->GetDepthStencil() == this)
+            graphics->ResetDepthStencil();
+
+        // Clean up also from non-active FBOs
+        graphics->CleanupRenderSurface(this);
+
+        if (renderBuffer_)
+            glDeleteRenderbuffersEXT(1, &renderBuffer_);
+    }
+
+    renderBuffer_ = 0;
+}
 void RenderSurface::SetNumViewports(unsigned num)
 {
-    viewports_.resize(num);
+    d->viewports_.resize(num);
 }
 
 void RenderSurface::SetViewport(unsigned index, Viewport* viewport)
 {
-    if (index >= viewports_.size())
-        viewports_.resize(index + 1);
+    if (index >= d->viewports_.size())
+        d->viewports_.resize(index + 1);
 
-    viewports_[index] = viewport;
+    d->viewports_[index] = viewport;
 }
 
 void RenderSurface::SetUpdateMode(RenderSurfaceUpdateMode mode)
@@ -57,20 +138,20 @@ void RenderSurface::SetUpdateMode(RenderSurfaceUpdateMode mode)
 void RenderSurface::SetLinkedRenderTarget(RenderSurface* renderTarget)
 {
     if (renderTarget != this)
-        linkedRenderTarget_ = renderTarget;
+        d->linkedRenderTarget_ = renderTarget;
 }
 
 void RenderSurface::SetLinkedDepthStencil(RenderSurface* depthStencil)
 {
     if (depthStencil != this)
-        linkedDepthStencil_ = depthStencil;
+        d->linkedDepthStencil_ = depthStencil;
 }
 
 void RenderSurface::QueueUpdate()
 {
     updateQueued_ = true;
 }
-
+/// Reset update queued flag. Called internally.
 void RenderSurface::ResetUpdateQueued()
 {
     updateQueued_ = false;
@@ -101,9 +182,23 @@ bool RenderSurface::GetAutoResolve() const
     return parentTexture_->GetAutoResolve();
 }
 
-Viewport* RenderSurface::GetViewport(unsigned index) const
+unsigned RenderSurface::GetNumViewports() const
 {
-    return index < viewports_.size() ? viewports_[index] : nullptr;
+    return d->viewports_.size();
 }
 
+Viewport* RenderSurface::GetViewport(unsigned index) const
+{
+    return index < d->viewports_.size() ? d->viewports_[index] : nullptr;
+}
+
+RenderSurface *RenderSurface::GetLinkedRenderTarget() const
+{
+    return d->linkedRenderTarget_;
+}
+
+RenderSurface *RenderSurface::GetLinkedDepthStencil() const
+{
+    return d->linkedDepthStencil_;
+}
 }

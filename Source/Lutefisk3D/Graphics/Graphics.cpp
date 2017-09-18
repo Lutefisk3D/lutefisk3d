@@ -264,10 +264,15 @@ void Graphics::AddGPUObject(GPUObject* object)
 void Graphics::RemoveGPUObject(GPUObject* object)
 {
     MutexLock lock(gpuObjectMutex_);
+    if(gpuObjects_.empty())
+    {
+        // this might happen if Graphics subsystem is shutting down.
+        return;
+    }
     auto iter = std::find(gpuObjects_.begin(),gpuObjects_.end(),object);
-    if(iter==gpuObjects_.end())
+    if(iter==gpuObjects_.end()) {
         URHO3D_LOGDEBUG("Graphics::RemoveGPUObject called multiple times on same object");
-
+    }
 
     gpuObjects_.erase(iter);
 }

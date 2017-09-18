@@ -137,6 +137,7 @@ UIElement::UIElement(Context* context) :
     pivot_(std::numeric_limits<float>::max(), std::numeric_limits<float>::max()),
     pivotSet_(false)
 {
+    initSignals(context->m_signal_allocator);
     SetEnabled(false);
 }
 

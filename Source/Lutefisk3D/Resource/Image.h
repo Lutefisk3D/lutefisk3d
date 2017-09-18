@@ -47,6 +47,7 @@ enum CompressedFormat : unsigned
     CF_PVRTC_RGB_4BPP,
     CF_PVRTC_RGBA_4BPP,
 };
+
 enum class ImageSet : uint8_t {
     SINGLE,
     ARRAY,   //!< Texture array status if DDS.
@@ -105,6 +106,7 @@ public:
     /// Whether this texture is in sRGB, only relevant for DDS.
     bool IsSRGB() const { return sRGB_; }
 
+
     Color GetPixel(int x, int y) const;
     Color GetPixel(int x, int y, int z) const;
     unsigned GetPixelInt(int x, int y) const;
@@ -151,9 +153,9 @@ private:
     unsigned                   components_          = 0;       ///< Number of color components.
     unsigned                   numCompressedLevels_ = 0;       ///< Number of compressed mip levels.
     CompressedFormat           compressedFormat_    = CF_NONE; ///< Compressed format.
-    std::unique_ptr<uint8_t[]> data_;                          ///< Pixel data.
-    SharedPtr<Image>           nextLevel_;                     ///< Precalculated mip level image.
-    SharedPtr<Image>           nextSibling_;                   ///< Next texture array or cube map image.
+    std::unique_ptr<uint8_t[]> data_;                ///< Pixel data.
+    SharedPtr<Image>           nextLevel_;           ///< Precalculated mip level image.
+    SharedPtr<Image>           nextSibling_;         ///< Next texture array or cube map image.
     ImageSet                   imageset_=ImageSet::SINGLE;
     bool                       sRGB_    = false;               ///< Data is sRGB.
 };

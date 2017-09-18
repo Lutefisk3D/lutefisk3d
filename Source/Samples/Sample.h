@@ -76,9 +76,9 @@ protected:
     /// Camera scene node.
     Urho3D::SharedPtr<Urho3D::Node> cameraNode_;
     /// Camera yaw angle.
-    float yaw_;
+    float yaw_=0;
     /// Camera pitch angle.
-    float pitch_;
+    float pitch_=0;
     /// Mouse mode option to use in the sample.
     Urho3D::MouseMode useMouseMode_;
 private:

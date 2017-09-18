@@ -666,9 +666,9 @@ void BatchGroup::Draw(View *view, Camera *camera, bool allowDepthWrite) const
 
         // Get the geometry vertex buffers, then add the instancing stream buffer
         // Hack: use a const_cast to avoid dynamic allocation of new temp vectors
-        std::vector<SharedPtr<VertexBuffer>> &vertexBuffers =
-                const_cast<std::vector<SharedPtr<VertexBuffer>> &>(geometry_->GetVertexBuffers());
-        vertexBuffers.emplace_back(SharedPtr<VertexBuffer>(instanceBuffer));
+        std::vector<VertexBuffer *> &vertexBuffers =
+                const_cast<std::vector<VertexBuffer *> &>(geometry_->GetVertexBuffers());
+        vertexBuffers.emplace_back(instanceBuffer);
 
         graphics->SetIndexBuffer(geometry_->GetIndexBuffer());
         graphics->SetVertexBuffers(vertexBuffers, startIndex_);

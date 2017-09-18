@@ -142,9 +142,7 @@ public:
     /// Set vertex buffer.
     void SetVertexBuffer(VertexBuffer* buffer);
     /// Set multiple vertex buffers.
-    bool SetVertexBuffers(const std::vector<VertexBuffer*>& buffers, unsigned instanceOffset = 0);
-    /// Set multiple vertex buffers.
-    bool SetVertexBuffers(const std::vector<SharedPtr<VertexBuffer> >& buffers, unsigned instanceOffset = 0);
+    bool SetVertexBuffers(const std::vector<Urho3D::VertexBuffer *> &buffers, unsigned instanceOffset = 0);
     /// Set index buffer.
     void SetIndexBuffer(IndexBuffer* buffer);
     /// Set shaders.

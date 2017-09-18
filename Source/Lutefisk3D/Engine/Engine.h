@@ -41,7 +41,7 @@ public:
     /// Construct.
     Engine(Context* context);
     /// Destruct. Free all subsystems.
-    virtual ~Engine();
+    virtual ~Engine() = default;
 
     bool Initialize(const VariantMap& parameters);
     bool InitializeResourceCache(const VariantMap& parameters, bool removeOld = true);

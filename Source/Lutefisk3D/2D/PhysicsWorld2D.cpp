@@ -955,8 +955,8 @@ void PhysicsWorld2D::OnSceneSet(Scene *scene)
     if (scene)
         scene->sceneSubsystemUpdate.Connect(this,&PhysicsWorld2D::HandleSceneSubsystemUpdate);
     else {
-        assert(GetScene());
-        GetScene()->sceneSubsystemUpdate.Disconnect(this,&PhysicsWorld2D::HandleSceneSubsystemUpdate);
+        if(GetScene())
+            GetScene()->sceneSubsystemUpdate.Disconnect(this);
     }
 }
 

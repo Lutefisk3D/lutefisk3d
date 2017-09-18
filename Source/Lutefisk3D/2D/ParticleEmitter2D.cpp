@@ -177,15 +177,13 @@ ResourceRef ParticleEmitter2D::GetSpriteAttr() const
 
 void ParticleEmitter2D::OnSceneSet(Scene* scene)
 {
-    Scene* old_scene = scene; // todo: shouldn't this always unsubscribe from 'old' scene ?
+    Scene* old_scene = GetScene(); // todo: shouldn't this always unsubscribe from 'old' scene ?
     Drawable2D::OnSceneSet(scene);
 
+    if(old_scene && old_scene!=scene)
+        old_scene->scenePostUpdate.Disconnect(this);
     if (scene && IsEnabledEffective())
         scene->scenePostUpdate.Connect(this,&ParticleEmitter2D::HandleScenePostUpdate);
-    else if(!scene) {
-        assert(old_scene);
-        old_scene->scenePostUpdate.Disconnect(this,&ParticleEmitter2D::HandleScenePostUpdate);
-    }
 }
 
 void ParticleEmitter2D::OnWorldBoundingBoxUpdate()

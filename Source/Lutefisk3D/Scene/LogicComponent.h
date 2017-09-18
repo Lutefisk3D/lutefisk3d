@@ -26,25 +26,27 @@
 
 namespace Urho3D
 {
+enum SceneEventFlags : uint8_t {
+    /// Bitmask for using the scene update event.
+    USE_UPDATE = 0x1,
+    /// Bitmask for using the scene post-update event.
+    USE_POSTUPDATE = 0x2,
+    /// Bitmask for using the physics update event.
+    USE_FIXEDUPDATE = 0x4,
+    /// Bitmask for using the physics post-update event.
+    USE_FIXEDPOSTUPDATE = 0x8,
 
-/// Bitmask for using the scene update event.
-static const unsigned char USE_UPDATE = 0x1;
-/// Bitmask for using the scene post-update event.
-static const unsigned char USE_POSTUPDATE = 0x2;
-/// Bitmask for using the physics update event.
-static const unsigned char USE_FIXEDUPDATE = 0x4;
-/// Bitmask for using the physics post-update event.
-static const unsigned char USE_FIXEDPOSTUPDATE = 0x8;
+};
 
 /// Helper base class for user-defined game logic components that hooks up to update events and forwards them to virtual functions similar to ScriptInstance class.
 class LUTEFISK3D_EXPORT LogicComponent : public Component
 {
-    URHO3D_OBJECT(LogicComponent,Component);
+    URHO3D_OBJECT(LogicComponent,Component)
 
     /// Construct.
     LogicComponent(Context* context);
     /// Destruct.
-    virtual ~LogicComponent() = default;
+    ~LogicComponent() override = default;
 
     /// Handle enabled/disabled state change. Changes update event subscription.
     virtual void OnSetEnabled() override;

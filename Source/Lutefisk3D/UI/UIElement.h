@@ -121,7 +121,7 @@ public:
     /// Construct.
     UIElement(Context* context);
     /// Destruct.
-    virtual ~UIElement();
+    ~UIElement() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 

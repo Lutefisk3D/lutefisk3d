@@ -45,7 +45,7 @@ enum CollisionEventMode
     COLLISION_ACTIVE,
     COLLISION_ALWAYS
 };
-
+struct RigidBodyPrivate;
 /// Physics rigid body component.
 class LUTEFISK3D_EXPORT RigidBody : public Component
 {
@@ -245,7 +245,7 @@ private:
     /// Handle SmoothedTransform target rotation update.
     void HandleTargetRotation();
 
-    struct RigidBodyPrivate *private_data;
+    std::unique_ptr<RigidBodyPrivate> private_data;
     /// Physics world.
     WeakPtr<PhysicsWorld> physicsWorld_;
     /// Smoothed transform, if has one.

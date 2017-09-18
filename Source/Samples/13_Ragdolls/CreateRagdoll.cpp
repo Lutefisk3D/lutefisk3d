@@ -25,8 +25,10 @@
 #include <Lutefisk3D/Graphics/AnimatedModel.h>
 #include <Lutefisk3D/IO/Log.h>
 #include <Lutefisk3D/Scene/Node.h>
+#include <Lutefisk3D/Scene/Scene.h>
 #include <Lutefisk3D/Physics/RigidBody.h>
 #include <Lutefisk3D/Physics/PhysicsEvents.h>
+#include <Lutefisk3D/Physics/PhysicsWorld.h>
 
 
 CreateRagdoll::CreateRagdoll(Context* context) :
@@ -38,17 +40,27 @@ void CreateRagdoll::OnNodeSet(Node* node)
 {
     // If the node pointer is non-null, this component has been created into a scene node. Subscribe to physics collisions that
     // concern this scene node
-    if (node)
-        SubscribeToEvent(node, E_NODECOLLISION, URHO3D_HANDLER(CreateRagdoll, HandleNodeCollision));
+    if (node) {
+        Scene *s = node->GetScene();
+        assert(s->GetComponent<PhysicsWorld>());
+        s->GetComponent<PhysicsWorld>()->connectNodeCollision(node,this,&CreateRagdoll::HandleNodeCollision);
+    }
 }
 
-void CreateRagdoll::HandleNodeCollision(StringHash eventType, VariantMap& eventData)
+void CreateRagdoll::OnSceneSet(Scene *scene)
 {
-    using namespace NodeCollision;
 
-    // Get the other colliding body, make sure it is moving (has nonzero mass)
-    RigidBody* otherBody = static_cast<RigidBody*>(eventData[P_OTHERBODY].GetPtr());
+    if(!scene && GetNode() && GetScene()) {
+        Scene *s = GetScene();
+        assert(s->GetComponent<PhysicsWorld>());
+        s->GetComponent<PhysicsWorld>()->disconnectNodeCollision(GetNode(),this);
+    }
+}
 
+
+void CreateRagdoll::HandleNodeCollision(RigidBody *, Node *, RigidBody *otherBody, bool, const std::vector<uint8_t> &)
+{
+    // Make sure the other colliding body is moving (has nonzero mass)
     if (otherBody->GetMass() > 0.0f)
     {
         // We do not need the physics components in the AnimatedModel's root scene node anymore

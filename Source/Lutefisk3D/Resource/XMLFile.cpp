@@ -117,7 +117,7 @@ bool XMLFile::BeginLoad(Deserializer& source)
         document_.reset(new pugi::xml_document());
         document_->reset(*inheritedXMLFile->document_);
         Patch(rootElem);
-        patchDocument.release();
+        patchDocument.reset();
 
         // Store resource dependencies so we know when to reload/repatch when the inherited resource changes
         cache->StoreResourceDependency(this, inherit);

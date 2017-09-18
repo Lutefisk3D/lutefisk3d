@@ -667,7 +667,7 @@ void Serializable::ResetToDefault()
 
 void Serializable::RemoveInstanceDefault()
 {
-    instanceDefaultValues_.release();
+    instanceDefaultValues_.reset();
 }
 
 void Serializable::SetTemporary(bool enable)

@@ -27,27 +27,28 @@
 
 namespace Urho3D
 {
+
 enum AttributeKind : unsigned
 {
-    /// Attribute shown only in the editor, but not serialized.
+/// Attribute shown only in the editor, but not serialized.
     AM_EDIT = 0x0,
-    /// Attribute used for file serialization.
+/// Attribute used for file serialization.
     AM_FILE = 0x1,
-    /// Attribute used for network replication.
+/// Attribute used for network replication.
     AM_NET = 0x2,
-    /// Attribute used for both file serialization and network replication (default).
+/// Attribute used for both file serialization and network replication (default).
     AM_DEFAULT = AM_FILE | AM_NET,
-    /// Attribute should use latest data grouping instead of delta update in network replication.
+/// Attribute should use latest data grouping instead of delta update in network replication.
     AM_LATESTDATA = 0x4,
-    /// Attribute should not be shown in the editor.
+/// Attribute should not be shown in the editor.
     AM_NOEDIT = 0x8,
-    /// Attribute is a node ID and may need rewriting.
+/// Attribute is a node ID and may need rewriting.
     AM_NODEID = 0x10,
-    /// Attribute is a component ID and may need rewriting.
+/// Attribute is a component ID and may need rewriting.
     AM_COMPONENTID = 0x20,
-    /// Attribute is a node ID vector where first element is the amount of nodes.
+/// Attribute is a node ID vector where first element is the amount of nodes.
     AM_NODEIDVECTOR = 0x40,
-    /// Attribute is readonly. Can't be used with binary serialized objects.
+/// Attribute is readonly. Can't be used with binary serialized objects.
     AM_FILEREADONLY = 0x80 | AM_FILE
 };
 class Serializable;

@@ -171,9 +171,10 @@ void AnimatedSprite2D::OnSceneSet(Scene* scene)
         if (IsEnabledEffective())
             scene->scenePostUpdate.Connect(this,&AnimatedSprite2D::HandleScenePostUpdate);
     }
-    else {
-        assert(GetScene());
-        GetScene()->scenePostUpdate.Disconnect(this,&AnimatedSprite2D::HandleScenePostUpdate);
+    else
+    {
+        if(GetScene())
+            GetScene()->scenePostUpdate.Disconnect(this);
     }
 }
 

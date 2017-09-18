@@ -88,6 +88,7 @@ extern const char* PHYSICS_CATEGORY;
 
 RigidBody::RigidBody(Context* context) :
     Component(context),
+    private_data(new RigidBodyPrivate(this)),
     gravityOverride_(Vector3::ZERO),
     centerOfMass_(Vector3::ZERO),
     mass_(DEFAULT_MASS),
@@ -989,7 +990,7 @@ void RigidBody::AddBodyToWorld()
     {
         // Correct inertia will be calculated below
         btVector3 localInertia(0.0f, 0.0f, 0.0f);
-        private_data->body_.reset(new btRigidBody(mass_, private_data, private_data->shiftedCompoundShape_.get(), localInertia));
+        private_data->body_.reset(new btRigidBody(mass_, private_data.get(), private_data->shiftedCompoundShape_.get(), localInertia));
         private_data->body_->setUserPointer(this);
 
         // Check for existence of the SmoothedTransform component, which should be created by now in network client mode.

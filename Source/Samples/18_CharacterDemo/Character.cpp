@@ -57,8 +57,6 @@ void Character::RegisterObject(Context* context)
 
 void Character::Start()
 {
-    // Component has been inserted into its scene node. Subscribe to events now
-    SubscribeToEvent(GetNode(), E_NODECOLLISION, URHO3D_HANDLER(Character, HandleNodeCollision));
 }
 
 void Character::FixedUpdate(float timeStep)
@@ -129,12 +127,11 @@ void Character::FixedUpdate(float timeStep)
     onGround_ = false;
 }
 
-void Character::HandleNodeCollision(StringHash eventType, VariantMap& eventData)
+void Character::HandleNodeCollision(RigidBody *, Node *, RigidBody *, bool, const std::vector<uint8_t> &contacts_buf)
 {
     // Check collision contacts and see if character is standing on ground (look for a contact that has near vertical normal)
-    using namespace NodeCollision;
 
-    MemoryBuffer contacts(eventData[P_CONTACTS].GetBuffer());
+    MemoryBuffer contacts(contacts_buf);
 
     while (!contacts.IsEof())
     {
@@ -146,9 +143,21 @@ void Character::HandleNodeCollision(StringHash eventType, VariantMap& eventData)
         // If contact is below node center and mostly vertical, assume it's a ground contact
         if (contactPosition.y_ < (node_->GetPosition().y_ + 1.0f))
         {
-            float level = Abs(contactNormal.y_);
-            if (level > 0.75)
+            float level = std::abs(contactNormal.y_);
+            if (level > 0.75f)
                 onGround_ = true;
         }
     }
+}
+
+void Character::OnNodeSet(Node *node)
+{
+    // Component has been inserted into its scene node. Subscribe to events now
+    if(node)
+    {
+        auto p_world=node->GetScene()->GetComponent<PhysicsWorld>();
+        p_world->connectNodeCollision(node,this,&Character::HandleNodeCollision);
+    }
+
+    LogicComponent::OnNodeSet(node);
 }

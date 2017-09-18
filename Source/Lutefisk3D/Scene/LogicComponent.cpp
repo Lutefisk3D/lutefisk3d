@@ -91,10 +91,11 @@ void LogicComponent::OnSceneSet(Scene* scene)
         UpdateEventSubscription();
     else
     {
-        Scene *scene = GetScene();
-        assert(scene);
+        Scene *oldscene = GetScene();
         g_sceneSignals.sceneUpdate.Disconnect(this,&LogicComponent::HandleSceneUpdate);
-        scene->scenePostUpdate.Disconnect(this,&LogicComponent::HandleScenePostUpdate);
+        if(oldscene)
+            oldscene->scenePostUpdate.Disconnect(this,&LogicComponent::HandleScenePostUpdate);
+
 #if defined(LUTEFISK3D_PHYSICS) || defined(LUTEFISK3D_URHO2D)
         PhysicsSignals *signal_source = GetFixedSignalSource();
         if(signal_source) {

@@ -151,6 +151,7 @@ void RenderSurface::QueueUpdate()
 {
     updateQueued_ = true;
 }
+
 /// Reset update queued flag. Called internally.
 void RenderSurface::ResetUpdateQueued()
 {

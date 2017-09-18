@@ -58,7 +58,6 @@ public:
     }
 
     void SetAllocator( ScopedAllocator* pAllocator ) { m_oConnections.Init( pAllocator ); }
-    unsigned CountConnections() const override { return m_oConnections.size(); }
 
     // Connects non-instance functions.
     void Connect( void (*fpFunction)(Types...) )
@@ -335,7 +334,6 @@ public:
     }
 
     void SetAllocator( ScopedAllocator* pAllocator ) { m_oConnections.Init( pAllocator ); }
-    unsigned CountConnections() const { return m_oConnections.size(); }
 
     // Connects non-instance functions.
     void Connect( void (*fpFunction)(void) )

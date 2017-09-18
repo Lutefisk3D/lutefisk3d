@@ -74,6 +74,8 @@ void Ragdolls::Start()
 
     // Hook up to the frame update and render post-update events
     SubscribeToEvents();
+    Sample::InitMouseMode(MM_FREE);
+
 }
 
 void Ragdolls::CreateScene()

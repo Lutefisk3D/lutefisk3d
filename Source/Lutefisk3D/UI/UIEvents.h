@@ -116,7 +116,23 @@ struct UiElementSignals  {
     jl::Signal<UIElement *,int,int,IntVector2,int,int,int,int> dragMove;
     /// Drag of a UI Element was canceled by pressing ESC
     jl::Signal<UIElement *,int,int,int,int,int,int> dragCancel;
-
+    void initSignals(jl::ScopedAllocator *allocator)
+    {
+        nameChanged.SetAllocator(allocator);
+        resized.SetAllocator(allocator);
+        click.SetAllocator(allocator);
+        clickEnd.SetAllocator(allocator);
+        doubleClick.SetAllocator(allocator);
+        layoutUpdated.SetAllocator(allocator);
+        focused.SetAllocator(allocator);
+        defocused.SetAllocator(allocator);
+        hoverBegin.SetAllocator(allocator);
+        hoverEnd.SetAllocator(allocator);
+        dragBegin.SetAllocator(allocator);
+        dragEnd.SetAllocator(allocator);
+        dragMove.SetAllocator(allocator);
+        dragCancel.SetAllocator(allocator);
+    }
 };
 
 struct UIButtonSignals {

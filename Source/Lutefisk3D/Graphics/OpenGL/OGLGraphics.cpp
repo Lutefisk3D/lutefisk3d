@@ -97,11 +97,11 @@ static const GLenum glCmpFunc[] =
     GL_GEQUAL
 };
 static const std::pair<GLenum,GLenum> glTranslatedBlend[MAX_BLENDMODES] = {
-    {GL_ONE,GL_ZERO},
-    {GL_ONE,GL_ONE},
-    {GL_DST_COLOR,GL_ZERO},
-    {GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA},
-    {GL_SRC_ALPHA,GL_ONE},
+    {GL_ONE,GL_ZERO},   //BLEND_REPLACE
+    {GL_ONE,GL_ONE},    //BLEND_ADD
+    {GL_DST_COLOR,GL_ZERO},//BLEND_MULTIPLY
+    {GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA}, //BLEND_ALPHA
+    {GL_SRC_ALPHA,GL_ONE},                 //BLEND_ADDALPHA
     {GL_ONE,GL_ONE_MINUS_SRC_ALPHA},
     {GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA},
     {GL_ONE,GL_ONE}, // subtract
@@ -845,7 +845,7 @@ bool Graphics::SetVertexBuffers(const std::vector<VertexBuffer*>& buffers, unsig
 
     for (unsigned i = 0; i < MAX_VERTEX_STREAMS; ++i)
     {
-        VertexBuffer* buffer = 0;
+        VertexBuffer* buffer = nullptr;
         if (i < buffers.size())
             buffer = buffers[i];
         if (buffer != vertexBuffers_[i])
@@ -856,11 +856,6 @@ bool Graphics::SetVertexBuffers(const std::vector<VertexBuffer*>& buffers, unsig
     }
 
     return true;
-}
-
-bool Graphics::SetVertexBuffers(const std::vector<SharedPtr<VertexBuffer>> & buffers, unsigned instanceOffset)
-{
-    return SetVertexBuffers(reinterpret_cast<const std::vector<VertexBuffer*>&>(buffers), instanceOffset);
 }
 
 void Graphics::SetIndexBuffer(IndexBuffer* buffer)

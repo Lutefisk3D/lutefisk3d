@@ -364,7 +364,7 @@ bool AnimationSet2D::EndLoadSpriter()
 
 void AnimationSet2D::Dispose()
 {
-    spriterData_.release();
+    spriterData_.reset();
     sprite_.Reset();
     spriteSheet_.Reset();
     spriterFileSprites_.clear();

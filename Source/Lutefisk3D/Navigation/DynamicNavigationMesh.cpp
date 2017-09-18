@@ -1054,8 +1054,8 @@ void DynamicNavigationMesh::OnSceneSet(Scene* scene)
     if (scene)
         scene->sceneSubsystemUpdate.Connect(this,&DynamicNavigationMesh::HandleSceneSubsystemUpdate);
     else {
-        assert(GetScene());
-        GetScene()->sceneSubsystemUpdate.Disconnect(this, &DynamicNavigationMesh::HandleSceneSubsystemUpdate);
+        if(GetScene())
+            GetScene()->sceneSubsystemUpdate.Disconnect(this);
     }
 }
 

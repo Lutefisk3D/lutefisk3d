@@ -1119,7 +1119,7 @@ void AnimatedModel::CloneGeometries()
 
             // Add an additional vertex stream into the clone, which supplies only the morphable vertex data, while the static
             // data comes from the original vertex buffer(s)
-            const std::vector<SharedPtr<VertexBuffer> >& originalBuffers = original->GetVertexBuffers();
+            const std::vector<VertexBuffer *>& originalBuffers = original->GetVertexBuffers();
             unsigned totalBuf = originalBuffers.size();
             for (VertexBuffer* originalBuffer : originalBuffers)
             {

@@ -74,6 +74,7 @@ void StaticModel::RegisterObject(Context* context)
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
     URHO3D_ATTRIBUTE("Occlusion LOD Level", int, occlusionLodLevel_, M_MAX_UNSIGNED, AM_DEFAULT);
 }
+
 /// Process octree raycast. May be called from a worker thread.
 void StaticModel::ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results)
 {
@@ -132,6 +133,7 @@ void StaticModel::ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQu
         break;
     }
 }
+
 /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
 void StaticModel::UpdateBatches(const FrameInfo& frame)
 {
@@ -156,6 +158,7 @@ void StaticModel::UpdateBatches(const FrameInfo& frame)
         CalculateLodLevels();
     }
 }
+
 /// Return the geometry for a specific LOD level.
 Geometry* StaticModel::GetLodGeometry(unsigned batchIndex, unsigned level)
 {
@@ -168,6 +171,7 @@ Geometry* StaticModel::GetLodGeometry(unsigned batchIndex, unsigned level)
     else
         return batches_[batchIndex].geometry_;
 }
+
 /// Return number of occlusion geometry triangles.
 unsigned StaticModel::GetNumOccluderTriangles()
 {
@@ -189,6 +193,7 @@ unsigned StaticModel::GetNumOccluderTriangles()
 
     return triangles;
 }
+
 /// Draw to occlusion buffer. Return true if did not run out of triangles.
 bool StaticModel::DrawOcclusion(OcclusionBuffer* buffer)
 {
@@ -358,12 +363,14 @@ bool StaticModel::IsInsideLocal(const Vector3& point) const
 
     return false;
 }
+
 /// Set local-space bounding box.
 void StaticModel::SetBoundingBox(const BoundingBox& box)
 {
     boundingBox_ = box;
     OnMarkedDirty(node_);
 }
+
 /// Set number of geometries.
 void StaticModel::SetNumGeometries(unsigned num)
 {
@@ -404,6 +411,7 @@ void StaticModel::OnWorldBoundingBoxUpdate()
 {
     worldBoundingBox_ = boundingBox_.Transformed(node_->GetWorldTransform());
 }
+
 /// Reset LOD levels.
 void StaticModel::ResetLodLevels()
 {
@@ -419,6 +427,7 @@ void StaticModel::ResetLodLevels()
     // Find out the real LOD levels on next geometry update
     lodDistance_ = M_INFINITY;
 }
+
 /// Choose LOD levels based on distance.
 void StaticModel::CalculateLodLevels()
 {

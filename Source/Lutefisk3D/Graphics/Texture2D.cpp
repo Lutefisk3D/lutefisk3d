@@ -38,7 +38,6 @@
 #include "Lutefisk3D/Resource/XMLFile.h"
 
 using namespace gl;
-
 namespace Urho3D
 {
 
@@ -57,6 +56,7 @@ void Texture2D::RegisterObject(Context* context)
 {
     context->RegisterFactory<Texture2D>();
 }
+
 /// Load resource from stream. May be called from a worker thread. Return true if successful.
 bool Texture2D::BeginLoad(Deserializer& source)
 {
@@ -90,6 +90,7 @@ bool Texture2D::BeginLoad(Deserializer& source)
 
     return true;
 }
+
 /// Finish resource loading. Always called from the main thread. Return true if successful.
 bool Texture2D::EndLoad()
 {

@@ -15,20 +15,20 @@ template<typename _T>
 class DoublyLinkedList
 {
 public:
-    
+
     //////////////////
     // Data structures
     //////////////////
-    
+
     typedef _T TObject;
-    
+
     struct Node
     {
         TObject object;
         Node* prev;
         Node* next;
     };
-    
+
     class iterator
     {
     public:
@@ -37,24 +37,24 @@ public:
         {
             return m_pCurrent->object;
         }
-        
+
         TObject& operator->()
         {
             return m_pCurrent->object;
         }
-        
+
         iterator& operator++()
         {
             JL_ASSERT( m_pCurrent );
-            
+
             if ( m_pCurrent )
             {
                 m_pCurrent = m_pCurrent->next;
             }
-            
+
             return *this;
         }
-        
+
         bool operator==( const iterator& other ) const
         {
             return m_pList == other.m_pList && m_pCurrent == other.m_pCurrent;
@@ -64,13 +64,13 @@ public:
         {
             return m_pList != nullptr && m_pCurrent != nullptr;
         }
-        
+
     private:
         friend class DoublyLinkedList<TObject>;
         DoublyLinkedList<TObject>* m_pList;
         Node* m_pCurrent;
     };
-    
+
     class const_iterator
     {
     public:
@@ -80,7 +80,7 @@ public:
         {
             return m_pCurrent->object;
         }
-        
+
         const TObject& operator->()
         {
             return m_pCurrent->object;
@@ -88,12 +88,12 @@ public:
         const_iterator& operator++()
         {
             JL_ASSERT( m_pCurrent );
-            
+
             if ( m_pCurrent )
             {
                 m_pCurrent = m_pCurrent->next;
             }
-            
+
             return *this;
         }
         bool operator!=(const const_iterator &other) const { return m_pCurrent!=other.m_pCurrent || m_pList!=other.m_pList; }
@@ -101,45 +101,45 @@ public:
         {
             return m_pList == other.m_pList && m_pCurrent == other.m_pCurrent;
         }
-        
+
         bool isValid() const
         {
             return m_pList != nullptr && m_pCurrent != nullptr;
         }
-        
+
     private:
         friend class DoublyLinkedList<TObject>;
         const DoublyLinkedList<TObject>* m_pList;
         const Node* m_pCurrent;
     };
-    
+
     /////////////////////
     // Internal interface
     /////////////////////
-    
+
 private:
     Node* CreateNode()
     {
         Node* pNode = new(m_pNodeAllocator->Alloc( sizeof(Node) ))Node;
-        
+
         if ( ! pNode )
         {
             return nullptr;
         }
-        
+
         // Initialize node pointers
         pNode->next = nullptr;
         pNode->prev = nullptr;
-        
+
         return pNode;
     }
-    
+
     ///////////////////
     // Public interface
     ///////////////////
-    
+
 public:
-    
+
     DoublyLinkedList()
     {
         m_pHead = nullptr;
@@ -147,32 +147,32 @@ public:
         m_nObjectCount = 0;
         m_pNodeAllocator = nullptr;
     }
-    
+
     ~DoublyLinkedList()
     {
         clear();
     }
-    
+
     void Init( ScopedAllocator* pNodeAllocator )
     {
         m_pNodeAllocator = pNodeAllocator;
     }
-    
+    ScopedAllocator* getAllocator() { return m_pNodeAllocator; }
     // Returns true if the object was successfully added
     Node* Add( const TObject& object )
     {
         // Create a node to contain the object.
         Node* pNode = CreateNode();
         JL_ASSERT( pNode );
-        
+
         if ( ! pNode )
         {
             return nullptr;
         }
-        
+
         // Place the object in the node.
         pNode->object = object;
-        
+
         // Add node to the end of the list.
         if ( m_pTail )
         {
@@ -186,10 +186,10 @@ public:
             m_pHead = pNode;
             m_pTail = pNode;
         }
-        
+
         // Update object count
         m_nObjectCount += 1;
-        
+
         return pNode;
     }
     // Returns true if the object at the iterator position was successfully removed
@@ -198,42 +198,40 @@ public:
     {
         JL_ASSERT( i.m_pList == this );
         if ( i.m_pList != this )
-        {
             return false;
-        }
-        
+
         Node* pNext = i.m_pCurrent->next;
         if ( RemoveNode(i.m_pCurrent) )
         {
             i.m_pCurrent = pNext;
             return true;
         }
-        
+
         return false;
-    }    
+    }
     unsigned size() const
     {
         return m_nObjectCount;
     }
-    
+
     void clear()
     {
         Node* pCurrent = nullptr;
         Node* pNext = m_pHead;
-        
+
         while ( pNext )
         {
             pCurrent = pNext;
             pNext = pCurrent->next;
-            
+
             m_pNodeAllocator->Free( pCurrent );
         }
-        
+
         m_pHead = nullptr;
         m_pTail = nullptr;
         m_nObjectCount = 0;
     }
-    
+
     // Iterator interface
     iterator begin() { return {this,m_pHead}; }
     iterator end() { return {this,nullptr}; }
@@ -246,41 +244,31 @@ private:
     {
         JL_ASSERT( m_nObjectCount );
         if ( ! m_nObjectCount )
-        {
             return false;
-        }
-        
+
         // Re-assign head/tail pointers, if necessary
         if ( m_pHead == pNode )
-        {
             m_pHead = pNode->next;
-        }
-        
+
         if ( m_pTail == pNode )
-        {
             m_pTail = pNode->prev;
-        }
-        
+
         // Reassign links between previous/next buckets
         if ( pNode->prev )
-        {
             pNode->prev->next = pNode->next;
-        }
-        
+
         if ( pNode->next )
-        {
             pNode->next->prev = pNode->prev;
-        }
-        
+
         // Update object count
         m_nObjectCount -= 1;
-        
+
         // Free node object
         m_pNodeAllocator->Free( pNode );
-        
+
         return true;
     }
-    
+
     Node* m_pHead;
     Node* m_pTail;
     unsigned m_nObjectCount;

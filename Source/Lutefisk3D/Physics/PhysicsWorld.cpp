@@ -173,7 +173,7 @@ PhysicsWorld::PhysicsWorld(Context* context) :
     private_data(new PhysicsWorldPrivate(this))
 {
     gContactAddedCallback = CustomMaterialCombinerCallback;
-
+    init(context->m_signal_allocator);
 }
 
 PhysicsWorld::~PhysicsWorld()
@@ -873,16 +873,12 @@ void PhysicsWorld::SendCollisionEvents()
     URHO3D_PROFILE(SendCollisionEvents);
 
     currentCollisions_.clear();
-    physicsCollisionData_.clear();
-    nodeCollisionData_.clear();
     L_D(PhysicsWorld);
 
     int numManifolds = d->collisionDispatcher_->getNumManifolds();
 
     if (numManifolds)
     {
-        physicsCollisionData_[PhysicsCollision::P_WORLD] = this;
-
         for (int i = 0; i < numManifolds; ++i)
         {
             btPersistentManifold* contactManifold = d->collisionDispatcher_->getManifoldByIndexInternal(i);
@@ -943,12 +939,6 @@ void PhysicsWorld::SendCollisionEvents()
             bool trigger = bodyA->IsTrigger() || bodyB->IsTrigger();
             bool newCollision = !previousCollisions_.contains(MAP_KEY(elem));
 
-            physicsCollisionData_[PhysicsCollision::P_NODEA] = nodeA;
-            physicsCollisionData_[PhysicsCollision::P_NODEB] = nodeB;
-            physicsCollisionData_[PhysicsCollision::P_BODYA] = bodyA;
-            physicsCollisionData_[PhysicsCollision::P_BODYB] = bodyB;
-            physicsCollisionData_[PhysicsCollision::P_TRIGGER] = trigger;
-
             contacts_.clear();
 
             // "Pointers not flipped"-manifold, send unmodified normals
@@ -977,38 +967,33 @@ void PhysicsWorld::SendCollisionEvents()
                 }
             }
 
-            physicsCollisionData_[PhysicsCollision::P_CONTACTS] = contacts_.GetBuffer();
-
             // Send separate collision start event if collision is new
             if (newCollision)
             {
-                SendEvent(E_PHYSICSCOLLISIONSTART, physicsCollisionData_);
+                collisionStart.Emit(this,nodeA,nodeB,bodyA,bodyB,trigger,contacts_.GetBuffer());
                 // Skip rest of processing if either of the nodes or bodies is removed as a response to the event
                 if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                     continue;
             }
-
-            // Then send the ongoing collision event
-            SendEvent(E_PHYSICSCOLLISION, physicsCollisionData_);
+            collision.Emit(this,nodeA,nodeB,bodyA,bodyB,trigger,contacts_.GetBuffer());
             if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                 continue;
-
-            nodeCollisionData_[NodeCollision::P_BODY] = bodyA;
-            nodeCollisionData_[NodeCollision::P_OTHERNODE] = nodeB;
-            nodeCollisionData_[NodeCollision::P_OTHERBODY] = bodyB;
-            nodeCollisionData_[NodeCollision::P_TRIGGER] = trigger;
-            nodeCollisionData_[NodeCollision::P_CONTACTS] = contacts_.GetBuffer();
 
             if (newCollision)
             {
-                nodeA->SendEvent(E_NODECOLLISIONSTART, nodeCollisionData_);
+                auto iter = nodeCollisionStart.find(nodeA);
+                if(iter!=nodeCollisionStart.end()) {
+                    iter->second.Emit(bodyA,nodeB,bodyB,trigger,contacts_.GetBuffer());
+                    if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
+                        continue;
+                }
+            }
+            auto iter = nodeCollision.find(nodeA);
+            if(iter!=nodeCollision.end()) {
+                iter->second.Emit(bodyA,nodeB,bodyB,trigger,contacts_.GetBuffer());
                 if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                     continue;
             }
-
-            nodeA->SendEvent(E_NODECOLLISION, nodeCollisionData_);
-            if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
-                continue;
 
             // Flip perspective to body B
             contacts_.clear();
@@ -1037,26 +1022,24 @@ void PhysicsWorld::SendCollisionEvents()
                 }
             }
 
-            nodeCollisionData_[NodeCollision::P_BODY] = bodyB;
-            nodeCollisionData_[NodeCollision::P_OTHERNODE] = nodeA;
-            nodeCollisionData_[NodeCollision::P_OTHERBODY] = bodyA;
-            nodeCollisionData_[NodeCollision::P_CONTACTS] = contacts_.GetBuffer();
-
             if (newCollision)
             {
-                nodeB->SendEvent(E_NODECOLLISIONSTART, nodeCollisionData_);
-                if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
-                    continue;
+                auto iter = nodeCollisionStart.find(nodeB);
+                if(iter!=nodeCollisionStart.end()) {
+                    iter->second.Emit(bodyB,nodeA,bodyA,trigger,contacts_.GetBuffer());
+                    if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
+                        continue;
+                }
             }
-
-            nodeB->SendEvent(E_NODECOLLISION, nodeCollisionData_);
+            iter = nodeCollision.find(nodeB);
+            if(iter!=nodeCollision.end()) {
+                iter->second.Emit(bodyB,nodeA,bodyA,trigger,contacts_.GetBuffer());
+            }
         }
     }
 
     // Send collision end events as applicable
     {
-        physicsCollisionData_[PhysicsCollisionEnd::P_WORLD] = this;
-
         for (auto & elem : previousCollisions_.keys())
         {
             if (!currentCollisions_.contains(elem))
@@ -1082,31 +1065,21 @@ void PhysicsWorld::SendCollisionEvents()
                 WeakPtr<Node> nodeWeakA(nodeA);
                 WeakPtr<Node> nodeWeakB(nodeB);
 
-                physicsCollisionData_[PhysicsCollisionEnd::P_BODYA] = bodyA;
-                physicsCollisionData_[PhysicsCollisionEnd::P_BODYB] = bodyB;
-                physicsCollisionData_[PhysicsCollisionEnd::P_NODEA] = nodeA;
-                physicsCollisionData_[PhysicsCollisionEnd::P_NODEB] = nodeB;
-                physicsCollisionData_[PhysicsCollisionEnd::P_TRIGGER] = trigger;
-
-                SendEvent(E_PHYSICSCOLLISIONEND, physicsCollisionData_);
+                collisionEnd.Emit(this,nodeA,nodeB,bodyA,bodyB,trigger);
                 // Skip rest of processing if either of the nodes or bodies is removed as a response to the event
                 if (!nodeWeakA || !nodeWeakB || !elem.first || !elem.second)
                     continue;
 
-                nodeCollisionData_[NodeCollisionEnd::P_BODY] = bodyA;
-                nodeCollisionData_[NodeCollisionEnd::P_OTHERNODE] = nodeB;
-                nodeCollisionData_[NodeCollisionEnd::P_OTHERBODY] = bodyB;
-                nodeCollisionData_[NodeCollisionEnd::P_TRIGGER] = trigger;
-
-                nodeA->SendEvent(E_NODECOLLISIONEND, nodeCollisionData_);
-                if (!nodeWeakA || !nodeWeakB || !elem.first || !elem.second)
-                    continue;
-
-                nodeCollisionData_[NodeCollisionEnd::P_BODY] = bodyB;
-                nodeCollisionData_[NodeCollisionEnd::P_OTHERNODE] = nodeA;
-                nodeCollisionData_[NodeCollisionEnd::P_OTHERBODY] = bodyA;
-
-                nodeB->SendEvent(E_NODECOLLISIONEND, nodeCollisionData_);
+                auto iter = nodeCollisionEnd.find(nodeA);
+                if(iter!=nodeCollisionEnd.end()) {
+                    iter->second.Emit(bodyA,nodeB,bodyB,trigger);
+                    if (!nodeWeakA || !nodeWeakB || !elem.first || !elem.second)
+                        continue;
+                }
+                iter = nodeCollisionEnd.find(nodeB);
+                if(iter!=nodeCollisionEnd.end()) {
+                    iter->second.Emit(bodyB,nodeA,bodyA,trigger);
+                }
             }
         }
     }

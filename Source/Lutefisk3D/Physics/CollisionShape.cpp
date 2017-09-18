@@ -918,7 +918,7 @@ void CollisionShape::ReleaseShape()
         rigidBody_->UpdateMass();
     }
 
-    shape_.release();
+    shape_.reset();
 
     geometry_.Reset();
 

@@ -283,7 +283,7 @@ public:
     {
         auto j = batchQueues_.find(passIdx);
         if (j != batchQueues_.end())
-            return j->first;
+            return j->second;
         batchQueueStorage_.emplace_back();
         batchQueues_.emplace(passIdx, batchQueueStorage_.size()-1);
         return uint32_t(batchQueueStorage_.size()-1);

@@ -48,6 +48,7 @@
 
 namespace Urho3D
 {
+
 namespace {
 int DoSystemCommand(const QString& commandLine, bool redirectToLog)
 {
@@ -66,6 +67,7 @@ int DoSystemRun(const QString& fileName, const QStringList& arguments)
 {
     return QProcess::execute(fileName,arguments);
 }
+
 /// Base class for async execution requests.
 class AsyncExecRequest : public Thread
 {
@@ -95,6 +97,7 @@ protected:
     /// Completed flag.
     volatile bool completed_=false;
 };
+
 /// Async system command operation.
 class AsyncSystemCommand final : public AsyncExecRequest
 {
@@ -118,6 +121,7 @@ private:
     /// Command line.
     QString commandLine_;
 };
+
 /// Async system run operation.
 class AsyncSystemRun final : public AsyncExecRequest
 {
@@ -158,14 +162,14 @@ struct FileSystemPrivate : public jl::SignalObserver
     bool executeConsoleCommands_=false;
 
     ~FileSystemPrivate() {
-        // If any async exec items pending, delete them
+    // If any async exec items pending, delete them
         if (!asyncExecQueue_.empty())
-        {
-            for (auto & elem : asyncExecQueue_)
-                delete(elem);
+    {
+        for (auto & elem : asyncExecQueue_)
+            delete(elem);
 
-            asyncExecQueue_.clear();
-        }
+        asyncExecQueue_.clear();
+    }
     }
     unsigned addAsyncSysCommand(const QString &commandLine)
     {

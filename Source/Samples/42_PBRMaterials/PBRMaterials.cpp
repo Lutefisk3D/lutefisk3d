@@ -185,7 +185,8 @@ void PBRMaterials::CreateUI()
 
 void PBRMaterials::HandleRoughnessSliderChanged(UIElement *,float newValue)
 {
-    dynamicMaterial_->SetShaderParameter("Roughness", newValue);
+    if(dynamicMaterial_)
+        dynamicMaterial_->SetShaderParameter("Roughness", newValue);
     roughnessLabel_->SetText("Roughness: " + QString::number(newValue));
 }
 

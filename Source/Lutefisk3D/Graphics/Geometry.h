@@ -72,7 +72,8 @@ public:
     void Draw(Graphics* graphics);
 
     /// Return all vertex buffers.
-    const std::vector<SharedPtr<VertexBuffer> >& GetVertexBuffers() const { return vertexBuffers_; }
+    const std::vector<VertexBuffer *>& GetVertexBuffers() const {
+        return reinterpret_cast<const std::vector<VertexBuffer *> &>(vertexBuffers_); }
     /// Return number of vertex buffers.
     unsigned GetNumVertexBuffers() const { return vertexBuffers_.size(); }
     /// Return vertex buffer by index.

@@ -503,8 +503,8 @@ void RibbonTrail::OnSceneSet(Scene* scene)
     if (scene && IsEnabledEffective())
         scene->scenePostUpdate.Connect(this,&RibbonTrail::HandleScenePostUpdate);
     else if (!scene) {
-        assert(GetScene());
-        GetScene()->scenePostUpdate.Disconnect(this,&RibbonTrail::HandleScenePostUpdate);
+        if(GetScene())
+            GetScene()->scenePostUpdate.Disconnect(this);
     }
 }
 /// Recalculate the world-space bounding box.
@@ -634,9 +634,10 @@ void RibbonTrail::UpdateVertexBuffer(const FrameInfo& frame)
 
     // Fill sorted points vector
     sortedPoints_.reserve(numPoints_);
+    sortedPoints_.clear();
     for (unsigned i = 0; i < numPoints_; ++i)
     {
-        TrailPoint& point = points_[i];
+        TrailPoint& point(points_[i]);
         sortedPoints_.emplace_back(&point);
         if (sorted_)
             point.sortDistance_ = frame.camera_->GetDistanceSquared(point.position_);
@@ -644,7 +645,7 @@ void RibbonTrail::UpdateVertexBuffer(const FrameInfo& frame)
 
     // Sort points
     if (sorted_)
-        std::sort(sortedPoints_.begin(), sortedPoints_.end(), CompareTails);
+        std::stable_sort(sortedPoints_.begin(), sortedPoints_.end(), CompareTails);
 
     // Update individual trail elapsed length
     float trailLength = 0.0f;

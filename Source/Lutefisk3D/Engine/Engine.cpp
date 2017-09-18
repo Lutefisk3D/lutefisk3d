@@ -108,9 +108,11 @@ public:
 
     }
 };
-struct SignalAllocator : public AllocatorWrapper<jl::Signal<void>::eAllocationSize> {
+struct SignalAllocator : public AllocatorWrapper<jl::Signal<void>::eAllocationSize>
+{
 };
-struct ObserverAllocator : public AllocatorWrapper<jl::SignalObserver::eAllocationSize> {
+struct ObserverAllocator : public AllocatorWrapper<jl::SignalObserver::eAllocationSize>
+{
 };
 
 enum { eMaxConnections = 32000 };
@@ -132,7 +134,6 @@ extern const char* logLevelPrefixes[];
 
 Engine::Engine(Context* context) :
     Object(context),
-    jl::SignalObserver(),
     timeStep_(0.0f),
     timeStepSmoothing_(2),
     minFps_(10),
@@ -204,9 +205,6 @@ Engine::Engine(Context* context) :
 #ifdef LUTEFISK3D_INPUT
     g_inputSignals.exitRequested.Connect(this,&Engine::HandleExitRequested);
 #endif
-}
-
-Engine::~Engine() {
 }
 
 /// Initialize engine using parameters given and show the application window. Return true if successful.

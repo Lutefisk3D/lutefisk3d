@@ -956,7 +956,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
 {
     LightType type = light->GetLightType();
     const FocusParameters& parameters = light->GetShadowFocus();
-    float size = (float)shadowMapSize_ * light->GetShadowResolution();
+    float size = shadowMapSize_ * light->GetShadowResolution();
     // Automatically reduce shadow map size when far away
     if (parameters.autoSize_ && type != LIGHT_DIRECTIONAL)
     {
@@ -989,7 +989,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
     }
 
     /// \todo Allow to specify maximum shadow maps per resolution, as smaller shadow maps take less memory
-    int width = NextPowerOfTwo((unsigned)size);
+    int width = NextPowerOfTwo(static_cast<unsigned>(size));
     int height = width;
 
     // Adjust the size for directional or point light shadow map atlases
@@ -1022,7 +1022,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
             shadowMapAllocations_[searchKey].push_back(light);
             return shadowmap[allocated];
         }
-        if ((int)allocated >= maxShadowMaps_)
+        if (static_cast<int>(allocated) >= maxShadowMaps_)
             return nullptr;
     }
 

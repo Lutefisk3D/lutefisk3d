@@ -189,10 +189,6 @@ ShaderParameterAnimationInfo::ShaderParameterAnimationInfo(const ShaderParameter
 {
 }
 
-ShaderParameterAnimationInfo::~ShaderParameterAnimationInfo()
-{
-}
-
 void ShaderParameterAnimationInfo::ApplyValue(const Variant& newValue)
 {
     static_cast<Material*>(target_.Get())->SetShaderParameter(name_, newValue);

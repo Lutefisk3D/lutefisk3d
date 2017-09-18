@@ -1497,7 +1497,7 @@ void View::GetLitBatches(Drawable* drawable, Zone *zone,LightBatchQueue& lightQu
 
 void View::ExecuteRenderPathCommands()
 {
-    View* actualView = sourceView_ != nullptr ? sourceView_ : this;
+    View* actualView = sourceView_ != nullptr ? sourceView_.Get() : this;
     // If not reusing shadowmaps, render all of them first
     if (!renderer_->GetReuseShadowMaps() && renderer_->GetDrawShadows() && !actualView->lightQueues_.empty())
     {
@@ -1952,7 +1952,7 @@ bool View::CheckPingpong(unsigned index)
 
 void View::AllocateScreenBuffers()
 {
-    View* actualView = sourceView_ != nullptr ? sourceView_ : this;
+    View* actualView = sourceView_ != nullptr ? sourceView_.Get() : this;
     bool hasScenePassToRTs = false;
     bool hasCustomDepth = false;
     bool hasViewportRead = false;

@@ -88,15 +88,13 @@ public:
     ShaderParameterAnimationInfo(Material* material, const QString& name, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed);
     /// Copy construct.
     ShaderParameterAnimationInfo(const ShaderParameterAnimationInfo& other);
-    /// Destruct.
-    ~ShaderParameterAnimationInfo();
 
     /// Return shader parameter name.
     const QString& GetName() const { return name_; }
 
 protected:
     /// Apply new animation value to the target object. Called by Update().
-    virtual void ApplyValue(const Variant& newValue);
+    void ApplyValue(const Variant& newValue) override;
 
 private:
     /// Shader parameter name.

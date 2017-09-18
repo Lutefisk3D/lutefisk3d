@@ -828,8 +828,8 @@ void AnimationController::OnSceneSet(Scene* scene)
     //TODO: disconnect from previous scene events?
     if (scene && IsEnabledEffective())
         scene->scenePostUpdate.Connect(this,&AnimationController::HandleScenePostUpdate);
-    else if (!scene)
-        scene->scenePostUpdate.Disconnect(this,&AnimationController::HandleScenePostUpdate);
+    else if (!scene && GetScene())
+        GetScene()->scenePostUpdate.Disconnect(this,&AnimationController::HandleScenePostUpdate);
 }
 
 AnimationState* AnimationController::AddAnimationState(Animation* animation)

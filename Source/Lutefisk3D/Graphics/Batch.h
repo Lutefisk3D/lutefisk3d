@@ -27,7 +27,6 @@
 #include "Lutefisk3D/Math/Matrix3x4.h"
 #include "Lutefisk3D/Container/Ptr.h"
 
-#include <cstdio>
 #include <stdint.h>
 
 namespace Urho3D

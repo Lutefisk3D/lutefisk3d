@@ -248,8 +248,8 @@ bool UI::SetModalElement(UIElement* modalElement, bool enable)
         modalElement->SetParent(static_cast<UIElement*>(modalElement->GetVar(VAR_ORIGINAL_PARENT).GetPtr()),
                                 modalElement->GetVar(VAR_ORIGINAL_CHILD_INDEX).GetUInt());
         VariantMap& vars = const_cast<VariantMap&>(modalElement->GetVars());
-        vars.remove(VAR_ORIGINAL_PARENT);
-        vars.remove(VAR_ORIGINAL_CHILD_INDEX);
+        vars.erase(VAR_ORIGINAL_PARENT);
+        vars.erase(VAR_ORIGINAL_CHILD_INDEX);
 
         // If it is a popup element, revert back its top-level parent
         UIElement* originElement = static_cast<UIElement*>(modalElement->GetVar(VAR_ORIGIN).GetPtr());
@@ -258,12 +258,12 @@ bool UI::SetModalElement(UIElement* modalElement, bool enable)
             UIElement* element = static_cast<UIElement*>(originElement->GetVar(VAR_PARENT_CHANGED).GetPtr());
             if (element)
             {
-                const_cast<VariantMap&>(originElement->GetVars()).remove(VAR_PARENT_CHANGED);
+                const_cast<VariantMap&>(originElement->GetVars()).erase(VAR_PARENT_CHANGED);
                 element->SetParent(static_cast<UIElement*>(element->GetVar(VAR_ORIGINAL_PARENT).GetPtr()),
                                    element->GetVar(VAR_ORIGINAL_CHILD_INDEX).GetUInt());
                 vars = const_cast<VariantMap&>(element->GetVars());
-                vars.remove(VAR_ORIGINAL_PARENT);
-                vars.remove(VAR_ORIGINAL_CHILD_INDEX);
+                vars.erase(VAR_ORIGINAL_PARENT);
+                vars.erase(VAR_ORIGINAL_CHILD_INDEX);
             }
         }
 

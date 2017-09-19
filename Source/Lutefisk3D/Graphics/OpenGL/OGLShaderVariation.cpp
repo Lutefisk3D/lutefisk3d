@@ -26,9 +26,8 @@
 #include "../GraphicsImpl.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "../Shader.h"
-#include "../ShaderProgram.h"
+//#include "../ShaderProgram.h"
 #include <QString>
-#include <QDebug>
 using namespace gl;
 
 namespace Urho3D
@@ -56,32 +55,28 @@ void ShaderVariation::OnDeviceLost()
 
 void ShaderVariation::Release()
 {
-    if (object_)
+    compilerOutput_.clear();
+    if (!object_ || !graphics_)
+        return;
+
+    if (!graphics_->IsDeviceLost())
     {
-        if (!graphics_)
-            return;
-
-        if (!graphics_->IsDeviceLost())
+        if (type_ == VS)
         {
-            if (type_ == VS)
-            {
-                if (graphics_->GetVertexShader() == this)
-                    graphics_->SetShaders(nullptr, nullptr);
-            }
-            else
-            {
-                if (graphics_->GetPixelShader() == this)
-                    graphics_->SetShaders(nullptr, nullptr);
-            }
-
-            glDeleteShader(object_);
+            if (graphics_->GetVertexShader() == this)
+                graphics_->SetShaders(nullptr, nullptr);
+        }
+        else
+        {
+            if (graphics_->GetPixelShader() == this)
+                graphics_->SetShaders(nullptr, nullptr);
         }
 
-        object_ = 0;
-        graphics_->CleanupShaderPrograms(this);
+        glDeleteShader(object_);
     }
 
-    compilerOutput_.clear();
+    object_ = 0;
+    graphics_->CleanupShaderPrograms(this);
 }
 
 bool ShaderVariation::Create()
@@ -105,8 +100,8 @@ bool ShaderVariation::Create()
     QString shaderCode;
 
     // Check if the shader code contains a version define
-    unsigned verStart = originalShaderCode.indexOf('#');
-    unsigned verEnd = 0;
+    int verStart = originalShaderCode.indexOf('#');
+    int verEnd = 0;
     if (verStart != -1)
     {
         if (originalShaderCode.midRef(verStart + 1, 7) == "version")
@@ -135,10 +130,10 @@ bool ShaderVariation::Create()
     shaderCode += "#define MAXBONES " + QString::number(Graphics::GetMaxBones()) + "\n";
     // Prepend the defines to the shader code
     QStringList defineVec = defines_.split(' ',QString::SkipEmptyParts);
-    for (unsigned i = 0; i < defineVec.size(); ++i)
+    for (QString &str : defineVec)
     {
         // Add extra space for the checking code below
-        QString defineString = "#define " + defineVec[i].replace('=', ' ') + " \n";
+        QString defineString = "#define " + str.replace('=', ' ') + " \n";
         shaderCode += defineString;
 
         // In debug mode, check that all defines are referenced by the shader code

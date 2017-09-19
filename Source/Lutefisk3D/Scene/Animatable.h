@@ -34,6 +34,9 @@ class ValueAnimation;
 class AttributeAnimationInfo;
 class ObjectAnimation;
 enum WrapMode : int;
+extern template class SharedPtr<ObjectAnimation>;
+extern template class HashSet<const AttributeInfo*>;
+extern template class HashMap<QString, SharedPtr<AttributeAnimationInfo> >;
 
 /// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an
 /// object animation to it.
@@ -43,7 +46,7 @@ class LUTEFISK3D_EXPORT Animatable : public Serializable, public jl::SignalObser
 
 public:
     Animatable(Context* context);
-    virtual ~Animatable();
+    ~Animatable() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 

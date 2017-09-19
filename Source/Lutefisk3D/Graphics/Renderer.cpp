@@ -1665,7 +1665,7 @@ void Renderer::RemoveUnusedBuffers()
         }
         if (buffers.empty())
         {
-            screenBufferAllocations_.remove(MAP_KEY(i));
+            screenBufferAllocations_.erase(MAP_KEY(i));
             i = screenBuffers_.erase(i);
         }
         else

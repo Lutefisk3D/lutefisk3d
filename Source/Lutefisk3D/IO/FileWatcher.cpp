@@ -209,8 +209,8 @@ void FileWatcher::StopWatching()
 #ifdef _WIN32
         CloseHandle((HANDLE)dirHandle_);
 #elif defined(__linux__)
-        for (auto & elem : dirHandle_.keys())
-            inotify_rm_watch(watchHandle_, elem);
+        for (auto & elem : dirHandle_)
+            inotify_rm_watch(watchHandle_, elem.first);
         dirHandle_.clear();
 #elif defined(__APPLE__)
         CloseFileWatcher(watcher_);
@@ -331,7 +331,7 @@ bool FileWatcher::GetNextChange(QString& dest)
 
     unsigned delayMsec = (unsigned)(delay_ * 1000.0f);
 
-    if (changes_.isEmpty())
+    if (changes_.empty())
         return false;
     else
     {

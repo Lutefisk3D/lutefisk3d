@@ -30,7 +30,7 @@ namespace Urho3D
 /// 2D motor constraint component.
 class LUTEFISK3D_EXPORT ConstraintMotor2D : public Constraint2D
 {
-    URHO3D_OBJECT(ConstraintMotor2D,Constraint2D);
+    URHO3D_OBJECT(ConstraintMotor2D,Constraint2D)
 
 public:
     /// Construct.

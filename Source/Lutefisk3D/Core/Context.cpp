@@ -21,6 +21,8 @@
 //
 
 #include "Context.h"
+#include "context_p.h"
+
 #include "Thread.h"
 #include "Attribute.h"
 #include "EventProfiler.h"
@@ -40,9 +42,10 @@
 #endif
 #ifndef MINI_URHO
 #include <SDL2/SDL.h>
+
 #endif
-namespace Urho3D
-{
+namespace Urho3D {
+template class SharedPtr<AttributeAccessor>;
 /*!
   \class Context
   \brief Urho3D execution context. Provides access to subsystems, object factories and attributes, and event receivers.
@@ -122,7 +125,7 @@ namespace Urho3D
 */
 
 /*!
-  \var HashMap<Object*, HashMap<StringHash, SharedPtr<EventReceiverGroup> > > Context::specificEventReceivers_
+  \var HashMap<Object*, HashMap<StringHash, SharedPtr<EventReceiverGroup> > > ContextPrivate::specificEventReceivers_
   \brief
  */
 /*!
@@ -274,7 +277,7 @@ void RemoveNamedAttribute(HashMap<StringHash, std::vector<AttributeInfo> >& attr
         attributes.erase(i);
 }
 
-Context::Context() : eventHandler_(nullptr),d(new ContextPrivate)
+Context::Context() : d(new ContextPrivate)
 {
     // Set the main thread ID (assuming the Context is created in it)
     Thread::SetMainThread();

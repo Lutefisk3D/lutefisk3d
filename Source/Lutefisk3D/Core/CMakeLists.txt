@@ -17,6 +17,7 @@ set(INCLUDES
     Timer.h
     Variant.h
     WorkQueue.h
+    CoreDecls.h
 )
 set(SOURCE
     Condition.cpp

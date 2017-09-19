@@ -33,7 +33,9 @@ class Sprite2D;
 class Texture2D;
 class XMLFile;
 class JSONFile;
-
+extern template class SharedPtr<Texture2D>;
+extern template class SharedPtr<XMLFile>;
+extern template class SharedPtr<JSONFile>;
 /// Sprite sheet.
 class LUTEFISK3D_EXPORT SpriteSheet2D : public Resource
 {

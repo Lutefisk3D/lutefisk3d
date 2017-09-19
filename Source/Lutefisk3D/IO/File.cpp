@@ -38,6 +38,7 @@
 
 namespace Urho3D
 {
+template class SharedPtr<File>;
 
 QFile::OpenMode openMode[] = {
    QFile::ReadOnly,

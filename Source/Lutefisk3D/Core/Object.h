@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,21 +35,18 @@
 namespace Urho3D
 {
 class Variant;
-typedef HashMap<StringHash, Variant> VariantMap;
+using VariantMap = HashMap<StringHash, Variant>;
 
 class Context;
 class EventHandler;
-typedef std::deque<EventHandler *>::iterator ilEventHandler;
-typedef std::deque<EventHandler *>::const_iterator cilEventHandler;
-
+class Object;
+extern template class SharedPtr<Object>;
 /// Type info.
 class LUTEFISK3D_EXPORT TypeInfo
 {
 public:
     /// Construct.
     TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo);
-    /// Destruct.
-    ~TypeInfo() = default;
 
     /// Check current type is type of specified type.
     bool IsTypeOf(StringHash type) const;
@@ -91,22 +88,20 @@ class LUTEFISK3D_EXPORT Object : public RefCounted
     friend class Context;
 
 public:
+    using ilEventHandler = std::deque<EventHandler *>::iterator;
+    using cilEventHandler = std::deque<EventHandler *>::const_iterator;
+
     /// Construct.
     Object(Context* context);
     /// Destruct. Clean up self from event sender & receiver structures.
     virtual ~Object();
 
-    /// Return type hash.
-    virtual StringHash GetType() const = 0;
-    /// Return type name.
-    virtual const QString& GetTypeName() const = 0;
-    /// Return type info.
-    virtual const TypeInfo* GetTypeInfo() const = 0;
-    /// Handle event.
-    virtual void OnEvent(Object* sender, StringHash eventType, VariantMap& eventData);
-
+    virtual StringHash GetType() const = 0; //!< Return type hash.
+    virtual const QString& GetTypeName() const = 0; //!< Return type name.
+    virtual const TypeInfo* GetTypeInfo() const = 0; //!< Return type info.
+    virtual void OnEvent(Object* sender, StringHash eventType, VariantMap& eventData); //!< Handle event.
     /// Return type info static.
-    static const TypeInfo* GetTypeInfoStatic() { return 0; }
+    static const TypeInfo* GetTypeInfoStatic() { return nullptr; }
     /// Check current type is type of specified type.
     static bool IsTypeOf(StringHash type);
     /// Check current type is type of specified type.
@@ -122,9 +117,11 @@ public:
     /// Subscribe to an event that can be sent by any sender.
     void SubscribeToEvent(StringHash eventType, EventHandler* handler);
     /// Subscribe to an event that can be sent by any sender.
-    void SubscribeToEvent(StringHash eventType, const std::function<void(StringHash, VariantMap&)>& function, void* userData=0);
+    void SubscribeToEvent(StringHash eventType, const std::function<void(StringHash, VariantMap &)> &function,
+                          void *userData = nullptr);
     /// Subscribe to a specific sender's event.
-    void SubscribeToEvent(Object* sender, StringHash eventType, const std::function<void(StringHash, VariantMap&)>& function, void* userData=0);
+    void SubscribeToEvent(Object *sender, StringHash eventType,
+                          const std::function<void(StringHash, VariantMap &)> &function, void *userData = nullptr);
     /// Subscribe to a specific sender's event.
     void SubscribeToEvent(Object* sender, StringHash eventType, EventHandler* handler);
     /// Unsubscribe from an event.
@@ -202,10 +199,8 @@ public:
     const QString& GetTypeName() const { return typeInfo_->GetTypeName(); }
 
 protected:
-    /// Execution context.
-    Context* context_;
-    /// Type info.
-    const TypeInfo* typeInfo_;
+    Context* context_; //!< Execution context.
+    const TypeInfo* typeInfo_; //!< Type info.
 };
 
 /// Template implementation of the object factory.
@@ -217,7 +212,6 @@ public:
         ObjectFactory(context,T::GetTypeInfoStatic())
     {
     }
-
     /// Create an object of the specific type.
     virtual SharedPtr<Object> CreateObject() override { return SharedPtr<Object>(new T(context_)); }
 };

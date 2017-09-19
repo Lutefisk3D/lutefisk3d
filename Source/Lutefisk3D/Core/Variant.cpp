@@ -27,8 +27,13 @@
 
 #include "Lutefisk3D/Resource/Resource.h"
 
+namespace std {
+template class std::vector<Urho3D::Variant>;
+}
+
 namespace Urho3D
 {
+template class HashMap<StringHash, Variant>;
 
 const Variant Variant::EMPTY;
 const std::vector<unsigned char> Variant::emptyBuffer(0);

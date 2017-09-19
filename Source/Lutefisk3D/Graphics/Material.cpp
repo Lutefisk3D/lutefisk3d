@@ -986,7 +986,7 @@ void Material::SetShaderParameterAnimation(const QString& name, ValueAnimation* 
         if (info)
         {
             StringHash nameHash(name);
-            shaderParameterAnimationInfos_.remove(nameHash);
+            shaderParameterAnimationInfos_.erase(nameHash);
             UpdateEventSubscription();
         }
     }
@@ -1102,7 +1102,7 @@ void Material::SetScene(Scene* scene)
 void Material::RemoveShaderParameter(const QString& name)
 {
     StringHash nameHash(name);
-    shaderParameters_.remove(nameHash);
+    shaderParameters_.erase(nameHash);
 
     if (nameHash == PSP_MATSPECCOLOR)
         specular_ = false;

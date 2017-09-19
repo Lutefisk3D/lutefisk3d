@@ -247,7 +247,7 @@ void ResourceCache::ReleaseResource(StringHash type, const QString& name, bool f
     // If other references exist, do not release, unless forced
     if ((existingRes.Refs() == 1 && existingRes.WeakRefs() == 0) || force)
     {
-        resourceGroups_[type].resources_.remove(nameHash);
+        resourceGroups_[type].resources_.erase(nameHash);
         UpdateResourceGroup(type);
     }
 }
@@ -1009,13 +1009,13 @@ void ResourceCache::ReleasePackageResources(PackageFile* package, bool force)
     QSet<StringHash> affectedGroups;
 
     const HashMap<QString, PackageEntry>& entries = package->GetEntries();
-    for (auto nameHash : entries.keys())
+    for (const auto &entry : entries)
     {
         // We do not know the actual resource type, so search all type containers
         for (auto iter = resourceGroups_.begin(),fin=resourceGroups_.end(); iter!=fin; ++iter)
         {
             ResourceGroup & elem(MAP_VALUE(iter));
-            HashMap<StringHash, SharedPtr<Resource> >::iterator k = elem.resources_.find(nameHash);
+            HashMap<StringHash, SharedPtr<Resource> >::iterator k = elem.resources_.find(entry.first);
             if (k != elem.resources_.end())
             {
                 // If other references exist, do not release, unless forced

@@ -459,7 +459,7 @@ void Input::SetToggleFullscreen(bool enable)
 
 static void PopulateKeyBindingMap(HashMap<QString, int>& keyBindingMap)
 {
-    if (!keyBindingMap.isEmpty())
+    if (!keyBindingMap.empty())
         return;
     keyBindingMap.emplace("SPACE", KEY_SPACE);
     keyBindingMap.emplace("LCTRL", KEY_LCTRL);
@@ -497,7 +497,7 @@ static void PopulateKeyBindingMap(HashMap<QString, int>& keyBindingMap)
 
 static void PopulateMouseButtonBindingMap(HashMap<QString, int>& mouseButtonBindingMap)
 {
-    if (!mouseButtonBindingMap.isEmpty())
+    if (!mouseButtonBindingMap.empty())
         return;
     mouseButtonBindingMap.emplace("LEFT", SDL_BUTTON_LEFT);
     mouseButtonBindingMap.emplace("MIDDLE", SDL_BUTTON_MIDDLE);
@@ -1062,7 +1062,7 @@ void Input::HandleSDLEvent(void* sdlEvent)
 
     case SDL_JOYDEVICEREMOVED:
     {
-        joysticks_.remove(evt.jdevice.which);
+        joysticks_.erase(evt.jdevice.which);
         g_inputSignals.joystickDisconnected.Emit(evt.jdevice.which);
     }
         break;

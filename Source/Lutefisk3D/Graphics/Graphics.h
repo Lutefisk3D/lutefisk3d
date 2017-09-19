@@ -66,6 +66,7 @@ class LUTEFISK3D_EXPORT Vector3;
 class LUTEFISK3D_EXPORT Vector4;
 class LUTEFISK3D_EXPORT VertexBuffer;
 struct ShaderParameter;
+extern template class WeakPtr<Shader>;
 
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 /// CPU-side scratch buffer for vertex data updates.

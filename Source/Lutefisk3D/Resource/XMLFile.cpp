@@ -36,6 +36,8 @@
 
 namespace Urho3D
 {
+template class SharedPtr<XMLFile>;
+template class WeakPtr<XMLFile>;
 
 /// XML writer for pugixml.
 class XMLWriter : public pugi::xml_writer

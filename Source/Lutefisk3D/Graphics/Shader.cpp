@@ -35,6 +35,10 @@
 
 namespace Urho3D
 {
+/////////////////////////////////////////////////////////
+/// Template instantiations
+///
+template class WeakPtr<Shader>;
 
 void CommentOutFunction(QString& code, const QString& signature)
 {

@@ -3,6 +3,8 @@
 #include "Animatable.h"
 
 using namespace Urho3D;
+template class Urho3D::HashSet<const AttributeInfo*>;
+template class Urho3D::HashMap<QString, SharedPtr<AttributeAnimationInfo> >;
 
 AttributeAnimationInfo::AttributeAnimationInfo(Animatable* target, const AttributeInfo& attributeInfo, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed) :
     ValueAnimationInfo(target, attributeAnimation, wrapMode, speed),

@@ -129,235 +129,204 @@ class LUTEFISK3D_EXPORT Variant
 {
 public:
     /// Construct empty.
-    Variant() :
-        type_(VAR_NONE)
+    Variant()
     {
     }
 
     /// Construct from integer.
-    Variant(int value) :
-        type_(VAR_NONE)
+    Variant(int value)
     {
         *this = value;
     }
 
     /// Construct from unsigned integer.
-    Variant(uint32_t value) : type_(VAR_NONE)
+    Variant(uint32_t value)
     {
         *this = (int)value;
     }
     /// Construct from size_t type //ERROR: truncates on 64 bit on OSes
-    Variant(long long value) : type_(VAR_NONE)
+    Variant(long long value)
     {
         *this = (long long)value;
     }
     /// Construct from a string hash (convert to integer).
-    Variant(const StringHash& value) :
-        type_(VAR_NONE)
+    Variant(const StringHash& value)
     {
         *this = (int)value.Value();
     }
 
     /// Construct from a bool.
-    Variant(bool value) :
-        type_(VAR_NONE)
+    Variant(bool value)
     {
         *this = value;
     }
 
     /// Construct from a float.
-    Variant(float value) :
-        type_(VAR_NONE)
+    Variant(float value)
     {
         *this = value;
     }
 
     /// Construct from a double.
-    Variant(double value) :
-        type_(VAR_NONE)
+    Variant(double value)
     {
         *this = value;
     }
 
     /// Construct from a Vector2.
-    Variant(const Vector2& value) :
-        type_(VAR_NONE)
+    Variant(const Vector2& value)
     {
         *this = value;
     }
 
     /// Construct from a Vector3.
-    Variant(const Vector3& value) :
-        type_(VAR_NONE)
+    Variant(const Vector3& value)
     {
         *this = value;
     }
 
     /// Construct from a Vector4.
-    Variant(const Vector4& value) :
-        type_(VAR_NONE)
+    Variant(const Vector4& value)
     {
         *this = value;
     }
 
     /// Construct from a quaternion.
-    Variant(const Quaternion& value) : type_(VAR_NONE)
+    Variant(const Quaternion& value)
     {
         *this = value;
     }
 
     /// Construct from a color.
-    Variant(const Color& value) : type_(VAR_NONE)
+    Variant(const Color& value)
     {
         *this = value;
     }
 
     /// Construct from a string.
-    Variant(const QString& value) :
-        type_(VAR_NONE)
+    Variant(const QString& value)
     {
         *this = value;
     }
 
     /// Construct from a C string.
-    Variant(const char* value) :
-        type_(VAR_NONE)
+    Variant(const char* value)
     {
         *this = value;
     }
 
     /// Construct from a buffer.
-    Variant(const std::vector<unsigned char>& value) :
-        type_(VAR_NONE)
+    Variant(const std::vector<unsigned char>& value)
     {
         *this = value;
     }
 
     /// Construct from a pointer.
-    Variant(void* value) :
-        type_(VAR_NONE)
+    Variant(void* value)
     {
         *this = value;
     }
 
     /// Construct from a resource reference.
-    Variant(const ResourceRef& value) :
-        type_(VAR_NONE)
+    Variant(const ResourceRef& value)
     {
         *this = value;
     }
 
     /// Construct from a resource reference list.
-    Variant(const ResourceRefList& value) :
-        type_(VAR_NONE)
+    Variant(const ResourceRefList& value)
     {
         *this = value;
     }
 
     /// Construct from a variant vector.
-    Variant(const VariantVector& value) :
-        type_(VAR_NONE)
+    Variant(const VariantVector& value)
     {
         *this = value;
     }
 
     /// Construct from a variant map.
-    Variant(const VariantMap& value) :
-        type_(VAR_NONE)
+    Variant(const VariantMap& value)
     {
         *this = value;
     }
 
     /// Construct from a string vector.
-    Variant(const QStringList& value) :
-        type_ (VAR_NONE)
+    Variant(const QStringList& value)
     {
         *this = value;
     }
     /// Construct from a rect.
-    Variant(const Rect& value) :
-        type_(VAR_NONE)
+    Variant(const Rect& value)
     {
         *this = value;
     }
     /// Construct from an integer rect.
-    Variant(const IntRect& value) :
-        type_(VAR_NONE)
+    Variant(const IntRect& value)
     {
         *this = value;
     }
 
     /// Construct from an IntVector2.
-    Variant(const IntVector2& value) :
-        type_(VAR_NONE)
+    Variant(const IntVector2& value)
     {
         *this = value;
     }
     /// Construct from an IntVector3.
-    Variant(const IntVector3& value) :
-        type_(VAR_NONE)
+    Variant(const IntVector3& value)
     {
         *this = value;
     }
     /// Construct from a RefCounted pointer. The object will be stored internally in a WeakPtr so that its expiration can be detected safely.
-    Variant(RefCounted* value) :
-        type_(VAR_NONE)
+    Variant(RefCounted* value)
     {
         *this = value;
     }
 
     /// Construct from a Matrix3.
-    Variant(const Matrix3& value) :
-        type_(VAR_NONE)
+    Variant(const Matrix3& value)
     {
         *this = value;
     }
 
     /// Construct from a Matrix3x4.
-    Variant(const Matrix3x4& value) :
-        type_(VAR_NONE)
+    Variant(const Matrix3x4& value)
     {
         *this = value;
     }
 
     /// Construct from a Matrix4.
-    Variant(const Matrix4& value) :
-        type_(VAR_NONE)
+    Variant(const Matrix4& value)
     {
         *this = value;
     }
 
     /// Construct from type and value.
-    Variant(const QString& type, const QString& value) :
-        type_(VAR_NONE)
+    Variant(const QString& type, const QString& value)
     {
         FromString(type, value);
     }
 
     /// Construct from type and value.
-    Variant(VariantType type, const QString& value) :
-        type_(VAR_NONE)
+    Variant(VariantType type, const QString& value)
     {
         FromString(type, value);
     }
 
     /// Construct from type and value.
-    Variant(const char* type, const char* value) :
-        type_(VAR_NONE)
+    Variant(const char* type, const char* value)
     {
         FromString(type, value);
     }
 
     /// Construct from type and value.
-    Variant(VariantType type, const char* value) :
-        type_(VAR_NONE)
+    Variant(VariantType type, const char* value)
     {
         FromString(type, value);
     }
 
     /// Copy-construct from another variant.
-    Variant(const Variant& value) :
-        type_(VAR_NONE)
+    Variant(const Variant& value)
     {
         *this = value;
     }
@@ -946,7 +915,7 @@ private:
     void SetType(VariantType newType);
 
     /// Variant type.
-    VariantType type_;
+    VariantType type_ = VAR_NONE;
     /// Variant value.
     VariantValue value_;
 };

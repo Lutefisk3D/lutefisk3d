@@ -23,7 +23,7 @@
 #pragma once
 #include "Lutefisk3D/Core/Lutefisk3D.h"
 
-#include <functional>
+#include <functional> // for std::hash specialization
 class QString;
 class QStringRef;
 class QLatin1String;

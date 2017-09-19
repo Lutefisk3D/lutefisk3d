@@ -723,7 +723,7 @@ void Scene::RegisterVar(const QString& name)
 
 void Scene::UnregisterVar(const QString& name)
 {
-    d->varNames_.remove(name);
+    d->varNames_.erase(name);
 }
 
 void Scene::UnregisterAllVars()
@@ -1007,11 +1007,11 @@ void Scene::NodeRemoved(Node* node)
     unsigned id = node->GetID();
     if (id < FIRST_LOCAL_ID)
     {
-        d->replicatedNodes_.remove(id);
+        d->replicatedNodes_.erase(id);
         MarkReplicationDirty(node);
     }
     else
-        d->localNodes_.remove(id);
+        d->localNodes_.erase(id);
 
     node->ResetScene();
 
@@ -1078,9 +1078,9 @@ void Scene::ComponentRemoved(Component* component)
 
     unsigned id = component->GetID();
     if (id < FIRST_LOCAL_ID)
-        d->replicatedComponents_.remove(id);
+        d->replicatedComponents_.erase(id);
     else
-        d->localComponents_.remove(id);
+        d->localComponents_.erase(id);
 
     component->SetID(0);
     component->OnSceneSet(nullptr);

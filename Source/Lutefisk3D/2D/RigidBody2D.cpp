@@ -32,6 +32,7 @@
 
 namespace Urho3D
 {
+template class WeakPtr<RigidBody2D>;
 
 extern const char* URHO2D_CATEGORY;
 static const BodyType2D DEFAULT_BODYTYPE = BT_STATIC;

@@ -66,8 +66,8 @@ protected:
 #define URHO3D_DEFINE_APPLICATION_MAIN(className) \
 int RunApplication() \
 { \
-    Urho3D::SharedPtr<Urho3D::Context> context(new Urho3D::Context()); \
-    std::unique_ptr<className> application(new className(context)); \
+    std::unique_ptr<Urho3D::Context> context(new Urho3D::Context()); \
+    std::unique_ptr<className> application(new className(context.get())); \
     return application->Run(); \
 } \
 URHO3D_DEFINE_MAIN(RunApplication());

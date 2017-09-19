@@ -70,10 +70,12 @@ enum JSONNumberType
 class LUTEFISK3D_EXPORT JSONValue;
 
 /// JSON array type.
-using JSONArray = std::vector<JSONValue> ;
+using JSONArray = std::vector<JSONValue>;
+}
+namespace Urho3D
+{
 /// JSON object type.
 using JSONObject = HashMap<QString, JSONValue>;
-
 /// JSON value class.
 class LUTEFISK3D_EXPORT JSONValue
 {
@@ -298,5 +300,8 @@ private:
         JSONObject* objectValue_;
     };
 };
-
+extern template class HashMap<QString, JSONValue>;
+}
+namespace std {
+extern template class std::vector<Urho3D::JSONValue>;
 }

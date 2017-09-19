@@ -41,6 +41,7 @@
 
 namespace Urho3D
 {
+template class WeakPtr<PhysicsWorld2D>;
 
 namespace
 {

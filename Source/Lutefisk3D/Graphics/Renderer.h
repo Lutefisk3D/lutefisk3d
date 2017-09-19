@@ -61,6 +61,7 @@ struct LUTEFISK3D_EXPORT BatchQueue;
 class LUTEFISK3D_EXPORT ShaderVariation;
 struct LUTEFISK3D_EXPORT Batch;
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
+extern template class SharedPtr<ShaderVariation>;
 
 static const int SHADOW_MIN_PIXELS = 64;
 static const int INSTANCING_BUFFER_DEFAULT_SIZE = 1024;

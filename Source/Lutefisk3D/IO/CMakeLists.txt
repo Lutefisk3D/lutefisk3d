@@ -18,6 +18,7 @@ set(INCLUDES
     MemoryBuffer.h
     VectorBuffer.h
     IOEvents.h
+    IODecls.h
 )
 set(SOURCE
     Log.cpp

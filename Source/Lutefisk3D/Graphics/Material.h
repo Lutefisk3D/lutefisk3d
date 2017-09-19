@@ -52,6 +52,8 @@ class LUTEFISK3D_EXPORT TextureCube;
 class LUTEFISK3D_EXPORT ValueAnimationInfo;
 class LUTEFISK3D_EXPORT JSONFile;
 class LUTEFISK3D_EXPORT XMLFile;
+extern template class SharedPtr<XMLFile>;
+extern template class SharedPtr<JSONFile>;
 static const constexpr uint8_t DEFAULT_RENDER_ORDER = 128;
 
 /// %Material's shader parameter definition.

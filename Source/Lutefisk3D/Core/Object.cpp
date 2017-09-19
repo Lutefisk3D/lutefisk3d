@@ -22,6 +22,7 @@
 #include "Object.h"
 
 #include "Context.h"
+#include "context_p.h"
 #include "Variant.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Thread.h"
@@ -29,6 +30,7 @@
 #include <algorithm>
 
 using namespace Urho3D;
+template class Urho3D::SharedPtr<Urho3D::Object>;
 namespace
 {
 /// Template implementation of the event handler invoke helper (std::function instance).
@@ -429,7 +431,7 @@ const QString& Object::GetCategory() const
     return context_->GetObjectCategory(GetType());
 }
 /// Find the first event handler with no specific sender.
-cilEventHandler Object::FindEventHandler(StringHash eventType) const
+Object::cilEventHandler Object::FindEventHandler(StringHash eventType) const
 {
     cilEventHandler handler = eventHandlers_.cbegin();
     while (handler!=eventHandlers_.cend())
@@ -442,7 +444,7 @@ cilEventHandler Object::FindEventHandler(StringHash eventType) const
     return eventHandlers_.cend();
 }
 /// Find the first event handler with specific sender.
-Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender) const
+Object::cilEventHandler Object::FindSpecificEventHandler(Object* sender) const
 {
     cilEventHandler handler = eventHandlers_.cbegin();
 
@@ -456,7 +458,7 @@ Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender) const
     return eventHandlers_.cend();
 }
 /// Find the first event handler with specific sender and event type.
-Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous) const
+Object::cilEventHandler Object::FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous) const
 {
     cilEventHandler handler = eventHandlers_.cbegin();
     if(previous)

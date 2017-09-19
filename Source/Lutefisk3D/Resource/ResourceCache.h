@@ -39,6 +39,8 @@ class FileWatcher;
 class PackageFile;
 class LUTEFISK3D_EXPORT Resource;
 class LUTEFISK3D_EXPORT File;
+extern template class SharedPtr<Resource>;
+extern template class SharedPtr<File>;
 /// Sets to priority so that a package or file is pushed to the end of the vector.
 static const unsigned PRIORITY_LAST = 0xffffffff;
 

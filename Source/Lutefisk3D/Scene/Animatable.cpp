@@ -356,7 +356,7 @@ void Animatable::SetAttributeAnimation(const QString& name, ValueAnimation* attr
         if ((info->GetAttributeInfo().mode_ & AM_NET) != 0u)
             animatedNetworkAttributes_.remove(&info->GetAttributeInfo());
 
-        attributeAnimationInfos_.remove(name);
+        attributeAnimationInfos_.erase(name);
         OnAttributeAnimationRemoved();
     }
 }

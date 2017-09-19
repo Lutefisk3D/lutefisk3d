@@ -29,9 +29,11 @@
 
 #include <QtCore/QVector>
 
+template class std::vector<Urho3D::JSONValue>;
 
 namespace Urho3D
 {
+template class HashMap<QString, JSONValue>;
 
 static const char* valueTypeNames[] =
 {

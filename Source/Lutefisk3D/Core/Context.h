@@ -21,57 +21,47 @@
 //
 
 #pragma once
-#include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Math/StringHash.h"
-#include "Lutefisk3D/Container/Ptr.h"
-#include "Lutefisk3D/Container/HashMap.h"
-#include <QtCore/QString>
 #include <memory>
+#include <vector>
 #ifdef _MSC_VER
 #include <iso646.h>
 #endif
 namespace jl {
 class ScopedAllocator;
 }
+class QString;
 namespace Urho3D
 {
 #ifndef LUTEFISK3D_UILESS
-class LUTEFISK3D_EXPORT UI;
+class UI;
 #else
-class LUTEFISK3D_EXPORT UI {};
+class UI {};
 #endif
-class LUTEFISK3D_EXPORT EventHandler;
-class LUTEFISK3D_EXPORT ObjectFactory;
-class LUTEFISK3D_EXPORT Variant;
-class LUTEFISK3D_EXPORT Log;
-class LUTEFISK3D_EXPORT Object;
-class LUTEFISK3D_EXPORT FileSystem;
-class LUTEFISK3D_EXPORT Input;
-class LUTEFISK3D_EXPORT ResourceCache;
-class LUTEFISK3D_EXPORT Graphics;
-class LUTEFISK3D_EXPORT Time;
-class LUTEFISK3D_EXPORT Profiler;
-class LUTEFISK3D_EXPORT EventProfiler;
-class LUTEFISK3D_EXPORT Renderer;
-class LUTEFISK3D_EXPORT WorkQueue;
+class EventHandler;
+class ObjectFactory;
+class Variant;
+class Log;
+class Object;
+class FileSystem;
+class Input;
+class ResourceCache;
+class Graphics;
+class Time;
+class Profiler;
+class EventProfiler;
+class Renderer;
+class WorkQueue;
+
 template<class T> class ObjectFactoryImpl;
+template<class U,class V> class HashMap;
+template<class T> class SharedPtr;
+template <class T, class U> SharedPtr<T> StaticCast(const SharedPtr<U>& ptr);
 
 struct AttributeInfo;
-class LUTEFISK3D_EXPORT EventReceiverGroup : public RefCounted
-{
-public:
-    void BeginSendEvent();
-    void EndSendEvent();
-    void Add(Object *object);
-    void Remove(Object *object);
-    std::vector<Object *> receivers_;
-
-private:
-    unsigned inSend_ = 0;
-    bool     dirty_  = false;
-};
+class LUTEFISK3D_EXPORT EventReceiverGroup;
 class ContextPrivate;
-class LUTEFISK3D_EXPORT Context : public RefCounted
+class LUTEFISK3D_EXPORT Context
 {
     friend class Object;
     friend class Context_EventGuard;
@@ -143,7 +133,7 @@ private:
     void SetEventHandler(EventHandler* handler) { eventHandler_ = handler; }
     std::unique_ptr<ContextPrivate> d;
     std::vector<Object*> eventSenders_;
-    EventHandler* eventHandler_;
+    EventHandler* eventHandler_=nullptr;
 };
 
 class Context_EventGuard

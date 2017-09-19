@@ -38,6 +38,7 @@ using namespace rapidjson;
 
 namespace Urho3D
 {
+template class SharedPtr<JSONFile>;
 
 JSONFile::JSONFile(Context* context) :
     Resource(context)

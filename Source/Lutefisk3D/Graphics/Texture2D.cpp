@@ -40,6 +40,7 @@
 using namespace gl;
 namespace Urho3D
 {
+template class SharedPtr<Texture2D>;
 
 Texture2D::Texture2D(Context* context) :
     Texture(context)

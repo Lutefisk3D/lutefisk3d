@@ -26,7 +26,7 @@
 #include "Lutefisk3D/Core/Timer.h"
 #include "Lutefisk3D/Resource/JSONValue.h"
 #include "Lutefisk3D/Resource/ResourceEvents.h"
-
+#include "Lutefisk3D/Resource/ResourceDecls.h"
 namespace Urho3D
 {
 

@@ -74,63 +74,25 @@ enum RenderTargetSizeMode
 /// Rendertarget definition.
 struct LUTEFISK3D_EXPORT RenderTargetInfo
 {
-    /// Construct.
-    RenderTargetInfo() :
-        size_(Vector2::ZERO),
-        sizeMode_(SIZE_ABSOLUTE),
-        multiSample_(1),
-        autoResolve_(true),
-        enabled_(true),
-        cubemap_(false),
-        filtered_(false),
-        sRGB_(false),
-        persistent_(false)
-    {
-    }
     /// Read from an XML element.
     void Load(const XMLElement& element);
-
-    /// Name.
-    QString name_;
-    /// Tag name.
-    QString tag_;
-    /// Texture format.
-    gl::GLenum format_;
-    /// Absolute size or multiplier.
-    Vector2 size_;
-    /// Size mode.
-    RenderTargetSizeMode sizeMode_;
-    /// Multisampling level (1 = no multisampling).
-    int multiSample_;
-    /// Multisampling autoresolve flag.
-    bool autoResolve_;
-    /// Enabled flag.
-    bool enabled_;
-    /// Cube map flag.
-    bool cubemap_;
-    /// Filtering flag.
-    bool filtered_;
-    /// sRGB sampling/writing mode flag.
-    bool sRGB_;
-    /// Should be persistent and not shared/reused between other buffers of same size.
-    bool persistent_;
+    QString              name_;                        //!< Name.
+    QString              tag_;                         //!< Tag name.
+    gl::GLenum           format_;                      //!< Texture format.
+    Vector2              size_        = Vector2::ZERO; //!< Absolute size or multiplier.
+    RenderTargetSizeMode sizeMode_    = SIZE_ABSOLUTE; //!< Size mode.
+    int                  multiSample_ = 1;             //!< Multisampling level (1 = no multisampling).
+    bool                 autoResolve_ = true;          //!< Multisampling autoresolve flag.
+    bool                 enabled_     = true;          //!< Enabled flag.
+    bool                 cubemap_     = false;         //!< Cube map flag.
+    bool                 filtered_    = false;         //!< Filtering flag.
+    bool                 sRGB_        = false;         //!< sRGB sampling/writing mode flag.
+    bool persistent_ = false; //!< Should be persistent and not shared/reused between other buffers of same size.
 };
 
 /// Rendering path command.
 struct LUTEFISK3D_EXPORT RenderPathCommand
 {
-    /// Construct.
-    RenderPathCommand() :
-        clearFlags_(0),
-        blendMode_(BLEND_REPLACE),
-        enabled_(true),
-        useFogColor_(false),
-        markToStencil_(false),
-        useLitBase_(true),
-        vertexLights_(false)
-    {
-    }
-
     /// Read from an XML element.
     void Load(const XMLElement& element);
     /// Set a texture resource name. Can also refer to a rendertarget defined in the rendering path.
@@ -193,7 +155,7 @@ struct LUTEFISK3D_EXPORT RenderPathCommand
     /// Depth-stencil output name.
     QString depthStencilName_;
     /// Clear flags. Affects clear command only.
-    unsigned clearFlags_;
+    unsigned clearFlags_=0;
     /// Clear color. Affects clear command only.
     Color clearColor_;
     /// Clear depth. Affects clear command only.
@@ -201,17 +163,17 @@ struct LUTEFISK3D_EXPORT RenderPathCommand
     /// Clear stencil value. Affects clear command only.
     unsigned clearStencil_;
     /// Blend mode. Affects quad command only.
-    BlendMode blendMode_;
+    BlendMode blendMode_=BLEND_REPLACE;
     /// Enabled flag.
-    bool enabled_;
+    bool enabled_=true;
     /// Use fog color for clearing.
-    bool useFogColor_;
+    bool useFogColor_=false;
     /// Mark to stencil flag.
-    bool markToStencil_;
+    bool markToStencil_=false;
     /// Use lit base pass optimization for forward per-pixel lights.
-    bool useLitBase_;
+    bool useLitBase_=true;
     /// Vertex lights flag.
-    bool vertexLights_;
+    bool vertexLights_=false;
     /// Event name.
     QString eventName_;
 };
@@ -220,11 +182,6 @@ struct LUTEFISK3D_EXPORT RenderPathCommand
 class LUTEFISK3D_EXPORT RenderPath : public RefCounted
 {
 public:
-    /// Construct.
-    RenderPath();
-    /// Destruct.
-    ~RenderPath();
-
     /// Clone the rendering path.
     SharedPtr<RenderPath> Clone();
     /// Clear existing data and load from an XML file. Return true if successful.

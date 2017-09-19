@@ -314,7 +314,7 @@ void PhysicsWorld::Update(float timeStep)
 
     simulating_ = false;
     // Apply delayed (parented) world transforms now
-    while (!delayedWorldTransforms_.isEmpty())
+    while (!delayedWorldTransforms_.empty())
     {
         for (auto i = delayedWorldTransforms_.begin(); i != delayedWorldTransforms_.end(); )
         {
@@ -713,8 +713,9 @@ void PhysicsWorld::GetCollidingBodies(std::unordered_set<RigidBody*>& result, co
 
     result.clear();
 
-    for (auto & elem : currentCollisions_.keys())
+    for (auto & elem_pair : currentCollisions_)
     {
+        const std::pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> > &elem(elem_pair.first);
         if (elem.first == body) {
             assert(elem.second);
             result.insert(elem.second);
@@ -753,7 +754,7 @@ void PhysicsWorld::RemoveRigidBody(RigidBody* body)
 {
     rigidBodies_.erase(body);
     // Remove possible dangling pointer from the delayedWorldTransforms structure
-    delayedWorldTransforms_.remove(body);
+    delayedWorldTransforms_.erase(body);
 }
 
 void PhysicsWorld::AddCollisionShape(CollisionShape* shape)
@@ -1040,8 +1041,10 @@ void PhysicsWorld::SendCollisionEvents()
 
     // Send collision end events as applicable
     {
-        for (auto & elem : previousCollisions_.keys())
+        for (auto & elem_pair : previousCollisions_)
         {
+            const std::pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> > &elem(elem_pair.first);
+
             if (!currentCollisions_.contains(elem))
             {
                 RigidBody* bodyA = elem.first;

@@ -32,6 +32,7 @@ enum CullMode : unsigned;
 enum CompareMode : unsigned;
 
 class ShaderVariation;
+extern template class SharedPtr<ShaderVariation>;
 
 /// Lighting mode of a pass.
 enum PassLightingMode : unsigned

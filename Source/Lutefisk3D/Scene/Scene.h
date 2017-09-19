@@ -35,6 +35,8 @@ class LUTEFISK3D_EXPORT JSONFile;
 class LUTEFISK3D_EXPORT File;
 class LUTEFISK3D_EXPORT PackageFile;
 class LUTEFISK3D_EXPORT Resource;
+extern template class SharedPtr<XMLFile>;
+extern template class SharedPtr<JSONFile>;
 static const unsigned FIRST_REPLICATED_ID = 0x1;
 static const unsigned LAST_REPLICATED_ID = 0xffffff;
 static const unsigned FIRST_LOCAL_ID = 0x01000000;

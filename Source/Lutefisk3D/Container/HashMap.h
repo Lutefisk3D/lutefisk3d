@@ -73,32 +73,6 @@ public:
     typedef typename ParentClass::const_iterator const_iterator;
 
     constexpr bool contains(const T &v) const { return this->find(v)!=this->cend();}
-    /// Erase an element if found.
-    bool remove(const T& value)
-    {
-        iterator i = this->find(value);
-        if (i == this->end())
-            return false;
-        this->erase(i);
-        return true;
-    }
-    constexpr bool isEmpty() const { return this->empty(); }
-    std::vector<T> keys() const {
-        std::vector<T> result;
-        result.reserve(this->size());
-        for(const std::pair<const T,U> v : *this) {
-            result.push_back(v.first);
-        }
-        return result;
-    }
-    std::vector<U> values() const {
-        std::vector<U> result;
-        result.reserve(this->size());
-        for(const std::pair<const T,U> v : *this) {
-            result.push_back(v.second);
-        }
-        return result;
-    }
 };
 template <typename T,typename U>
 class FasterHashMap : public sherwood_map<T,U> {
@@ -109,32 +83,6 @@ public:
     typedef typename ParentClass::const_iterator const_iterator;
 
     constexpr bool contains(const T &v) const { return this->find(v)!=this->cend();}
-    /// Erase an element if found.
-    bool remove(const T& value)
-    {
-        iterator i = this->find(value);
-        if (i == this->end())
-            return false;
-        this->erase(i);
-        return true;
-    }
-    constexpr bool isEmpty() const { return this->empty(); }
-    std::vector<T> keys() const {
-        std::vector<T> result;
-        result.reserve(this->size());
-        for(const std::pair<const T,U> v : *this) {
-            result.push_back(v.first);
-        }
-        return result;
-    }
-    std::vector<U> values() const {
-        std::vector<U> result;
-        result.reserve(this->size());
-        for(const std::pair<const T,U> v : *this) {
-            result.push_back(v.second);
-        }
-        return result;
-    }
 };
 
 template <typename T>

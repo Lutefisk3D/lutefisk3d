@@ -373,14 +373,6 @@ public:
         return *rawPtr;
     }
 
-    /// Subscript the object if applicable.
-    T& operator [] (const int index)
-    {
-        T* rawPtr = Get();
-        assert(rawPtr);
-        return (*rawPtr)[index];
-    }
-
     /// Test for equality with another weak pointer.
     template <class U> bool operator ==(const WeakPtr<U>& rhs) const { return ptr_ == rhs.ptr_ && refCount_ == rhs.refCount_; }
     /// Test for inequality with another weak pointer.

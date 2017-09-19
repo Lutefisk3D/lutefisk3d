@@ -194,7 +194,7 @@ void Component::OnAttributeAnimationAdded()
 
 void Component::OnAttributeAnimationRemoved()
 {
-    if (attributeAnimationInfos_.isEmpty())
+    if (attributeAnimationInfos_.empty())
         GetScene()->attributeAnimationUpdate.Disconnect(this,&Component::HandleAttributeAnimationUpdate);
 }
 

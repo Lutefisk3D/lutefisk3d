@@ -9,6 +9,7 @@ set(INCLUDES
     XMLFile.h
     Localization.h
     ResourceEvents.h
+    ResourceDecls.h
 )
 set(SOURCE
     BackgroundLoader.cpp

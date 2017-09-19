@@ -123,4 +123,13 @@ const PackageEntry* PackageFile::GetEntry(const QString& fileName) const
     return nullptr;
 }
 
+std::vector<QString> PackageFile::GetEntryNames() const
+{
+    std::vector<QString> res;
+    res.reserve(entries_.size());
+    for(auto &v : entries_)
+        res.emplace_back(v.first);
+    return res;
+}
+
 }

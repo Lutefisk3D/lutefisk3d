@@ -46,7 +46,7 @@ class Object;
 class FileSystem;
 class Input;
 class ResourceCache;
-class Graphics;
+class LUTEFISK3D_EXPORT Graphics;
 class Time;
 class Profiler;
 class EventProfiler;

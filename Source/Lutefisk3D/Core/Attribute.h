@@ -62,7 +62,7 @@ public:
     /// Set the attribute.
     virtual void Set(Serializable* ptr, const Variant& src) = 0;
 };
-extern template class SharedPtr<AttributeAccessor>;
+extern template class LUTEFISK3D_EXPORT SharedPtr<AttributeAccessor>;
 /// Description of an automatically serializable variable.
 struct AttributeInfo
 {
@@ -71,7 +71,7 @@ struct AttributeInfo
         type_(VAR_NONE),
         offset_(0),
         enumNames_(nullptr),
-        variantStructureElementNames_(0),
+        variantStructureElementNames_(nullptr),
         mode_(AM_DEFAULT),
         ptr_(nullptr)
     {
@@ -83,7 +83,7 @@ struct AttributeInfo
         name_(name),
         offset_((unsigned)offset),
         enumNames_(nullptr),
-        variantStructureElementNames_(0),
+        variantStructureElementNames_(nullptr),
         defaultValue_(defaultValue),
         mode_(mode),
         ptr_(nullptr)

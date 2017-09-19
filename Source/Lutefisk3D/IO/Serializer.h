@@ -31,7 +31,7 @@ class QStringList;
 namespace Urho3D
 {
 typedef HashMap<StringHash, class Variant> VariantMap;
-struct LUTEFISK3D_EXPORT ResourceRefList;
+struct ResourceRefList;
 struct ResourceRef;
 class Variant;
 class Color;

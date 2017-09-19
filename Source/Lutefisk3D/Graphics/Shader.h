@@ -29,8 +29,8 @@ namespace Urho3D
 {
 
 class ShaderVariation;
-extern template class SharedPtr<ShaderVariation>;
-extern template class HashMap<StringHash, SharedPtr<ShaderVariation> >;
+extern template class LUTEFISK3D_EXPORT SharedPtr<ShaderVariation>;
+extern template class LUTEFISK3D_EXPORT HashMap<StringHash, SharedPtr<ShaderVariation> >;
 /// %Shader resource consisting of several shader variations.
 class LUTEFISK3D_EXPORT Shader : public Resource
 {

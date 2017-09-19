@@ -34,9 +34,9 @@ class ValueAnimation;
 class AttributeAnimationInfo;
 class ObjectAnimation;
 enum WrapMode : int;
-extern template class SharedPtr<ObjectAnimation>;
-extern template class HashSet<const AttributeInfo*>;
-extern template class HashMap<QString, SharedPtr<AttributeAnimationInfo> >;
+extern template class LUTEFISK3D_EXPORT SharedPtr<ObjectAnimation>;
+extern template class LUTEFISK3D_EXPORT HashSet<const AttributeInfo*>;
+extern template class LUTEFISK3D_EXPORT HashMap<QString, SharedPtr<AttributeAnimationInfo> >;
 
 /// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an
 /// object animation to it.

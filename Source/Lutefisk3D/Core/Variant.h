@@ -66,7 +66,7 @@ enum LUTEFISK3D_EXPORT VariantType : uint8_t
 };
 
 /// Union for the possible variant values. Also stores non-POD objects such as String and math objects
-/// (excluding Matrix) which must not exceed 16 bytes in size (or 32 bytes in a 64-bit build.)
+/// (excluding Matrix) which must not exceed 40 bytes in size (or 80 bytes in a 64-bit build.)
 /// Objects exceeding the limit are allocated on the heap and pointed to by _ptr.
 struct VariantValue
 {
@@ -923,38 +923,38 @@ static_assert(sizeof(VariantValue)>=sizeof(VariantMap),"Variant value must be la
 static_assert(sizeof(VariantValue)>=sizeof(VariantVector),"Variant value must be large enough to hold VariantVector");
 
 /// Return variant type from type.
-template<typename T> VariantType GetVariantType();
+template<typename T> constexpr VariantType GetVariantType();
 
 // Return variant type from concrete types
-template<> inline VariantType GetVariantType<int>() { return VAR_INT; }
-template<> inline VariantType GetVariantType<unsigned>() { return VAR_INT; }
-template<> inline VariantType GetVariantType<long long>() { return VAR_INT64; }
-template<> inline VariantType GetVariantType<unsigned long long>() { return VAR_INT64; }
-template<> inline VariantType GetVariantType<bool>() { return VAR_BOOL; }
-template<> inline VariantType GetVariantType<float>() { return VAR_FLOAT; }
-template<> inline VariantType GetVariantType<double>() { return VAR_DOUBLE; }
-template<> inline VariantType GetVariantType<Vector2>() { return VAR_VECTOR2; }
-template<> inline VariantType GetVariantType<Vector3>() { return VAR_VECTOR3; }
-template<> inline VariantType GetVariantType<Vector4>() { return VAR_VECTOR4; }
-template<> inline VariantType GetVariantType<Quaternion>() { return VAR_QUATERNION; }
-template<> inline VariantType GetVariantType<Color>() { return VAR_COLOR; }
-template<> inline VariantType GetVariantType<QString>() { return VAR_STRING; }
-template<> inline VariantType GetVariantType<StringHash>() { return VAR_INT; }
-template<> inline VariantType GetVariantType<std::vector<unsigned char> >() { return VAR_BUFFER; }
-template<> inline VariantType GetVariantType<ResourceRef>() { return VAR_RESOURCEREF; }
-template<> inline VariantType GetVariantType<ResourceRefList>() { return VAR_RESOURCEREFLIST; }
-template<> inline VariantType GetVariantType<VariantVector>() { return VAR_VARIANTVECTOR; }
-template<> inline VariantType GetVariantType<QStringList >() { return VAR_STRINGVECTOR; }
-template<> inline VariantType GetVariantType<VariantMap>() { return VAR_VARIANTMAP; }
-template<> inline VariantType GetVariantType<Rect>() { return VAR_RECT; }
-template<> inline VariantType GetVariantType<IntRect>() { return VAR_INTRECT; }
-template<> inline VariantType GetVariantType<IntVector2>() { return VAR_INTVECTOR2; }
-template<> inline VariantType GetVariantType<IntVector3>() { return VAR_INTVECTOR3; }
-template<> inline VariantType GetVariantType<Matrix3>() { return VAR_MATRIX3; }
-template<> LUTEFISK3D_EXPORT inline VariantType GetVariantType<Matrix3x4>() { return VAR_MATRIX3X4; }
-template<> LUTEFISK3D_EXPORT inline VariantType GetVariantType<Matrix4>() { return VAR_MATRIX4; }
-template<> LUTEFISK3D_EXPORT Rect Variant::Get<Rect>() const;
-template<> LUTEFISK3D_EXPORT IntRect Variant::Get<IntRect>() const;
+template<> constexpr VariantType GetVariantType<int>() { return VAR_INT; }
+template<> constexpr VariantType GetVariantType<unsigned>() { return VAR_INT; }
+template<> constexpr VariantType GetVariantType<long long>() { return VAR_INT64; }
+template<> constexpr VariantType GetVariantType<unsigned long long>() { return VAR_INT64; }
+template<> constexpr VariantType GetVariantType<bool>() { return VAR_BOOL; }
+template<> constexpr VariantType GetVariantType<float>() { return VAR_FLOAT; }
+template<> constexpr VariantType GetVariantType<double>() { return VAR_DOUBLE; }
+template<> constexpr VariantType GetVariantType<Vector2>() { return VAR_VECTOR2; }
+template<> constexpr VariantType GetVariantType<Vector3>() { return VAR_VECTOR3; }
+template<> constexpr VariantType GetVariantType<Vector4>() { return VAR_VECTOR4; }
+template<> constexpr VariantType GetVariantType<Quaternion>() { return VAR_QUATERNION; }
+template<> constexpr VariantType GetVariantType<Color>() { return VAR_COLOR; }
+template<> constexpr VariantType GetVariantType<QString>() { return VAR_STRING; }
+template<> constexpr VariantType GetVariantType<StringHash>() { return VAR_INT; }
+template<> constexpr VariantType GetVariantType<std::vector<unsigned char> >() { return VAR_BUFFER; }
+template<> constexpr VariantType GetVariantType<ResourceRef>() { return VAR_RESOURCEREF; }
+template<> constexpr VariantType GetVariantType<ResourceRefList>() { return VAR_RESOURCEREFLIST; }
+template<> constexpr VariantType GetVariantType<VariantVector>() { return VAR_VARIANTVECTOR; }
+template<> constexpr VariantType GetVariantType<QStringList >() { return VAR_STRINGVECTOR; }
+template<> constexpr VariantType GetVariantType<VariantMap>() { return VAR_VARIANTMAP; }
+template<> constexpr VariantType GetVariantType<Rect>() { return VAR_RECT; }
+template<> constexpr VariantType GetVariantType<IntRect>() { return VAR_INTRECT; }
+template<> constexpr VariantType GetVariantType<IntVector2>() { return VAR_INTVECTOR2; }
+template<> constexpr VariantType GetVariantType<IntVector3>() { return VAR_INTVECTOR3; }
+template<> constexpr VariantType GetVariantType<Matrix3>() { return VAR_MATRIX3; }
+template<> constexpr VariantType GetVariantType<Matrix3x4>() { return VAR_MATRIX3X4; }
+template<> constexpr VariantType GetVariantType<Matrix4>() { return VAR_MATRIX4; }
+//template<> LUTEFISK3D_EXPORT Rect Variant::Get<Rect>() const;
+//template<> LUTEFISK3D_EXPORT IntRect Variant::Get<IntRect>() const;
 
 static_assert(sizeof(VariantValue)>=sizeof(QString),"Variant value must be large enough to hold VariantMap");
 }

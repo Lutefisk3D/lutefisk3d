@@ -29,7 +29,7 @@
 
 namespace Urho3D
 {
-class LUTEFISK3D_EXPORT File;
+class File;
 enum LogLevels : int32_t
 {
     LOG_RAW     = -1, //!< Fictional message level to indicate a stored raw message.

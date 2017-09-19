@@ -140,7 +140,7 @@ Vector3 SmoothedTransform::GetTargetWorldPosition() const
     if ((node_ != nullptr) && (node_->GetParent() != nullptr))
         return node_->GetParent()->GetWorldTransform() * targetPosition_;
 
-        return targetPosition_;
+    return targetPosition_;
 }
 
 Quaternion SmoothedTransform::GetTargetWorldRotation() const
@@ -148,7 +148,7 @@ Quaternion SmoothedTransform::GetTargetWorldRotation() const
     if ((node_ != nullptr) && (node_->GetParent() != nullptr))
         return node_->GetParent()->GetWorldRotation() * targetRotation_;
 
-        return targetRotation_;
+    return targetRotation_;
 }
 
 void SmoothedTransform::OnNodeSet(Node* node)

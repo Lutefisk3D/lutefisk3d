@@ -37,8 +37,8 @@ class Context;
 class BackgroundLoader;
 class FileWatcher;
 class PackageFile;
-class LUTEFISK3D_EXPORT Resource;
-class LUTEFISK3D_EXPORT File;
+class Resource;
+class File;
 extern template class SharedPtr<Resource>;
 extern template class SharedPtr<File>;
 /// Sets to priority so that a package or file is pushed to the end of the vector.

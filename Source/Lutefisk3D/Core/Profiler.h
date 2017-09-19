@@ -182,7 +182,7 @@ public:
         if (!Thread::IsMainThread())
             return;
 
-            current_->End();
+        current_->End();
         if (current_->parent_)
             current_ = current_->parent_;
         }

@@ -26,6 +26,7 @@
 #include "Lutefisk3D/Core/Variant.h"
 namespace Urho3D
 {
+template class SharedPtr<PackageFile>;
 
 PackageFile::PackageFile(Context* context) :
     Object(context),

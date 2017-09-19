@@ -35,7 +35,7 @@ namespace Urho3D
 {
 class ConstantBuffer;
 class Shader;
-extern template class WeakPtr<Shader>;
+
 /// %Shader parameter definition.
 struct LUTEFISK3D_EXPORT ShaderParameter
 {

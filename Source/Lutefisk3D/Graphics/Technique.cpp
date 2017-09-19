@@ -37,7 +37,7 @@
 
 namespace Urho3D
 {
-
+template class SharedPtr<Technique>;
 extern const char* cullModeNames[];
 
 const char* blendModeNames[MAX_BLENDMODES+1] =
@@ -55,7 +55,7 @@ const char* blendModeNames[MAX_BLENDMODES+1] =
     nullptr
 };
 
-static const char* compareModeNames[] =
+static const char* compareModeNames[MAX_COMPAREMODES+1] =
 {
     "always",
     "equal",

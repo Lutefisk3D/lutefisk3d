@@ -41,12 +41,41 @@
 #include "Lutefisk3D/IO/VectorBuffer.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Resource/ResourceEvents.h"
+#include "Lutefisk3D/Resource/XMLElement.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Resource/JSONFile.h"
 
-
+#if 1
 namespace Urho3D
 {
+namespace  {
+/// Asynchronous loading progress of a scene.
+struct AsyncProgress
+{
+    /// File for binary mode.
+    SharedPtr<File> file_;
+    /// XML file for XML mode.
+    SharedPtr<XMLFile> xmlFile_;
+    /// JSON file for JSON mode
+    SharedPtr<JSONFile> jsonFile_;
+    /// Current XML element for XML mode.
+    XMLElement xmlElement_;
+    /// Current JSON child array and for JSON mode
+    unsigned jsonIndex_;
+    /// Current load mode.
+    LoadMode mode_;
+    /// Resource name hashes left to load.
+    QSet<StringHash> resources_;
+    /// Loaded resources.
+    unsigned loadedResources_;
+    /// Total resources.
+    unsigned totalResources_;
+    /// Loaded root-level nodes.
+    unsigned loadedNodes_;
+    /// Total root-level nodes.
+    unsigned totalNodes_;
+};
+}
 class ScenePrivate
 {
 public:
@@ -80,6 +109,18 @@ public:
     unsigned localNodeID_=FIRST_LOCAL_ID;
     /// Next free local component ID.
     unsigned localComponentID_=FIRST_LOCAL_ID;
+    /// Asynchronous loading progress.
+    AsyncProgress asyncProgress_;
+    void stopAsyncLoad()
+    {
+        asyncProgress_.file_.Reset();
+        asyncProgress_.xmlFile_.Reset();
+        asyncProgress_.jsonFile_.Reset();
+        asyncProgress_.xmlElement_ = XMLElement::EMPTY;
+        asyncProgress_.jsonIndex_ = 0;
+        asyncProgress_.resources_.clear();
+        resolver_.Reset();
+    }
 
 };
 const char* SCENE_CATEGORY = "Scene";
@@ -366,10 +407,10 @@ bool Scene::LoadAsync(File* file, LoadMode mode)
     }
 
     asyncLoading_ = true;
-    asyncProgress_.file_ = file;
-    asyncProgress_.mode_ = mode;
-    asyncProgress_.loadedNodes_ = asyncProgress_.totalNodes_ = asyncProgress_.loadedResources_ = asyncProgress_.totalResources_ = 0;
-    asyncProgress_.resources_.clear();
+    d->asyncProgress_.file_ = file;
+    d->asyncProgress_.mode_ = mode;
+    d->asyncProgress_.loadedNodes_ = d->asyncProgress_.totalNodes_ = d->asyncProgress_.loadedResources_ = d->asyncProgress_.totalResources_ = 0;
+    d->asyncProgress_.resources_.clear();
 
     if (mode > LOAD_RESOURCES_ONLY)
     {
@@ -395,7 +436,7 @@ bool Scene::LoadAsync(File* file, LoadMode mode)
         }
 
         // Then prepare to load child nodes in the async updates
-        asyncProgress_.totalNodes_ = file->ReadVLE();
+        d->asyncProgress_.totalNodes_ = file->ReadVLE();
     }
     else
     {
@@ -429,11 +470,11 @@ bool Scene::LoadAsyncXML(File* file, LoadMode mode)
     }
 
     asyncLoading_ = true;
-    asyncProgress_.xmlFile_ = xml;
-    asyncProgress_.file_ = file;
-    asyncProgress_.mode_ = mode;
-    asyncProgress_.loadedNodes_ = asyncProgress_.totalNodes_ = asyncProgress_.loadedResources_ = asyncProgress_.totalResources_ = 0;
-    asyncProgress_.resources_.clear();
+    d->asyncProgress_.xmlFile_ = xml;
+    d->asyncProgress_.file_ = file;
+    d->asyncProgress_.mode_ = mode;
+    d->asyncProgress_.loadedNodes_ = d->asyncProgress_.totalNodes_ = d->asyncProgress_.loadedResources_ = d->asyncProgress_.totalResources_ = 0;
+    d->asyncProgress_.resources_.clear();
 
     if (mode > LOAD_RESOURCES_ONLY)
     {
@@ -457,12 +498,12 @@ bool Scene::LoadAsyncXML(File* file, LoadMode mode)
 
         // Then prepare for loading all root level child nodes in the async update
         XMLElement childNodeElement = rootElement.GetChild("node");
-        asyncProgress_.xmlElement_ = childNodeElement;
+        d->asyncProgress_.xmlElement_ = childNodeElement;
 
         // Count the amount of child nodes
         while (childNodeElement)
         {
-            ++asyncProgress_.totalNodes_;
+            ++d->asyncProgress_.totalNodes_;
             childNodeElement = childNodeElement.GetNext("node");
         }
     }
@@ -498,11 +539,11 @@ bool Scene::LoadAsyncJSON(File* file, LoadMode mode)
     }
 
     asyncLoading_ = true;
-    asyncProgress_.jsonFile_ = json;
-    asyncProgress_.file_ = file;
-    asyncProgress_.mode_ = mode;
-    asyncProgress_.loadedNodes_ = asyncProgress_.totalNodes_ = asyncProgress_.loadedResources_ = asyncProgress_.totalResources_ = 0;
-    asyncProgress_.resources_.clear();
+    d->asyncProgress_.jsonFile_ = json;
+    d->asyncProgress_.file_ = file;
+    d->asyncProgress_.mode_ = mode;
+    d->asyncProgress_.loadedNodes_ = d->asyncProgress_.totalNodes_ = d->asyncProgress_.loadedResources_ = d->asyncProgress_.totalResources_ = 0;
+    d->asyncProgress_.resources_.clear();
 
     if (mode > LOAD_RESOURCES_ONLY)
     {
@@ -526,10 +567,10 @@ bool Scene::LoadAsyncJSON(File* file, LoadMode mode)
 
         // Then prepare for loading all root level child nodes in the async update
         JSONArray childrenArray = rootVal.Get("children").GetArray();
-        asyncProgress_.jsonIndex_ = 0;
+        d->asyncProgress_.jsonIndex_ = 0;
 
         // Count the amount of child nodes
-        asyncProgress_.totalNodes_ = childrenArray.size();
+        d->asyncProgress_.totalNodes_ = childrenArray.size();
     }
     else
     {
@@ -545,13 +586,7 @@ bool Scene::LoadAsyncJSON(File* file, LoadMode mode)
 void Scene::StopAsyncLoading()
 {
     asyncLoading_ = false;
-    asyncProgress_.file_.Reset();
-    asyncProgress_.xmlFile_.Reset();
-    asyncProgress_.jsonFile_.Reset();
-    asyncProgress_.xmlElement_ = XMLElement::EMPTY;
-    asyncProgress_.jsonIndex_ = 0;
-    asyncProgress_.resources_.clear();
-    d->resolver_.Reset();
+    d->stopAsyncLoad();
 }
 
 Node* Scene::Instantiate(Deserializer& source, const Vector3& position, const Quaternion& rotation, CreateMode mode)
@@ -774,10 +809,13 @@ Component* Scene::GetComponent(unsigned id) const
 
 float Scene::GetAsyncProgress() const
 {
-    return !asyncLoading_ || asyncProgress_.totalNodes_ + asyncProgress_.totalResources_ == 0 ? 1.0f :
-                                                                                                (float)(asyncProgress_.loadedNodes_ + asyncProgress_.loadedResources_) /
-                                                                                                (float)(asyncProgress_.totalNodes_ + asyncProgress_.totalResources_);
+    return !asyncLoading_ || d->asyncProgress_.totalNodes_ + d->asyncProgress_.totalResources_ == 0
+               ? 1.0f
+               : (float)(d->asyncProgress_.loadedNodes_ + d->asyncProgress_.loadedResources_) /
+                     (float)(d->asyncProgress_.totalNodes_ + d->asyncProgress_.totalResources_);
 }
+
+LoadMode Scene::GetAsyncLoadMode() const { return d->asyncProgress_.mode_; }
 
 const QString &Scene::GetVarName(StringHash hash) const
 {
@@ -791,7 +829,7 @@ void Scene::Update(float timeStep)
     {
         UpdateAsyncLoading();
         // If only preloading resources, scene update can continue
-        if (asyncProgress_.mode_ > LOAD_RESOURCES_ONLY)
+        if (d->asyncProgress_.mode_ > LOAD_RESOURCES_ONLY)
             return;
     }
 
@@ -1194,10 +1232,10 @@ void Scene::HandleResourceBackgroundLoaded(const QString &,bool,Resource *resour
 {
     if (asyncLoading_)
     {
-        if (asyncProgress_.resources_.contains(resource->GetNameHash()))
+        if (d->asyncProgress_.resources_.contains(resource->GetNameHash()))
         {
-            asyncProgress_.resources_.remove(resource->GetNameHash());
-            ++asyncProgress_.loadedResources_;
+            d->asyncProgress_.resources_.remove(resource->GetNameHash());
+            ++d->asyncProgress_.loadedResources_;
         }
     }
 }
@@ -1207,14 +1245,14 @@ void Scene::UpdateAsyncLoading()
     URHO3D_PROFILE(UpdateAsyncLoading);
 
     // If resources left to load, do not load nodes yet
-    if (asyncProgress_.loadedResources_ < asyncProgress_.totalResources_)
+    if (d->asyncProgress_.loadedResources_ < d->asyncProgress_.totalResources_)
         return;
 
     HiresTimer asyncLoadTimer;
 
     for (;;)
     {
-        if (asyncProgress_.loadedNodes_ >= asyncProgress_.totalNodes_)
+        if (d->asyncProgress_.loadedNodes_ >= d->asyncProgress_.totalNodes_)
         {
             FinishAsyncLoading();
             return;
@@ -1222,49 +1260,49 @@ void Scene::UpdateAsyncLoading()
 
         // Read one child node with its full sub-hierarchy either from binary, JSON, or XML
         /// \todo Works poorly in scenes where one root-level child node contains all content
-        if (asyncProgress_.xmlFile_ != nullptr)
+        if (d->asyncProgress_.xmlFile_ != nullptr)
         {
-            unsigned nodeID = asyncProgress_.xmlElement_.GetUInt("id");
+            unsigned nodeID = d->asyncProgress_.xmlElement_.GetUInt("id");
             Node* newNode = CreateChild(nodeID, nodeID < FIRST_LOCAL_ID ? REPLICATED : LOCAL);
             d->resolver_.AddNode(nodeID, newNode);
-            newNode->LoadXML(asyncProgress_.xmlElement_, d->resolver_);
-            asyncProgress_.xmlElement_ = asyncProgress_.xmlElement_.GetNext("node");
+            newNode->LoadXML(d->asyncProgress_.xmlElement_, d->resolver_);
+            d->asyncProgress_.xmlElement_ = d->asyncProgress_.xmlElement_.GetNext("node");
         }
-        else if (asyncProgress_.jsonFile_ != nullptr) // Load from JSON
+        else if (d->asyncProgress_.jsonFile_ != nullptr) // Load from JSON
         {
-            const JSONValue& childValue = asyncProgress_.jsonFile_->GetRoot().Get("children").GetArray().at(asyncProgress_.jsonIndex_);
+            const JSONValue& childValue = d->asyncProgress_.jsonFile_->GetRoot().Get("children").GetArray().at(d->asyncProgress_.jsonIndex_);
 
             unsigned nodeID =childValue.Get("id").GetUInt();
             Node* newNode = CreateChild(nodeID, nodeID < FIRST_LOCAL_ID ? REPLICATED : LOCAL);
             d->resolver_.AddNode(nodeID, newNode);
             newNode->LoadJSON(childValue, d->resolver_);
-            ++asyncProgress_.jsonIndex_;
+            ++d->asyncProgress_.jsonIndex_;
         }
         else // Load from binary
         {
-            unsigned nodeID = asyncProgress_.file_->ReadUInt();
+            unsigned nodeID = d->asyncProgress_.file_->ReadUInt();
             Node* newNode = CreateChild(nodeID, nodeID < FIRST_LOCAL_ID ? REPLICATED : LOCAL);
             d->resolver_.AddNode(nodeID, newNode);
-            newNode->Load(*asyncProgress_.file_, d->resolver_);
+            newNode->Load(*d->asyncProgress_.file_, d->resolver_);
         }
 
-        ++asyncProgress_.loadedNodes_;
+        ++d->asyncProgress_.loadedNodes_;
 
         // Break if time limit exceeded, so that we keep sufficient FPS
         if (asyncLoadTimer.GetUSecS() >= asyncLoadingMs_ * 1000)
             break;
     }
-    asyncLoadProgress.Emit(this, GetAsyncProgress(), asyncProgress_.loadedNodes_, asyncProgress_.totalNodes_,
-                           asyncProgress_.loadedResources_, asyncProgress_.totalResources_);
+    asyncLoadProgress.Emit(this, GetAsyncProgress(), d->asyncProgress_.loadedNodes_, d->asyncProgress_.totalNodes_,
+                           d->asyncProgress_.loadedResources_, d->asyncProgress_.totalResources_);
 }
 
 void Scene::FinishAsyncLoading()
 {
-    if (asyncProgress_.mode_ > LOAD_RESOURCES_ONLY)
+    if (d->asyncProgress_.mode_ > LOAD_RESOURCES_ONLY)
     {
         d->resolver_.Resolve();
         ApplyAttributes();
-        FinishLoading(asyncProgress_.file_);
+        FinishLoading(d->asyncProgress_.file_);
     }
 
     StopAsyncLoading();
@@ -1334,8 +1372,8 @@ void Scene::PreloadResources(File* file, bool isSceneFile)
                     bool success = cache->BackgroundLoadResource(ref.type_, name);
                     if (success)
                     {
-                        ++asyncProgress_.totalResources_;
-                        asyncProgress_.resources_.insert(StringHash(name));
+                        ++d->asyncProgress_.totalResources_;
+                        d->asyncProgress_.resources_.insert(StringHash(name));
                     }
                 }
                 else if (attr.type_ == VAR_RESOURCEREFLIST)
@@ -1347,8 +1385,8 @@ void Scene::PreloadResources(File* file, bool isSceneFile)
                         bool success = cache->BackgroundLoadResource(refList.type_, name);
                         if (success)
                         {
-                            ++asyncProgress_.totalResources_;
-                            asyncProgress_.resources_.insert(StringHash(name));
+                            ++d->asyncProgress_.totalResources_;
+                            d->asyncProgress_.resources_.insert(StringHash(name));
                         }
                     }
                 }
@@ -1395,8 +1433,8 @@ void Scene::PreloadResourcesXML(const XMLElement& element)
                             bool success = cache->BackgroundLoadResource(ref.type_, name);
                             if (success)
                             {
-                                ++asyncProgress_.totalResources_;
-                                asyncProgress_.resources_.insert(StringHash(name));
+                                ++d->asyncProgress_.totalResources_;
+                                d->asyncProgress_.resources_.insert(StringHash(name));
                             }
                         }
                         else if (attr.type_ == VAR_RESOURCEREFLIST)
@@ -1408,8 +1446,8 @@ void Scene::PreloadResourcesXML(const XMLElement& element)
                                 bool success = cache->BackgroundLoadResource(refList.type_, name);
                                 if (success)
                                 {
-                                    ++asyncProgress_.totalResources_;
-                                    asyncProgress_.resources_.insert(StringHash(name));
+                                    ++d->asyncProgress_.totalResources_;
+                                    d->asyncProgress_.resources_.insert(StringHash(name));
                                 }
                             }
                         }
@@ -1478,8 +1516,8 @@ void Scene::PreloadResourcesJSON(const JSONValue& value)
                             bool success = cache->BackgroundLoadResource(ref.type_, name);
                             if (success)
                             {
-                                ++asyncProgress_.totalResources_;
-                                asyncProgress_.resources_.insert(StringHash(name));
+                                ++d->asyncProgress_.totalResources_;
+                                d->asyncProgress_.resources_.insert(StringHash(name));
                             }
                         }
                         else if (attr.type_ == VAR_RESOURCEREFLIST)
@@ -1491,8 +1529,8 @@ void Scene::PreloadResourcesJSON(const JSONValue& value)
                                 bool success = cache->BackgroundLoadResource(refList.type_, name);
                                 if (success)
                                 {
-                                    ++asyncProgress_.totalResources_;
-                                    asyncProgress_.resources_.insert(StringHash(name));
+                                    ++d->asyncProgress_.totalResources_;
+                                    d->asyncProgress_.resources_.insert(StringHash(name));
                                 }
                             }
                         }
@@ -1532,3 +1570,4 @@ void RegisterSceneLibrary(Context* context)
 }
 
 }
+#endif

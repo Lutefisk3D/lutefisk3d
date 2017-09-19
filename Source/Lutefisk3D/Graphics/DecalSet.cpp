@@ -930,7 +930,7 @@ bool DecalSet::GetBones(Drawable* target, unsigned batchIndex, const float* blen
                 URHO3D_LOGWARNING("Maximum skinned decal bone count reached");
                 return false;
             }
-            
+
             // Copy the bone from the model to the decal
             index = bones_.size();
             bones_.resize(bones_.size() + 1);

@@ -8,4 +8,4 @@ extern template class SharedPtr<XMLFile>;
 class Resource;
 extern template class SharedPtr<Resource>;
 
-};
+}

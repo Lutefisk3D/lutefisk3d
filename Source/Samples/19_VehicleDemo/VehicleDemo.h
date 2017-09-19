@@ -30,9 +30,9 @@ namespace Urho3D
 class Node;
 class Scene;
 
+class Vehicle;
 }
 
-class Vehicle;
 
 /// Vehicle example.
 /// This sample demonstrates:
@@ -41,7 +41,7 @@ class Vehicle;
 ///     - Defining attributes (including node and component references) of a custom component so that it can be saved and loaded
 class VehicleDemo : public Sample
 {
-    
+
 
 public:
     /// Construct.

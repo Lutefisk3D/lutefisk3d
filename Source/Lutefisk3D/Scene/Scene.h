@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Lutefisk3D/Resource/XMLElement.h"
+
 #include "Lutefisk3D/Scene/Node.h"
 #include "Lutefisk3D/Scene/SceneEvents.h"
 
@@ -31,12 +31,15 @@
 
 namespace Urho3D
 {
-class LUTEFISK3D_EXPORT JSONFile;
-class LUTEFISK3D_EXPORT File;
-class LUTEFISK3D_EXPORT PackageFile;
-class LUTEFISK3D_EXPORT Resource;
+class JSONFile;
+class XMLFile;
+class File;
+class PackageFile;
+class Resource;
+class XMLElement;
 extern template class SharedPtr<XMLFile>;
 extern template class SharedPtr<JSONFile>;
+extern template class SharedPtr<PackageFile>;
 static const unsigned FIRST_REPLICATED_ID = 0x1;
 static const unsigned LAST_REPLICATED_ID = 0xffffff;
 static const unsigned FIRST_LOCAL_ID = 0x01000000;
@@ -56,32 +59,7 @@ enum LoadMode
     LOAD_SCENE_AND_RESOURCES
 };
 
-/// Asynchronous loading progress of a scene.
-struct AsyncProgress
-{
-    /// File for binary mode.
-    SharedPtr<File> file_;
-    /// XML file for XML mode.
-    SharedPtr<XMLFile> xmlFile_;
-    /// JSON file for JSON mode
-    SharedPtr<JSONFile> jsonFile_;
-    /// Current XML element for XML mode.
-    XMLElement xmlElement_;
-    /// Current JSON child array and for JSON mode
-    unsigned jsonIndex_;
-    /// Current load mode.
-    LoadMode mode_;
-    /// Resource name hashes left to load.
-    QSet<StringHash> resources_;
-    /// Loaded resources.
-    unsigned loadedResources_;
-    /// Total resources.
-    unsigned totalResources_;
-    /// Loaded root-level nodes.
-    unsigned loadedNodes_;
-    /// Total root-level nodes.
-    unsigned totalNodes_;
-};
+
 class ScenePrivate;
 /// Root scene node, represents the whole scene.
 class LUTEFISK3D_EXPORT Scene : public Node, public SingularSceneSignals
@@ -175,7 +153,7 @@ public:
     /// Return asynchronous loading progress between 0.0 and 1.0, or 1.0 if not in progress.
     float GetAsyncProgress() const;
     /// Return the load mode of the current asynchronous loading operation.
-    LoadMode GetAsyncLoadMode() const { return asyncProgress_.mode_; }
+    LoadMode GetAsyncLoadMode() const;
     /// Return source file name.
     const QString& GetFileName() const { return fileName_; }
     /// Return source file checksum.
@@ -257,8 +235,6 @@ private:
     /// Preload resources from a JSON scene or object prefab file.
     void PreloadResourcesJSON(const JSONValue& value);
 
-    /// Asynchronous loading progress.
-    AsyncProgress asyncProgress_;
     /// Source file name.
     mutable QString fileName_;
     /// Required package files for networking.

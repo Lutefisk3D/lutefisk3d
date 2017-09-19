@@ -27,10 +27,9 @@
 #include "jlsignal/Signal.h"
 namespace Urho3D
 {
-class LUTEFISK3D_EXPORT Component;
-class LUTEFISK3D_EXPORT PhysicsWorld;
-class LUTEFISK3D_EXPORT Node;
-class LUTEFISK3D_EXPORT RigidBody;
+class Component; class PhysicsWorld;
+class Node;
+class RigidBody;
 struct PhysicsSignals
 {
     jl::ScopedAllocator *m_allocator;

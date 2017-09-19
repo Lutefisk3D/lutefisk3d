@@ -572,12 +572,12 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
             for (auto iter= parameters.begin(), fin=parameters.end(); iter!=fin; ++iter)
                 graphics->SetShaderParameter(MAP_KEY(iter), MAP_VALUE(iter).value_);
         }
-
-        const HashMap<TextureUnit, SharedPtr<Texture> >& textures = material_->GetTextures();
-        for (auto i = textures.begin(); i != textures.end(); ++i)
+        int texunitidx=0;
+        for (const auto &entry : material_->GetTextures())
         {
-            if (graphics->HasTextureUnit(MAP_KEY(i)))
-                graphics->SetTexture(MAP_KEY(i), MAP_VALUE(i).Get());
+            if (entry && graphics->HasTextureUnit(TextureUnit(texunitidx)))
+                graphics->SetTexture(TextureUnit(texunitidx), entry);
+            texunitidx++;
         }
     }
 

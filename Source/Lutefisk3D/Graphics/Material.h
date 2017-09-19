@@ -29,31 +29,23 @@
 #include "Lutefisk3D/Math/Vector4.h"
 #include "Lutefisk3D/Core/Variant.h"
 
-#include <unordered_map>
-namespace std {
-template<> struct hash<Urho3D::TextureUnit> {
-    inline size_t operator()(const Urho3D::TextureUnit & key) const
-    {
-        return (unsigned)key;
-    }
-};
-}
-
 namespace Urho3D
 {
 
-class LUTEFISK3D_EXPORT Material;
-class LUTEFISK3D_EXPORT Pass;
-class LUTEFISK3D_EXPORT Scene;
-class LUTEFISK3D_EXPORT Technique;
-class LUTEFISK3D_EXPORT Texture;
-class LUTEFISK3D_EXPORT Texture2D;
-class LUTEFISK3D_EXPORT TextureCube;
-class LUTEFISK3D_EXPORT ValueAnimationInfo;
-class LUTEFISK3D_EXPORT JSONFile;
-class LUTEFISK3D_EXPORT XMLFile;
+class Material;
+class Pass;
+class Scene;
+class Technique;
+class Texture;
+class Texture2D;
+class TextureCube;
+class ValueAnimationInfo;
+class JSONFile;
+class XMLFile;
 extern template class SharedPtr<XMLFile>;
 extern template class SharedPtr<JSONFile>;
+extern template class SharedPtr<Technique>;
+extern const char* cullModeNames[];
 static const constexpr uint8_t DEFAULT_RENDER_ORDER = 128;
 
 /// %Material's shader parameter definition.
@@ -62,7 +54,7 @@ struct MaterialShaderParameter
     QString name_; //!< Name.
     Variant value_; //!< Value.
 };
-
+extern template class HashMap<StringHash, MaterialShaderParameter>;
 /// %Material's technique list entry.
 struct TechniqueEntry
 {
@@ -74,12 +66,13 @@ struct TechniqueEntry
 
     /// Technique.
     SharedPtr<Technique> technique_;
-    /// Original technique, in case the material adds shader compilation defines. The modified clones are requested from it.
+    /// Original technique, in case the material adds shader compilation defines. The modified clones are requested from
+    /// it.
     SharedPtr<Technique> original_;
     /// Quality level.
-    int qualityLevel_;
+    int qualityLevel_ = 0;
     /// LOD distance.
-    float lodDistance_;
+    float lodDistance_ = 0.0f;
 };
 
 /// Material's shader parameter animation instance.
@@ -102,17 +95,17 @@ private:
     /// Shader parameter name.
     QString name_;
 };
-
+struct MaterialPrivate;
 /// Describes how to render 3D geometries.
 class LUTEFISK3D_EXPORT Material : public Resource, public jl::SignalObserver
 {
     URHO3D_OBJECT(Material,Resource)
 
-public:
-    /// Construct.
-    Material(Context* context);
+    public:
+        /// Construct.
+        Material(Context* context);
     /// Destruct.
-    ~Material();
+    ~Material() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -194,8 +187,8 @@ public:
     Pass* GetPass(unsigned index, const QString& passName) const;
     /// Return texture by unit.
     Texture* GetTexture(TextureUnit unit) const;
-   /// Return all textures.
-    const HashMap<TextureUnit, SharedPtr<Texture> >& GetTextures() const { return textures_; }
+    /// Return all textures.
+    const std::array<SharedPtr<Texture>,MAX_TEXTURE_UNITS> & GetTextures() const { return textures_; }
     /// Return additional vertex shader defines.
     const QString& GetVertexShaderDefines() const { return vertexShaderDefines_; }
     /// Return additional pixel shader defines.
@@ -249,18 +242,13 @@ private:
     void RefreshMemoryUse();
     void ApplyShaderDefines(unsigned index = M_MAX_UNSIGNED);
     ShaderParameterAnimationInfo* GetShaderParameterAnimationInfo(const QString& name) const;
-    void UpdateEventSubscription();
-    void HandleAttributeAnimationUpdate(Scene *, float timeStep);
-    void HandleAttributeGlobalAnimationUpdate(float timeStep);
-
+    std::unique_ptr<MaterialPrivate> d;
     /// Techniques.
     std::vector<TechniqueEntry> techniques_;
     /// Textures.
-    HashMap<TextureUnit, SharedPtr<Texture> > textures_;
+    std::array<SharedPtr<Texture>,MAX_TEXTURE_UNITS> textures_;
     /// %Shader parameters.
     HashMap<StringHash, MaterialShaderParameter> shaderParameters_;
-    /// %Shader parameters animation infos.
-    HashMap<StringHash, SharedPtr<ShaderParameterAnimationInfo> > shaderParameterAnimationInfos_;
     /// Vertex shader defines.
     QString vertexShaderDefines_;
     /// Pixel shader defines.
@@ -287,16 +275,8 @@ private:
     bool occlusion_;
     /// Specular lighting flag.
     bool specular_;
-    /// Flag for whether is subscribed to animation updates.
-    bool subscribed_;
     /// Flag to suppress parameter hash and memory use recalculation when setting multiple shader parameters (loading or resetting the material.)
     bool batchedParameterUpdate_;
-    /// XML file used while loading.
-    SharedPtr<XMLFile> loadXMLFile_;
-    /// JSON file used while loading.
-    SharedPtr<JSONFile> loadJSONFile_;
-    /// Associated scene for shader parameter animation updates.
-    WeakPtr<Scene> scene_;
 };
 
 }

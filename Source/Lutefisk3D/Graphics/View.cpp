@@ -2801,28 +2801,26 @@ Technique* View::GetTechnique(Drawable* drawable, Material* material)
 
 void View::CheckMaterialForAuxView(Material* material)
 {
-    for (const auto & i : material->GetTextures())
+    for (Texture* texture : material->GetTextures())
     {
-        Texture* texture = ELEMENT_VALUE(i).Get();
-        if ((texture != nullptr) && texture->GetUsage() == TEXTURE_RENDERTARGET)
+        if ((texture == nullptr) || texture->GetUsage() != TEXTURE_RENDERTARGET)
+            continue;
+        // Have to check cube & 2D textures separately
+        if (texture->GetType() == Texture2D::GetTypeStatic())
         {
-            // Have to check cube & 2D textures separately
-            if (texture->GetType() == Texture2D::GetTypeStatic())
+            Texture2D* tex2D = static_cast<Texture2D*>(texture);
+            RenderSurface* target = tex2D->GetRenderSurface();
+            if ((target != nullptr) && target->GetUpdateMode() == SURFACE_UPDATEVISIBLE)
+                target->QueueUpdate();
+        }
+        else if (texture->GetType() == TextureCube::GetTypeStatic())
+        {
+            TextureCube* texCube = static_cast<TextureCube*>(texture);
+            for (unsigned j = 0; j < MAX_CUBEMAP_FACES; ++j)
             {
-                Texture2D* tex2D = static_cast<Texture2D*>(texture);
-                RenderSurface* target = tex2D->GetRenderSurface();
+                RenderSurface* target = texCube->GetRenderSurface((CubeMapFace)j);
                 if ((target != nullptr) && target->GetUpdateMode() == SURFACE_UPDATEVISIBLE)
                     target->QueueUpdate();
-            }
-            else if (texture->GetType() == TextureCube::GetTypeStatic())
-            {
-                TextureCube* texCube = static_cast<TextureCube*>(texture);
-                for (unsigned j = 0; j < MAX_CUBEMAP_FACES; ++j)
-                {
-                    RenderSurface* target = texCube->GetRenderSurface((CubeMapFace)j);
-                    if ((target != nullptr) && target->GetUpdateMode() == SURFACE_UPDATEVISIBLE)
-                        target->QueueUpdate();
-                }
             }
         }
     }

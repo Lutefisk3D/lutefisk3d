@@ -38,7 +38,7 @@ namespace Urho3D
 
 class Geometry;
 class IndexBuffer;
-class Graphics;
+class LUTEFISK3D_EXPORT Graphics;
 class VertexBuffer;
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 using IndexBufferHandle = DataHandle<IndexBuffer,20,20>;

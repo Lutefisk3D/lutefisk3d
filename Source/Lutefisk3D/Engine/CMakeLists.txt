@@ -1,27 +1,20 @@
 set(INCLUDES
-    Application.h
-    Engine.h
-    EngineDefs.h
-    EngineEvents.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Application.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Engine.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/EngineDefs.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/EngineEvents.h
 )
 set(SOURCE
-    Application.cpp
-    Engine.cpp
-    EngineEvents.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Application.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Engine.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/EngineEvents.cpp
 
 )
-add_library(Lutefisk3D_Engine OBJECT ${SOURCE} ${INCLUDES})
-
-target_include_directories(Lutefisk3D_Engine PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
-target_compile_definitions(Lutefisk3D_Engine PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
-set_property(TARGET Lutefisk3D_Engine PROPERTY POSITION_INDEPENDENT_CODE ON)
-add_dependencies(Lutefisk3D_Engine Lutefisk3D_Core Lutefisk3D_Container)
-
-set_property(TARGET Lutefisk3D_Engine APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-    jlsignal)
-set(ThirdParty_requisites ${ThirdParty_requisites} jlsignal PARENT_SCOPE)
 install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Engine)
 if(UNIT_TESTING)
 #add_lutefisk_test(AttributeTests)
 #add_lutefisk_test(ContextTests)
 endif()
+
+set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} jlsignal PARENT_SCOPE)
+set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} PARENT_SCOPE)

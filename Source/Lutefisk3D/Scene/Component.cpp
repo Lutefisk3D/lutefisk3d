@@ -32,6 +32,8 @@
 #include "Lutefisk3D/2D/PhysicsWorld2D.h"
 #endif
 #include "Lutefisk3D/Resource/JSONValue.h"
+#include "Lutefisk3D/Resource/XMLElement.h"
+
 namespace Urho3D
 {
 

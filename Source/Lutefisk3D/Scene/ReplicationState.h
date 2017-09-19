@@ -45,7 +45,6 @@ struct ReplicationState;
 struct ComponentReplicationState;
 struct NodeReplicationState;
 struct SceneReplicationState;
-
 /// Dirty attribute bits structure for network replication.
 struct LUTEFISK3D_EXPORT DirtyBits
 {

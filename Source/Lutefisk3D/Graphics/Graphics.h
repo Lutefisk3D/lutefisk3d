@@ -46,27 +46,26 @@ struct SDL_Window;
 namespace Urho3D
 {
 enum CompressedFormat : unsigned;
-class LUTEFISK3D_EXPORT Deserializer;
-class LUTEFISK3D_EXPORT ConstantBuffer;
-class LUTEFISK3D_EXPORT File;
-class LUTEFISK3D_EXPORT Image;
-class LUTEFISK3D_EXPORT IndexBuffer;
-class LUTEFISK3D_EXPORT GPUObject;
-class LUTEFISK3D_EXPORT GraphicsImpl;
-class LUTEFISK3D_EXPORT RenderSurface;
-class LUTEFISK3D_EXPORT Shader;
-class LUTEFISK3D_EXPORT ShaderPrecache;
-class LUTEFISK3D_EXPORT ShaderProgram;
-class LUTEFISK3D_EXPORT ShaderVariation;
-class LUTEFISK3D_EXPORT Texture;
-class LUTEFISK3D_EXPORT Texture2D;
-class LUTEFISK3D_EXPORT Texture2DArray;
-class LUTEFISK3D_EXPORT TextureCube;
-class LUTEFISK3D_EXPORT Vector3;
-class LUTEFISK3D_EXPORT Vector4;
-class LUTEFISK3D_EXPORT VertexBuffer;
+class Deserializer;
+class ConstantBuffer;
+class File;
+class Image;
+class IndexBuffer;
+class GPUObject;
+class GraphicsImpl;
+class RenderSurface;
+class Shader;
+class ShaderPrecache;
+class ShaderProgram;
+class ShaderVariation;
+class Texture;
+class Texture2D;
+class Texture2DArray;
+class TextureCube;
+class Vector3;
+class Vector4;
+class VertexBuffer;
 struct ShaderParameter;
-extern template class WeakPtr<Shader>;
 
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 /// CPU-side scratch buffer for vertex data updates.

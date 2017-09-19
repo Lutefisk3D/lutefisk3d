@@ -33,7 +33,7 @@ namespace Urho3D
 enum VariantType : uint8_t;
 class Variant;
 using VariantMap = HashMap<StringHash, Variant>;
-struct LUTEFISK3D_EXPORT ResourceRefList;
+struct ResourceRefList;
 struct ResourceRef;
 class Color;
 class IntRect;

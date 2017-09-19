@@ -31,7 +31,7 @@
 
 namespace Urho3D
 {
-template class SharedPtr<ObjectAnimation>;
+template class LUTEFISK3D_EXPORT SharedPtr<ObjectAnimation>;
 const char* wrapModeNames[] =
 {
     "Loop",

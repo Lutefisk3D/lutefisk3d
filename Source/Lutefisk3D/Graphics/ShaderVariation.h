@@ -33,9 +33,9 @@ enum class GLenum : uint32_t;
 
 namespace Urho3D
 {
-
 class ConstantBuffer;
 class Shader;
+
 /// %Shader parameter definition.
 struct LUTEFISK3D_EXPORT ShaderParameter
 {
@@ -73,7 +73,7 @@ public:
     /// Construct.
     ShaderVariation(Shader* owner, ShaderType type);
     /// Destruct.
-    virtual ~ShaderVariation();
+    ~ShaderVariation() override;
 
     /// Mark the GPU resource destroyed on graphics context destruction.
     void OnDeviceLost() override;
@@ -95,20 +95,15 @@ public:
     const QString& GetName() const { return name_; }
     /// Return full shader name.
     QString GetFullName() const { return name_ + "(" + defines_ + ")"; }
-    /// Return whether uses a parameter. Not applicable on OpenGL, where this information is contained in ShaderProgram instead.
-    bool HasParameter(StringHash param) const { return parameters_.contains(param); }
 
     /// Return whether uses a texture unit (only for pixel shaders.) Not applicable on OpenGL, where this information is contained in ShaderProgram instead.
     bool HasTextureUnit(TextureUnit unit) const { return useTextureUnit_[unit]; }
 
-    /// Return all parameter definitions. Not applicable on OpenGL, where this information is contained in ShaderProgram instead.
-    const HashMap<StringHash, ShaderParameter>& GetParameters() const { return parameters_; }
-
     /// Return vertex element hash.
-    unsigned long long GetElementHash() const { return elementHash_; }
+    uint64_t GetElementHash() const { return elementHash_; }
 
     /// Return shader bytecode. Stored persistently on Direct3D11 only.
-    const std::vector<unsigned char>& GetByteCode() const { return byteCode_; }
+    const std::vector<uint8_t>& GetByteCode() const { return byteCode_; }
 
     /// Return defines.
     const QString& GetDefines() const { return defines_; }
@@ -121,7 +116,7 @@ public:
     /// Return defines with the CLIPPLANE define appended. Used internally on Direct3D11 only, will be empty on other APIs.
     const QString& GetDefinesClipPlane() { return definesClipPlane_; }
 
-    /// D3D11 vertex semantic names. Used internally.
+    /// vertex semantic names. Used internally.
     static const char* elementSemanticNames[];
 private:
     /// Load bytecode from a file. Return true if successful.
@@ -129,7 +124,7 @@ private:
     /// Compile from source. Return true if successful.
     bool Compile();
     /// Inspect the constant parameters and input layout (if applicable) from the shader bytecode.
-    void ParseParameters(unsigned char* bufData, unsigned bufSize);
+    void ParseParameters(uint8_t* bufData, unsigned bufSize);
     /// Save bytecode to a file.
     void SaveByteCode(const QString& binaryShaderName);
     /// Calculate constant buffer sizes from parameters.
@@ -139,15 +134,13 @@ private:
     /// Shader type.
     ShaderType type_;
     /// Vertex element hash for vertex shaders. Zero for pixel shaders. Note that hashing is different than vertex buffers.
-    unsigned long long elementHash_;
-    /// Shader parameters.
-    HashMap<StringHash, ShaderParameter> parameters_;
+    uint64_t elementHash_;
     /// Texture unit use flags.
     bool useTextureUnit_[MAX_TEXTURE_UNITS];
     /// Constant buffer sizes. 0 if a constant buffer slot is not in use.
     unsigned constantBufferSizes_[MAX_SHADER_PARAMETER_GROUPS];
     /// Shader bytecode. Needed for inspecting the input signature and parameters. Not used on OpenGL.
-    std::vector<unsigned char> byteCode_;
+    std::vector<uint8_t> byteCode_;
     /// Shader name.
     QString name_;
     /// Defines to use in compiling.

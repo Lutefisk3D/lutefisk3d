@@ -19,21 +19,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-#include "Lutefisk3D/Container/Ptr.h"
 #include "SceneResolver.h"
-
 
 #include "Component.h"
 #include "Node.h"
+#include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/IO/Log.h"
-
 
 #include <QtCore/QSet>
 
 namespace Urho3D
 {
 
-SceneResolver::SceneResolver()
+class SceneResolverPrivate
+{
+public:
+    HashMap<unsigned, WeakPtr<Node>>      nodes_;      ///< Nodes.
+    HashMap<unsigned, WeakPtr<Component>> components_; ///< Components.
+};
+
+SceneResolver::SceneResolver() : d(new SceneResolverPrivate)
 {
 }
 
@@ -43,27 +49,27 @@ SceneResolver::~SceneResolver()
 /// Reset. Clear all remembered nodes and components.
 void SceneResolver::Reset()
 {
-    nodes_.clear();
-    components_.clear();
+    d->nodes_.clear();
+    d->components_.clear();
 }
 /// Remember a created node.
 void SceneResolver::AddNode(unsigned oldID, Node* node)
 {
     if (node != nullptr)
-        nodes_[oldID] = node;
+        d->nodes_[oldID] = node;
 }
 /// Remember a created component.
 void SceneResolver::AddComponent(unsigned oldID, Component* component)
 {
     if (component != nullptr)
-        components_[oldID] = component;
+        d->components_[oldID] = component;
 }
 /// Resolve component and node ID attributes and reset.
 void SceneResolver::Resolve()
 {
     // Nodes do not have component or node ID attributes, so only have to go through components
     QSet<StringHash> noIDAttributes;
-    for (auto & elem : components_)
+    for (auto & elem : d->components_)
     {
         Component * component = ELEMENT_VALUE(elem);
         if ((component == nullptr) || noIDAttributes.contains(component->GetType()))
@@ -87,9 +93,9 @@ void SceneResolver::Resolve()
 
                 if (oldNodeID != 0u)
                 {
-                    HashMap<unsigned, WeakPtr<Node> >::const_iterator k = nodes_.find(oldNodeID);
+                    HashMap<unsigned, WeakPtr<Node> >::const_iterator k = d->nodes_.find(oldNodeID);
 
-                    if (k != nodes_.end() && MAP_VALUE(k))
+                    if (k != d->nodes_.end() && MAP_VALUE(k))
                     {
                         unsigned newNodeID = MAP_VALUE(k)->GetID();
                         component->SetAttribute(j, Variant(newNodeID));
@@ -105,9 +111,9 @@ void SceneResolver::Resolve()
 
                 if (oldComponentID != 0u)
                 {
-                    HashMap<unsigned, WeakPtr<Component> >::const_iterator k = components_.find(oldComponentID);
+                    HashMap<unsigned, WeakPtr<Component> >::const_iterator k = d->components_.find(oldComponentID);
 
-                    if (k != components_.end() && MAP_VALUE(k))
+                    if (k != d->components_.end() && MAP_VALUE(k))
                     {
                         unsigned newComponentID = MAP_VALUE(k)->GetID();
                         component->SetAttribute(j, Variant(newComponentID));
@@ -131,9 +137,9 @@ void SceneResolver::Resolve()
                     for (unsigned k = 1; k < oldNodeIDs.size(); ++k)
                     {
                         unsigned oldNodeID = oldNodeIDs[k].GetUInt();
-                        HashMap<unsigned, WeakPtr<Node> >::const_iterator l = nodes_.find(oldNodeID);
+                        HashMap<unsigned, WeakPtr<Node> >::const_iterator l = d->nodes_.find(oldNodeID);
 
-                        if (l != nodes_.end() && MAP_VALUE(l))
+                        if (l != d->nodes_.end() && MAP_VALUE(l))
                             newIDs.push_back(MAP_VALUE(l)->GetID());
                         else
                         {

@@ -24,10 +24,10 @@
 
 #include "Lutefisk3D/Math/BoundingBox.h"
 #include "Lutefisk3D/Scene/Component.h"
-#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 
 namespace Urho3D
 {
+enum GeometryType : unsigned;
 enum eDrawableFlags : unsigned {
     DRAWABLE_GEOMETRY = 0x1,
     DRAWABLE_LIGHT = 0x2,
@@ -42,17 +42,17 @@ static const unsigned DEFAULT_ZONEMASK = M_MAX_UNSIGNED;
 static const int MAX_VERTEX_LIGHTS = 4;
 static const float ANIMATION_LOD_BASESCALE = 2500.0f;
 
-class LUTEFISK3D_EXPORT Camera;
-class LUTEFISK3D_EXPORT File;
-class LUTEFISK3D_EXPORT Geometry;
-class LUTEFISK3D_EXPORT Light;
-class LUTEFISK3D_EXPORT Material;
-class LUTEFISK3D_EXPORT OcclusionBuffer;
-class LUTEFISK3D_EXPORT Octant;
-class LUTEFISK3D_EXPORT RayOctreeQuery;
-class LUTEFISK3D_EXPORT Zone;
-struct LUTEFISK3D_EXPORT RayQueryResult;
-struct LUTEFISK3D_EXPORT WorkItem;
+class Camera;
+class File;
+class Geometry;
+class Light;
+class Material;
+class OcclusionBuffer;
+class Octant;
+class RayOctreeQuery;
+class Zone;
+struct RayQueryResult;
+struct WorkItem;
 
 /// Geometry update type.
 enum UpdateGeometryType
@@ -78,29 +78,14 @@ struct FrameInfo
 /// Source data for a 3D geometry draw call.
 struct LUTEFISK3D_EXPORT SourceBatch
 {
-    /// Construct with defaults.
-    SourceBatch();
-    /// Copy-construct.
-    SourceBatch(const SourceBatch& batch);
-    /// Destruct.
     ~SourceBatch();
-
-    /// Assignment operator.
-    SourceBatch& operator =(const SourceBatch& rhs);
-    /// Distance from camera.
-    float distance_;
-    /// Geometry.
-    Geometry* geometry_;
-    /// Material.
-    SharedPtr<Material> material_;
-    /// World transform(s). For a skinned model, these are the bone transforms.
-    const Matrix3x4* worldTransform_;
-    /// Number of world transforms.
-    unsigned numWorldTransforms_;
-    /// Per-instance data. If not null, must contain enough data to fill instancing buffer.
-    void* instancingData_;
-    /// %Geometry type.
-    GeometryType geometryType_;
+    float distance_=0;              //!< Distance from camera.
+    Geometry * geometry_=nullptr;   //!< Geometry.
+    SharedPtr<Material> material_;  //!< Material.
+    const Matrix3x4* worldTransform_ = &Matrix3x4::IDENTITY; //!< World transform(s). For a skinned model, these are the bone transforms.
+    unsigned numWorldTransforms_=1; //!< Number of world transforms.
+    void * instancingData_=nullptr; //!< Per-instance data. If not null, must contain enough data to fill instancing buffer.
+    GeometryType geometryType_ = GeometryType(0); //!< %Geometry type.
 };
 
 /// Base class for visible components.

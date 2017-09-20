@@ -209,8 +209,8 @@ void FileWatcher::StopWatching()
 #ifdef _WIN32
         CloseHandle((HANDLE)dirHandle_);
 #elif defined(__linux__)
-        for (auto & elem : dirHandle_.keys())
-            inotify_rm_watch(watchHandle_, elem);
+        for (auto & elem : dirHandle_)
+            inotify_rm_watch(watchHandle_, elem.first);
         dirHandle_.clear();
 #elif defined(__APPLE__)
         CloseFileWatcher(watcher_);
@@ -225,21 +225,21 @@ void FileWatcher::StopWatching()
 
 void FileWatcher::SetDelay(float interval)
 {
-    delay_ = Max(interval, 0.0f);
+    delay_ = std::max(interval, 0.0f);
 }
 
 void FileWatcher::ThreadFunction()
 {
 #ifdef LUTEFISK3D_FILEWATCHER
 #ifdef _WIN32
-    unsigned char buffer[BUFFERSIZE];
+    unsigned char buffer[4096];
     DWORD bytesFilled = 0;
 
     while (shouldRun_)
     {
         if (ReadDirectoryChangesW((HANDLE)dirHandle_,
                                   buffer,
-                                  BUFFERSIZE,
+                                  4096,
                                   watchSubDirs_,
                                   FILE_NOTIFY_CHANGE_FILE_NAME |
                                   FILE_NOTIFY_CHANGE_LAST_WRITE,
@@ -273,7 +273,7 @@ void FileWatcher::ThreadFunction()
         }
     }
 #elif defined(__linux__)
-    unsigned char buffer[BUFFERSIZE];
+    unsigned char buffer[4096];
 
     while (shouldRun_)
     {
@@ -331,7 +331,7 @@ bool FileWatcher::GetNextChange(QString& dest)
 
     unsigned delayMsec = (unsigned)(delay_ * 1000.0f);
 
-    if (changes_.isEmpty())
+    if (changes_.empty())
         return false;
     else
     {

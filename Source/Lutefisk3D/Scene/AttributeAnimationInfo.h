@@ -5,7 +5,7 @@
 
 namespace Urho3D {
 class Animatable;
-class AttributeInfo;
+struct AttributeInfo;
 /// Attribute animation instance.
 class AttributeAnimationInfo : public ValueAnimationInfo
 {

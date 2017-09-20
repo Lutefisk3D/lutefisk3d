@@ -28,6 +28,7 @@
 #include <Lutefisk3D/UI/Font.h>
 #include <Lutefisk3D/Graphics/Graphics.h>
 #include <Lutefisk3D/Input/Input.h>
+#include <Lutefisk3D/Graphics/Light.h>
 #include <Lutefisk3D/Graphics/Material.h>
 #include <Lutefisk3D/Graphics/Model.h>
 #include <Lutefisk3D/Graphics/Octree.h>

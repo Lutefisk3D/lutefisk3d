@@ -198,7 +198,7 @@ ResourceRef Sprite2D::SaveToResourceRef(Sprite2D* sprite)
         return GetResourceRef(sprite, Sprite2D::GetTypeStatic());
 
     // Combine sprite sheet name and sprite name as resource name.
-    return ResourceRef(spriteSheet->GetType(), spriteSheet->GetName() + "@" + sprite->GetName());
+    return {spriteSheet->GetType(), spriteSheet->GetName() + "@" + sprite->GetName()};
 }
 
 Sprite2D* Sprite2D::LoadFromResourceRef(Object* object, const ResourceRef& value)

@@ -1,5 +1,4 @@
-#ifndef _JL_OBJECTPOOL_H_
-#define _JL_OBJECTPOOL_H_
+#pragma once
 
 #include "Utils.h"
 
@@ -215,5 +214,3 @@ private:
 };
 
 } // namespace jl    
-    
-#endif // ! defined( _JL_OBJECTPOOL_H_ )

@@ -41,6 +41,7 @@
 
 namespace Urho3D
 {
+template class WeakPtr<PhysicsWorld2D>;
 
 namespace
 {
@@ -556,7 +557,7 @@ void PhysicsWorld2D::Update(float timeStep)
             const DelayedWorldTransform2D& transform = MAP_VALUE(i);
 
             // If parent's transform has already been assigned, can proceed
-            if (!delayedWorldTransforms_.contains(transform.parentRigidBody_))
+            if (!hashContains(delayedWorldTransforms_,transform.parentRigidBody_))
             {
                 transform.rigidBody_->ApplyWorldTransform(transform.worldPosition_, transform.worldRotation_);
                 i = delayedWorldTransforms_.erase(i);
@@ -955,8 +956,8 @@ void PhysicsWorld2D::OnSceneSet(Scene *scene)
     if (scene)
         scene->sceneSubsystemUpdate.Connect(this,&PhysicsWorld2D::HandleSceneSubsystemUpdate);
     else {
-        assert(GetScene());
-        GetScene()->sceneSubsystemUpdate.Disconnect(this,&PhysicsWorld2D::HandleSceneSubsystemUpdate);
+        if(GetScene())
+            GetScene()->sceneSubsystemUpdate.Disconnect(this);
     }
 }
 

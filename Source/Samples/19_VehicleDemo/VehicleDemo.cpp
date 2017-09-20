@@ -216,29 +216,9 @@ void VehicleDemo::HandleUpdate(float timeStep)
             vehicle_->controls_.Set(CTRL_LEFT, input->GetKeyDown(KEY_A));
             vehicle_->controls_.Set(CTRL_RIGHT, input->GetKeyDown(KEY_D));
 
-            // Add yaw & pitch from the mouse motion or touch input. Used only for the camera, does not affect motion
-            if (touchEnabled_)
-            {
-                for (unsigned i = 0; i < input->GetNumTouches(); ++i)
-                {
-                    TouchState* state = input->GetTouch(i);
-                    if (!state->touchedElement_)    // Touch on empty space
-                    {
-                        Camera* camera = cameraNode_->GetComponent<Camera>();
-                        if (!camera)
-                            return;
-
-                        Graphics* graphics = m_context->m_Graphics.get();
-                        vehicle_->controls_.yaw_ += TOUCH_SENSITIVITY * camera->GetFov() / graphics->GetHeight() * state->delta_.x_;
-                        vehicle_->controls_.pitch_ += TOUCH_SENSITIVITY * camera->GetFov() / graphics->GetHeight() * state->delta_.y_;
-                    }
-                }
-            }
-            else
-            {
-                vehicle_->controls_.yaw_ += (float)input->GetMouseMoveX() * YAW_SENSITIVITY;
-                vehicle_->controls_.pitch_ += (float)input->GetMouseMoveY() * YAW_SENSITIVITY;
-            }
+            // Add yaw & pitch from the mouse motion. Used only for the camera, does not affect motion
+            vehicle_->controls_.yaw_ += (float)input->GetMouseMoveX() * YAW_SENSITIVITY;
+            vehicle_->controls_.pitch_ += (float)input->GetMouseMoveY() * YAW_SENSITIVITY;
             // Limit pitch
             vehicle_->controls_.pitch_ = Clamp(vehicle_->controls_.pitch_, 0.0f, 80.0f);
 
@@ -282,7 +262,7 @@ void VehicleDemo::HandlePostUpdate(float ts)
 
     // Raycast camera against static objects (physics collision mask 2)
     // and move it closer to the vehicle if something in between
-    Ray cameraRay(cameraStartPos, cameraTargetPos - cameraStartPos);
+    Ray cameraRay {cameraStartPos, cameraTargetPos - cameraStartPos};
     float cameraRayLength = (cameraTargetPos - cameraStartPos).Length();
     PhysicsRaycastResult result;
     scene_->GetComponent<PhysicsWorld>()->RaycastSingle(result, cameraRay, cameraRayLength, 2);

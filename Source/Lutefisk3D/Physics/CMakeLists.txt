@@ -4,40 +4,27 @@ list (APPEND BULLET_LIBRARIES BulletCollision)
 list (APPEND BULLET_LIBRARIES LinearMath)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/Source/ThirdParty/Bullet)
 set(INCLUDES
-    CollisionShape.h
-    Constraint.h
-    PhysicsEvents.h
-    PhysicsWorld.h
-    RaycastVehicle.h
-    RigidBody.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/CollisionShape.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Constraint.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/PhysicsEvents.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/PhysicsWorld.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/RaycastVehicle.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/RigidBody.h
 )
 set(SOURCE
-    PhysicsUtils.h
-    CollisionShape.cpp
-    Constraint.cpp
-    PhysicsWorld.cpp
-    RaycastVehicle.cpp
-    RigidBody.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PhysicsUtils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/CollisionShape.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Constraint.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PhysicsWorld.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/RaycastVehicle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/RigidBody.cpp
 )
-#if(LUTEFISK3D_AS_DLLS)
-#    add_library(Lutefisk3D_Physics SHARED ${SOURCE} ${INCLUDES}
-#        $<TARGET_OBJECTS:StanHull>
-#    )
-#    target_link_libraries(Lutefisk3D_Physics Bullet_LIB)
-#else()
-    add_library(Lutefisk3D_Physics OBJECT ${SOURCE} ${INCLUDES}
-    )
-    set_property(TARGET Lutefisk3D_Physics APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-        ${BULLET_LIBRARIES} StanHull
-    )
-#endif()
-add_dependencies(Lutefisk3D_Physics  ${BULLET_LIBRARIES})
-target_include_directories(Lutefisk3D_Physics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
-target_compile_definitions(Lutefisk3D_Physics PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
-set_property(TARGET Lutefisk3D_Physics PROPERTY POSITION_INDEPENDENT_CODE ON)
-set(ThirdParty_requisites ${ThirdParty_requisites} ${BULLET_LIBRARIES} StanHull PARENT_SCOPE)
 install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Physics )
 
 if(UNIT_TESTING)
 endif()
 
+set(Lutefisk3D_INCLUDE_DIRS ${Lutefisk3D_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/Source/ThirdParty/Bullet PARENT_SCOPE)
+
+set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} ${BULLET_LIBRARIES} StanHull PARENT_SCOPE)
+set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} PARENT_SCOPE)

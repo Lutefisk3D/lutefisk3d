@@ -21,9 +21,16 @@
 //
 #include "Scene.h"
 
+#include "SceneResolver.h"
+#include "SceneEvents.h"
+#include "SmoothedTransform.h"
+#include "SplinePath.h"
+#include "UnknownComponent.h"
+#include "ValueAnimation.h"
 #include "Component.h"
 #include "ObjectAnimation.h"
 #include "ReplicationState.h"
+#include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/CoreEvents.h"
 #include "Lutefisk3D/Core/Profiler.h"
@@ -31,19 +38,91 @@
 #include "Lutefisk3D/IO/File.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/PackageFile.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Resource/ResourceEvents.h"
+#include "Lutefisk3D/Resource/XMLElement.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Resource/JSONFile.h"
-#include "SceneEvents.h"
-#include "SmoothedTransform.h"
-#include "SplinePath.h"
-#include "UnknownComponent.h"
-#include "ValueAnimation.h"
 
+#if 1
 namespace Urho3D
 {
+namespace  {
+/// Asynchronous loading progress of a scene.
+struct AsyncProgress
+{
+    /// File for binary mode.
+    SharedPtr<File> file_;
+    /// XML file for XML mode.
+    SharedPtr<XMLFile> xmlFile_;
+    /// JSON file for JSON mode
+    SharedPtr<JSONFile> jsonFile_;
+    /// Current XML element for XML mode.
+    XMLElement xmlElement_;
+    /// Current JSON child array and for JSON mode
+    unsigned jsonIndex_;
+    /// Current load mode.
+    LoadMode mode_;
+    /// Resource name hashes left to load.
+    QSet<StringHash> resources_;
+    /// Loaded resources.
+    unsigned loadedResources_;
+    /// Total resources.
+    unsigned totalResources_;
+    /// Loaded root-level nodes.
+    unsigned loadedNodes_;
+    /// Total root-level nodes.
+    unsigned totalNodes_;
+};
+}
+class ScenePrivate
+{
+public:
+    /// Replicated scene nodes by ID.
+    HashMap<unsigned, Node*> replicatedNodes_;
+    /// Local scene nodes by ID.
+    HashMap<unsigned, Node*> localNodes_;
+    /// Replicated components by ID.
+    HashMap<unsigned, Component*> replicatedComponents_;
+    /// Local components by ID.
+    HashMap<unsigned, Component*> localComponents_;
+    /// Cached tagged nodes by tag.
+    HashMap<StringHash, std::vector<Node*> > taggedNodes_;
+    /// Node and component ID resolver for asynchronous loading.
+    SceneResolver resolver_;
+    /// Registered node user variable reverse mappings.
+    HashMap<StringHash, QString> varNames_;
+    /// Nodes to check for attribute changes on the next network update.
+    QSet<unsigned> networkUpdateNodes_;
+    /// Components to check for attribute changes on the next network update.
+    QSet<unsigned> networkUpdateComponents_;
+    /// Delayed dirty notification queue for components.
+    std::vector<Component*> delayedDirtyComponents_;
+    /// Mutex for the delayed dirty notification queue.
+    Mutex sceneMutex_;
+    /// Next free non-local node ID.
+    unsigned replicatedNodeID_=FIRST_REPLICATED_ID;
+    /// Next free non-local component ID.
+    unsigned replicatedComponentID_=FIRST_REPLICATED_ID;
+    /// Next free local node ID.
+    unsigned localNodeID_=FIRST_LOCAL_ID;
+    /// Next free local component ID.
+    unsigned localComponentID_=FIRST_LOCAL_ID;
+    /// Asynchronous loading progress.
+    AsyncProgress asyncProgress_;
+    void stopAsyncLoad()
+    {
+        asyncProgress_.file_.Reset();
+        asyncProgress_.xmlFile_.Reset();
+        asyncProgress_.jsonFile_.Reset();
+        asyncProgress_.xmlElement_ = XMLElement::EMPTY;
+        asyncProgress_.jsonIndex_ = 0;
+        asyncProgress_.resources_.clear();
+        resolver_.Reset();
+    }
 
+};
 const char* SCENE_CATEGORY = "Scene";
 const char* LOGIC_CATEGORY = "Logic";
 const char* SUBSYSTEM_CATEGORY = "Subsystem";
@@ -53,10 +132,7 @@ static const float DEFAULT_SNAP_THRESHOLD = 5.0f;
 
 Scene::Scene(Context* context) :
     Node(context),
-    replicatedNodeID_(FIRST_REPLICATED_ID),
-    replicatedComponentID_(FIRST_REPLICATED_ID),
-    localNodeID_(FIRST_LOCAL_ID),
-    localComponentID_(FIRST_LOCAL_ID),
+    d(new ScenePrivate),
     checksum_(0),
     asyncLoadingMs_(5),
     timeScale_(1.0f),
@@ -82,9 +158,9 @@ Scene::~Scene()
     RemoveAllChildren();
 
     // Remove scene reference and owner from all nodes that still exist
-    for (auto & elem : replicatedNodes_)
+    for (auto & elem : d->replicatedNodes_)
         ELEMENT_VALUE(elem)->ResetScene();
-    for (auto & elem : localNodes_)
+    for (auto & elem : d->localNodes_)
         ELEMENT_VALUE(elem)->ResetScene();
 }
 
@@ -97,10 +173,10 @@ void Scene::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Smoothing Constant", GetSmoothingConstant, SetSmoothingConstant, float, DEFAULT_SMOOTHING_CONSTANT, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Snap Threshold", GetSnapThreshold, SetSnapThreshold, float, DEFAULT_SNAP_THRESHOLD, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Elapsed Time", GetElapsedTime, SetElapsedTime, float, 0.0f, AM_FILE);
-    URHO3D_ATTRIBUTE("Next Replicated Node ID", unsigned, replicatedNodeID_, FIRST_REPLICATED_ID, AM_FILE | AM_NOEDIT);
-    URHO3D_ATTRIBUTE("Next Replicated Component ID", unsigned, replicatedComponentID_, FIRST_REPLICATED_ID, AM_FILE | AM_NOEDIT);
-    URHO3D_ATTRIBUTE("Next Local Node ID", unsigned, localNodeID_, FIRST_LOCAL_ID, AM_FILE | AM_NOEDIT);
-    URHO3D_ATTRIBUTE("Next Local Component ID", unsigned, localComponentID_, FIRST_LOCAL_ID, AM_FILE | AM_NOEDIT);
+//    URHO3D_ATTRIBUTE("Next Replicated Node ID", unsigned, replicatedNodeID_, FIRST_REPLICATED_ID, AM_FILE | AM_NOEDIT);
+//    URHO3D_ATTRIBUTE("Next Replicated Component ID", unsigned, replicatedComponentID_, FIRST_REPLICATED_ID, AM_FILE | AM_NOEDIT);
+//    URHO3D_ATTRIBUTE("Next Local Node ID", unsigned, localNodeID_, FIRST_LOCAL_ID, AM_FILE | AM_NOEDIT);
+//    URHO3D_ATTRIBUTE("Next Local Component ID", unsigned, localComponentID_, FIRST_LOCAL_ID, AM_FILE | AM_NOEDIT);
     URHO3D_ATTRIBUTE("Variables", VariantMap, vars_, Variant::emptyVariantMap, AM_FILE); // Network replication of vars uses custom data
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Variable Names", GetVarNamesAttr, SetVarNamesAttr, QString, QString(), AM_FILE | AM_NOEDIT);
 }
@@ -204,7 +280,7 @@ void Scene::AddReplicationState(NodeReplicationState* state)
     Node::AddReplicationState(state);
 
     // This is the first update for a new connection. Mark all replicated nodes dirty
-    for (HashMap<unsigned, Node*>::const_iterator i = replicatedNodes_.begin(); i != replicatedNodes_.end(); ++i)
+    for (auto i = d->replicatedNodes_.cbegin(); i != d->replicatedNodes_.end(); ++i)
         state->sceneState_->dirtyNodes_.insert(MAP_KEY(i));
 }
 
@@ -331,10 +407,10 @@ bool Scene::LoadAsync(File* file, LoadMode mode)
     }
 
     asyncLoading_ = true;
-    asyncProgress_.file_ = file;
-    asyncProgress_.mode_ = mode;
-    asyncProgress_.loadedNodes_ = asyncProgress_.totalNodes_ = asyncProgress_.loadedResources_ = asyncProgress_.totalResources_ = 0;
-    asyncProgress_.resources_.clear();
+    d->asyncProgress_.file_ = file;
+    d->asyncProgress_.mode_ = mode;
+    d->asyncProgress_.loadedNodes_ = d->asyncProgress_.totalNodes_ = d->asyncProgress_.loadedResources_ = d->asyncProgress_.totalResources_ = 0;
+    d->asyncProgress_.resources_.clear();
 
     if (mode > LOAD_RESOURCES_ONLY)
     {
@@ -350,17 +426,17 @@ bool Scene::LoadAsync(File* file, LoadMode mode)
 
         // Store own old ID for resolving possible root node references
         unsigned nodeID = file->ReadUInt();
-        resolver_.AddNode(nodeID, this);
+        d->resolver_.AddNode(nodeID, this);
 
         // Load root level components first
-        if (!Node::Load(*file, resolver_, false))
+        if (!Node::Load(*file, d->resolver_, false))
         {
             StopAsyncLoading();
             return false;
         }
 
         // Then prepare to load child nodes in the async updates
-        asyncProgress_.totalNodes_ = file->ReadVLE();
+        d->asyncProgress_.totalNodes_ = file->ReadVLE();
     }
     else
     {
@@ -394,11 +470,11 @@ bool Scene::LoadAsyncXML(File* file, LoadMode mode)
     }
 
     asyncLoading_ = true;
-    asyncProgress_.xmlFile_ = xml;
-    asyncProgress_.file_ = file;
-    asyncProgress_.mode_ = mode;
-    asyncProgress_.loadedNodes_ = asyncProgress_.totalNodes_ = asyncProgress_.loadedResources_ = asyncProgress_.totalResources_ = 0;
-    asyncProgress_.resources_.clear();
+    d->asyncProgress_.xmlFile_ = xml;
+    d->asyncProgress_.file_ = file;
+    d->asyncProgress_.mode_ = mode;
+    d->asyncProgress_.loadedNodes_ = d->asyncProgress_.totalNodes_ = d->asyncProgress_.loadedResources_ = d->asyncProgress_.totalResources_ = 0;
+    d->asyncProgress_.resources_.clear();
 
     if (mode > LOAD_RESOURCES_ONLY)
     {
@@ -414,20 +490,20 @@ bool Scene::LoadAsyncXML(File* file, LoadMode mode)
 
         // Store own old ID for resolving possible root node references
         unsigned nodeID = rootElement.GetUInt("id");
-        resolver_.AddNode(nodeID, this);
+        d->resolver_.AddNode(nodeID, this);
 
         // Load the root level components first
-        if (!Node::LoadXML(rootElement, resolver_, false))
+        if (!Node::LoadXML(rootElement, d->resolver_, false))
             return false;
 
         // Then prepare for loading all root level child nodes in the async update
         XMLElement childNodeElement = rootElement.GetChild("node");
-        asyncProgress_.xmlElement_ = childNodeElement;
+        d->asyncProgress_.xmlElement_ = childNodeElement;
 
         // Count the amount of child nodes
         while (childNodeElement)
         {
-            ++asyncProgress_.totalNodes_;
+            ++d->asyncProgress_.totalNodes_;
             childNodeElement = childNodeElement.GetNext("node");
         }
     }
@@ -463,11 +539,11 @@ bool Scene::LoadAsyncJSON(File* file, LoadMode mode)
     }
 
     asyncLoading_ = true;
-    asyncProgress_.jsonFile_ = json;
-    asyncProgress_.file_ = file;
-    asyncProgress_.mode_ = mode;
-    asyncProgress_.loadedNodes_ = asyncProgress_.totalNodes_ = asyncProgress_.loadedResources_ = asyncProgress_.totalResources_ = 0;
-    asyncProgress_.resources_.clear();
+    d->asyncProgress_.jsonFile_ = json;
+    d->asyncProgress_.file_ = file;
+    d->asyncProgress_.mode_ = mode;
+    d->asyncProgress_.loadedNodes_ = d->asyncProgress_.totalNodes_ = d->asyncProgress_.loadedResources_ = d->asyncProgress_.totalResources_ = 0;
+    d->asyncProgress_.resources_.clear();
 
     if (mode > LOAD_RESOURCES_ONLY)
     {
@@ -483,18 +559,18 @@ bool Scene::LoadAsyncJSON(File* file, LoadMode mode)
 
         // Store own old ID for resolving possible root node references
         unsigned nodeID = rootVal.Get("id").GetUInt();
-        resolver_.AddNode(nodeID, this);
+        d->resolver_.AddNode(nodeID, this);
 
         // Load the root level components first
-        if (!Node::LoadJSON(rootVal, resolver_, false))
+        if (!Node::LoadJSON(rootVal, d->resolver_, false))
             return false;
 
         // Then prepare for loading all root level child nodes in the async update
         JSONArray childrenArray = rootVal.Get("children").GetArray();
-        asyncProgress_.jsonIndex_ = 0;
+        d->asyncProgress_.jsonIndex_ = 0;
 
         // Count the amount of child nodes
-        asyncProgress_.totalNodes_ = childrenArray.size();
+        d->asyncProgress_.totalNodes_ = childrenArray.size();
     }
     else
     {
@@ -510,13 +586,7 @@ bool Scene::LoadAsyncJSON(File* file, LoadMode mode)
 void Scene::StopAsyncLoading()
 {
     asyncLoading_ = false;
-    asyncProgress_.file_.Reset();
-    asyncProgress_.xmlFile_.Reset();
-    asyncProgress_.jsonFile_.Reset();
-    asyncProgress_.xmlElement_ = XMLElement::EMPTY;
-    asyncProgress_.jsonIndex_ = 0;
-    asyncProgress_.resources_.clear();
-    resolver_.Reset();
+    d->stopAsyncLoad();
 }
 
 Node* Scene::Instantiate(Deserializer& source, const Vector3& position, const Quaternion& rotation, CreateMode mode)
@@ -624,13 +694,13 @@ void Scene::Clear(bool clearReplicated, bool clearLocal)
     // Reset ID generators
     if (clearReplicated)
     {
-        replicatedNodeID_ = FIRST_REPLICATED_ID;
-        replicatedComponentID_ = FIRST_REPLICATED_ID;
+        d->replicatedNodeID_ = FIRST_REPLICATED_ID;
+        d->replicatedComponentID_ = FIRST_REPLICATED_ID;
     }
     if (clearLocal)
     {
-        localNodeID_ = FIRST_LOCAL_ID;
-        localComponentID_ = FIRST_LOCAL_ID;
+        d->localNodeID_ = FIRST_LOCAL_ID;
+        d->localComponentID_ = FIRST_LOCAL_ID;
     }
 }
 
@@ -683,38 +753,38 @@ void Scene::ClearRequiredPackageFiles()
 
 void Scene::RegisterVar(const QString& name)
 {
-    varNames_[name] = name;
+    d->varNames_[name] = name;
 }
 
 void Scene::UnregisterVar(const QString& name)
 {
-    varNames_.remove(name);
+    d->varNames_.erase(name);
 }
 
 void Scene::UnregisterAllVars()
 {
-    varNames_.clear();
+    d->varNames_.clear();
 }
 
 Node* Scene::GetNode(unsigned id) const
 {
     if (id < FIRST_LOCAL_ID)
     {
-        HashMap<unsigned, Node*>::const_iterator i = replicatedNodes_.find(id);
-        return i != replicatedNodes_.end() ? MAP_VALUE(i) : nullptr;
+        HashMap<unsigned, Node*>::const_iterator i = d->replicatedNodes_.find(id);
+        return i != d->replicatedNodes_.end() ? MAP_VALUE(i) : nullptr;
     }
 
 
-    HashMap<unsigned, Node*>::const_iterator i = localNodes_.find(id);
-    return i != localNodes_.end() ? MAP_VALUE(i) : nullptr;
+    HashMap<unsigned, Node*>::const_iterator i = d->localNodes_.find(id);
+    return i != d->localNodes_.end() ? MAP_VALUE(i) : nullptr;
 
 }
 
 bool Scene::GetNodesWithTag(std::vector<Node*>& dest, const QString & tag) const
 {
     dest.clear();
-    HashMap<StringHash, std::vector<Node*> >::const_iterator it = taggedNodes_.find(tag);
-    if (it != taggedNodes_.end())
+    HashMap<StringHash, std::vector<Node*> >::const_iterator it = d->taggedNodes_.find(tag);
+    if (it != d->taggedNodes_.end())
     {
         dest = it->second;
         return true;
@@ -727,27 +797,30 @@ Component* Scene::GetComponent(unsigned id) const
 {
     if (id < FIRST_LOCAL_ID)
     {
-        HashMap<unsigned, Component*>::const_iterator i = replicatedComponents_.find(id);
-        return i != replicatedComponents_.end() ? MAP_VALUE(i) :  nullptr;
+        HashMap<unsigned, Component*>::const_iterator i = d->replicatedComponents_.find(id);
+        return i != d->replicatedComponents_.end() ? MAP_VALUE(i) :  nullptr;
     }
 
 
-    HashMap<unsigned, Component*>::const_iterator i = localComponents_.find(id);
-    return i != localComponents_.end() ? MAP_VALUE(i) :  nullptr;
+    HashMap<unsigned, Component*>::const_iterator i = d->localComponents_.find(id);
+    return i != d->localComponents_.end() ? MAP_VALUE(i) :  nullptr;
 
 }
 
 float Scene::GetAsyncProgress() const
 {
-    return !asyncLoading_ || asyncProgress_.totalNodes_ + asyncProgress_.totalResources_ == 0 ? 1.0f :
-                                                                                                (float)(asyncProgress_.loadedNodes_ + asyncProgress_.loadedResources_) /
-                                                                                                (float)(asyncProgress_.totalNodes_ + asyncProgress_.totalResources_);
+    return !asyncLoading_ || d->asyncProgress_.totalNodes_ + d->asyncProgress_.totalResources_ == 0
+               ? 1.0f
+               : (float)(d->asyncProgress_.loadedNodes_ + d->asyncProgress_.loadedResources_) /
+                     (float)(d->asyncProgress_.totalNodes_ + d->asyncProgress_.totalResources_);
 }
+
+LoadMode Scene::GetAsyncLoadMode() const { return d->asyncProgress_.mode_; }
 
 const QString &Scene::GetVarName(StringHash hash) const
 {
-    HashMap<StringHash, QString>::const_iterator i = varNames_.find(hash);
-    return i != varNames_.end() ? MAP_VALUE(i) : s_dummy;
+    HashMap<StringHash, QString>::const_iterator i = d->varNames_.find(hash);
+    return i != d->varNames_.end() ? MAP_VALUE(i) : s_dummy;
 }
 
 void Scene::Update(float timeStep)
@@ -756,7 +829,7 @@ void Scene::Update(float timeStep)
     {
         UpdateAsyncLoading();
         // If only preloading resources, scene update can continue
-        if (asyncProgress_.mode_ > LOAD_RESOURCES_ONLY)
+        if (d->asyncProgress_.mode_ > LOAD_RESOURCES_ONLY)
             return;
     }
 
@@ -806,20 +879,20 @@ void Scene::EndThreadedUpdate()
 
     threadedUpdate_ = false;
 
-    if (!delayedDirtyComponents_.empty())
+    if (!d->delayedDirtyComponents_.empty())
     {
         URHO3D_PROFILE(EndThreadedUpdate);
 
-        for (Component* i : delayedDirtyComponents_)
+        for (Component* i : d->delayedDirtyComponents_)
             i->OnMarkedDirty(i->GetNode());
-        delayedDirtyComponents_.clear();
+        d->delayedDirtyComponents_.clear();
     }
 }
 
 void Scene::DelayedMarkedDirty(Component* component)
 {
-    MutexLock lock(sceneMutex_);
-    delayedDirtyComponents_.push_back(component);
+    MutexLock lock(d->sceneMutex_);
+    d->delayedDirtyComponents_.push_back(component);
 }
 
 unsigned Scene::GetFreeNodeID(CreateMode mode)
@@ -828,13 +901,13 @@ unsigned Scene::GetFreeNodeID(CreateMode mode)
     {
         for (;;)
         {
-            unsigned ret = replicatedNodeID_;
-            if (replicatedNodeID_ < LAST_REPLICATED_ID)
-                ++replicatedNodeID_;
+            unsigned ret = d->replicatedNodeID_;
+            if (d->replicatedNodeID_ < LAST_REPLICATED_ID)
+                ++d->replicatedNodeID_;
             else
-                replicatedNodeID_ = FIRST_REPLICATED_ID;
+                d->replicatedNodeID_ = FIRST_REPLICATED_ID;
 
-            if (!replicatedNodes_.contains(ret))
+            if (!hashContains(d->replicatedNodes_,ret))
                 return ret;
         }
     }
@@ -842,13 +915,13 @@ unsigned Scene::GetFreeNodeID(CreateMode mode)
     {
         for (;;)
         {
-            unsigned ret =  localNodeID_;
-            if (localNodeID_ < LAST_LOCAL_ID)
-                ++localNodeID_;
+            unsigned ret =  d->localNodeID_;
+            if (d->localNodeID_ < LAST_LOCAL_ID)
+                ++d->localNodeID_;
             else
-                localNodeID_ = FIRST_LOCAL_ID;
+                d->localNodeID_ = FIRST_LOCAL_ID;
 
-            if (!localNodes_.contains(ret))
+            if (!hashContains(d->localNodes_,ret))
                 return ret;
         }
     }
@@ -860,13 +933,13 @@ unsigned Scene::GetFreeComponentID(CreateMode mode)
     {
         for (;;)
         {
-            unsigned ret = replicatedComponentID_;
-            if (replicatedComponentID_ < LAST_REPLICATED_ID)
-                ++replicatedComponentID_;
+            unsigned ret = d->replicatedComponentID_;
+            if (d->replicatedComponentID_ < LAST_REPLICATED_ID)
+                ++d->replicatedComponentID_;
             else
-                replicatedComponentID_ = FIRST_REPLICATED_ID;
+                d->replicatedComponentID_ = FIRST_REPLICATED_ID;
 
-            if (!replicatedComponents_.contains(ret))
+            if (!hashContains(d->replicatedComponents_,ret))
                 return ret;
         }
     }
@@ -874,13 +947,13 @@ unsigned Scene::GetFreeComponentID(CreateMode mode)
     {
         for (;;)
         {
-            unsigned ret =  localComponentID_;
-            if (localComponentID_ < LAST_LOCAL_ID)
-                ++localComponentID_;
+            unsigned ret =  d->localComponentID_;
+            if (d->localComponentID_ < LAST_LOCAL_ID)
+                ++d->localComponentID_;
             else
-                localComponentID_ = FIRST_LOCAL_ID;
+                d->localComponentID_ = FIRST_LOCAL_ID;
 
-            if (!localComponents_.contains(ret))
+            if (!hashContains(d->localComponents_,ret))
                 return ret;
         }
     }
@@ -911,28 +984,28 @@ void Scene::NodeAdded(Node* node)
     // If node with same ID exists, remove the scene reference from it and overwrite with the new node
     if (id < FIRST_LOCAL_ID)
     {
-        HashMap<unsigned, Node*>::iterator i = replicatedNodes_.find(id);
-        if (i != replicatedNodes_.end() && MAP_VALUE(i) != node)
+        HashMap<unsigned, Node*>::iterator i = d->replicatedNodes_.find(id);
+        if (i != d->replicatedNodes_.end() && MAP_VALUE(i) != node)
         {
             URHO3D_LOGWARNING("Overwriting node with ID " + QString::number(id));
             NodeRemoved(MAP_VALUE(i));
         }
 
-        replicatedNodes_[id] = node;
+        d->replicatedNodes_[id] = node;
 
         MarkNetworkUpdate(node);
         MarkReplicationDirty(node);
     }
     else
     {
-        HashMap<unsigned, Node*>::iterator i = localNodes_.find(id);
-        if (i != localNodes_.end() && MAP_VALUE(i) != node)
+        HashMap<unsigned, Node*>::iterator i = d->localNodes_.find(id);
+        if (i != d->localNodes_.end() && MAP_VALUE(i) != node)
         {
             URHO3D_LOGWARNING("Overwriting node with ID " + QString::number(id));
             NodeRemoved(MAP_VALUE(i));
         }
 
-        localNodes_[id] = node;
+        d->localNodes_[id] = node;
     }
 
     // Cache tag if already tagged.
@@ -940,7 +1013,7 @@ void Scene::NodeAdded(Node* node)
     {
         const QStringList& tags = node->GetTags();
         for (unsigned i = 0; i < tags.size(); ++i)
-            taggedNodes_[tags[i]].push_back(node);
+            d->taggedNodes_[tags[i]].push_back(node);
     }
     // Add already created components and child nodes now
     const std::vector<SharedPtr<Component> > &components = node->GetComponents();
@@ -953,12 +1026,12 @@ void Scene::NodeAdded(Node* node)
 
 void Scene::NodeTagAdded(Node* node, const QString & tag)
 {
-    taggedNodes_[tag].push_back(node);
+    d->taggedNodes_[tag].push_back(node);
 }
 
 void Scene::NodeTagRemoved(Node* node, const QString & tag)
 {
-    std::vector<Node*> &nodes_with_tag(taggedNodes_[tag]);
+    std::vector<Node*> &nodes_with_tag(d->taggedNodes_[tag]);
     auto it = std::find(nodes_with_tag.begin(),nodes_with_tag.end(),node);
     assert(it!=nodes_with_tag.end());
     nodes_with_tag.erase(it);
@@ -972,11 +1045,11 @@ void Scene::NodeRemoved(Node* node)
     unsigned id = node->GetID();
     if (id < FIRST_LOCAL_ID)
     {
-        replicatedNodes_.remove(id);
+        d->replicatedNodes_.erase(id);
         MarkReplicationDirty(node);
     }
     else
-        localNodes_.remove(id);
+        d->localNodes_.erase(id);
 
     node->ResetScene();
 
@@ -1012,25 +1085,25 @@ void Scene::ComponentAdded(Component* component)
 
     if (id < FIRST_LOCAL_ID)
     {
-        HashMap<unsigned, Component*>::iterator i = replicatedComponents_.find(id);
-        if (i != replicatedComponents_.end() && MAP_VALUE(i) != component)
+        HashMap<unsigned, Component*>::iterator i = d->replicatedComponents_.find(id);
+        if (i != d->replicatedComponents_.end() && MAP_VALUE(i) != component)
         {
             URHO3D_LOGWARNING("Overwriting component with ID " + QString::number(id));
             ComponentRemoved(MAP_VALUE(i));
         }
 
-        replicatedComponents_[id] = component;
+        d->replicatedComponents_[id] = component;
     }
     else
     {
-        HashMap<unsigned, Component*>::iterator i = localComponents_.find(id);
-        if (i != localComponents_.end() && MAP_VALUE(i) != component)
+        HashMap<unsigned, Component*>::iterator i = d->localComponents_.find(id);
+        if (i != d->localComponents_.end() && MAP_VALUE(i) != component)
         {
             URHO3D_LOGWARNING("Overwriting component with ID " + QString::number(id));
             ComponentRemoved(MAP_VALUE(i));
         }
 
-        localComponents_[id] = component;
+        d->localComponents_[id] = component;
     }
 
     component->OnSceneSet(this);
@@ -1043,9 +1116,9 @@ void Scene::ComponentRemoved(Component* component)
 
     unsigned id = component->GetID();
     if (id < FIRST_LOCAL_ID)
-        replicatedComponents_.remove(id);
+        d->replicatedComponents_.erase(id);
     else
-        localComponents_.remove(id);
+        d->localComponents_.erase(id);
 
     component->SetID(0);
     component->OnSceneSet(nullptr);
@@ -1055,18 +1128,18 @@ void Scene::SetVarNamesAttr(const QString& value)
 {
     QStringList varNames = value.split(';');
 
-    varNames_.clear();
+    d->varNames_.clear();
     for (QStringList::const_iterator i = varNames.begin(); i != varNames.end(); ++i)
-        varNames_[*i] = *i;
+        d->varNames_[*i] = *i;
 }
 
 QString Scene::GetVarNamesAttr() const
 {
     QString ret;
 
-    if (!varNames_.empty())
+    if (!d->varNames_.empty())
     {
-        for (const auto & elem : varNames_)
+        for (const auto & elem : d->varNames_)
             ret += ELEMENT_VALUE(elem) + ';';
 
         ret.resize(ret.length() - 1);
@@ -1077,32 +1150,32 @@ QString Scene::GetVarNamesAttr() const
 
 void Scene::PrepareNetworkUpdate()
 {
-    for (unsigned node_id : networkUpdateNodes_)
+    for (unsigned node_id : d->networkUpdateNodes_)
     {
         Node* node = GetNode(node_id);
         if (node != nullptr)
             node->PrepareNetworkUpdate();
     }
 
-    for (unsigned component_id : networkUpdateComponents_)
+    for (unsigned component_id : d->networkUpdateComponents_)
     {
         Component* component = GetComponent(component_id);
         if (component != nullptr)
             component->PrepareNetworkUpdate();
     }
 
-    networkUpdateNodes_.clear();
-    networkUpdateComponents_.clear();
+    d->networkUpdateNodes_.clear();
+    d->networkUpdateComponents_.clear();
 }
 
 void Scene::CleanupConnection(Connection* connection)
 {
     Node::CleanupConnection(connection);
 
-    for (auto & elem : replicatedNodes_)
+    for (auto & elem : d->replicatedNodes_)
         ELEMENT_VALUE(elem)->CleanupConnection(connection);
 
-    for (auto & elem : replicatedComponents_)
+    for (auto & elem : d->replicatedComponents_)
         ELEMENT_VALUE(elem)->CleanupConnection(connection);
 }
 
@@ -1111,11 +1184,11 @@ void Scene::MarkNetworkUpdate(Node* node)
     if (node != nullptr)
     {
         if (!threadedUpdate_)
-            networkUpdateNodes_.insert(node->GetID());
+            d->networkUpdateNodes_.insert(node->GetID());
         else
         {
-            MutexLock lock(sceneMutex_);
-            networkUpdateNodes_.insert(node->GetID());
+            MutexLock lock(d->sceneMutex_);
+            d->networkUpdateNodes_.insert(node->GetID());
         }
     }
 }
@@ -1125,11 +1198,11 @@ void Scene::MarkNetworkUpdate(Component* component)
     if (component != nullptr)
     {
         if (!threadedUpdate_)
-            networkUpdateComponents_.insert(component->GetID());
+            d->networkUpdateComponents_.insert(component->GetID());
         else
         {
-            MutexLock lock(sceneMutex_);
-            networkUpdateComponents_.insert(component->GetID());
+            MutexLock lock(d->sceneMutex_);
+            d->networkUpdateComponents_.insert(component->GetID());
         }
     }
 }
@@ -1159,10 +1232,10 @@ void Scene::HandleResourceBackgroundLoaded(const QString &,bool,Resource *resour
 {
     if (asyncLoading_)
     {
-        if (asyncProgress_.resources_.contains(resource->GetNameHash()))
+        if (d->asyncProgress_.resources_.contains(resource->GetNameHash()))
         {
-            asyncProgress_.resources_.remove(resource->GetNameHash());
-            ++asyncProgress_.loadedResources_;
+            d->asyncProgress_.resources_.remove(resource->GetNameHash());
+            ++d->asyncProgress_.loadedResources_;
         }
     }
 }
@@ -1172,14 +1245,14 @@ void Scene::UpdateAsyncLoading()
     URHO3D_PROFILE(UpdateAsyncLoading);
 
     // If resources left to load, do not load nodes yet
-    if (asyncProgress_.loadedResources_ < asyncProgress_.totalResources_)
+    if (d->asyncProgress_.loadedResources_ < d->asyncProgress_.totalResources_)
         return;
 
     HiresTimer asyncLoadTimer;
 
     for (;;)
     {
-        if (asyncProgress_.loadedNodes_ >= asyncProgress_.totalNodes_)
+        if (d->asyncProgress_.loadedNodes_ >= d->asyncProgress_.totalNodes_)
         {
             FinishAsyncLoading();
             return;
@@ -1187,49 +1260,49 @@ void Scene::UpdateAsyncLoading()
 
         // Read one child node with its full sub-hierarchy either from binary, JSON, or XML
         /// \todo Works poorly in scenes where one root-level child node contains all content
-        if (asyncProgress_.xmlFile_ != nullptr)
+        if (d->asyncProgress_.xmlFile_ != nullptr)
         {
-            unsigned nodeID = asyncProgress_.xmlElement_.GetUInt("id");
+            unsigned nodeID = d->asyncProgress_.xmlElement_.GetUInt("id");
             Node* newNode = CreateChild(nodeID, nodeID < FIRST_LOCAL_ID ? REPLICATED : LOCAL);
-            resolver_.AddNode(nodeID, newNode);
-            newNode->LoadXML(asyncProgress_.xmlElement_, resolver_);
-            asyncProgress_.xmlElement_ = asyncProgress_.xmlElement_.GetNext("node");
+            d->resolver_.AddNode(nodeID, newNode);
+            newNode->LoadXML(d->asyncProgress_.xmlElement_, d->resolver_);
+            d->asyncProgress_.xmlElement_ = d->asyncProgress_.xmlElement_.GetNext("node");
         }
-        else if (asyncProgress_.jsonFile_ != nullptr) // Load from JSON
+        else if (d->asyncProgress_.jsonFile_ != nullptr) // Load from JSON
         {
-            const JSONValue& childValue = asyncProgress_.jsonFile_->GetRoot().Get("children").GetArray().at(asyncProgress_.jsonIndex_);
+            const JSONValue& childValue = d->asyncProgress_.jsonFile_->GetRoot().Get("children").GetArray().at(d->asyncProgress_.jsonIndex_);
 
             unsigned nodeID =childValue.Get("id").GetUInt();
             Node* newNode = CreateChild(nodeID, nodeID < FIRST_LOCAL_ID ? REPLICATED : LOCAL);
-            resolver_.AddNode(nodeID, newNode);
-            newNode->LoadJSON(childValue, resolver_);
-            ++asyncProgress_.jsonIndex_;
+            d->resolver_.AddNode(nodeID, newNode);
+            newNode->LoadJSON(childValue, d->resolver_);
+            ++d->asyncProgress_.jsonIndex_;
         }
         else // Load from binary
         {
-            unsigned nodeID = asyncProgress_.file_->ReadUInt();
+            unsigned nodeID = d->asyncProgress_.file_->ReadUInt();
             Node* newNode = CreateChild(nodeID, nodeID < FIRST_LOCAL_ID ? REPLICATED : LOCAL);
-            resolver_.AddNode(nodeID, newNode);
-            newNode->Load(*asyncProgress_.file_, resolver_);
+            d->resolver_.AddNode(nodeID, newNode);
+            newNode->Load(*d->asyncProgress_.file_, d->resolver_);
         }
 
-        ++asyncProgress_.loadedNodes_;
+        ++d->asyncProgress_.loadedNodes_;
 
         // Break if time limit exceeded, so that we keep sufficient FPS
         if (asyncLoadTimer.GetUSecS() >= asyncLoadingMs_ * 1000)
             break;
     }
-    asyncLoadProgress.Emit(this, GetAsyncProgress(), asyncProgress_.loadedNodes_, asyncProgress_.totalNodes_,
-                           asyncProgress_.loadedResources_, asyncProgress_.totalResources_);
+    asyncLoadProgress.Emit(this, GetAsyncProgress(), d->asyncProgress_.loadedNodes_, d->asyncProgress_.totalNodes_,
+                           d->asyncProgress_.loadedResources_, d->asyncProgress_.totalResources_);
 }
 
 void Scene::FinishAsyncLoading()
 {
-    if (asyncProgress_.mode_ > LOAD_RESOURCES_ONLY)
+    if (d->asyncProgress_.mode_ > LOAD_RESOURCES_ONLY)
     {
-        resolver_.Resolve();
+        d->resolver_.Resolve();
         ApplyAttributes();
-        FinishLoading(asyncProgress_.file_);
+        FinishLoading(d->asyncProgress_.file_);
     }
 
     StopAsyncLoading();
@@ -1299,8 +1372,8 @@ void Scene::PreloadResources(File* file, bool isSceneFile)
                     bool success = cache->BackgroundLoadResource(ref.type_, name);
                     if (success)
                     {
-                        ++asyncProgress_.totalResources_;
-                        asyncProgress_.resources_.insert(StringHash(name));
+                        ++d->asyncProgress_.totalResources_;
+                        d->asyncProgress_.resources_.insert(StringHash(name));
                     }
                 }
                 else if (attr.type_ == VAR_RESOURCEREFLIST)
@@ -1312,8 +1385,8 @@ void Scene::PreloadResources(File* file, bool isSceneFile)
                         bool success = cache->BackgroundLoadResource(refList.type_, name);
                         if (success)
                         {
-                            ++asyncProgress_.totalResources_;
-                            asyncProgress_.resources_.insert(StringHash(name));
+                            ++d->asyncProgress_.totalResources_;
+                            d->asyncProgress_.resources_.insert(StringHash(name));
                         }
                     }
                 }
@@ -1360,8 +1433,8 @@ void Scene::PreloadResourcesXML(const XMLElement& element)
                             bool success = cache->BackgroundLoadResource(ref.type_, name);
                             if (success)
                             {
-                                ++asyncProgress_.totalResources_;
-                                asyncProgress_.resources_.insert(StringHash(name));
+                                ++d->asyncProgress_.totalResources_;
+                                d->asyncProgress_.resources_.insert(StringHash(name));
                             }
                         }
                         else if (attr.type_ == VAR_RESOURCEREFLIST)
@@ -1373,8 +1446,8 @@ void Scene::PreloadResourcesXML(const XMLElement& element)
                                 bool success = cache->BackgroundLoadResource(refList.type_, name);
                                 if (success)
                                 {
-                                    ++asyncProgress_.totalResources_;
-                                    asyncProgress_.resources_.insert(StringHash(name));
+                                    ++d->asyncProgress_.totalResources_;
+                                    d->asyncProgress_.resources_.insert(StringHash(name));
                                 }
                             }
                         }
@@ -1443,8 +1516,8 @@ void Scene::PreloadResourcesJSON(const JSONValue& value)
                             bool success = cache->BackgroundLoadResource(ref.type_, name);
                             if (success)
                             {
-                                ++asyncProgress_.totalResources_;
-                                asyncProgress_.resources_.insert(StringHash(name));
+                                ++d->asyncProgress_.totalResources_;
+                                d->asyncProgress_.resources_.insert(StringHash(name));
                             }
                         }
                         else if (attr.type_ == VAR_RESOURCEREFLIST)
@@ -1456,8 +1529,8 @@ void Scene::PreloadResourcesJSON(const JSONValue& value)
                                 bool success = cache->BackgroundLoadResource(refList.type_, name);
                                 if (success)
                                 {
-                                    ++asyncProgress_.totalResources_;
-                                    asyncProgress_.resources_.insert(StringHash(name));
+                                    ++d->asyncProgress_.totalResources_;
+                                    d->asyncProgress_.resources_.insert(StringHash(name));
                                 }
                             }
                         }
@@ -1497,3 +1570,4 @@ void RegisterSceneLibrary(Context* context)
 }
 
 }
+#endif

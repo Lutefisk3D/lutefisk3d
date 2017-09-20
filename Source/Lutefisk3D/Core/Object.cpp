@@ -19,14 +19,43 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include "Object.h"
+
 #include "Context.h"
+#include "context_p.h"
+#include "Variant.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Thread.h"
+#include <QSet>
 #include <algorithm>
 
 using namespace Urho3D;
+template class Urho3D::SharedPtr<Urho3D::Object>;
 namespace
 {
+/// Template implementation of the event handler invoke helper (std::function instance).
+class EventHandler11Impl final : public EventHandler
+{
+public:
+    /// Construct with receiver and function pointers and userdata.
+    EventHandler11Impl(std::function<void(StringHash, VariantMap&)> function, void* userData = 0) :
+        EventHandler(0, userData),
+        function_(function)
+    {
+        assert(function_);
+    }
+
+    /// Invoke event handler function.
+    void Invoke(VariantMap& eventData)  override
+    {
+        function_(eventType_, eventData);
+    }
+
+private:
+    /// Class-specific pointer to handler function.
+    std::function<void(StringHash, VariantMap&)> function_;
+};
+
 // RAII based Begin/End SendEvent guard
 class EventReceiverGroup_Guard
 {
@@ -325,50 +354,43 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
 
     // Then the non-specific receivers
     group = context->GetEventReceivers(eventType);
-    if (group)
+    if (!group)
+        return;
+
+    EventReceiverGroup_Guard event_guard(*group);
+    if (processed.isEmpty())
     {
-        EventReceiverGroup_Guard event_guard(*group);
-        if (processed.isEmpty())
-        {
         //Prevent sending events for subscribers added during event handling.
         const size_t receiver_count = group->receivers_.size();
         for (size_t i = 0; i < receiver_count; ++i)
         {
             Object* receiver = group->receivers_[i];
-                if (!receiver)
-                    continue;
+            if (!receiver)
+                continue;
 
-                receiver->OnEvent(this, eventType, eventData);
+            receiver->OnEvent(this, eventType, eventData);
 
-                if (self.Expired())
-                {
-                    return;
-                }
-
-            }
-        }
-        else
-        {
-            //Prevent sending events for subscribers added during event handling.
-            const size_t receiver_count = group->receivers_.size();
-            // If there were specific receivers, check that the event is not sent doubly to them
-            for (size_t i = 0; i < receiver_count; ++i)
-            {
-                Object* receiver = group->receivers_[i];
-                if (!receiver || processed.contains(receiver))
-                    continue;
-
-                receiver->OnEvent(this, eventType, eventData);
-
-                if (self.Expired())
-                {
-                    return;
-                }
-
-            }
+            if (self.Expired())
+                return;
         }
     }
+    else
+    {
+        //Prevent sending events for subscribers added during event handling.
+        const size_t receiver_count = group->receivers_.size();
+        // If there were specific receivers, check that the event is not sent doubly to them
+        for (size_t i = 0; i < receiver_count; ++i)
+        {
+            Object* receiver = group->receivers_[i];
+            if (!receiver || processed.contains(receiver))
+                continue;
 
+            receiver->OnEvent(this, eventType, eventData);
+
+            if (self.Expired())
+                return;
+        }
+    }
 }
 
 VariantMap& Object::GetEventDataMap() const
@@ -406,22 +428,13 @@ bool Object::HasSubscribedToEvent(Object* sender, StringHash eventType) const
 
 const QString& Object::GetCategory() const
 {
-    const HashMap<QString, std::vector<StringHash> >& objectCategories = context_->GetObjectCategories();
-    StringHash myType = GetType();
-    for (auto iter = objectCategories.begin(),fin=objectCategories.end(); iter!=fin; ++iter)
-    {
-        const std::vector<StringHash> &entries(MAP_VALUE(iter));
-        if(entries.end() != std::find(entries.begin(),entries.end(),myType))
-            return MAP_KEY(iter);
-    }
-
-    return s_dummy;
+    return context_->GetObjectCategory(GetType());
 }
 /// Find the first event handler with no specific sender.
-cilEventHandler Object::FindEventHandler(StringHash eventType) const
+Object::cilEventHandler Object::FindEventHandler(StringHash eventType) const
 {
-    cilEventHandler handler = eventHandlers_.begin();
-    while (handler!=eventHandlers_.end())
+    cilEventHandler handler = eventHandlers_.cbegin();
+    while (handler!=eventHandlers_.cend())
     {
         if ((*handler)->GetEventType() == eventType)
             return handler;
@@ -431,7 +444,7 @@ cilEventHandler Object::FindEventHandler(StringHash eventType) const
     return eventHandlers_.cend();
 }
 /// Find the first event handler with specific sender.
-Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender) const
+Object::cilEventHandler Object::FindSpecificEventHandler(Object* sender) const
 {
     cilEventHandler handler = eventHandlers_.cbegin();
 
@@ -445,7 +458,7 @@ Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender) const
     return eventHandlers_.cend();
 }
 /// Find the first event handler with specific sender and event type.
-Urho3D::cilEventHandler Object::FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous) const
+Object::cilEventHandler Object::FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous) const
 {
     cilEventHandler handler = eventHandlers_.cbegin();
     if(previous)

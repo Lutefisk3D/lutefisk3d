@@ -22,20 +22,22 @@
 
 #pragma once
 
-#include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Container/DataHandle.h"
 #include "Lutefisk3D/Math/Color.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
-#include "Lutefisk3D/Resource/Image.h"
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Math/Plane.h"
 #include "Lutefisk3D/Math/Rect.h"
-
+#include "Lutefisk3D/Container/Str.h"
 #include <utility>
 #include <functional>
 #include <array>
 
+namespace std {
+extern template
+class unique_ptr<uint8_t[]>;
+}
 namespace gl {
 enum class GLenum : uint32_t;
 }
@@ -43,42 +45,38 @@ struct SDL_Window;
 
 namespace Urho3D
 {
-class LUTEFISK3D_EXPORT ConstantBuffer;
-class LUTEFISK3D_EXPORT File;
-class LUTEFISK3D_EXPORT Image;
-class LUTEFISK3D_EXPORT IndexBuffer;
-class LUTEFISK3D_EXPORT GPUObject;
-class LUTEFISK3D_EXPORT GraphicsImpl;
-class LUTEFISK3D_EXPORT RenderSurface;
-class LUTEFISK3D_EXPORT Shader;
-class LUTEFISK3D_EXPORT ShaderPrecache;
-class LUTEFISK3D_EXPORT ShaderProgram;
-class LUTEFISK3D_EXPORT ShaderVariation;
-class LUTEFISK3D_EXPORT Texture;
-class LUTEFISK3D_EXPORT Texture2D;
-class LUTEFISK3D_EXPORT Texture2DArray;
-class LUTEFISK3D_EXPORT TextureCube;
-class LUTEFISK3D_EXPORT Vector3;
-class LUTEFISK3D_EXPORT Vector4;
-class LUTEFISK3D_EXPORT VertexBuffer;
+enum CompressedFormat : unsigned;
+class Deserializer;
+class ConstantBuffer;
+class File;
+class Image;
+class IndexBuffer;
+class GPUObject;
+class GraphicsImpl;
+class RenderSurface;
+class Shader;
+class ShaderPrecache;
+class ShaderProgram;
+class ShaderVariation;
+class Texture;
+class Texture2D;
+class Texture2DArray;
+class TextureCube;
+class Vector3;
+class Vector4;
+class VertexBuffer;
 struct ShaderParameter;
 
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 /// CPU-side scratch buffer for vertex data updates.
 struct ScratchBuffer
 {
-    ScratchBuffer() :
-        size_(0),
-        reserved_(false)
-    {
-    }
-
     /// Buffer data.
-    SharedArrayPtr<unsigned char> data_;
+    std::unique_ptr<uint8_t[]> data_;
     /// Data size.
-    unsigned size_;
+    unsigned size_=0;
     /// Reserved flag.
-    bool reserved_;
+    bool reserved_=false;
 };
 
 /// %Graphics subsystem. Manages the application window, rendering state and GPU resources.
@@ -90,8 +88,9 @@ public:
     /// Destruct. Release the device context and close the window.
     virtual ~Graphics();
 
-    /// Set external window handle. Only effective before setting the initial screen mode.
-    void SetExternalWindow(void* window);
+    /// Inform graphics that our SDL_Window is wrapped in a toolkit's own window.
+    void SetEmbeddedWindow() { assert(!window_); ourWindowIsEmbedded_=true; }
+    bool WeAreEmbedded() const { return ourWindowIsEmbedded_; }
     /// Set window title.
     void SetWindowTitle(const QString& windowTitle);
     /// Set window icon.
@@ -144,9 +143,7 @@ public:
     /// Set vertex buffer.
     void SetVertexBuffer(VertexBuffer* buffer);
     /// Set multiple vertex buffers.
-    bool SetVertexBuffers(const std::vector<VertexBuffer*>& buffers, unsigned instanceOffset = 0);
-    /// Set multiple vertex buffers.
-    bool SetVertexBuffers(const std::vector<SharedPtr<VertexBuffer> >& buffers, unsigned instanceOffset = 0);
+    bool SetVertexBuffers(const std::vector<Urho3D::VertexBuffer *> &buffers, unsigned instanceOffset = 0);
     /// Set index buffer.
     void SetIndexBuffer(IndexBuffer* buffer);
     /// Set shaders.
@@ -213,17 +210,11 @@ public:
     void SetDepthStencil(Texture2D* texture);
     /// Set viewport.
     void SetViewport(const IntRect& rect);
-    /// Set blending and alpha-to-coverage modes. Alpha-to-coverage is not supported on Direct3D9.
     void SetBlendMode(BlendMode mode, bool alphaToCoverage = false);
-    /// Set color write on/off.
     void SetColorWrite(bool enable);
-    /// Set hardware culling mode.
     void SetCullMode(CullMode mode);
-    /// Set depth bias.
     void SetDepthBias(float constantBias, float slopeScaledBias);
-    /// Set depth compare.
     void SetDepthTest(CompareMode mode);
-    /// Set depth write on/off.
     void SetDepthWrite(bool enable);
     /// Set polygon fill mode.
     void SetFillMode(FillMode mode);
@@ -250,8 +241,6 @@ public:
     bool IsInitialized() const;
     /// Return graphics implementation, which holds the actual API-specific resources.
     GraphicsImpl* GetImpl() const { return impl_; }
-    /// Return OS-specific external window handle. Null if not in use.
-    void* GetExternalWindow() const { return externalWindow_; }
     /// Return SDL window.
     SDL_Window* GetWindow() const { return window_; }
     /// Return window title.
@@ -326,7 +315,6 @@ public:
     int GetMonitorCount() const;
     /// Return hardware format for a compressed image format, or 0 if unsupported.
     gl::GLenum GetFormat(CompressedFormat format) const;
-    /// Return a shader variation by name and defines.
     ShaderVariation* GetShader(ShaderType type, const QString& name, const QString& defines = QString()) const;
     /// Return a shader variation by name and defines.
     ShaderVariation* GetShader(ShaderType type, const char* name, const char* defines) const;
@@ -546,8 +534,6 @@ private:
     QString windowTitle_;
     /// Window icon image.
     WeakPtr<Image> windowIcon_;
-    /// External window, null if not in use (default.)
-    void* externalWindow_;
     /// Window width in pixels.
     int width_;
     /// Window height in pixels.
@@ -576,6 +562,8 @@ private:
     bool flushGPU_;
     /// sRGB conversion on write flag for the main window.
     bool sRGB_;
+    /// If the window we are managing is embedded inside some UI toolkit
+    bool ourWindowIsEmbedded_;
     /// Light pre-pass rendering support flag.
     bool lightPrepassSupport_;
     /// Deferred rendering support flag.

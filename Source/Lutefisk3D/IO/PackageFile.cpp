@@ -23,9 +23,10 @@
 #include "Lutefisk3D/IO/File.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/PackageFile.h"
-
+#include "Lutefisk3D/Core/Variant.h"
 namespace Urho3D
 {
+template class SharedPtr<PackageFile>;
 
 PackageFile::PackageFile(Context* context) :
     Object(context),
@@ -121,6 +122,15 @@ const PackageEntry* PackageFile::GetEntry(const QString& fileName) const
     if (i != entries_.end())
         return &MAP_VALUE(i);
     return nullptr;
+}
+
+std::vector<QString> PackageFile::GetEntryNames() const
+{
+    std::vector<QString> res;
+    res.reserve(entries_.size());
+    for(auto &v : entries_)
+        res.emplace_back(v.first);
+    return res;
 }
 
 }

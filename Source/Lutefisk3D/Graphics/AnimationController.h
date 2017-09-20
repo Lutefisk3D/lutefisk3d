@@ -29,7 +29,7 @@
 namespace Urho3D
 {
 
-class AnimatedModel;
+class LUTEFISK3D_EXPORT AnimatedModel;
 class Animation;
 class AnimationState;
 struct Bone;

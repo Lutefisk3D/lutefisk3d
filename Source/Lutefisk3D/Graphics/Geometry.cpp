@@ -178,12 +178,12 @@ void Geometry::Draw(Graphics* graphics)
     if (indexBuffer_ && indexCount_ > 0)
     {
         graphics->SetIndexBuffer(indexBuffer_);
-        graphics->SetVertexBuffers(vertexBuffers_);
+        graphics->SetVertexBuffers(reinterpret_cast<std::vector<VertexBuffer *> &>(vertexBuffers_));
         graphics->Draw(primitiveType_, indexStart_, indexCount_, vertexStart_, vertexCount_);
     }
     else if (vertexCount_ > 0)
     {
-        graphics->SetVertexBuffers(vertexBuffers_);
+        graphics->SetVertexBuffers(reinterpret_cast<std::vector<VertexBuffer *> &>(vertexBuffers_));
         graphics->Draw(primitiveType_, vertexStart_, vertexCount_);
     }
 }

@@ -7,7 +7,6 @@
 #else
 #include <unordered_map>
 #include <unordered_set>
-#include <set>
 #endif
 
 #include <vector>
@@ -64,80 +63,18 @@ public:
         return true;
     }
 };
-
-template <typename T,typename U>
-class HashMap : public std::unordered_map<T,U> {
-    typedef std::unordered_map<T,U> ParentClass;
-public:
-    HashMap() {}
-    typedef typename ParentClass::iterator iterator;
-    typedef typename ParentClass::const_iterator const_iterator;
-
-    constexpr bool contains(const T &v) const { return this->find(v)!=this->cend();}
-    /// Erase an element if found.
-    bool remove(const T& value)
-    {
-        iterator i = this->find(value);
-        if (i == this->end())
-            return false;
-        this->erase(i);
-        return true;
-    }
-    constexpr bool isEmpty() const { return this->empty(); }
-    std::vector<T> keys() const {
-        std::vector<T> result;
-        result.reserve(this->size());
-        for(const std::pair<const T,U> v : *this) {
-            result.push_back(v.first);
-        }
-        return result;
-    }
-    std::vector<U> values() const {
-        std::vector<U> result;
-        result.reserve(this->size());
-        for(const std::pair<const T,U> v : *this) {
-            result.push_back(v.second);
-        }
-        return result;
-    }
+template<typename K,typename V>
+class HashMap : public std::unordered_map<K,V>
+{
 };
-template <typename T,typename U>
-class FasterHashMap : public sherwood_map<T,U> {
-    typedef sherwood_map<T,U> ParentClass;
-public:
-    FasterHashMap() {}
-    typedef typename ParentClass::iterator iterator;
-    typedef typename ParentClass::const_iterator const_iterator;
-
-    constexpr bool contains(const T &v) const { return this->find(v)!=this->cend();}
-    /// Erase an element if found.
-    bool remove(const T& value)
-    {
-        iterator i = this->find(value);
-        if (i == this->end())
-            return false;
-        this->erase(i);
-        return true;
-    }
-    constexpr bool isEmpty() const { return this->empty(); }
-    std::vector<T> keys() const {
-        std::vector<T> result;
-        result.reserve(this->size());
-        for(const std::pair<const T,U> v : *this) {
-            result.push_back(v.first);
-        }
-        return result;
-    }
-    std::vector<U> values() const {
-        std::vector<U> result;
-        result.reserve(this->size());
-        for(const std::pair<const T,U> v : *this) {
-            result.push_back(v.second);
-        }
-        return result;
-    }
+template<typename K,typename V>
+class FasterHashMap : public sherwood_map<K,V>
+{
 };
-
+template<class CONTAINER,class VAL>
+constexpr bool hashContains(const CONTAINER &c,const VAL &v) {
+    return c.find(v)!=c.end();
+}
 template <typename T>
 class HashSet : public std::unordered_set<T> {
 public:

@@ -23,7 +23,6 @@
 #pragma once
 
 #include "Lutefisk3D/Audio/AudioDefs.h"
-#include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Container/HashMap.h"
@@ -35,6 +34,7 @@ class AudioImpl;
 class Sound;
 class SoundListener;
 class SoundSource;
+extern const char* AUDIO_CATEGORY;
 
 /// %Audio subsystem.
 class LUTEFISK3D_EXPORT Audio : public Object, public jl::SignalObserver
@@ -76,7 +76,7 @@ public:
     /// Return all sound sources.
     const std::vector<SoundSource*>& GetSoundSources() const { return soundSources_; }
     /// Return whether the specified master gain has been defined.
-    bool HasMasterGain(const QString& type) const { return masterGain_.contains(type); }
+    bool HasMasterGain(const QString& type) const { return hashContains(masterGain_,type); }
     void AddSoundSource(SoundSource* soundSource);
     void RemoveSoundSource(SoundSource* soundSource);
     /// Return audio thread mutex.
@@ -89,7 +89,7 @@ private:
     void Release();
     void UpdateInternal(float timeStep);
 
-    SharedArrayPtr<int> clipBuffer_; ///< Clipping buffer for mixing.
+    std::unique_ptr<int[]> clipBuffer_; ///< Clipping buffer for mixing.
     Mutex audioMutex_;  ///< Audio thread mutex.
     unsigned deviceID_; ///< SDL audio device ID.
     unsigned sampleSize_; ///< Sample size.
@@ -98,7 +98,7 @@ private:
     bool interpolation_;///< Mixing interpolation flag.
     bool stereo_;       ///< Stereo flag.
     bool playing_;      ///< Playing flag.
-    HashMap<StringHash, Variant> masterGain_;///< Master gain by sound source type.
+    HashMap<StringHash, float> masterGain_;///< Master gain by sound source type.
     HashSet<StringHash> pausedSoundTypes_;///< Paused sound types.
     std::vector<SoundSource*> soundSources_; ///< Sound sources. TODO: consider std::set ?
     WeakPtr<SoundListener> listener_; ///< Sound listener.

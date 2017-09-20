@@ -23,7 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Graphics/Drawable.h"
-
+#include "Lutefisk3D/Graphics/BiasParameters.h"
 namespace Urho3D
 {
 class LUTEFISK3D_EXPORT Texture;
@@ -40,35 +40,9 @@ enum LightType
 
 static constexpr const float SHADOW_MIN_QUANTIZE = 0.1f;
 static constexpr const float SHADOW_MIN_VIEW = 1.0f;
-static constexpr const unsigned MAX_LIGHT_SPLITS = 6;
 static constexpr const unsigned MAX_CASCADE_SPLITS = 4;
 
-/// Depth bias parameters. Used both by lights (for shadow mapping) and materials.
-struct LUTEFISK3D_EXPORT BiasParameters
-{
-    /// Construct undefined.
-    BiasParameters()
-    {
-    }
 
-    /// Construct with initial values.
-    BiasParameters(float constantBias, float slopeScaledBias, float normalOffset = 0.0f) :
-        constantBias_(constantBias),
-        slopeScaledBias_(slopeScaledBias),
-        normalOffset_(normalOffset)
-    {
-    }
-
-    /// Validate parameters.
-    void Validate();
-
-    /// Constant bias.
-    float constantBias_;
-    /// Slope scaled bias.
-    float slopeScaledBias_;
-    /// Normal offset multiplier.
-    float normalOffset_;
-};
 
 /// Cascaded shadow map parameters.
 struct LUTEFISK3D_EXPORT CascadeParameters
@@ -110,39 +84,6 @@ struct LUTEFISK3D_EXPORT CascadeParameters
     float biasAutoAdjust_;
 };
 
-/// Shadow map focusing parameters.
-struct LUTEFISK3D_EXPORT FocusParameters
-{
-    /// Construct undefined.
-    FocusParameters()
-    {
-    }
-
-    /// Construct with initial values.
-    FocusParameters(bool focus, bool nonUniform, bool autoSize, float quantize, float minView) :
-        focus_(focus),
-        nonUniform_(nonUniform),
-        autoSize_(autoSize),
-        quantize_(quantize),
-        minView_(minView)
-    {
-    }
-
-    /// Validate parameters.
-    void Validate();
-
-    /// Focus flag.
-    bool focus_;
-    /// Non-uniform focusing flag.
-    bool nonUniform_;
-    /// Auto-size (reduce resolution when far away) flag.
-    bool autoSize_;
-    /// Focus quantization.
-    float quantize_;
-    /// Minimum view size.
-    float minView_;
-};
-
 /// %Light component.
 class LUTEFISK3D_EXPORT Light : public Drawable
 {
@@ -157,11 +98,11 @@ public:
     static void RegisterObject(Context* context);
 
     /// Handle attribute change.
-    virtual void OnSetAttribute(const AttributeInfo& attr, const Variant& src) override;
+    void OnSetAttribute(const AttributeInfo& attr, const Variant& src) override;
     /// Process octree raycast. May be called from a worker thread.
-    virtual void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
+    void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
     /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
-    virtual void UpdateBatches(const FrameInfo& frame) override;
+    void UpdateBatches(const FrameInfo& frame) override;
     /// Visualize the component as debug geometry.
     virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 

@@ -181,7 +181,7 @@ void RibbonTrail::RegisterObject(Context* context)
 
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Material", GetMaterialAttr, SetMaterialAttr, ResourceRef, ResourceRef(Material::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Material", GetMaterialAttr, SetMaterialAttr, ResourceRef, {Material::GetTypeStatic()}, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Emitting", IsEmitting, SetEmitting, bool, true, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Update Invisible", GetUpdateInvisible, SetUpdateInvisible, bool, false, AM_DEFAULT);
     URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Trail Type", GetTrailType, SetTrailType, TrailType, trailTypeNames, TT_FACE_CAMERA, AM_DEFAULT);
@@ -503,8 +503,8 @@ void RibbonTrail::OnSceneSet(Scene* scene)
     if (scene && IsEnabledEffective())
         scene->scenePostUpdate.Connect(this,&RibbonTrail::HandleScenePostUpdate);
     else if (!scene) {
-        assert(GetScene());
-        GetScene()->scenePostUpdate.Disconnect(this,&RibbonTrail::HandleScenePostUpdate);
+        if(GetScene())
+            GetScene()->scenePostUpdate.Disconnect(this);
     }
 }
 /// Recalculate the world-space bounding box.
@@ -634,9 +634,10 @@ void RibbonTrail::UpdateVertexBuffer(const FrameInfo& frame)
 
     // Fill sorted points vector
     sortedPoints_.reserve(numPoints_);
+    sortedPoints_.clear();
     for (unsigned i = 0; i < numPoints_; ++i)
     {
-        TrailPoint& point = points_[i];
+        TrailPoint& point(points_[i]);
         sortedPoints_.emplace_back(&point);
         if (sorted_)
             point.sortDistance_ = frame.camera_->GetDistanceSquared(point.position_);
@@ -644,7 +645,7 @@ void RibbonTrail::UpdateVertexBuffer(const FrameInfo& frame)
 
     // Sort points
     if (sorted_)
-        std::sort(sortedPoints_.begin(), sortedPoints_.end(), CompareTails);
+        std::stable_sort(sortedPoints_.begin(), sortedPoints_.end(), CompareTails);
 
     // Update individual trail elapsed length
     float trailLength = 0.0f;

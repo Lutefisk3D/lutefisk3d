@@ -21,6 +21,7 @@
 //
 
 #include "Batch.h"
+#include "Light.h"
 
 #include "Camera.h"
 #include "Geometry.h"
@@ -571,12 +572,12 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
             for (auto iter= parameters.begin(), fin=parameters.end(); iter!=fin; ++iter)
                 graphics->SetShaderParameter(MAP_KEY(iter), MAP_VALUE(iter).value_);
         }
-
-        const HashMap<TextureUnit, SharedPtr<Texture> >& textures = material_->GetTextures();
-        for (auto i = textures.begin(); i != textures.end(); ++i)
+        int texunitidx=0;
+        for (const auto &entry : material_->GetTextures())
         {
-            if (graphics->HasTextureUnit(MAP_KEY(i)))
-                graphics->SetTexture(MAP_KEY(i), MAP_VALUE(i).Get());
+            if (entry && graphics->HasTextureUnit(TextureUnit(texunitidx)))
+                graphics->SetTexture(TextureUnit(texunitidx), entry);
+            texunitidx++;
         }
     }
 
@@ -665,9 +666,9 @@ void BatchGroup::Draw(View *view, Camera *camera, bool allowDepthWrite) const
 
         // Get the geometry vertex buffers, then add the instancing stream buffer
         // Hack: use a const_cast to avoid dynamic allocation of new temp vectors
-        std::vector<SharedPtr<VertexBuffer>> &vertexBuffers =
-                const_cast<std::vector<SharedPtr<VertexBuffer>> &>(geometry_->GetVertexBuffers());
-        vertexBuffers.emplace_back(SharedPtr<VertexBuffer>(instanceBuffer));
+        std::vector<VertexBuffer *> &vertexBuffers =
+                const_cast<std::vector<VertexBuffer *> &>(geometry_->GetVertexBuffers());
+        vertexBuffers.emplace_back(instanceBuffer);
 
         graphics->SetIndexBuffer(geometry_->GetIndexBuffer());
         graphics->SetVertexBuffers(vertexBuffers, startIndex_);

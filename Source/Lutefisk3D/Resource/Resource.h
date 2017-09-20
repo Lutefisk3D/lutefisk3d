@@ -26,6 +26,7 @@
 #include "Lutefisk3D/Core/Timer.h"
 #include "Lutefisk3D/Resource/JSONValue.h"
 #include "Lutefisk3D/Resource/ResourceEvents.h"
+#include "Lutefisk3D/Resource/ResourceDecls.h"
 namespace Urho3D
 {
 
@@ -48,6 +49,27 @@ enum AsyncLoadState
     ASYNC_FAIL = 4
 };
 
+/// Typed resource reference.
+struct LUTEFISK3D_EXPORT ResourceRef
+{
+    StringHash type_; //!< Object type.
+    QString    name_; //!< Object name.
+
+    /// Test for equality with another reference.
+    bool operator == (const ResourceRef& rhs) const { return type_ == rhs.type_ && name_ == rhs.name_; }
+    /// Test for inequality with another reference.
+    bool operator != (const ResourceRef& rhs) const { return type_ != rhs.type_ || name_ != rhs.name_; }
+};
+/// %List of typed resource references.
+struct LUTEFISK3D_EXPORT ResourceRefList
+{
+    StringHash type_; //!< Object type.
+    std::vector<QString> names_; //!< List of object names.
+    /// Test for equality with another reference list.
+    bool operator == (const ResourceRefList& rhs) const { return type_ == rhs.type_ && names_ == rhs.names_; }
+    /// Test for inequality with another reference list.
+    bool operator != (const ResourceRefList& rhs) const { return type_ != rhs.type_ || names_ != rhs.names_; }
+};
 /// Base class for resources.
 class LUTEFISK3D_EXPORT Resource : public Object, public SingleResourceSignals
 {
@@ -121,7 +143,7 @@ private:
 };
 inline QString GetResourceName(Resource* resource)
 {
-    return resource ? resource->GetName() : QString::null;
+    return resource ? resource->GetName() : QLatin1Literal("");
 }
 
 inline StringHash GetResourceType(Resource* resource, StringHash defaultType)
@@ -131,7 +153,7 @@ inline StringHash GetResourceType(Resource* resource, StringHash defaultType)
 
 inline ResourceRef GetResourceRef(Resource* resource, StringHash defaultType)
 {
-    return ResourceRef(GetResourceType(resource, defaultType), GetResourceName(resource));
+    return {GetResourceType(resource, defaultType), GetResourceName(resource)};
 }
 
 template <class T> QStringList GetResourceNames(const std::vector<SharedPtr<T> >& resources)

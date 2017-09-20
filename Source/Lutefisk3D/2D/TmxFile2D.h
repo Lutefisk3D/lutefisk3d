@@ -33,6 +33,7 @@ class Texture2D;
 class TmxFile2D;
 class XMLElement;
 class XMLFile;
+extern template class SharedPtr<XMLFile>;
 
 /// Tmx layer.
 class TmxLayer2D : public RefCounted

@@ -29,6 +29,7 @@
 #include "SceneEvents.h"
 #include "Lutefisk3D/IO/Serializer.h"
 #include "Lutefisk3D/Resource/XMLElement.h"
+#include "Lutefisk3D/Resource/Resource.h"
 #include "Lutefisk3D/Resource/JSONValue.h"
 
 namespace Urho3D
@@ -666,7 +667,7 @@ void Serializable::ResetToDefault()
 
 void Serializable::RemoveInstanceDefault()
 {
-    instanceDefaultValues_.release();
+    instanceDefaultValues_.reset();
 }
 
 void Serializable::SetTemporary(bool enable)

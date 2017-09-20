@@ -41,7 +41,7 @@ void ConstantBuffer::Release()
         object_ = 0;
     }
 
-    shadowData_.Reset();
+    shadowData_.reset();
     size_ = 0;
 }
 
@@ -65,15 +65,15 @@ bool ConstantBuffer::SetSize(unsigned size)
 
     size_ = size;
     dirty_ = false;
-    shadowData_ = new unsigned char[size_];
-    memset(shadowData_.Get(), 0, size_);
+    shadowData_.reset(new unsigned char[size_]);
+    memset(shadowData_.get(), 0, size_);
 
     if (graphics_)
     {
         if (!object_)
             gl::glGenBuffers(1, &object_);
         graphics_->SetUBO(object_);
-        gl::glBufferData(gl::GL_UNIFORM_BUFFER, size_, shadowData_.Get(), gl::GL_DYNAMIC_DRAW);
+        gl::glBufferData(gl::GL_UNIFORM_BUFFER, size_, shadowData_.get(), gl::GL_DYNAMIC_DRAW);
     }
 
     return true;
@@ -84,7 +84,7 @@ void ConstantBuffer::Apply()
     if (dirty_ && object_)
     {
         graphics_->SetUBO(object_);
-        gl::glBufferData(gl::GL_UNIFORM_BUFFER, size_, shadowData_.Get(), gl::GL_DYNAMIC_DRAW);
+        gl::glBufferData(gl::GL_UNIFORM_BUFFER, size_, shadowData_.get(), gl::GL_DYNAMIC_DRAW);
         dirty_ = false;
     }
 }

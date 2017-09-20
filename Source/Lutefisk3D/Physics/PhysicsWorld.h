@@ -60,12 +60,6 @@ struct CollisionGeometryData;
 /// Physics raycast hit.
 struct LUTEFISK3D_EXPORT PhysicsRaycastResult
 {
-    /// Construct with defaults.
-    PhysicsRaycastResult() :
-        body_(nullptr)
-    {
-    }
-
     /// Test for inequality, added to prevent GCC from complaining.
     bool operator !=(const PhysicsRaycastResult& rhs) const
     {
@@ -81,7 +75,7 @@ struct LUTEFISK3D_EXPORT PhysicsRaycastResult
     /// Hit fraction.
     float hitFraction_;
     /// Rigid body that was hit.
-    RigidBody* body_;
+    RigidBody* body_ = nullptr;
 };
 
 /// Delayed world transform assignment for parented rigidbodies.
@@ -100,29 +94,17 @@ struct DelayedWorldTransform
 /// Manifold pointers stored during collision processing.
 struct ManifoldPair
 {
-    /// Construct with defaults.
-    ManifoldPair() :
-        manifold_(0),
-        flippedManifold_(0)
-    {
-    }
-
     /// Manifold without the body pointers flipped.
-    btPersistentManifold* manifold_;
+    btPersistentManifold* manifold_=nullptr;
     /// Manifold with the body pointers flipped.
-    btPersistentManifold* flippedManifold_;
+    btPersistentManifold* flippedManifold_=nullptr;
 };
 
 /// Custom overrides of physics internals. To use overrides, must be set before the physics component is created.
 struct PhysicsWorldConfig
 {
-    PhysicsWorldConfig() :
-        collisionConfig_(0)
-    {
-    }
-
     /// Override for the collision configuration (default btDefaultCollisionConfiguration).
-    btCollisionConfiguration* collisionConfig_;
+    btCollisionConfiguration* collisionConfig_=nullptr;
 };
 
 static const float DEFAULT_MAX_NETWORK_ANGULAR_VELOCITY = 100.0f;
@@ -137,7 +119,7 @@ public:
     /// Construct.
     PhysicsWorld(Context* scontext);
     /// Destruct.
-    virtual ~PhysicsWorld();
+    ~PhysicsWorld() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -278,10 +260,6 @@ private:
     HashMap<std::pair<Model*, unsigned>, SharedPtr<CollisionGeometryData> > triMeshCache_;
     /// Cache for convex geometry data by model and LOD level.
     HashMap<std::pair<Model*, unsigned>, SharedPtr<CollisionGeometryData> > convexCache_;
-    /// Preallocated event data map for physics collision events.
-    VariantMap physicsCollisionData_;
-    /// Preallocated event data map for node collision events.
-    VariantMap nodeCollisionData_;
     /// Preallocated buffer for physics collision contact data.
     VectorBuffer contacts_;
     /// Simulation substeps per second.

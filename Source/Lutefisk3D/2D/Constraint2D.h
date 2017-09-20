@@ -30,11 +30,12 @@ namespace Urho3D
 
 class RigidBody2D;
 class PhysicsWorld2D;
-
+extern template class WeakPtr<RigidBody2D>;
+extern template class WeakPtr<PhysicsWorld2D>;
 /// 2D physics constraint component.
 class LUTEFISK3D_EXPORT Constraint2D : public Component
 {
-    URHO3D_OBJECT(Constraint2D,Component);
+    URHO3D_OBJECT(Constraint2D,Component)
 
 public:
     /// Construct.

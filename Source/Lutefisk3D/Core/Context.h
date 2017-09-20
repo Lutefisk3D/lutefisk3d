@@ -21,19 +21,16 @@
 //
 
 #pragma once
-
-#include "Lutefisk3D/Core/Attribute.h"
-#include "Lutefisk3D/Container/HashMap.h"
-#include "Lutefisk3D/Core/Object.h"
-#include <QtCore/QSet>
-#include <QtCore/QString>
+#include "Lutefisk3D/Math/StringHash.h"
 #include <memory>
+#include <vector>
 #ifdef _MSC_VER
 #include <iso646.h>
 #endif
 namespace jl {
 class ScopedAllocator;
 }
+class QString;
 namespace Urho3D
 {
 #ifndef LUTEFISK3D_UILESS
@@ -41,31 +38,30 @@ class UI;
 #else
 class UI {};
 #endif
+class EventHandler;
+class ObjectFactory;
+class Variant;
 class Log;
+class Object;
 class FileSystem;
 class Input;
 class ResourceCache;
-class Graphics;
+class LUTEFISK3D_EXPORT Graphics;
 class Time;
 class Profiler;
 class EventProfiler;
 class Renderer;
 class WorkQueue;
-class LUTEFISK3D_EXPORT EventReceiverGroup : public RefCounted
-{
-public:
-    void BeginSendEvent();
-    void EndSendEvent();
-    void Add(Object *object);
-    void Remove(Object *object);
-    std::vector<Object *> receivers_;
 
-private:
-    unsigned inSend_ = 0;
-    bool     dirty_  = false;
-};
+template<class T> class ObjectFactoryImpl;
+template<class U,class V> class HashMap;
+template<class T> class SharedPtr;
+template <class T, class U> SharedPtr<T> StaticCast(const SharedPtr<U>& ptr);
 
-class LUTEFISK3D_EXPORT Context : public RefCounted
+struct AttributeInfo;
+class LUTEFISK3D_EXPORT EventReceiverGroup;
+class ContextPrivate;
+class LUTEFISK3D_EXPORT Context
 {
     friend class Object;
     friend class Context_EventGuard;
@@ -96,7 +92,7 @@ public:
     void RegisterAttribute(StringHash objectType, const AttributeInfo& attr);
     void RemoveAttribute(StringHash objectType, const char* name);
     void UpdateAttributeDefaultValue(StringHash objectType, const char* name, const Variant& defaultValue);
-    VariantMap& GetEventDataMap();
+    HashMap<StringHash, Variant>& GetEventDataMap();
     bool RequireSDL(unsigned int sdlFlags);
     void ReleaseSDL();
 
@@ -112,10 +108,7 @@ public:
 
     Object* GetSubsystem(StringHash type) const;
 
-    const HashMap<StringHash, SharedPtr<Object> >& GetSubsystems() const { return subsystems_; }
-    const HashMap<StringHash, SharedPtr<ObjectFactory> >& GetObjectFactories() const { return factories_; }
-    const HashMap<QString, std::vector<StringHash> >& GetObjectCategories() const { return objectCategories_; }
-
+    const QString &GetObjectCategory(StringHash objType) const;
     Object* GetEventSender() const;
     EventHandler* GetEventHandler() const { return eventHandler_; }
     const QString& GetTypeName(StringHash objectType) const;
@@ -123,36 +116,10 @@ public:
     AttributeInfo* GetAttribute(StringHash objectType, const char* name);
     template <class T> T* GetSubsystemT() const;
     template <class T> AttributeInfo* GetAttribute(const char* name);
-
-    const std::vector<AttributeInfo>* GetAttributes(StringHash type) const
-    {
-        HashMap<StringHash, std::vector<AttributeInfo> >::const_iterator i = attributes_.find(type);
-        return i != attributes_.end() ? &(MAP_VALUE(i)) : nullptr;
-    }
-
-    const std::vector<AttributeInfo>* GetNetworkAttributes(StringHash type) const
-    {
-        HashMap<StringHash, std::vector<AttributeInfo> >::const_iterator i = networkAttributes_.find(type);
-        return i != networkAttributes_.end() ? &(MAP_VALUE(i)) : nullptr;
-    }
-
-    const HashMap<StringHash, std::vector<AttributeInfo> >& GetAllAttributes() const { return attributes_; }
-
-    EventReceiverGroup* GetEventReceivers(Object* sender, StringHash eventType)
-    {
-        auto i = specificEventReceivers_.find(sender);
-        if (i != specificEventReceivers_.end())
-        {
-            auto j = MAP_VALUE(i).find(eventType);
-            return j != MAP_VALUE(i).end() ? MAP_VALUE(j) : nullptr;
-        }
-        return nullptr;
-    }
-    EventReceiverGroup* GetEventReceivers(StringHash eventType)
-    {
-        auto i = eventReceivers_.find(eventType);
-        return i != eventReceivers_.end() ? MAP_VALUE(i) : nullptr;
-    }
+    const std::vector<AttributeInfo>* GetAttributes(StringHash type) const;
+    const std::vector<AttributeInfo>* GetNetworkAttributes(StringHash type) const;
+    EventReceiverGroup* GetEventReceivers(Object* sender, StringHash eventType);
+    EventReceiverGroup* GetEventReceivers(StringHash eventType);
 
 private:
 
@@ -164,17 +131,9 @@ private:
     void BeginSendEvent(Object* sender, StringHash eventType);
     void EndSendEvent();
     void SetEventHandler(EventHandler* handler) { eventHandler_ = handler; }
-    HashMap<StringHash, SharedPtr<ObjectFactory> > factories_;
-    HashMap<StringHash, SharedPtr<Object> > subsystems_;
-    HashMap<StringHash, std::vector<AttributeInfo> > attributes_;
-    HashMap<StringHash, std::vector<AttributeInfo> > networkAttributes_;
-    HashMap<StringHash, SharedPtr<EventReceiverGroup> > eventReceivers_;
-    HashMap<Object*, HashMap<StringHash, SharedPtr<EventReceiverGroup> > > specificEventReceivers_;
+    std::unique_ptr<ContextPrivate> d;
     std::vector<Object*> eventSenders_;
-    std::vector<VariantMap*> eventDataMaps_;
-    EventHandler* eventHandler_;
-    HashMap<QString, std::vector<StringHash> > objectCategories_;
-    VariantMap globalVars_;
+    EventHandler* eventHandler_=nullptr;
 };
 
 class Context_EventGuard

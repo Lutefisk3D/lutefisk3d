@@ -335,6 +335,7 @@ void AnimationState::AddTime(float delta)
                 eventData[P_NAME] = animation_->GetAnimationName();
                 eventData[P_TIME] = trigger.time_;
                 eventData[P_DATA] = trigger.data_;
+
                 // Note: this may cause arbitrary deletion of animation states, including the one we are currently processing
                 senderNode->SendEvent(E_ANIMATIONTRIGGER, eventData);
                 if (senderNode.Expired() || self.Expired())

@@ -36,6 +36,8 @@
 
 namespace Urho3D
 {
+template class SharedPtr<XMLFile>;
+template class WeakPtr<XMLFile>;
 
 /// XML writer for pugixml.
 class XMLWriter : public pugi::xml_writer
@@ -85,11 +87,11 @@ bool XMLFile::BeginLoad(Deserializer& source)
         return false;
     }
 
-    SharedArrayPtr<char> buffer(new char[dataSize]);
-    if (source.Read(buffer.Get(), dataSize) != dataSize)
+    std::unique_ptr<char[]> buffer(new char[dataSize]);
+    if (source.Read(buffer.get(), dataSize) != dataSize)
         return false;
 
-    if (!document_->load_buffer(buffer.Get(), dataSize))
+    if (!document_->load_buffer(buffer.get(), dataSize))
     {
         URHO3D_LOGERROR("Could not parse XML data from " + source.GetName());
         document_->reset();
@@ -117,7 +119,7 @@ bool XMLFile::BeginLoad(Deserializer& source)
         document_.reset(new pugi::xml_document());
         document_->reset(*inheritedXMLFile->document_);
         Patch(rootElem);
-        patchDocument.release();
+        patchDocument.reset();
 
         // Store resource dependencies so we know when to reload/repatch when the inherited resource changes
         cache->StoreResourceDependency(this, inherit);

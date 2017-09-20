@@ -24,6 +24,7 @@
 
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Core/Main.h"
+#include "Lutefisk3D/Core/Variant.h"
 #include "jlsignal/Signal.h"
 
 namespace Urho3D
@@ -37,9 +38,11 @@ class LUTEFISK3D_EXPORT Application : public jl::SignalObserver
 public:
     Application(const QString &appName,Context* context);
     virtual ~Application();
-    /// Setup before engine initialization. This is a chance to eg. modify the engine parameters. Call ErrorExit() to terminate without initializing the engine. Called by Application.
+    /// Setup before engine initialization. This is a chance to eg. modify the engine parameters. Call ErrorExit() to
+    /// terminate without initializing the engine. Called by Application.
     virtual void Setup() {}
-    /// Setup after engine initialization and before running the main loop. Call ErrorExit() to terminate without running the main loop. Called by Application.
+    /// Setup after engine initialization and before running the main loop. Call ErrorExit() to terminate without
+    /// running the main loop. Called by Application.
     virtual void Start() {}
     /// Cleanup after the main loop. Called by Application.
     virtual void Stop() {}
@@ -53,25 +56,20 @@ protected:
     /// Handle log message.
     void HandleLogMessage(LogLevels level, const QString &message);
 
-    Context* m_context;
-    /// Application name.
-    QString m_appName;
-    /// Urho3D engine.
-    SharedPtr<Engine> engine_;
-    /// Engine parameters map.
-    VariantMap engineParameters_;
-    /// Collected startup error log messages.
-    QString startupErrors_;
-    /// Application exit code.
-    int exitCode_;
+    Context *         m_context;
+    QString           m_appName; //!< Application name.
+    Engine *          engine_;
+    VariantMap        engineParameters_; //!< Engine parameters map.
+    QString           startupErrors_;    //!< Collected startup error log messages.
+    int               exitCode_;         //!< Application exit code.
 };
 
 // Macro for defining a main function which creates a Context and the application, then runs it
 #define URHO3D_DEFINE_APPLICATION_MAIN(className) \
 int RunApplication() \
 { \
-    Urho3D::SharedPtr<Urho3D::Context> context(new Urho3D::Context()); \
-    std::unique_ptr<className> application(new className(context)); \
+    std::unique_ptr<Urho3D::Context> context(new Urho3D::Context()); \
+    std::unique_ptr<className> application(new className(context.get())); \
     return application->Run(); \
 } \
 URHO3D_DEFINE_MAIN(RunApplication());

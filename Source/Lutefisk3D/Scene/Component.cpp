@@ -32,6 +32,8 @@
 #include "Lutefisk3D/2D/PhysicsWorld2D.h"
 #endif
 #include "Lutefisk3D/Resource/JSONValue.h"
+#include "Lutefisk3D/Resource/XMLElement.h"
+
 namespace Urho3D
 {
 
@@ -41,14 +43,6 @@ const char* autoRemoveModeNames[] = {
     "Node",
     nullptr
 };
-Component::Component(Context* context) :
-    Animatable(context),
-    node_(nullptr),
-    id_(0),
-    networkUpdate_(false),
-    enabled_(true)
-{
-}
 
 bool Component::Save(Serializer& dest) const
 {
@@ -181,13 +175,16 @@ void Component::PrepareNetworkUpdate()
 
 void Component::CleanupConnection(Connection* connection)
 {
-    if (networkState_ != nullptr)
+    if (networkState_ == nullptr)
+        return;
+    auto iter=networkState_->replicationStates_.begin();
+    auto fin=networkState_->replicationStates_.end();
+    for ( ; iter!=fin; )
     {
-        for (unsigned i = networkState_->replicationStates_.size() - 1; i < networkState_->replicationStates_.size(); --i)
-        {
-            if (networkState_->replicationStates_[i]->connection_ == connection)
-                networkState_->replicationStates_.erase(networkState_->replicationStates_.begin() + i);
-        }
+        if ((*iter)->connection_ == connection)
+            iter = networkState_->replicationStates_.erase(iter);
+        else
+            ++iter;
     }
 }
 
@@ -199,24 +196,8 @@ void Component::OnAttributeAnimationAdded()
 
 void Component::OnAttributeAnimationRemoved()
 {
-    if (attributeAnimationInfos_.isEmpty())
+    if (attributeAnimationInfos_.empty())
         GetScene()->attributeAnimationUpdate.Disconnect(this,&Component::HandleAttributeAnimationUpdate);
-}
-
-void Component::OnNodeSet(Node* node)
-{
-}
-
-void Component::OnSceneSet(Scene* scene)
-{
-}
-
-void Component::OnMarkedDirty(Node* node)
-{
-}
-
-void Component::OnNodeSetEnabled(Node* node)
-{
 }
 
 void Component::SetID(unsigned id)
@@ -273,19 +254,18 @@ Component* Component::GetFixedUpdateSource()
 PhysicsSignals* Component::GetFixedSignalSource()
 {
     Scene* scene = GetScene();
-    if (scene != nullptr)
-    {
+    if (scene == nullptr)
+        return nullptr;
 #ifdef LUTEFISK3D_PHYSICS
-        PhysicsWorld *retw = scene->GetComponent<PhysicsWorld>();
-        if(retw)
-            return static_cast<PhysicsSignals *>(retw);
+    PhysicsWorld *retw = scene->GetComponent<PhysicsWorld>();
+    if(retw)
+        return static_cast<PhysicsSignals *>(retw);
 #endif
 #ifdef LUTEFISK3D_URHO2D
-        PhysicsWorld2D *ret2d = scene->GetComponent<PhysicsWorld2D>();
-        if(ret2d)
-            return static_cast<PhysicsSignals *>(ret2d);
+    PhysicsWorld2D *ret2d = scene->GetComponent<PhysicsWorld2D>();
+    if(ret2d)
+        return static_cast<PhysicsSignals *>(ret2d);
 #endif
-    }
 
     return nullptr;
 }

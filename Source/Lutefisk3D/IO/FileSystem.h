@@ -22,29 +22,23 @@
 
 #pragma once
 #include "Lutefisk3D/Core/Lutefisk3D.h"
-#include "Lutefisk3D/Container/HashMap.h"
-#include "Lutefisk3D/Container/Str.h"
-#include "Lutefisk3D/Math/StringHash.h"
-#include <jlsignal/SignalBase.h>
 
 #include <QtCore/QString>
 #include <list>
+#include <memory>
 namespace Urho3D
 {
 class Context;
-class AsyncExecRequest;
 
 enum ScanFlags : uint32_t
 {
-    /// Return files.
-    SCAN_FILES = 0x1,
-    /// Return directories.
-    SCAN_DIRS = 0x2,
-    /// Return also hidden files.
-    SCAN_HIDDEN = 0x4,
+    SCAN_FILES  = 0x1, //!< Return files.
+    SCAN_DIRS   = 0x2, //!< Return directories.
+    SCAN_HIDDEN = 0x4, //!< Return also hidden files.
 };
+struct FileSystemPrivate;
 /// Subsystem for file and directory operations and access control.
-class LUTEFISK3D_EXPORT FileSystem : public jl::SignalObserver
+class LUTEFISK3D_EXPORT FileSystem
 {
 public:
     /// Construct.
@@ -80,9 +74,9 @@ public:
     /// Return the absolute current working directory.
     QString GetCurrentDir() const;
     /// Return whether is executing engine console commands as OS-specific system command.
-    bool GetExecuteConsoleCommands() const { return executeConsoleCommands_; }
+    bool GetExecuteConsoleCommands() const;
     /// Return whether paths have been registered.
-    bool HasRegisteredPaths() const { return !allowedPaths_.empty(); }
+    bool HasRegisteredPaths() const;
     /// Check if a path is allowed to be accessed. If no paths are registered, all are allowed.
     bool CheckAccess(const QString& pathName) const;
     /// Returns the file's last modified time as seconds since 1.1.1970, or 0 if can not be accessed.
@@ -101,20 +95,11 @@ public:
     QString GetAppPreferencesDir(const QString& org, const QString& app) const;
 
 private:
-    /// Handle begin frame event to check for completed async executions.
-    void HandleBeginFrame(unsigned, float);
     /// Handle a console command event.
     void HandleConsoleCommand(const QString &cmd, const QString &id);
 
     Context *m_context;
-    /// Allowed directories.
-    HashSet<QString> allowedPaths_;
-    /// Async execution queue.
-    std::list<AsyncExecRequest*> asyncExecQueue_;
-    /// Next async execution ID.
-    unsigned nextAsyncExecID_;
-    /// Flag for executing engine console commands as OS-specific system command. Default to true.
-    bool executeConsoleCommands_;
+    std::unique_ptr<FileSystemPrivate> d;
 };
 
 /// Split a full path to path, filename and extension. The extension will be converted to lowercase by default.
@@ -139,8 +124,6 @@ LUTEFISK3D_EXPORT QString GetParentPath(const QString& pathName);
 LUTEFISK3D_EXPORT QString GetInternalPath(const QString& pathName);
 /// Convert a path to the format required by the operating system.
 LUTEFISK3D_EXPORT QString GetNativePath(const QString& pathName);
-/// Convert a path to the format required by the operating system in wide characters.
-//WString GetWideNativePath(const String& pathName);
 /// Return whether a path is absolute.
 LUTEFISK3D_EXPORT bool IsAbsolutePath(const QString& pathName);
 

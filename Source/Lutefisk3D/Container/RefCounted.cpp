@@ -75,3 +75,5 @@ int RefCounted::WeakRefs() const
 }
 
 }
+#include <memory>
+template class std::unique_ptr<uint8_t[]>;

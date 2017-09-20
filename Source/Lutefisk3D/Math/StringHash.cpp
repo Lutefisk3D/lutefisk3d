@@ -41,6 +41,11 @@ StringHash::StringHash(const QString& str) :
     value_(Calculate(qPrintable(str)))
 {
 }
+StringHash::StringHash(const QLatin1String& str) :
+    value_(Calculate(str.data()))
+{
+}
+
 StringHash::StringHash(const QStringRef& str)
 {
     value_ = 0;

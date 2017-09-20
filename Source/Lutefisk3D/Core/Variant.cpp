@@ -25,8 +25,15 @@
 
 #include <cstring>
 
+#include "Lutefisk3D/Resource/Resource.h"
+
+namespace std {
+template class std::vector<Urho3D::Variant>;
+}
+
 namespace Urho3D
 {
+template class HashMap<StringHash, Variant>;
 
 const Variant Variant::EMPTY;
 const std::vector<unsigned char> Variant::emptyBuffer(0);
@@ -200,6 +207,30 @@ bool Variant::operator ==(const std::vector<unsigned char>& rhs) const
     const std::vector<unsigned char>& buffer = *(reinterpret_cast<const std::vector<unsigned char>*>(&value_));
     return type_ == VAR_BUFFER && buffer.size() == rhs.size() ? strncmp(reinterpret_cast<const char*>(&buffer[0]), reinterpret_cast<const char*>(&rhs[0]), buffer.size()) == 0 : false;
 }
+    Variant &Variant::operator=(const ResourceRef &rhs)
+    {
+    SetType(VAR_RESOURCEREF);
+    *(reinterpret_cast<ResourceRef*>(&value_)) = rhs;
+    return *this;
+}
+
+bool Variant::operator==(const ResourceRef &rhs) const
+{
+    return type_ == VAR_RESOURCEREF ? *(reinterpret_cast<const ResourceRef *>(&value_)) == rhs : false;
+}
+
+Variant &Variant::operator =(const ResourceRefList &rhs)
+{
+    SetType(VAR_RESOURCEREFLIST);
+    *(reinterpret_cast<ResourceRefList*>(&value_)) = rhs;
+    return *this;
+}
+
+bool Variant::operator==(const ResourceRefList &rhs) const
+{
+    return type_ == VAR_RESOURCEREFLIST ? *(reinterpret_cast<const ResourceRefList *>(&value_)) == rhs : false;
+}
+
 void Variant::FromString(const QString& type, const QString& value)
 {
     return FromString(GetTypeFromName(type), qPrintable(value));

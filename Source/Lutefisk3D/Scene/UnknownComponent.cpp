@@ -37,7 +37,7 @@ static QLatin1String letters("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX
 
 static QString GenerateNameFromType(StringHash typeHash)
 {
-    if (unknownTypeToName.contains(typeHash))
+    if (hashContains(unknownTypeToName,typeHash))
         return unknownTypeToName[typeHash];
 
     QString test;

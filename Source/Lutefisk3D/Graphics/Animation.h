@@ -24,7 +24,9 @@
 
 #include "Lutefisk3D/Container/Ptr.h"
 #include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Math/Quaternion.h"
 #include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Core/Variant.h"
 
 namespace Urho3D
 {
@@ -32,31 +34,24 @@ namespace Urho3D
 /// Skeletal animation keyframe.
 struct AnimationKeyFrame
 {
-    /// Construct.
-    AnimationKeyFrame() :
-        time_(0.0f),
-        scale_(Vector3::ONE)
-    {
-    }
     /// Keyframe time.
-    float time_;
+    float time_=0.0f;
     /// Bone position.
     Vector3 position_;
     /// Bone rotation.
     Quaternion rotation_;
     /// Bone scale.
-    Vector3 scale_;
+    Vector3 scale_=Vector3::ONE;
 };
-
+}
+namespace std {
+extern template class std::vector<Urho3D::AnimationKeyFrame>;
+}
+namespace Urho3D
+{
 /// Skeletal animation track, stores keyframes of a single bone.
 struct LUTEFISK3D_EXPORT AnimationTrack
 {
-    /// Construct.
-    AnimationTrack() :
-        channelMask_(0)
-    {
-    }
-
     /// Assign keyframe at index.
     void SetKeyFrame(unsigned index, const AnimationKeyFrame& command);
     /// Add a keyframe at the end.
@@ -80,23 +75,23 @@ struct LUTEFISK3D_EXPORT AnimationTrack
     /// Name hash.
     StringHash nameHash_;
     /// Bitmask of included data (position, rotation, scale.)
-    unsigned char channelMask_;
+    uint8_t channelMask_=0;
     /// Keyframes.
     std::vector<AnimationKeyFrame> keyFrames_;
 };
-
+extern template class HashMap<StringHash, AnimationTrack>;
 /// %Animation trigger point.
 struct AnimationTriggerPoint
 {
-    /// Trigger data.
-    Variant data_;
-    /// Trigger time.
-    float time_ = 0.0f;
+    Variant data_; //!< Trigger data.
+    float time_ = 0.0f; //!< Trigger time.
+};
+enum AnimationChannelFlags : uint8_t {
+    CHANNEL_POSITION = 0x1,
+    CHANNEL_ROTATION = 0x2,
+    CHANNEL_SCALE = 0x4
 };
 
-static const unsigned char CHANNEL_POSITION = 0x1;
-static const unsigned char CHANNEL_ROTATION = 0x2;
-static const unsigned char CHANNEL_SCALE = 0x4;
 
 /// Skeletal animation resource.
 class LUTEFISK3D_EXPORT Animation : public ResourceWithMetadata
@@ -107,7 +102,7 @@ public:
     /// Construct.
     Animation(Context* context);
     /// Destruct.
-    virtual ~Animation() = default;
+    ~Animation() override = default;
     /// Register object factory.
     static void RegisterObject(Context* context);
 

@@ -37,77 +37,11 @@
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 
-#ifdef LUTEFISK3D_SPINE
-#include <spine/spine.h>
-#include <spine/extension.h>
-#endif
-
-#ifdef LUTEFISK3D_SPINE
-// Current animation set
-static Urho3D::AnimationSet2D* currentAnimationSet = 0;
-
-void _spAtlasPage_createTexture(spAtlasPage* self, const char* path)
-{
-    using namespace Urho3D;
-    if (!currentAnimationSet)
-        return;
-
-    ResourceCache* cache = currentAnimationSet->m_context->m_ResourceCache.get();
-    Sprite2D* sprite = cache->GetResource<Sprite2D>(path);
-    // Add reference
-    if (sprite)
-        sprite->AddRef();
-
-    self->width = sprite->GetTexture()->GetWidth();
-    self->height = sprite->GetTexture()->GetHeight();
-
-    self->rendererObject = sprite;
-}
-
-void _spAtlasPage_disposeTexture(spAtlasPage* self)
-{
-    using namespace Urho3D;
-    Sprite2D* sprite = static_cast<Sprite2D*>(self->rendererObject);
-    if (sprite)
-        sprite->ReleaseRef();
-
-    self->rendererObject = 0;
-}
-
-char* _spUtil_readFile(const char* path, int* length)
-{
-    using namespace Urho3D;
-
-    if (!currentAnimationSet)
-        return 0;
-
-    ResourceCache* cache = currentAnimationSet->m_context->m_ResourceCache.get();
-    SharedPtr<File> file = cache->GetFile(path);
-    if (!file)
-        return 0;
-
-    unsigned size = file->GetSize();
-
-    char* data = MALLOC(char, size + 1);
-    file->Read(data, size);
-    data[size] = '\0';
-
-    file.Reset();
-    *length = size;
-
-    return data;
-}
-#endif
-
 namespace Urho3D
 {
 
 AnimationSet2D::AnimationSet2D(Context* context) :
     Resource(context),
-    #ifdef LUTEFISK3D_SPINE
-    skeletonData_(0),
-    atlas_(0),
-    #endif
     hasSpriteSheet_(false)
 {
 }
@@ -155,10 +89,6 @@ bool AnimationSet2D::EndLoad()
 
 unsigned AnimationSet2D::GetNumAnimations() const
 {
-#ifdef LUTEFISK3D_SPINE
-    if (skeletonData_)
-        return (unsigned)skeletonData_->animationsCount;
-#endif
     if (spriterData_ && !spriterData_->entities_.empty())
         return (unsigned)spriterData_->entities_[0]->animations_.size();
     return 0;
@@ -169,10 +99,6 @@ QString AnimationSet2D::GetAnimation(unsigned index) const
     if (index >= GetNumAnimations())
         return QString();
 
-#ifdef LUTEFISK3D_SPINE
-    if (skeletonData_)
-        return skeletonData_->animations[index]->name;
-#endif
     if (spriterData_ && !spriterData_->entities_.empty())
         return spriterData_->entities_[0]->animations_[index]->name_;
 
@@ -181,17 +107,6 @@ QString AnimationSet2D::GetAnimation(unsigned index) const
 
 bool AnimationSet2D::HasAnimation(const QString& animationName) const
 {
-#ifdef LUTEFISK3D_SPINE
-    if (skeletonData_)
-    {
-        for (int i = 0; i < skeletonData_->animationsCount; ++i)
-        {
-            if (animationName == skeletonData_->animations[i]->name)
-                return true;
-        }
-    }
-
-#endif
     if (spriterData_ && !spriterData_->entities_.empty())
     {
         const std::vector<Spriter::Animation*>& animations = spriterData_->entities_[0]->animations_;
@@ -219,66 +134,6 @@ Sprite2D* AnimationSet2D::GetSpriterFileSprite(int folderId, int fileId) const
 
     return 0;
 }
-#ifdef LUTEFISK3D_SPINE
-bool AnimationSet2D::BeginLoadSpine(Deserializer& source)
-{
-    if (GetName().isEmpty())
-        SetName(source.GetName());
-
-    unsigned size = source.GetSize();
-    jsonData_ = new char[size + 1];
-    source.Read(jsonData_, size);
-    jsonData_[size] = '\0';
-
-    SetMemoryUse(size);
-    return true;
-}
-
-bool AnimationSet2D::EndLoadSpine()
-{
-    currentAnimationSet = this;
-
-    QString atlasFileName = ReplaceExtension(GetName(), ".atlas");
-    atlas_ = spAtlas_createFromFile(qPrintable(atlasFileName), 0);
-    if (!atlas_)
-    {
-        URHO3D_LOGERROR("Create spine atlas failed");
-        return false;
-    }
-
-    int numAtlasPages = 0;
-    spAtlasPage* atlasPage = atlas_->pages;
-    while (atlasPage)
-    {
-        ++numAtlasPages;
-        atlasPage = atlasPage->next;
-    }
-
-    if (numAtlasPages > 1)
-    {
-        URHO3D_LOGERROR("Only one page is supported in Urho3D");
-        return false;
-    }
-
-    sprite_ = static_cast<Sprite2D*>(atlas_->pages->rendererObject);
-
-    spSkeletonJson* skeletonJson = spSkeletonJson_create(atlas_);
-    if (!skeletonJson)
-    {
-        URHO3D_LOGERROR("Create skeleton Json failed");
-        return false;
-    }
-
-    skeletonJson->scale = 0.01f; // PIXEL_SIZE;
-    skeletonData_ = spSkeletonJson_readSkeletonData(skeletonJson, &jsonData_[0]);
-
-    spSkeletonJson_dispose(skeletonJson);
-    jsonData_.Reset();
-
-    currentAnimationSet = 0;
-    return true;
-}
-#endif
 
 bool AnimationSet2D::BeginLoadSpriter(Deserializer& source)
 {
@@ -289,12 +144,12 @@ bool AnimationSet2D::BeginLoadSpriter(Deserializer& source)
         return false;
     }
 
-    SharedArrayPtr<char> buffer(new char[dataSize]);
-    if (source.Read(buffer.Get(), dataSize) != dataSize)
+    std::unique_ptr<char[]> buffer(new char[dataSize]);
+    if (source.Read(buffer.get(), dataSize) != dataSize)
         return false;
 
     spriterData_.reset(new Spriter::SpriterData());
-    if (!spriterData_->Load(buffer.Get(), dataSize))
+    if (!spriterData_->Load(buffer.get(), dataSize))
     {
         URHO3D_LOGERROR("Could not spriter data from " + source.GetName());
         return false;
@@ -460,8 +315,8 @@ bool AnimationSet2D::EndLoadSpriter()
             texture->SetSize(allocator.GetWidth(), allocator.GetHeight(), Graphics::GetRGBAFormat());
 
             unsigned textureDataSize = allocator.GetWidth() * allocator.GetHeight() * 4;
-            SharedArrayPtr<unsigned char> textureData(new unsigned char[textureDataSize]);
-            memset(textureData.Get(), 0, textureDataSize);
+            std::unique_ptr<uint8_t[]> textureData(new unsigned char[textureDataSize]);
+            memset(textureData.get(), 0, textureDataSize);
             sprite_ = new Sprite2D(context_);
             sprite_->SetTexture(texture);
 
@@ -472,7 +327,7 @@ bool AnimationSet2D::EndLoadSpriter()
 
                 for (int y = 0; y < image->GetHeight(); ++y)
                 {
-                    memcpy(textureData.Get() + ((info.y + y) * allocator.GetWidth() + info.x) * 4,
+                    memcpy(textureData.get() + ((info.y + y) * allocator.GetWidth() + info.x) * 4,
                         image->GetData() + y * image->GetWidth() * 4, image->GetWidth() * 4);
                 }
 
@@ -484,7 +339,7 @@ bool AnimationSet2D::EndLoadSpriter()
                 int key = (info.file_->folder_->id_ << 16) + info.file_->id_;
                 spriterFileSprites_[key] = sprite;
             }
-            texture->SetData(0, 0, 0, allocator.GetWidth(), allocator.GetHeight(), textureData.Get());
+            texture->SetData(0, 0, 0, allocator.GetWidth(), allocator.GetHeight(), textureData.get());
         }
         else
         {
@@ -509,22 +364,7 @@ bool AnimationSet2D::EndLoadSpriter()
 
 void AnimationSet2D::Dispose()
 {
-#ifdef LUTEFISK3D_SPINE
-    if (skeletonData_)
-    {
-        spSkeletonData_dispose(skeletonData_);
-        skeletonData_ = 0;
-    }
-
-    if (atlas_)
-    {
-        spAtlas_dispose(atlas_);
-        atlas_ = 0;
-    }
-#endif
-
-    spriterData_.release();
-
+    spriterData_.reset();
     sprite_.Reset();
     spriteSheet_.Reset();
     spriterFileSprites_.clear();

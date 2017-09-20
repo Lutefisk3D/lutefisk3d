@@ -24,13 +24,16 @@
 #include "Lutefisk3D/Core/StringUtils.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Variant.h"
+#include "Lutefisk3D/Resource/Resource.h"
 #include "Lutefisk3D/IO/Log.h"
 
 #include <QtCore/QVector>
 
+template class std::vector<Urho3D::JSONValue>;
 
 namespace Urho3D
 {
+template class HashMap<QString, JSONValue>;
 
 static const char* valueTypeNames[] =
 {
@@ -296,7 +299,7 @@ bool JSONValue::Contains(const QString& key) const
     if  (GetValueType() != JSON_OBJECT)
         return false;
 
-    return objectValue_->contains(key);
+    return hashContains(*objectValue_,key);
 }
 
 void JSONValue::Clear()

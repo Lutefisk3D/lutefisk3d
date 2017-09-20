@@ -33,7 +33,7 @@
 #include <Lutefisk3D/Scene/Scene.h>
 #include <Lutefisk3D/Graphics/StaticModel.h>
 
-
+namespace Urho3D {
 Vehicle::Vehicle(Context* context) :
     LogicComponent(context),
     steering_(0.0f)
@@ -192,4 +192,5 @@ void Vehicle::GetWheelComponents()
     frontRightBody_ = frontRight_->GetComponent<RigidBody>();
     rearLeftBody_ = rearLeft_->GetComponent<RigidBody>();
     rearRightBody_ = rearRight_->GetComponent<RigidBody>();
+}
 }

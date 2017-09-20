@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/Str.h"
 
 namespace Urho3D
 {
@@ -76,7 +77,7 @@ public:
     /// Return whether the files are compressed.
     bool IsCompressed() const { return compressed_; }
     /// Return list of file names in the package.
-    const std::vector<QString> GetEntryNames() const { return entries_.keys(); }
+    std::vector<QString> GetEntryNames() const;
 
 private:
     /// File entries.

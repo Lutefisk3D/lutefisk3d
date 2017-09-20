@@ -43,9 +43,7 @@ public:
     /// Destruct. Free all subsystems.
     virtual ~Engine() = default;
 
-    /// Initialize engine using parameters given and show the application window. Return true if successful.
     bool Initialize(const VariantMap& parameters);
-    /// Reinitialize resource cache subsystem using parameters given. Implicitly called by Initialize. Return true if successful.
     bool InitializeResourceCache(const VariantMap& parameters, bool removeOld = true);
     void RunFrame();
     Console* CreateConsole();
@@ -90,19 +88,15 @@ public:
     /// Return whether the engine has been created in headless mode.
     bool IsHeadless() const { return headless_; }
 
-    /// Send frame update events.
+
     void Update();
-    /// Render after frame update.
     void Render();
-    /// Get the timestep for the next frame and sleep for frame limiting if necessary.
     void ApplyFrameLimit();
 
     /// Parse the engine startup parameters map from command line arguments.
     static VariantMap ParseParameters(const QStringList& arguments);
     /// Return whether startup parameters contains a specific parameter.
     static bool HasParameter(const VariantMap& parameters, const QString& parameter);
-    /// Get an engine startup parameter, with default value if missing.
-    static const Variant& GetParameter(const VariantMap& parameters, const QString& parameter, const Variant& defaultValue = Variant::EMPTY);
 
 private:
     void HandleExitRequested();
@@ -114,7 +108,7 @@ private:
     unsigned           timeStepSmoothing_; ///< How many frames to average for the smoothed timestep.
     unsigned           minFps_;            ///< Minimum frames per second.
     unsigned           maxFps_;            ///< Maximum frames per second.
-    unsigned           maxInactiveFps_;   ///< Maximum frames per second when the application does not have input focus.
+    unsigned           maxInactiveFps_;    ///< Maximum frames per second when the application does not have input focus.
     bool               pauseMinimized_;    ///< Pause when minimized flag.
     bool               autoExit_;          ///< Auto-exit flag.
     bool               initialized_;       ///< Initialized flag.

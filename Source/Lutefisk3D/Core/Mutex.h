@@ -21,12 +21,12 @@
 //
 
 #pragma once
-
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 namespace Urho3D
 {
 
 /// Operating system mutual exclusion primitive.
-class Mutex
+class LUTEFISK3D_EXPORT Mutex
 {
 public:
     Mutex();
@@ -45,7 +45,7 @@ private:
 };
 
 /// Lock that automatically acquires and releases a mutex.
-class MutexLock
+class LUTEFISK3D_EXPORT MutexLock
 {
 public:
     /// Construct and acquire the mutex.

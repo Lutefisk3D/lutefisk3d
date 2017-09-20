@@ -22,46 +22,46 @@
 
 #pragma once
 #include "Lutefisk3D/Core/Lutefisk3D.h"
+#include "Lutefisk3D/Core/Mutex.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Container/DataHandle.h"
+#include "Lutefisk3D/Math/Color.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Graphics/Drawable.h"
 #include "Lutefisk3D/Graphics/Viewport.h"
-#include "Lutefisk3D/Math/Color.h"
-#include "Lutefisk3D/Container/HashMap.h"
-#include "Lutefisk3D/Core/Mutex.h"
-#include "Lutefisk3D/Container/DataHandle.h"
 #include "jlsignal/SignalBase.h"
-#include <QtCore/QSet>
 
 namespace gl {
 enum class GLenum : uint32_t;
 }
 namespace Urho3D
 {
-
-class LUTEFISK3D_EXPORT Geometry;
-class LUTEFISK3D_EXPORT Drawable;
-class LUTEFISK3D_EXPORT Light;
-class LUTEFISK3D_EXPORT Material;
-class LUTEFISK3D_EXPORT Pass;
-class LUTEFISK3D_EXPORT Technique;
-class LUTEFISK3D_EXPORT Octree;
-class LUTEFISK3D_EXPORT Graphics;
-class LUTEFISK3D_EXPORT RenderPath;
-class LUTEFISK3D_EXPORT RenderSurface;
-class LUTEFISK3D_EXPORT ResourceCache;
-class LUTEFISK3D_EXPORT Scene;
-class LUTEFISK3D_EXPORT Skeleton;
-class LUTEFISK3D_EXPORT OcclusionBuffer;
-class LUTEFISK3D_EXPORT Technique;
-class LUTEFISK3D_EXPORT Texture;
-class LUTEFISK3D_EXPORT Texture2D;
-class LUTEFISK3D_EXPORT TextureCube;
-class LUTEFISK3D_EXPORT VertexBuffer;
-class LUTEFISK3D_EXPORT View;
-class LUTEFISK3D_EXPORT Zone;
-struct LUTEFISK3D_EXPORT BatchQueue;
-class LUTEFISK3D_EXPORT ShaderVariation;
-struct LUTEFISK3D_EXPORT Batch;
+class Geometry;
+class Drawable;
+class Light;
+class Material;
+class Pass;
+class Technique;
+class Octree;
+class Graphics;
+class RenderPath;
+class RenderSurface;
+class ResourceCache;
+class Scene;
+class Skeleton;
+class OcclusionBuffer;
+class Technique;
+class Texture;
+class Texture2D;
+class TextureCube;
+class VertexBuffer;
+class View;
+class Zone;
+struct BatchQueue;
+class ShaderVariation;
+struct Batch;
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
+extern template class LUTEFISK3D_EXPORT SharedPtr<ShaderVariation>;
 
 static const int SHADOW_MIN_PIXELS = 64;
 static const int INSTANCING_BUFFER_DEFAULT_SIZE = 1024;

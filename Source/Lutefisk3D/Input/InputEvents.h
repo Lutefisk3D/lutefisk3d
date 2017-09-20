@@ -38,9 +38,6 @@ enum MouseMode : uint8_t;
 struct InputSignals
 {
     /// rawSDLInput - Raw SDL input event.
-    /// touchBegun - Finger pressed on the screen.
-    /// touchEnd - Finger released from the screen.
-    /// touchMove - Finger moved on the screen.
     /// gestureRecorded - A touch gesture finished recording.
     /// gestureInput - A recognized touch gesture was input by the user.
     /// multiGesture - Pinch/rotate multi-finger touch gesture motion update.
@@ -69,9 +66,6 @@ struct InputSignals
 
     jl::Signal<SDL_Event *, bool &> rawSDLInput;          // SDL_Event * event,bool &Consumed
 
-    jl::Signal<unsigned, int, int, float> touchBegun;          // unsigned touchID,int x,int y,float pressure
-    jl::Signal<unsigned, int, int> touchEnd;                   // unsigned touchID,int x,int y
-    jl::Signal<unsigned, int, int, int, int, float> touchMove; // unsigned touchID,int x,int y,int dX,int dY, float Pressure
     jl::Signal<unsigned> gestureRecorded;                   // unsigned GestureID
     jl::Signal<unsigned,int,int,int,float> gestureInput; // unsigned GestureID,int centerX,int centerY,int fingerCount,float error
     jl::Signal<int,int,int,float,float> multiGesture; // int centerX,int centerY,int fingerCount,float dTheta,float dist
@@ -106,9 +100,6 @@ struct InputSignals
     void init(jl::ScopedAllocator *alloctor) {
         rawSDLInput.SetAllocator(alloctor);
 
-        touchBegun.SetAllocator(alloctor);
-        touchEnd.SetAllocator(alloctor);
-        touchMove.SetAllocator(alloctor);
         gestureRecorded.SetAllocator(alloctor);
         gestureInput.SetAllocator(alloctor);
         multiGesture.SetAllocator(alloctor);

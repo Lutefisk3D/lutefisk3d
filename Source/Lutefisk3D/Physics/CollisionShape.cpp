@@ -282,14 +282,14 @@ void ConvexData::BuildHull(const std::vector<Vector3>& vertices)
         lib.CreateConvexHull(desc, result);
 
         vertexCount_ = result.mNumOutputVertices;
-        vertexData_ = new Vector3[vertexCount_];
+        vertexData_.reset(new Vector3[vertexCount_]);
 
         indexCount_ = result.mNumIndices;
-        indexData_ = new unsigned[indexCount_];
+        indexData_.reset(new unsigned[indexCount_]);
 
         // Copy vertex data & index data
-        memcpy(vertexData_.Get(), result.mOutputVertices, vertexCount_ * sizeof(Vector3));
-        memcpy(indexData_.Get(), result.mIndices, indexCount_ * sizeof(unsigned));
+        memcpy(vertexData_.get(), result.mOutputVertices, vertexCount_ * sizeof(Vector3));
+        memcpy(indexData_.get(), result.mIndices, indexCount_ * sizeof(unsigned));
 
         lib.ReleaseResult(result);
     }
@@ -419,7 +419,7 @@ void CollisionShape::RegisterObject(Context* context)
     URHO3D_ATTRIBUTE("Size", Vector3, size_, Vector3::ONE, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Offset Position", GetPosition, SetPosition, Vector3, Vector3::ZERO, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Offset Rotation", GetRotation, SetRotation, Quaternion, Quaternion::IDENTITY, AM_DEFAULT);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Model", GetModelAttr, SetModelAttr, ResourceRef, ResourceRef(Model::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Model", GetModelAttr, SetModelAttr, ResourceRef, {Model::GetTypeStatic()}, AM_DEFAULT);
     URHO3D_ATTRIBUTE("LOD Level", int, lodLevel_, 0, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Collision Margin", float, margin_, DEFAULT_COLLISION_MARGIN, AM_DEFAULT);
     URHO3D_ATTRIBUTE("CustomGeometry ComponentID", unsigned, customGeometryID_, 0, AM_DEFAULT | AM_COMPONENTID);
@@ -918,7 +918,7 @@ void CollisionShape::ReleaseShape()
         rigidBody_->UpdateMass();
     }
 
-    shape_.release();
+    shape_.reset();
 
     geometry_.Reset();
 
@@ -1117,7 +1117,7 @@ void CollisionShape::UpdateShape()
                 {
                     geometry_ = new ConvexData(custom);
                     ConvexData* convex = static_cast<ConvexData*>(geometry_.Get());
-                    shape_.reset(new btConvexHullShape((btScalar*)convex->vertexData_.Get(), convex->vertexCount_, sizeof(Vector3)));
+                    shape_.reset(new btConvexHullShape((btScalar*)convex->vertexData_.get(), convex->vertexCount_, sizeof(Vector3)));
                     shape_->setLocalScaling(ToBtVector3(newWorldScale * size_));
                 }
                 else
@@ -1141,7 +1141,7 @@ void CollisionShape::UpdateShape()
                 }
 
                 ConvexData* convex = static_cast<ConvexData*>(geometry_.Get());
-                shape_ .reset(new btConvexHullShape((btScalar*)convex->vertexData_.Get(), convex->vertexCount_, sizeof(Vector3)));
+                shape_ .reset(new btConvexHullShape((btScalar*)convex->vertexData_.get(), convex->vertexCount_, sizeof(Vector3)));
                 shape_->setLocalScaling(ToBtVector3(newWorldScale * size_));
                 model_->reloadFinished.Connect(this,&CollisionShape::HandleModelReloadFinished);
             }

@@ -26,11 +26,10 @@
 
 namespace Urho3D
 {
-
 /// A link between otherwise unconnected regions of the navigation mesh.
 class LUTEFISK3D_EXPORT OffMeshConnection : public Component
 {
-    URHO3D_OBJECT(OffMeshConnection,Component);
+    URHO3D_OBJECT(OffMeshConnection,Component)
 
 public:
     /// Construct.

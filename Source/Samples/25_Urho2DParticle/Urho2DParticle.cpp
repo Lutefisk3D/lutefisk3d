@@ -134,14 +134,8 @@ void Urho2DParticle::SetupViewport()
 void Urho2DParticle::SubscribeToEvents()
 {
     g_inputSignals.mouseMove.Connect(this,&Urho2DParticle::HandleMouseMove);
-    if (touchEnabled_)
-        g_inputSignals.touchMove.Connect(this,&Urho2DParticle::HandleTouchMove);
-
     // Unsubscribe the SceneUpdate event from base class to prevent camera pitch and yaw in 2D sample
     g_sceneSignals.sceneUpdate.Disconnect(this);
-}
-void Urho2DParticle::HandleTouchMove(unsigned,int x, int y, int dx, int dy,float) {
-    HandleMouseMove(x,y,dx,dy,0,0);
 }
 void Urho2DParticle::HandleMouseMove(int x, int y, int, int, unsigned, int)
 {

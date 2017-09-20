@@ -35,7 +35,8 @@ class Variant;
 class ValueAnimation;
 struct VAnimEventFrame;
 
-/// Base class for a value animation instance, which includes animation runtime information and updates the target object's value automatically.
+/// Base class for a value animation instance, which includes animation runtime information and updates the target
+/// object's value automatically.
 class LUTEFISK3D_EXPORT ValueAnimationInfo : public RefCounted
 {
 public:

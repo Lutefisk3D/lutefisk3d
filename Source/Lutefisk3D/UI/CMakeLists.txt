@@ -1,83 +1,79 @@
 set(INCLUDES
-    BorderImage.h
-    Button.h
-    CheckBox.h
-    Cursor.h
-    DropDownList.h
-    FileSelector.h
-    FontFaceBitmap.h
-    FontFaceFreeType.h
-    FontFace.h
-    Font.h
-    LineEdit.h
-    ListView.h
-    Menu.h
-    MessageBox.h
-    ScrollBar.h
-    ScrollView.h
-    Slider.h
-    Sprite.h
-    Text3D.h
-    Text.h
-    ToolTip.h
-    UIBatch.h
-    UIComponent.h
-    UIElement.h
-    UIEvents.h
-    UI.h
-    View3D.h
-    Window.h
-    Console.h
-    DebugHud.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/BorderImage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Button.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/CheckBox.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Cursor.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/DropDownList.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FileSelector.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FontFaceBitmap.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FontFaceFreeType.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FontFace.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Font.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/LineEdit.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ListView.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Menu.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/MessageBox.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ScrollBar.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ScrollView.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Slider.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Sprite.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Text3D.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Text.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ToolTip.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/UIBatch.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/UIComponent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/UIElement.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/UIEvents.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/UI.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/View3D.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Window.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Console.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/DebugHud.h
 )
 set(UI_COMPONENTS
-    Console.cpp
-    DebugHud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Console.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/DebugHud.cpp
 )
 set(SOURCE
-    BorderImage.cpp
-    Button.cpp
-    CheckBox.cpp
-    Cursor.cpp
-    DropDownList.cpp
-    FileSelector.cpp
-    Font.cpp
-    FontFaceBitmap.cpp
-    FontFace.cpp
-    FontFaceFreeType.cpp
-    LineEdit.cpp
-    ListView.cpp
-    Menu.cpp
-    MessageBox.cpp
-    ScrollBar.cpp
-    ScrollView.cpp
-    Slider.cpp
-    Sprite.cpp
-    Text3D.cpp
-    Text.cpp
-    ToolTip.cpp
-    UIComponent.cpp
-    UIBatch.cpp
-    UI.cpp
-    UIElement.cpp
-    UIEvents.cpp
-    View3D.cpp
-    Window.cpp
-
+    ${CMAKE_CURRENT_SOURCE_DIR}/BorderImage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Button.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/CheckBox.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Cursor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/DropDownList.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FileSelector.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Font.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FontFaceBitmap.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FontFace.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FontFaceFreeType.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/LineEdit.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ListView.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Menu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MessageBox.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ScrollBar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ScrollView.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Slider.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Sprite.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Text3D.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Text.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ToolTip.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UIComponent.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UIBatch.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UI.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UIElement.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UIEvents.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/View3D.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Window.cpp
 )
 
-INCLUDE_DIRECTORIES(../../ThirdParty/FreeType/include)
-
-add_library(Lutefisk3D_UI OBJECT ${SOURCE} ${INCLUDES} ${UI_COMPONENTS})
-target_include_directories(Lutefisk3D_UI PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
-target_compile_definitions(Lutefisk3D_UI PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
-add_dependencies(Lutefisk3D_UI FreeType)
-set_property(TARGET Lutefisk3D_UI APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-    FreeType Lutefisk3D_2D
-)
-set_property(TARGET Lutefisk3D_UI PROPERTY POSITION_INDEPENDENT_CODE ON)
+if(LUTEFISK3D_2DLESS)
+    message(ERROR "UI requires 2D rendering support")
+    return()
+endif()
 install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/UI )
 
-set(ThirdParty_requisites ${ThirdParty_requisites} FreeType PARENT_SCOPE)
 if(UNIT_TESTING)
 endif()
+set(Lutefisk3D_INCLUDE_DIRS ${Lutefisk3D_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/Source/ThirdParty/FreeType/include PARENT_SCOPE)
+set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} FreeType PARENT_SCOPE)
+#set(Lutefisk3D_DEPENDENCIES ${Lutefisk3D_DEPENDENCIES} rapidjson PARENT_SCOPE)
+set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} ${UI_COMPONENTS} PARENT_SCOPE)

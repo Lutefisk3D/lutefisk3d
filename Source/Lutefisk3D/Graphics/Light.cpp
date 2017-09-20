@@ -127,8 +127,8 @@ void Light::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Range", GetRange, SetRange, float, DEFAULT_RANGE, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Spot FOV", GetFov, SetFov, float, DEFAULT_LIGHT_FOV, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Spot Aspect Ratio", GetAspectRatio, SetAspectRatio, float, 1.0f, AM_DEFAULT);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Attenuation Texture", GetRampTextureAttr, SetRampTextureAttr, ResourceRef, ResourceRef(Texture2D::GetTypeStatic()), AM_DEFAULT);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Light Shape Texture", GetShapeTextureAttr, SetShapeTextureAttr, ResourceRef, ResourceRef(Texture2D::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Attenuation Texture", GetRampTextureAttr, SetRampTextureAttr, ResourceRef, {Texture2D::GetTypeStatic()}, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Light Shape Texture", GetShapeTextureAttr, SetShapeTextureAttr, ResourceRef, {Texture2D::GetTypeStatic()}, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Cast Shadows", bool, castShadows_, false, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Per Vertex", bool, perVertex_, false, AM_DEFAULT);
@@ -597,11 +597,11 @@ void Light::SetIntensitySortValue(const BoundingBox& box)
             Vector3 centerPos = box.Center();
             Vector3 lightPos = node_->GetWorldPosition();
             Vector3 lightDir = node_->GetWorldDirection();
-            Ray lightRay(lightPos, lightDir);
+            Ray lightRay {lightPos, lightDir};
 
             Vector3 centerProj = lightRay.Project(centerPos);
             float centerDistance = (centerProj - lightPos).Length();
-            Ray centerRay(centerProj, centerPos - centerProj);
+            Ray centerRay {centerProj, centerPos - centerProj};
             float centerAngle = centerRay.HitDistance(box) / centerDistance;
 
             // Check if a corner of the bounding box is closer to the light ray than the center, use its angle in that case
@@ -625,7 +625,7 @@ void Light::SetIntensitySortValue(const BoundingBox& box)
             Vector3 centerPos = box.Center();
             Vector3 lightPos = node_->GetWorldPosition();
             Vector3 lightDir = (centerPos - lightPos).Normalized();
-            Ray lightRay(lightPos, lightDir);
+            Ray lightRay {lightPos, lightDir};
             float distance = lightRay.HitDistance(box);
             float normDistance = distance / range_;
             float att = Max(1.0f - normDistance * normDistance, M_EPSILON);

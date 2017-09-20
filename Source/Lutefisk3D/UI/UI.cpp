@@ -89,7 +89,6 @@ UI::UI(Context* context) :
     qualifiers_(0),
     maxFontTextureSize_(DEFAULT_FONT_TEXTURE_MAX_SIZE),
     initialized_(false),
-    usingTouchInput_(false),
     #ifdef _WIN32
     nonFocusedMouseWheel_(false),    // Default MS Windows behaviour
     #else
@@ -119,9 +118,6 @@ UI::UI(Context* context) :
     g_inputSignals.mouseButtonUp.Connect(this,&UI::HandleMouseButtonUp);
     g_inputSignals.mouseMove.Connect(this,&UI::HandleMouseMove);
     g_inputSignals.mouseWheel.Connect(this,&UI::HandleMouseWheel);
-    g_inputSignals.touchBegun.Connect(this,&UI::HandleTouchBegin);
-    g_inputSignals.touchEnd.Connect(this,&UI::HandleTouchEnd);
-    g_inputSignals.touchMove.Connect(this,&UI::HandleTouchMove);
     g_inputSignals.keyDown.Connect(this,&UI::HandleKeyDown);
     g_inputSignals.textInput.Connect(this,&UI::HandleTextInput);
     g_inputSignals.dropFile.Connect(this,&UI::HandleDropFile);
@@ -252,8 +248,8 @@ bool UI::SetModalElement(UIElement* modalElement, bool enable)
         modalElement->SetParent(static_cast<UIElement*>(modalElement->GetVar(VAR_ORIGINAL_PARENT).GetPtr()),
                                 modalElement->GetVar(VAR_ORIGINAL_CHILD_INDEX).GetUInt());
         VariantMap& vars = const_cast<VariantMap&>(modalElement->GetVars());
-        vars.remove(VAR_ORIGINAL_PARENT);
-        vars.remove(VAR_ORIGINAL_CHILD_INDEX);
+        vars.erase(VAR_ORIGINAL_PARENT);
+        vars.erase(VAR_ORIGINAL_CHILD_INDEX);
 
         // If it is a popup element, revert back its top-level parent
         UIElement* originElement = static_cast<UIElement*>(modalElement->GetVar(VAR_ORIGIN).GetPtr());
@@ -262,12 +258,12 @@ bool UI::SetModalElement(UIElement* modalElement, bool enable)
             UIElement* element = static_cast<UIElement*>(originElement->GetVar(VAR_PARENT_CHANGED).GetPtr());
             if (element)
             {
-                const_cast<VariantMap&>(originElement->GetVars()).remove(VAR_PARENT_CHANGED);
+                const_cast<VariantMap&>(originElement->GetVars()).erase(VAR_PARENT_CHANGED);
                 element->SetParent(static_cast<UIElement*>(element->GetVar(VAR_ORIGINAL_PARENT).GetPtr()),
                                    element->GetVar(VAR_ORIGINAL_CHILD_INDEX).GetUInt());
                 vars = const_cast<VariantMap&>(element->GetVars());
-                vars.remove(VAR_ORIGINAL_PARENT);
-                vars.remove(VAR_ORIGINAL_CHILD_INDEX);
+                vars.erase(VAR_ORIGINAL_PARENT);
+                vars.erase(VAR_ORIGINAL_CHILD_INDEX);
             }
         }
 
@@ -325,12 +321,8 @@ void UI::Update(float timeStep)
                 dragData->dragBeginPending = false;
                 IntVector2 beginSendPos = dragData->dragBeginSumPos / dragData->numDragButtons;
                 dragConfirmedCount_ ++;
-                if (!usingTouchInput_)
-                    dragElement->OnDragBegin(dragElement->ScreenToElement(beginSendPos), beginSendPos,
-                                             dragData->dragButtons, qualifiers_, cursor_);
-                else
-                    dragElement->OnDragBegin(dragElement->ScreenToElement(beginSendPos), beginSendPos,
-                                             dragData->dragButtons, 0, nullptr);
+                dragElement->OnDragBegin(dragElement->ScreenToElement(beginSendPos), beginSendPos,
+                                         dragData->dragButtons, qualifiers_, cursor_);
 
                 IntVector2 relativePos = dragElement->ScreenToElement(cursorPos);
                 dragElement->dragBegin.Emit(dragElement, cursorPos.x_, cursorPos.y_, relativePos.x_, relativePos.y_,
@@ -342,21 +334,9 @@ void UI::Update(float timeStep)
     }
 
     // Mouse hover
-    if (!mouseGrabbed && !input->GetTouchEmulation())
+    if (!mouseGrabbed && cursorVisible)
     {
-        if (!usingTouchInput_ && cursorVisible)
-            ProcessHover(cursorPos, mouseButtons_, qualifiers_, cursor_);
-    }
-
-    // Touch hover
-    unsigned numTouches = input->GetNumTouches();
-    for (unsigned i = 0; i < numTouches; ++i)
-    {
-        TouchState* touch = input->GetTouch(i);
-        IntVector2 touchPos = touch->position_;
-        touchPos.x_ = (int)(touchPos.x_ / uiScale_);
-        touchPos.y_ = (int)(touchPos.y_ / uiScale_);
-        ProcessHover(touchPos, TOUCHID_MASK(touch->touchID_), 0, nullptr);
+        ProcessHover(cursorPos, mouseButtons_, qualifiers_, cursor_);
     }
 
     // End hovers that expired without refreshing
@@ -1248,7 +1228,7 @@ void UI::ProcessHover(const IntVector2& cursorPos, int buttons, int qualifiers, 
                 element->OnHover(element->ScreenToElement(cursorPos), cursorPos, buttons, qualifiers, cursor);
 
                 // Begin hover event
-                if (!hoveredElements_.contains(element))
+                if (!hashContains(hoveredElements_,element))
                 {
                     IntVector2 relativePos = element->ScreenToElement(cursorPos);
                     element->hoverBegin.Emit(element,cursorPos.x_,cursorPos.y_,relativePos.x_,relativePos.y_);
@@ -1287,7 +1267,7 @@ void UI::ProcessHover(const IntVector2& cursorPos, int buttons, int qualifiers, 
             element->OnHover(element->ScreenToElement(cursorPos), cursorPos, buttons, qualifiers, cursor);
 
             // Begin hover event
-            if (!hoveredElements_.contains(element))
+            if (!hashContains(hoveredElements_,element))
             {
                 IntVector2 relativePos = element->ScreenToElement(cursorPos);
                 element->hoverBegin.Emit(element,cursorPos.x_,cursorPos.y_,relativePos.x_,relativePos.y_);
@@ -1306,11 +1286,7 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
     {
         WeakPtr<UIElement> element(GetElementAt(cursorPos));
 
-        bool newButton;
-        if (usingTouchInput_)
-            newButton = (button & buttons) == 0;
-        else
-            newButton = true;
+        bool newButton = true;
         buttons |= button;
 
         if (element)
@@ -1345,25 +1321,23 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
             }
 
             // Handle start of drag. Click handling may have caused destruction of the element, so check the pointer again
-            bool dragElementsContain = dragElements_.contains(element);
+            bool dragElementsContain = hashContains(dragElements_,element);
             if (element && !dragElementsContain)
             {
                 DragData* dragData = new DragData();
                 dragElements_[element] = dragData;
                 dragData->dragBeginPending = true;
-                dragData->sumPos = cursorPos;
                 dragData->dragBeginSumPos = cursorPos;
                 dragData->dragBeginTimer.Reset();
                 dragData->dragButtons = button;
                 dragData->numDragButtons = CountSetBits(dragData->dragButtons);
                 dragElementsCount_++;
 
-                dragElementsContain = dragElements_.contains(element);
+                dragElementsContain = hashContains(dragElements_,element);
             }
             if (element && dragElementsContain && newButton)
             {
                 DragData* dragData = dragElements_[element];
-                dragData->sumPos += cursorPos;
                 dragData->dragBeginSumPos += cursorPos;
                 dragData->dragButtons |= button;
                 dragData->numDragButtons = CountSetBits(dragData->dragButtons);
@@ -1473,18 +1447,7 @@ void UI::ProcessMove(const IntVector2& cursorPos, const IntVector2& cursorDeltaP
             }
 
             // Calculate the position that we should send for this drag event.
-            IntVector2 sendPos;
-            if (usingTouchInput_)
-            {
-                dragData->sumPos += cursorDeltaPos;
-                sendPos.x_ = dragData->sumPos.x_ / dragData->numDragButtons;
-                sendPos.y_ = dragData->sumPos.y_ / dragData->numDragButtons;
-            }
-            else
-            {
-                dragData->sumPos = cursorPos;
-                sendPos = cursorPos;
-            }
+            IntVector2 sendPos = cursorPos;
 
             if (dragElement->IsEnabled() && dragElement->IsVisible())
             {
@@ -1546,7 +1509,6 @@ void UI::HandleMouseButtonDown(int button, unsigned buttons, int quals)
 {
     mouseButtons_ = buttons;
     qualifiers_ = quals;
-    usingTouchInput_ = false;
 
     IntVector2 cursorPos;
     bool cursorVisible;
@@ -1575,7 +1537,6 @@ void UI::HandleMouseMove(int x, int y, int DX, int DY, unsigned buttons, int qua
 {
     mouseButtons_ = buttons;
     qualifiers_ = quals;
-    usingTouchInput_ = false;
 
     Input* input = m_context->m_InputSystem.get();
     const IntVector2& rootSize = rootElement_->GetSize();
@@ -1620,7 +1581,6 @@ void UI::HandleMouseWheel(int Wheel,unsigned Buttons,int Qualifiers)
     mouseButtons_ = Buttons;
     qualifiers_ = Qualifiers;
     int delta = Wheel;
-    usingTouchInput_ = false;
 
     IntVector2 cursorPos;
     bool cursorVisible;
@@ -1657,71 +1617,6 @@ void UI::HandleMouseWheel(int Wheel,unsigned Buttons,int Qualifiers)
     }
 }
 
-void UI::HandleTouchBegin(unsigned touchID,int x,int y,float pressure)
-{
-    if (m_context->m_InputSystem->IsMouseGrabbed())
-        return;
-
-    IntVector2 pos(x, y);
-    pos.x_ = int(pos.x_ / uiScale_);
-    pos.y_ = int(pos.y_ / uiScale_);
-    usingTouchInput_ = true;
-
-    int touchMask = TOUCHID_MASK(touchID);
-    WeakPtr<UIElement> element(GetElementAt(pos));
-
-    if (element)
-    {
-        ProcessClickBegin(pos, touchMask, touchDragElements_[element], 0, nullptr, true);
-        touchDragElements_[element] |= touchMask;
-    }
-    else
-        ProcessClickBegin(pos, touchMask, touchMask, 0, nullptr, true);
-}
-
-void UI::HandleTouchEnd(unsigned touchID,int x,int y)
-{
-    IntVector2 pos(x, y);
-    pos.x_ = int(pos.x_ / uiScale_);
-    pos.y_ = int(pos.y_ / uiScale_);
-
-    // Get the touch index
-    int touchMask = TOUCHID_MASK(touchID);
-
-    // Transmit hover end to the position where the finger was lifted
-    WeakPtr<UIElement> element(GetElementAt(pos));
-
-    // Clear any drag events that were using the touch id
-    for (auto i = touchDragElements_.begin(),fin=touchDragElements_.end(); i != fin; )
-    {
-        int touches = MAP_VALUE(i);
-        if (touches & touchMask)
-            i = touchDragElements_.erase(i);
-        else
-            ++i;
-    }
-
-    if (element && element->IsEnabled())
-        element->OnHover(element->ScreenToElement(pos), pos, 0, 0, nullptr);
-
-    ProcessClickEnd(pos, touchMask, 0, 0, nullptr, true);
-}
-
-void UI::HandleTouchMove(unsigned touchID,int x,int y,int dX,int dY, float Pressure)
-{
-    IntVector2 pos(x, y);
-    IntVector2 deltaPos(dX, dY);
-    pos.x_ = int(pos.x_ / uiScale_);
-    pos.y_ = int(pos.y_ / uiScale_);
-    deltaPos.x_ = int(deltaPos.x_ / uiScale_);
-    deltaPos.y_ = int(deltaPos.y_ / uiScale_);
-    usingTouchInput_ = true;
-
-    int touchMask = TOUCHID_MASK(touchID);
-
-    ProcessMove(pos, deltaPos, touchMask, 0, nullptr, true);
-}
-
 void UI::HandleKeyDown(int key,int ,unsigned buttons,int qualifiers, bool )
 {
     mouseButtons_ = buttons;
@@ -1739,7 +1634,7 @@ void UI::HandleKeyDown(int key,int ,unsigned buttons,int qualifiers, bool )
     if (key == KEY_ESCAPE && HasModalElement())
     {
         UIElement* element = rootModalElement_->GetChild(rootModalElement_->GetNumChildren() - 1);
-        if (element->GetVars().contains(VAR_ORIGIN))
+        if (hashContains(element->GetVars(),VAR_ORIGIN))
             // If it is a popup, dismiss by defocusing it
             SetFocusElement(nullptr);
         else
@@ -1853,10 +1748,6 @@ HashMap<WeakPtr<UIElement>, UI::DragData*>::iterator UI::DragElementErase(HashMa
 
 void UI::ProcessDragCancel()
 {
-    // How to tell difference between drag cancel and new selection on multi-touch?
-    if (usingTouchInput_)
-        return;
-
     IntVector2 cursorPos;
     bool cursorVisible;
     GetCursorPositionAndVisible(cursorPos, cursorVisible);
@@ -1879,32 +1770,6 @@ void UI::ProcessDragCancel()
         else
             ++i;
     }
-}
-
-IntVector2 UI::SumTouchPositions(UI::DragData* dragData, const IntVector2& oldSendPos)
-{
-    IntVector2 sendPos = oldSendPos;
-    if (usingTouchInput_)
-    {
-        int buttons = dragData->dragButtons;
-        dragData->sumPos = IntVector2::ZERO;
-        Input* input = m_context->m_InputSystem.get();
-        for (int i = 0; (1 << i) <= buttons; i++)
-        {
-            if ((1 << i) & buttons)
-            {
-                TouchState* ts = input->GetTouch(i);
-                if (!ts)
-                    break;
-                IntVector2 pos = ts->position_;
-                dragData->sumPos.x_ += (int)(pos.x_ / uiScale_);
-                dragData->sumPos.y_ += (int)(pos.y_ / uiScale_);
-            }
-        }
-        sendPos.x_ = dragData->sumPos.x_ / dragData->numDragButtons;
-        sendPos.y_ = dragData->sumPos.y_ / dragData->numDragButtons;
-    }
-    return sendPos;
 }
 
 void UI::ResizeRootElement()

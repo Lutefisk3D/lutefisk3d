@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Graphics/Drawable.h"
+#include "Lutefisk3D/Resource/Resource.h"
 
 namespace Urho3D
 {
@@ -49,16 +50,11 @@ public:
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);
 
-    /// Process octree raycast. May be called from a worker thread.
-    virtual void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
-    /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
-    virtual void UpdateBatches(const FrameInfo& frame) override;
-    /// Return the geometry for a specific LOD level.
-    virtual Geometry* GetLodGeometry(unsigned batchIndex, unsigned level) override;
-    /// Return number of occlusion geometry triangles.
-    virtual unsigned GetNumOccluderTriangles() override;
-    /// Draw to occlusion buffer. Return true if did not run out of triangles.
-    virtual bool DrawOcclusion(OcclusionBuffer* buffer) override;
+    void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
+    void UpdateBatches(const FrameInfo& frame) override;
+    Geometry* GetLodGeometry(unsigned batchIndex, unsigned level) override;
+    unsigned GetNumOccluderTriangles() override;
+    bool DrawOcclusion(OcclusionBuffer* buffer) override;
 
     /// Set model.
     virtual void SetModel(Model* model);
@@ -95,14 +91,10 @@ public:
 
 protected:
     /// Recalculate the world-space bounding box.
-    virtual void OnWorldBoundingBoxUpdate() override;
-    /// Set local-space bounding box.
+    void OnWorldBoundingBoxUpdate() override;
     void SetBoundingBox(const BoundingBox& box);
-    /// Set number of geometries.
     void SetNumGeometries(unsigned num);
-    /// Reset LOD levels.
     void ResetLodLevels();
-    /// Choose LOD levels based on distance.
     void CalculateLodLevels();
 
     /// Extra per-geometry data.

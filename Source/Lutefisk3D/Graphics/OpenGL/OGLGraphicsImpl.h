@@ -72,7 +72,7 @@ struct FrameBufferObject
 /// %Graphics subsystem implementation. Holds API-specific objects.
 class LUTEFISK3D_EXPORT GraphicsImpl
 {
-    friend class Graphics;
+    friend class LUTEFISK3D_EXPORT Graphics;
 
 public:
     /// Construct.

@@ -32,9 +32,9 @@
 namespace Urho3D
 {
 
-class LUTEFISK3D_EXPORT Context;
-class LUTEFISK3D_EXPORT Variant;
-enum LUTEFISK3D_EXPORT VariantType : uint8_t;
+class Context;
+class Variant;
+enum VariantType : uint8_t;
 using VariantMap = HashMap<StringHash, Variant>;
 using VariantVector = std::vector<Variant>;
 
@@ -67,13 +67,15 @@ enum JSONNumberType
     JSONNT_FLOAT_DOUBLE
 };
 
-class LUTEFISK3D_EXPORT JSONValue;
+class JSONValue;
 
 /// JSON array type.
-using JSONArray = std::vector<JSONValue> ;
+using JSONArray = std::vector<JSONValue>;
+}
+namespace Urho3D
+{
 /// JSON object type.
 using JSONObject = HashMap<QString, JSONValue>;
-
 /// JSON value class.
 class LUTEFISK3D_EXPORT JSONValue
 {
@@ -298,5 +300,8 @@ private:
         JSONObject* objectValue_;
     };
 };
-
+extern template class HashMap<QString, JSONValue>;
+}
+namespace std {
+extern template class std::vector<Urho3D::JSONValue>;
 }

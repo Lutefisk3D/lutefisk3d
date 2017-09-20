@@ -27,6 +27,7 @@
 #include "Lutefisk3D/UI/Console.h"
 #include "Lutefisk3D/Container/Allocator.h"
 #include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/Core/CoreEvents.h"
 #include "Lutefisk3D/UI/DebugHud.h"
 #include "Lutefisk3D/IO/Log.h"
@@ -107,16 +108,25 @@ public:
 
     }
 };
-struct SignalAllocator : public AllocatorWrapper<jl::Signal<void>::eAllocationSize> {
+struct SignalAllocator : public AllocatorWrapper<jl::Signal<void>::eAllocationSize>
+{
 };
-struct ObserverAllocator : public AllocatorWrapper<jl::SignalObserver::eAllocationSize> {
+struct ObserverAllocator : public AllocatorWrapper<jl::SignalObserver::eAllocationSize>
+{
 };
 
 enum { eMaxConnections = 32000 };
 SignalAllocator oSignalConnectionAllocator;
 ObserverAllocator oObserverConnectionAllocator;
-
+/// Get an engine startup parameter, with default value if missing.
+const Urho3D::Variant& GetParameter(const Urho3D::VariantMap& parameters, const QString& parameter, const Urho3D::Variant& defaultValue = Urho3D::Variant::EMPTY)
+{
+    Urho3D::StringHash nameHash(parameter);
+    Urho3D::VariantMap::const_iterator i = parameters.find(nameHash);
+    return i != parameters.end() ? MAP_VALUE(i) : defaultValue;
 }
+
+} // end of anonymous namespace
 namespace Urho3D
 {
 
@@ -124,7 +134,6 @@ extern const char* logLevelPrefixes[];
 
 Engine::Engine(Context* context) :
     Object(context),
-    jl::SignalObserver(),
     timeStep_(0.0f),
     timeStepSmoothing_(2),
     minFps_(10),
@@ -198,8 +207,7 @@ Engine::Engine(Context* context) :
 #endif
 }
 
-
-
+/// Initialize engine using parameters given and show the application window. Return true if successful.
 bool Engine::Initialize(const VariantMap& parameters)
 {
     if (initialized_)
@@ -266,8 +274,8 @@ bool Engine::Initialize(const VariantMap& parameters)
         Graphics* graphics = context_->m_Graphics.get();
         Renderer* renderer = context_->m_Renderer.get();
 
-        if (HasParameter(parameters, EP_EXTERNAL_WINDOW))
-            graphics->SetExternalWindow(GetParameter(parameters, EP_EXTERNAL_WINDOW).GetVoidPtr());
+        if (HasParameter(parameters, EP_EMBEDDED_WINDOW))
+            graphics->SetEmbeddedWindow();
         graphics->SetWindowTitle(GetParameter(parameters, EP_WINDOW_TITLE, "Urho3D").GetString());
         graphics->SetWindowIcon(cache->GetResource<Image>(GetParameter(parameters, EP_WINDOW_ICON, QString()).GetString()));
         graphics->SetFlushGPU(GetParameter(parameters, EP_FLUSH_GPU, false).GetBool());
@@ -343,8 +351,9 @@ bool Engine::Initialize(const VariantMap& parameters)
     initialized_ = true;
     return true;
 }
-
-bool Engine::InitializeResourceCache(const VariantMap& parameters, bool removeOld /*= true*/)
+/// Reinitialize resource cache subsystem using parameters given. Implicitly called by Initialize.
+/// \returns true if successful.
+bool Engine::InitializeResourceCache(const VariantMap &parameters, bool removeOld /*= true*/)
 {
     ResourceCache* cache = context_->m_ResourceCache.get();
     FileSystem* fileSystem = context_->m_FileSystem.get();
@@ -678,7 +687,7 @@ void Engine::DumpMemory()
 #endif
 #endif
 }
-
+/// Send frame update events.
 void Engine::Update()
 {
     URHO3D_PROFILE_CTX(context_,Update);
@@ -698,7 +707,7 @@ void Engine::Update()
     // Post-render update event
     g_coreSignals.postRenderUpdate.Emit(timeStep_);
 }
-
+/// Render after frame update.
 void Engine::Render()
 {
     if (headless_)
@@ -717,7 +726,7 @@ void Engine::Render()
 #endif
     graphics->EndFrame();
 }
-
+/// Get the timestep for the next frame and sleep for frame limiting if necessary.
 void Engine::ApplyFrameLimit()
 {
     if (!initialized_)
@@ -790,6 +799,7 @@ void Engine::ApplyFrameLimit()
 VariantMap Engine::ParseParameters(const QStringList& arguments)
 {
     VariantMap ret;
+
     // Pre-initialize the parameters with environment variable values when they are set
     if (const char* paths = getenv("URHO3D_PREFIX_PATH"))
         ret[EP_RESOURCE_PREFIX_PATHS] = paths;
@@ -807,8 +817,6 @@ VariantMap Engine::ParseParameters(const QStringList& arguments)
                 ret[EP_FRAME_LIMITER] = false;
             else if (argument == "flushgpu")
                 ret[EP_FLUSH_GPU] = true;
-            else if (argument == "gl2")
-                ret[EP_FORCE_GL2] = true;
             else if (argument == "landscape")
                 ret[EP_ORIENTATIONS] = "LandscapeLeft LandscapeRight " + ret[EP_ORIENTATIONS].GetString();
             else if (argument == "portrait")
@@ -953,12 +961,6 @@ bool Engine::HasParameter(const VariantMap& parameters, const QString& parameter
     return parameters.find(nameHash) != parameters.end();
 }
 
-const Variant& Engine::GetParameter(const VariantMap& parameters, const QString& parameter, const Variant& defaultValue)
-{
-    StringHash nameHash(parameter);
-    VariantMap::const_iterator i = parameters.find(nameHash);
-    return i != parameters.end() ? MAP_VALUE(i) : defaultValue;
-}
 /// Handle exit requested event. Auto-exit if enabled.
 void Engine::HandleExitRequested()
 {

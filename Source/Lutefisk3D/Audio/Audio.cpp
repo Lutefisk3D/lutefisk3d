@@ -111,7 +111,7 @@ bool Audio::SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpo
     fragmentSize_ = std::min<unsigned>(NextPowerOfTwo(mixRate >> 6), obtained.samples);
     mixRate_ = obtained.freq;
     interpolation_ = interpolation;
-    clipBuffer_ = new int[stereo ? fragmentSize_ << 1 : fragmentSize_];
+    clipBuffer_.reset(new int[stereo ? fragmentSize_ << 1 : fragmentSize_]);
 
     URHO3D_LOGINFO("Set audio mode " + QString::number(mixRate_) + " Hz " + (stereo_ ? "stereo" : "mono") + " " +
                    (interpolation_ ? "interpolated" : ""));
@@ -208,11 +208,11 @@ void Audio::StopSound(Sound* soundClip)
 float Audio::GetMasterGain(const QString& type) const
 {
     // By definition previously unknown types return full volume
-    HashMap<StringHash, Variant>::const_iterator findIt = masterGain_.find(type);
+    HashMap<StringHash, float>::const_iterator findIt = masterGain_.find(type);
     if (findIt == masterGain_.end())
         return 1.0f;
 
-    return MAP_VALUE(findIt).GetFloat();
+    return MAP_VALUE(findIt);
 }
 
 /// Return whether specific sound type has been paused.
@@ -250,17 +250,17 @@ void Audio::RemoveSoundSource(SoundSource* channel)
 /// Return sound type specific gain multiplied by master gain.
 float Audio::GetSoundSourceMasterGain(StringHash typeHash) const
 {
-    HashMap<StringHash, Variant>::const_iterator masterIt = masterGain_.find(SOUND_MASTER_HASH);
+    HashMap<StringHash, float>::const_iterator masterIt = masterGain_.find(SOUND_MASTER_HASH);
 
     if (!typeHash)
-        return MAP_VALUE(masterIt).GetFloat();
+        return MAP_VALUE(masterIt);
 
-    HashMap<StringHash, Variant>::const_iterator typeIt = masterGain_.find(typeHash);
+    HashMap<StringHash, float>::const_iterator typeIt = masterGain_.find(typeHash);
 
     if (typeIt == masterGain_.end() || typeIt == masterIt)
-        return MAP_VALUE(masterIt).GetFloat();
+        return MAP_VALUE(masterIt);
 
-    return MAP_VALUE(masterIt).GetFloat() * MAP_VALUE(typeIt).GetFloat();
+    return MAP_VALUE(masterIt) * MAP_VALUE(typeIt);
 }
 
 void SDLAudioCallback(void *userdata, Uint8* stream, int len)
@@ -290,7 +290,7 @@ void Audio::MixOutput(void *dest, unsigned samples)
             clipSamples <<= 1;
 
         // Clear clip buffer
-        int* clipPtr = clipBuffer_.Get();
+        int* clipPtr = clipBuffer_.get();
         memset(clipPtr, 0, clipSamples * sizeof(int));
 
         // Mix samples to clip buffer
@@ -324,7 +324,7 @@ void Audio::Release()
     {
         SDL_CloseAudioDevice(deviceID_);
         deviceID_ = 0;
-        clipBuffer_.Reset();
+        clipBuffer_.reset();
     }
 }
 /// Actually update sound sources with the specific timestep. Called internally.

@@ -22,15 +22,15 @@
 
 #pragma once
 
+#include "Lutefisk3D/Container/RefCounted.h"
 #include <cassert>
 #include <cstddef>
 #include <memory>
-#include "Lutefisk3D/Container/RefCounted.h"
 namespace Urho3D
 {
 
 /// Shared pointer template class with intrusive reference counting.
-template <class T> class SharedPtr
+template <class T> class LUTEFISK3D_EXPORT SharedPtr
 {
 public:
     /// Construct a null shared pointer.
@@ -203,7 +203,7 @@ private:
         if (ptr_)
         {
             ptr_->ReleaseRef();
-            ptr_ = 0;
+            ptr_ = nullptr;
         }
     }
 
@@ -228,7 +228,7 @@ template <class T, class U> SharedPtr<T> DynamicCast(const SharedPtr<U>& ptr)
 }
 
 /// Weak pointer template class with intrusive reference counting. Does not keep the object pointed to alive.
-template <class T> class WeakPtr
+template <class T> class LUTEFISK3D_EXPORT WeakPtr
 {
 public:
     /// Construct a null weak pointer.
@@ -371,14 +371,6 @@ public:
         T* rawPtr = Get();
         assert(rawPtr);
         return *rawPtr;
-    }
-
-    /// Subscript the object if applicable.
-    T& operator [] (const int index)
-    {
-        T* rawPtr = Get();
-        assert(rawPtr);
-        return (*rawPtr)[index];
     }
 
     /// Test for equality with another weak pointer.

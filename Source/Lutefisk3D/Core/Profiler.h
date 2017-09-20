@@ -36,20 +36,7 @@ class LUTEFISK3D_EXPORT ProfilerBlock
 public:
     /// Construct with the specified parent block and name.
     ProfilerBlock(ProfilerBlock* parent, const char* name) :
-        name_(nullptr),
-        time_(0),
-        maxTime_(0),
-        count_(0),
-        parent_(parent),
-        frameTime_(0),
-        frameMaxTime_(0),
-        frameCount_(0),
-        intervalTime_(0),
-        intervalMaxTime_(0),
-        intervalCount_(0),
-        totalTime_(0),
-        totalMaxTime_(0),
-        totalCount_(0)
+        parent_(parent)
     {
         if (name)
         {
@@ -81,7 +68,7 @@ public:
     /// End timing.
     void End()
     {
-        long long time = timer_.GetUSecS();
+        int64_t time = timer_.GetUSecS();
         if (time > maxTime_)
             maxTime_ = time;
         time_ += time;
@@ -136,37 +123,37 @@ public:
     }
 
     /// Block name.
-    char* name_;
+    char* name_ = nullptr;
     /// High-resolution timer for measuring the block duration.
     HiresTimer timer_;
     /// Time on current frame.
-    long long time_;
+    int64_t time_=0;
     /// Maximum time on current frame.
-    long long maxTime_;
+    int64_t maxTime_=0;
     /// Calls on current frame.
-    unsigned count_;
+    unsigned count_=0;
     /// Parent block.
     ProfilerBlock* parent_;
     /// Child blocks.
     std::vector<ProfilerBlock*> children_;
     /// Time on the previous frame.
-    long long frameTime_;
+    int64_t frameTime_=0;
     /// Maximum time on the previous frame.
-    long long frameMaxTime_;
+    int64_t frameMaxTime_=0;
     /// Calls on the previous frame.
-    unsigned frameCount_;
+    unsigned frameCount_=0;
     /// Time during current profiler interval.
-    long long intervalTime_;
+    int64_t intervalTime_=0;
     /// Maximum time during current profiler interval.
-    long long intervalMaxTime_;
+    int64_t intervalMaxTime_=0;
     /// Calls during current profiler interval.
-    unsigned intervalCount_;
+    unsigned intervalCount_=0;
     /// Total accumulated time.
-    long long totalTime_;
+    int64_t totalTime_=0;
     /// All-time maximum time.
-    long long totalMaxTime_;
+    int64_t totalMaxTime_=0;
     /// Total accumulated calls.
-    unsigned totalCount_;
+    unsigned totalCount_=0;
 };
 
 /// Hierarchical performance profiler subsystem.
@@ -195,7 +182,7 @@ public:
         if (!Thread::IsMainThread())
             return;
 
-            current_->End();
+        current_->End();
         if (current_->parent_)
             current_ = current_->parent_;
         }

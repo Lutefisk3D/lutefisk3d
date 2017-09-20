@@ -24,7 +24,7 @@
 
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Graphics/Batch.h"
-#include "Lutefisk3D/Graphics/Light.h"
+#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Graphics/Zone.h"
 #include <array>
@@ -83,48 +83,17 @@ struct LightQueryResult
     unsigned numSplits_;
 };
 
-/// Scene render pass info.
-struct ScenePassInfo
-{
-    /// Pass index.
-    unsigned passIndex_;
-    /// Allow instancing flag.
-    bool allowInstancing_;
-    /// Mark to stencil flag.
-    bool markToStencil_;
-    /// Vertex light flag.
-    bool vertexLights_;
-    /// Batch queue.
-    uint32_t batchQueueIdx_;
-};
-
-/// Per-thread geometry, light and scene range collection structure.
-struct PerThreadSceneResult
-{
-    /// Geometry objects.
-    std::vector<Drawable*> geometries_;
-    /// Lights.
-    std::vector<Light*> lights_;
-    /// Scene minimum Z value.
-    float minZ_;
-    /// Scene maximum Z value.
-    float maxZ_;
-};
-
 static const unsigned MAX_VIEWPORT_TEXTURES = 2;
-
+class ViewPrivate;
 /// Internal structure for 3D rendering work. Created for each backbuffer and texture viewport, but not for shadow cameras.
 class LUTEFISK3D_EXPORT View : public RefCounted
 {
     friend void CheckVisibilityWork(const WorkItem* item, unsigned threadIndex);
     friend void ProcessLightWork(const WorkItem* item, unsigned threadIndex);
-    typedef HashMap<uint32_t, uint32_t> BatchQueueMap;
 public:
 
-    /// Construct.
     View(Context* context);
-    /// Destruct.
-    virtual ~View() = default;
+    virtual ~View();
 
     /// Define with rendertarget and viewport. Return true if successful.
     bool Define(RenderSurface* renderTarget, Viewport* viewport);
@@ -294,6 +263,7 @@ private:
         return hash;
     }
     Context *context_;
+    std::unique_ptr<ViewPrivate> d;
     /// Graphics subsystem.
     Graphics *graphics_; // non-owning pointer
     Renderer *renderer_; //!< Renderer subsystem.
@@ -366,39 +336,16 @@ private:
     bool drawDebug_;
     /// Renderpath.
     RenderPath* renderPath_;
-    /// Per-thread octree query results.
-    std::vector<std::vector<Drawable*> > tempDrawables_;
-    /// Per-thread geometries, lights and Z range collection results.
-    std::vector<PerThreadSceneResult> sceneResults_;
-    /// Visible zones.
-    std::vector<Zone*> zones_;
     /// Visible geometry objects.
     std::vector<Drawable*> geometries_;
-    /// Geometry objects that will be updated in the main thread.
-    std::vector<Drawable*> nonThreadedGeometries_;
-    /// Geometry objects that will be updated in worker threads.
-    std::vector<Drawable*> threadedGeometries_;
     /// Occluder objects.
     std::vector<Drawable*> occluders_;
     /// Lights.
     std::vector<Light*> lights_;
     /// Number of active occluders.
     unsigned activeOccluders_;
-    /// Drawables that limit their maximum light count.
-    HashSet<Drawable*> maxLightsDrawables_;
-    /// Rendertargets defined by the renderpath.
-    HashMap<StringHash, Texture*> renderTargets_;
-    /// Intermediate light processing results.
-    std::vector<LightQueryResult> lightQueryResults_;
-    /// Info for scene render passes defined by the renderpath.
-    std::vector<ScenePassInfo> scenePasses_;
     /// Per-pixel light queues.
     std::vector<LightBatchQueue> lightQueues_;
-    /// Per-vertex light queues.
-    HashMap<uint64_t, LightBatchQueue> vertexLightQueues_;
-    /// Batch queues by pass index.
-    BatchQueueMap batchQueues_;
-    std::deque<BatchQueue> batchQueueStorage_;
     int alphaPassQueueIdx_;
     /// Index of the GBuffer pass.
     unsigned gBufferPassIndex_;

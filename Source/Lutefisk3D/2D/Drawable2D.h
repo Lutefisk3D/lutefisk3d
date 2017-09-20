@@ -23,15 +23,14 @@
 #pragma once
 
 #include "Lutefisk3D/Graphics/Drawable.h"
-#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 
 namespace Urho3D
 {
 
-class Drawable2D;
-class Renderer2D;
-class Texture2D;
-class VertexBuffer;
+class LUTEFISK3D_EXPORT Drawable2D;
+class LUTEFISK3D_EXPORT Renderer2D;
+class LUTEFISK3D_EXPORT Texture2D;
+class LUTEFISK3D_EXPORT VertexBuffer;
 
 /// 2D vertex.
 struct Vertex2D
@@ -65,7 +64,7 @@ public:
     static void RegisterObject(Context* context);
 
 
-    virtual void OnSetEnabled() override;
+    void OnSetEnabled() override;
     void SetLayer(int layer);
     void SetOrderInLayer(int orderInLayer);
     /// Return layer.
@@ -76,8 +75,8 @@ public:
 
 protected:
 
-    virtual void OnSceneSet(Scene* scene) override;
-    virtual void OnMarkedDirty(Node* node) override;
+    void OnSceneSet(Scene* scene) override;
+    void OnMarkedDirty(Node* node) override;
     /// Handle draw order changed.
     virtual void OnDrawOrderChanged() = 0;
     /// Update source batches.

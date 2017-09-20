@@ -24,6 +24,9 @@
 
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Math/Vector3.h"
+#include "Lutefisk3D/Math/Color.h"
+#include "Lutefisk3D/Math/Rect.h"
 
 namespace Urho3D
 {

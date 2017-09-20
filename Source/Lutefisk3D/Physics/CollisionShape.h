@@ -105,11 +105,11 @@ struct ConvexData : public CollisionGeometryData
     void BuildHull(const std::vector<Vector3>& vertices);
 
     /// Vertex data.
-    SharedArrayPtr<Vector3> vertexData_;
+    std::unique_ptr<Vector3[]> vertexData_;
     /// Number of vertices.
     unsigned vertexCount_;
     /// Index data.
-    SharedArrayPtr<unsigned> indexData_;
+    std::unique_ptr<unsigned[]> indexData_;
     /// Number of indices.
     unsigned indexCount_;
 };

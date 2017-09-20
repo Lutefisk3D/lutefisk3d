@@ -23,10 +23,11 @@
 #pragma once
 
 #include "Lutefisk3D/Graphics/Drawable.h"
+#include "Lutefisk3D/Resource/Resource.h"
 
 namespace Urho3D
 {
-
+enum PrimitiveType : unsigned;
 /// Custom geometry vertex.
 struct CustomGeometryVertex
 {
@@ -49,7 +50,7 @@ class VertexBuffer;
 /// Custom geometry component.
 class LUTEFISK3D_EXPORT CustomGeometry : public Drawable
 {
-    URHO3D_OBJECT(CustomGeometry,Drawable);
+    URHO3D_OBJECT(CustomGeometry,Drawable)
 
 public:
     /// Construct.

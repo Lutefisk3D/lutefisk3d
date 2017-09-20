@@ -23,7 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Resource/Resource.h"
-
+#include "Lutefisk3D/Math/Rect.h"
 namespace Urho3D
 {
 
@@ -33,7 +33,7 @@ class Texture2D;
 /// Sprite.
 class LUTEFISK3D_EXPORT Sprite2D : public Resource
 {
-    URHO3D_OBJECT(Sprite2D,Resource);
+    URHO3D_OBJECT(Sprite2D,Resource)
 
 public:
     /// Construct.
@@ -44,9 +44,9 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
+    bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
-    virtual bool EndLoad() override;
+    bool EndLoad() override;
 
     /// Set texture.
     void SetTexture(Texture2D* texture);

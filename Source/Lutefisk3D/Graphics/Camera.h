@@ -24,11 +24,12 @@
 
 #include "Lutefisk3D/Math/Frustum.h"
 #include "Lutefisk3D/Scene/Component.h"
-#include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Math/Ray.h"
 
 namespace Urho3D
 {
+enum FillMode : unsigned;
+enum FaceCameraMode : unsigned;
 
 static const float DEFAULT_NEARCLIP = 0.1f;
 static const float DEFAULT_FARCLIP = 1000.0f;
@@ -43,7 +44,7 @@ static const unsigned VO_DISABLE_OCCLUSION = 0x4;
 /// %Camera component.
 class LUTEFISK3D_EXPORT Camera : public Component
 {
-    URHO3D_OBJECT(Camera,Component);
+    URHO3D_OBJECT(Camera,Component)
 
 public:
     /// Construct.

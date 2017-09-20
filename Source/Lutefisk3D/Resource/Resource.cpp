@@ -30,6 +30,7 @@
 
 namespace Urho3D
 {
+template class SharedPtr<Resource>;
 
 namespace  {
 struct ResourceWithMetadataPrivate {
@@ -170,7 +171,7 @@ const Urho3D::Variant& ResourceWithMetadata::GetMetadata(const QString& name) co
 bool ResourceWithMetadata::HasMetadata() const
 {
     L_D(ResourceWithMetadata);
-    return !d->metadata_.isEmpty();
+    return !d->metadata_.empty();
 }
 
 void ResourceWithMetadata::LoadMetadataFromXML(const XMLElement& source)

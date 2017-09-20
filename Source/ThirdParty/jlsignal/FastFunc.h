@@ -1,5 +1,4 @@
-#ifndef SSVU_FASTFUNC
-#define SSVU_FASTFUNC
+#pragma once
 
 #include <cstring>
 #include <type_traits>
@@ -367,7 +366,8 @@ namespace ssvu
     }
 
     template<typename T> struct MemFuncToFunc;
-    template<typename TReturn, typename TThis, typename... TArgs> struct MemFuncToFunc<TReturn(TThis::*)(TArgs...) const> { using Type = TReturn(*)(TArgs...); };
+    template<typename TReturn, typename TThis, typename... TArgs>
+    struct MemFuncToFunc<TReturn(TThis::*)(TArgs...) const> { using Type = TReturn(*)(TArgs...); };
 
 #define ENABLE_IF_CONV_TO_FUN_PTR(x)        typename std::enable_if<std::is_constructible<typename MemFuncToFunc<decltype(&std::decay<x>::type::operator())>::Type, x>::value>::type* = nullptr
 #define ENABLE_IF_NOT_CONV_TO_FUN_PTR(x)	typename std::enable_if<!std::is_constructible<typename MemFuncToFunc<decltype(&std::decay<x>::type::operator())>::Type, x>::value>::type* = nullptr
@@ -408,7 +408,5 @@ namespace ssvu
 #undef ENABLE_IF_NOT_CONV_TO_FUN_PTR
 #undef ENABLE_IF_SAME_TYPE
 }
-
-#endif
 
 #endif

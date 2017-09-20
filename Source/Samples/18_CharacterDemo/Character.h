@@ -26,7 +26,9 @@
 #include <Lutefisk3D/Scene/LogicComponent.h>
 
 using namespace Urho3D;
-
+namespace Urho3D {
+class RigidBody;
+}
 const int CTRL_FORWARD = 1;
 const int CTRL_BACK = 2;
 const int CTRL_LEFT = 4;
@@ -39,7 +41,6 @@ const float BRAKE_FORCE = 0.2f;
 const float JUMP_FORCE = 7.0f;
 const float YAW_SENSITIVITY = 0.1f;
 const float INAIR_THRESHOLD_TIME = 0.1f;
-
 /// Character component, responsible for physical movement according to controls, as well as animation.
 class Character : public LogicComponent
 {
@@ -62,7 +63,7 @@ public:
 
 private:
     /// Handle physics collision event.
-    void HandleNodeCollision(StringHash eventType, VariantMap& eventData);
+    void HandleNodeCollision(RigidBody *, Node *, RigidBody *, bool, const std::vector<uint8_t> &contacts_buf);
 
     /// Grounded flag for movement.
     bool onGround_;
@@ -70,4 +71,8 @@ private:
     bool okToJump_;
     /// In air timer. Due to possible physics inaccuracy, character can be off ground for max. 1/10 second and still be allowed to move.
     float inAirTimer_;
+
+    // Component interface
+protected:
+    void OnNodeSet(Node *node) override;
 };

@@ -27,6 +27,9 @@
 namespace Urho3D
 {
 
+template class SharedPtr<ShaderVariation>;
+template class HashMap<StringHash, SharedPtr<ShaderVariation> >;
+
 ShaderVariation::ShaderVariation(Shader* owner, ShaderType type) :
     GPUObject(owner->GetContext()->m_Graphics.get()),
     owner_(owner),

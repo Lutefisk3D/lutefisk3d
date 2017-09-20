@@ -1,46 +1,43 @@
 set(INCLUDES
-    AbstractFile.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/AbstractFile.h
 
-    Log.h
-    Deserializer.h
-    Serializer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Log.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Deserializer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Serializer.h
 
-    Compression.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Compression.h
 
-    File.h
-    FileSystem.h
-    FileWatcher.h
-    IOEvents.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/File.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FileSystem.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FileWatcher.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/IOEvents.h
 
-    RWOpsWrapper.h
-    PackageFile.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/RWOpsWrapper.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/PackageFile.h
 
-    MemoryBuffer.h
-    VectorBuffer.h
-    IOEvents.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/MemoryBuffer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/VectorBuffer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/IOEvents.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/IODecls.h
 )
 set(SOURCE
-    Log.cpp
-    Serializer.cpp
-    Deserializer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Log.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Serializer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Deserializer.cpp
 
-    Compression.cpp
-    File.cpp
-    FileSystem.cpp
-    FileWatcher.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Compression.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/File.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FileSystem.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FileWatcher.cpp
 
-    PackageFile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PackageFile.cpp
 
-    MemoryBuffer.cpp
-    VectorBuffer.cpp
-    IOEvents.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MemoryBuffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/VectorBuffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/IOEvents.cpp
 )
 
-add_library(Lutefisk3D_IO OBJECT ${SOURCE} ${INCLUDES} )
-add_dependencies(Lutefisk3D_IO LZ4)
-SET(ThirdParty_requisites ${ThirdParty_requisites} LZ4 PARENT_SCOPE)
+set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} LZ4 PARENT_SCOPE)
+set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} PARENT_SCOPE)
 
-target_include_directories(Lutefisk3D_IO PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
-target_compile_definitions(Lutefisk3D_IO PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
-set_property(TARGET Lutefisk3D_IO PROPERTY POSITION_INDEPENDENT_CODE ON)
 install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/IO )

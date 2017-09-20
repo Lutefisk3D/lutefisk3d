@@ -1,53 +1,51 @@
 set(INCLUDES
-    AreaAllocator.h
-    BoundingBox.h
-    Color.h
-    Frustum.h
-    MathDefs.h
-    Matrix2.h
-    Matrix3.h
-    Matrix3x4.h
-    Matrix4.h
-    Quaternion.h
-    Plane.h
-    Polyhedron.h
-    Ray.h
-    Rect.h
-    Random.h
-    Sphere.h
-    Spline.h
-    StringHash.h
-    Vector2.h
-    Vector3.h
-    Vector4.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/AreaAllocator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/BoundingBox.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Color.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Frustum.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathDefs.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Matrix2.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Matrix3.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Matrix3x4.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Matrix4.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Quaternion.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Plane.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Polyhedron.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Ray.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Rect.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Random.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Sphere.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Spline.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/StringHash.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Vector2.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Vector3.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Vector4.h
 )
 set(SOURCE
-    AreaAllocator.cpp
-    BoundingBox.cpp
-    Color.cpp
-    Frustum.cpp
-    MathDefs.cpp
-    Matrix2.cpp
-    Matrix3.cpp
-    Matrix3x4.cpp
-    Matrix4.cpp
-    Quaternion.cpp
-    Random.cpp
-    Plane.cpp
-    Polyhedron.cpp
-    Rect.cpp
-    Ray.cpp
-    Spline.cpp
-    Sphere.cpp
-    StringHash.cpp
-    Vector2.cpp
-    Vector3.cpp
-    Vector4.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/AreaAllocator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/BoundingBox.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Color.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Frustum.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathDefs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Matrix2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Matrix3.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Matrix3x4.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Matrix4.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Quaternion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Random.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Plane.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Polyhedron.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Rect.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Ray.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Spline.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Sphere.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/StringHash.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Vector2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Vector3.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Vector4.cpp
 )
 
-
-add_library(Lutefisk3D_Math OBJECT ${SOURCE} ${INCLUDES})
-target_include_directories(Lutefisk3D_Math PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
-target_compile_definitions(Lutefisk3D_Math PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
-set_property(TARGET Lutefisk3D_Math PROPERTY POSITION_INDEPENDENT_CODE ON)
 install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Math )
+
+#set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} SDL2_LIB glbinding_LIB PARENT_SCOPE)
+set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} PARENT_SCOPE)

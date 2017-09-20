@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Resource/Resource.h"
+#include "Lutefisk3D/Math/Vector2.h"
 
 namespace Urho3D
 {
@@ -45,7 +45,7 @@ enum FontType
 /// %Font resource.
 class LUTEFISK3D_EXPORT Font : public Resource
 {
-    URHO3D_OBJECT(Font,Resource);
+    URHO3D_OBJECT(Font,Resource)
 
 public:
     /// Construct.
@@ -81,17 +81,14 @@ public:
     void ReleaseFaces();
 
 private:
-    /// Load font glyph offset parameters from an optional XML file. Called internally when loading TrueType fonts.
     void LoadParameters();
-    /// Return font face using FreeType. Called internally. Return null on error.
     FontFace* GetFaceFreeType(float pointSize);
-    /// Return bitmap font face. Called internally. Return null on error.
     FontFace* GetFaceBitmap(float pointSize);
 
     /// Created faces.
     HashMap<int, SharedPtr<FontFace> > faces_;
     /// Font data.
-    SharedArrayPtr<unsigned char> fontData_;
+    std::unique_ptr<uint8_t[]> fontData_;
     /// Size of font data.
     unsigned fontDataSize_;
     /// Absolute position adjustment for glyphs.

@@ -26,11 +26,12 @@
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Core/Thread.h"
 #include "Lutefisk3D/Core/Timer.h"
+#include "Lutefisk3D/Container/Str.h"
 
 namespace Urho3D
 {
 class FileSystem;
-
+#define LUTEFISK3D_FILEWATCHER
 /// Watches a directory and its subdirectories for files being modified.
 class LUTEFISK3D_EXPORT FileWatcher : public Object, public Thread
 {
@@ -43,7 +44,7 @@ public:
     virtual ~FileWatcher();
 
     /// Directory watching loop.
-    virtual void ThreadFunction();
+    void ThreadFunction() override;
 
     /// Start watching a directory. Return true if successful.
     bool StartWatching(const QString& pathName, bool watchSubDirs);

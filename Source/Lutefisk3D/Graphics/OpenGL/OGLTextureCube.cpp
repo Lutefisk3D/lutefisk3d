@@ -34,6 +34,7 @@
 #include "../../Core/Profiler.h"
 #include "../../Resource/ResourceCache.h"
 #include "../../Resource/XMLFile.h"
+#include "Lutefisk3D/Resource/Image.h"
 
 #include "glbinding/gl33ext/functions.h"
 #include "glbinding/gl33ext/enum.h"

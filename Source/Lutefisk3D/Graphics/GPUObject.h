@@ -22,18 +22,17 @@
 
 #pragma once
 
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 #include "Lutefisk3D/Container/Ptr.h"
-
 namespace Urho3D
 {
-
 class Graphics;
 
+extern template class WeakPtr<Graphics>;
 /// API-specific GPU object representation.
 union GPUObjectHandle
 {
-    /// Object name (OpenGL.)
-    unsigned name_;
+    unsigned name_; //!< Object name (OpenGL.)
 };
 /// Base class for GPU resources.
 class LUTEFISK3D_EXPORT GPUObject
@@ -65,7 +64,7 @@ public:
 
 protected:
     /// Graphics subsystem.
-    Graphics * graphics_; // non-owning pointer
+    WeakPtr<Graphics> graphics_; // non-owning pointer
     /// Object handle.
     unsigned object_;
     /// Data lost flag.

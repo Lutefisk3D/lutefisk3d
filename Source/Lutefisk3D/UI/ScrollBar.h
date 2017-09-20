@@ -31,9 +31,9 @@ class Button;
 class Slider;
 
 /// Scroll bar %UI element with forward and back buttons.
-class LUTEFISK3D_EXPORT ScrollBar : public BorderImage
+class LUTEFISK3D_EXPORT ScrollBar : public BorderImage,public UIScrollbarSignals
 {
-    URHO3D_OBJECT(ScrollBar,BorderImage);
+    URHO3D_OBJECT(ScrollBar,BorderImage)
 
 public:
     /// Construct.

@@ -45,7 +45,6 @@ struct ReplicationState;
 struct ComponentReplicationState;
 struct NodeReplicationState;
 struct SceneReplicationState;
-
 /// Dirty attribute bits structure for network replication.
 struct LUTEFISK3D_EXPORT DirtyBits
 {
@@ -125,11 +124,6 @@ struct LUTEFISK3D_EXPORT DirtyBits
 /// Per-object attribute state for network replication, allocated on demand.
 struct LUTEFISK3D_EXPORT NetworkState
 {
-    /// Construct with defaults.
-    NetworkState() :
-        interceptMask_(0)
-    {
-    }
     /// Cached network attribute infos.
     const std::vector<AttributeInfo>* attributes_;
     /// Current network attribute values.
@@ -141,7 +135,7 @@ struct LUTEFISK3D_EXPORT NetworkState
     /// Previous user variables.
     VariantMap previousVars_;
     /// Bitmask for intercepting network messages. Used on the client only.
-    uint64_t interceptMask_;
+    uint64_t interceptMask_=0;
 };
 
 /// Base class for per-user network replication states.
@@ -165,14 +159,6 @@ struct LUTEFISK3D_EXPORT ComponentReplicationState : public ReplicationState
 /// Per-user node network replication state.
 struct LUTEFISK3D_EXPORT NodeReplicationState : public ReplicationState
 {
-    /// Construct.
-    NodeReplicationState() :
-        ReplicationState(),
-        priorityAcc_(0.0f),
-        markedDirty_(false)
-    {
-    }
-
     /// Parent scene replication state.
     SceneReplicationState* sceneState_;
     /// Link to the actual node.
@@ -184,9 +170,9 @@ struct LUTEFISK3D_EXPORT NodeReplicationState : public ReplicationState
     /// Components by ID.
     HashMap<unsigned, ComponentReplicationState> componentStates_;
     /// Interest management priority accumulator.
-    float priorityAcc_;
+    float priorityAcc_ = 0.0f;
     /// Whether exists in the SceneState's dirty set.
-    bool markedDirty_;
+    bool markedDirty_ = false;
 };
 
 /// Per-user scene network replication state.

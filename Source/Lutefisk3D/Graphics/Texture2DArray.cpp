@@ -33,6 +33,7 @@
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
+#include "Lutefisk3D/Resource/Image.h"
 
 namespace Urho3D
 {

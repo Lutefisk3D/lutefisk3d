@@ -129,7 +129,7 @@ bool BackgroundLoader::QueueResource(StringHash type, const QString& name, bool 
             g_resourceSignals.unknownResourceType.Emit(type);
         }
 
-        backgroundLoadQueue_.remove(key);
+        backgroundLoadQueue_.erase(key);
         return false;
     }
 

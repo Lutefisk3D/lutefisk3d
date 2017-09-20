@@ -30,6 +30,8 @@
 namespace Urho3D
 {
 
+extern template class SharedPtr<XMLFile>;
+extern template class WeakPtr<XMLFile>;
 
 /// %UI element horizontal alignment.
 enum HorizontalAlignment
@@ -121,7 +123,7 @@ public:
     /// Construct.
     UIElement(Context* context);
     /// Destruct.
-    virtual ~UIElement();
+    ~UIElement() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 

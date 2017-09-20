@@ -1,28 +1,26 @@
 set(INCLUDES
-    Allocator.h
-    ArrayPtr.h
-    DataHandle.h
-    HandleManager.h
-    Hash.h    
-    HashMap.h
-    HashTable.h
-    Ptr.h
-    RefCounted.h
-    SmallOrig.h
-    SmallVector.h
-    Str.h
-    sherwood_map.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Allocator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ArrayPtr.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/DataHandle.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/HandleManager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hash.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/HashMap.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/HashTable.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Ptr.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/RefCounted.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/SmallOrig.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/SmallVector.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Str.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/sherwood_map.hpp
 )
 set(SOURCE
-    Allocator.cpp
-    RefCounted.cpp
-    Str.cpp
-    sherwood_map.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Allocator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/RefCounted.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Str.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sherwood_map.cpp
 )
 
-add_library(Lutefisk3D_Container OBJECT ${SOURCE} ${INCLUDES})
+#set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} SDL2_LIB STB PARENT_SCOPE)
+set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} PARENT_SCOPE)
 
-target_include_directories(Lutefisk3D_Container PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
-target_compile_definitions(Lutefisk3D_Container PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
-set_property(TARGET Lutefisk3D_Container PROPERTY POSITION_INDEPENDENT_CODE ON)
 install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Container )

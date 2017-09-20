@@ -1,20 +1,17 @@
 set(INCLUDES
-    Controls.h
-    InputEvents.h
-    Input.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Controls.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/InputEvents.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Input.h
 )
 set(SOURCE
-    Controls.cpp
-    Input.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Controls.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Input.cpp
 )
-add_library(Lutefisk3D_Input OBJECT ${SOURCE} ${INCLUDES})
-target_include_directories(Lutefisk3D_Input PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
-target_compile_definitions(Lutefisk3D_Input PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
-set_property(TARGET Lutefisk3D_Input PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET Lutefisk3D_Input PROPERTY INTERFACE_LINK_LIBRARIES
-    SDL2_LIB
-)
+
 install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Input )
 
 if(UNIT_TESTING)
 endif()
+
+set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} SDL2_LIB PARENT_SCOPE)
+set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} PARENT_SCOPE)

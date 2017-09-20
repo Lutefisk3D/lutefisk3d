@@ -30,7 +30,7 @@ using namespace Urho3D;
 /// Custom component that creates a ragdoll upon collision.
 class CreateRagdoll : public Component
 {
-    URHO3D_OBJECT(CreateRagdoll,Component);
+    URHO3D_OBJECT(CreateRagdoll,Component)
 
 public:
     /// Construct.
@@ -38,11 +38,11 @@ public:
 
 protected:
     /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node) override;
-
+    void OnNodeSet(Node* node) override;
+    void OnSceneSet(Scene * scene) override;
 private:
     /// Handle scene node's physics collision.
-    void HandleNodeCollision(StringHash eventType, VariantMap& eventData);
+    void HandleNodeCollision(RigidBody *, Node *, RigidBody *otherBody, bool, const std::vector<uint8_t> &);
     /// Make a bone physical by adding RigidBody and CollisionShape components.
     void CreateRagdollBone(const QString& boneName, ShapeType type, const Vector3& size, const Vector3& position, const Quaternion& rotation);
     /// Join two bones with a Constraint component.

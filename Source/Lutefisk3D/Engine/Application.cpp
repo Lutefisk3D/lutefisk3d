@@ -22,6 +22,8 @@
 
 #include "Application.h"
 #include "Engine.h"
+#include "Lutefisk3D/Core/Variant.h"
+#include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/IO/IOEvents.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Core/ProcessUtils.h"
@@ -32,10 +34,6 @@
   \class Urho3D::Application
   \brief Base class for creating applications which initialize the Urho3D engine and run a main loop until exited.
 */
-namespace {
-enum { eMaxConnections = 25 };
-jl::StaticObserverConnectionAllocator< eMaxConnections > oObserverConnectionAllocator;
-}
 
 using namespace Urho3D;
 /// Construct. Parse default engine parameters from the command line, and create the engine in an uninitialized state.
@@ -44,13 +42,11 @@ Application::Application(const QString &appName, Context* context) :
     m_appName(appName),
     exitCode_(EXIT_SUCCESS)
 {
-    SetConnectionAllocator(&oObserverConnectionAllocator);
-
     engineParameters_ = Engine::ParseParameters(GetArguments());
 
     // Create the Engine, but do not initialize it yet. Subsystems except Graphics & Renderer are registered at this point
     engine_ = new Engine(context);
-
+    SetConnectionAllocator(context->m_observer_allocator);
     // Subscribe to log messages so that can show errors if ErrorExit() is called with empty message
     g_LogSignals.logMessageSignal.Connect(this, &Application::HandleLogMessage);
 
@@ -59,6 +55,7 @@ Application::Application(const QString &appName, Context* context) :
 // a SharedPtr<Engine>::~SharedPtr<Engine>  when Application.h was included.
 Application::~Application()
 {
+    //engine_ was registered in context_ as a subsystem, it will be destroyed when context_ is destroyed
 }
 
 int Application::Run()
@@ -101,7 +98,7 @@ void Application::ErrorExit(const QString& message)
     if (message.isEmpty())
     {
         ErrorDialog(m_appName, startupErrors_.length() ? startupErrors_ :
-            "Application has been terminated due to unexpected error.");
+                                                         "Application has been terminated due to unexpected error.");
     }
     else
         ErrorDialog(m_appName, message);

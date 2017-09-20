@@ -235,7 +235,7 @@ void RenderPathCommand::SetShaderParameter(const QString& name, const Variant& v
 
 void RenderPathCommand::RemoveShaderParameter(const QString& name)
 {
-    shaderParameters_.remove(name);
+    shaderParameters_.erase(name);
 }
 
 void RenderPathCommand::SetNumOutputs(unsigned num)
@@ -291,14 +291,6 @@ const QString& RenderPathCommand::GetOutputName(unsigned index) const
 CubeMapFace RenderPathCommand::GetOutputFace(unsigned index) const
 {
     return index < outputs_.size() ? outputs_[index].second : FACE_POSITIVE_X;
-}
-
-RenderPath::RenderPath()
-{
-}
-
-RenderPath::~RenderPath()
-{
 }
 
 SharedPtr<RenderPath> RenderPath::Clone()

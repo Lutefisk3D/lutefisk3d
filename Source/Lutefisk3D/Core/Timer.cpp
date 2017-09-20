@@ -170,7 +170,7 @@ void Time::Sleep(unsigned mSec)
     timespec time;
     time.tv_sec = mSec / 1000;
     time.tv_nsec = (mSec % 1000) * 1000000;
-    nanosleep(&time, 0);
+    nanosleep(&time, nullptr);
 #endif
 }
 

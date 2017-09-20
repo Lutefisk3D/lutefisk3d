@@ -24,7 +24,6 @@
 
 #include "Lutefisk3D/Graphics/GPUObject.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
-#include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/Container/RefCounted.h"
 
 namespace Urho3D
@@ -34,9 +33,7 @@ class Context;
 class LUTEFISK3D_EXPORT ConstantBuffer : public RefCounted, public GPUObject
 {
 public:
-    /// Construct.
     ConstantBuffer(Context* context);
-    /// Destruct.
     virtual ~ConstantBuffer();
 
     /// Recreate the GPU resource and restore data if applicable.
@@ -61,7 +58,7 @@ public:
 private:
 
     /// Shadow data.
-    SharedArrayPtr<unsigned char> shadowData_;
+    std::unique_ptr<uint8_t[]> shadowData_;
     /// Buffer byte size.
     unsigned size_;
     /// Dirty flag.

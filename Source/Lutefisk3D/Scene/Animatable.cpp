@@ -48,7 +48,7 @@ Animatable::~Animatable() {
 
 void Animatable::RegisterObject(Context* context)
 {
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Object Animation", GetObjectAnimationAttr, SetObjectAnimationAttr, ResourceRef, ResourceRef(ObjectAnimation::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Object Animation", GetObjectAnimationAttr, SetObjectAnimationAttr, ResourceRef, ResourceRef{ObjectAnimation::GetTypeStatic()}, AM_DEFAULT);
 }
 
 bool Animatable::LoadXML(const XMLElement& source, bool setInstanceDefault)
@@ -356,7 +356,7 @@ void Animatable::SetAttributeAnimation(const QString& name, ValueAnimation* attr
         if ((info->GetAttributeInfo().mode_ & AM_NET) != 0u)
             animatedNetworkAttributes_.remove(&info->GetAttributeInfo());
 
-        attributeAnimationInfos_.remove(name);
+        attributeAnimationInfos_.erase(name);
         OnAttributeAnimationRemoved();
     }
 }

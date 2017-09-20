@@ -33,8 +33,14 @@
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Resource/JSONFile.h"
 
+template class std::vector<Urho3D::AnimationKeyFrame>;
 namespace Urho3D
 {
+extern template class SharedPtr<XMLFile>;
+extern template class WeakPtr<XMLFile>;
+extern template class SharedPtr<JSONFile>;
+
+template class HashMap<StringHash, AnimationTrack>;
 
 inline bool CompareTriggers(AnimationTriggerPoint& lhs, AnimationTriggerPoint& rhs)
 {

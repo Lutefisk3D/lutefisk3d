@@ -28,26 +28,29 @@
 namespace Urho3D
 {
 
+enum AttributeKind : unsigned
+{
 /// Attribute shown only in the editor, but not serialized.
-static const unsigned AM_EDIT = 0x0;
+    AM_EDIT = 0x0,
 /// Attribute used for file serialization.
-static const unsigned AM_FILE = 0x1;
+    AM_FILE = 0x1,
 /// Attribute used for network replication.
-static const unsigned AM_NET = 0x2;
+    AM_NET = 0x2,
 /// Attribute used for both file serialization and network replication (default).
-static const unsigned AM_DEFAULT = 0x3;
+    AM_DEFAULT = AM_FILE | AM_NET,
 /// Attribute should use latest data grouping instead of delta update in network replication.
-static const unsigned AM_LATESTDATA = 0x4;
+    AM_LATESTDATA = 0x4,
 /// Attribute should not be shown in the editor.
-static const unsigned AM_NOEDIT = 0x8;
+    AM_NOEDIT = 0x8,
 /// Attribute is a node ID and may need rewriting.
-static const unsigned AM_NODEID = 0x10;
+    AM_NODEID = 0x10,
 /// Attribute is a component ID and may need rewriting.
-static const unsigned AM_COMPONENTID = 0x20;
+    AM_COMPONENTID = 0x20,
 /// Attribute is a node ID vector where first element is the amount of nodes.
-static const unsigned AM_NODEIDVECTOR = 0x40;
+    AM_NODEIDVECTOR = 0x40,
 /// Attribute is readonly. Can't be used with binary serialized objects.
-static const unsigned AM_FILEREADONLY = 0x81;
+    AM_FILEREADONLY = 0x80 | AM_FILE
+};
 class Serializable;
 
 /// Abstract base class for invoking attribute accessors.
@@ -59,7 +62,7 @@ public:
     /// Set the attribute.
     virtual void Set(Serializable* ptr, const Variant& src) = 0;
 };
-
+extern template class LUTEFISK3D_EXPORT SharedPtr<AttributeAccessor>;
 /// Description of an automatically serializable variable.
 struct AttributeInfo
 {
@@ -68,7 +71,7 @@ struct AttributeInfo
         type_(VAR_NONE),
         offset_(0),
         enumNames_(nullptr),
-        variantStructureElementNames_(0),
+        variantStructureElementNames_(nullptr),
         mode_(AM_DEFAULT),
         ptr_(nullptr)
     {
@@ -80,7 +83,7 @@ struct AttributeInfo
         name_(name),
         offset_((unsigned)offset),
         enumNames_(nullptr),
-        variantStructureElementNames_(0),
+        variantStructureElementNames_(nullptr),
         defaultValue_(defaultValue),
         mode_(mode),
         ptr_(nullptr)

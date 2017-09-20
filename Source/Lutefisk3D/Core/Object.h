@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,6 @@
 #include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Container/Ptr.h"
-#include "Lutefisk3D/Container/Str.h"
-#include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/Math/StringHash.h"
 
 #include <QtCore/QString>
@@ -34,27 +32,21 @@
 #include <deque>
 #include <functional>
 
-template<typename T>
-constexpr unsigned ptrHash(T *v) {
-    return unsigned(uintptr_t(v)/sizeof(T));
-}
 namespace Urho3D
 {
-typedef HashMap<StringHash, Variant> VariantMap;
+class Variant;
+using VariantMap = HashMap<StringHash, Variant>;
 
 class Context;
 class EventHandler;
-typedef std::deque<EventHandler *>::iterator ilEventHandler;
-typedef std::deque<EventHandler *>::const_iterator cilEventHandler;
-
+class Object;
+extern template class LUTEFISK3D_EXPORT SharedPtr<Object>;
 /// Type info.
 class LUTEFISK3D_EXPORT TypeInfo
 {
 public:
     /// Construct.
     TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo);
-    /// Destruct.
-    ~TypeInfo() = default;
 
     /// Check current type is type of specified type.
     bool IsTypeOf(StringHash type) const;
@@ -96,22 +88,20 @@ class LUTEFISK3D_EXPORT Object : public RefCounted
     friend class Context;
 
 public:
+    using ilEventHandler = std::deque<EventHandler *>::iterator;
+    using cilEventHandler = std::deque<EventHandler *>::const_iterator;
+
     /// Construct.
     Object(Context* context);
     /// Destruct. Clean up self from event sender & receiver structures.
     virtual ~Object();
 
-    /// Return type hash.
-    virtual StringHash GetType() const = 0;
-    /// Return type name.
-    virtual const QString& GetTypeName() const = 0;
-    /// Return type info.
-    virtual const TypeInfo* GetTypeInfo() const = 0;
-    /// Handle event.
-    virtual void OnEvent(Object* sender, StringHash eventType, VariantMap& eventData);
-
+    virtual StringHash GetType() const = 0; //!< Return type hash.
+    virtual const QString& GetTypeName() const = 0; //!< Return type name.
+    virtual const TypeInfo* GetTypeInfo() const = 0; //!< Return type info.
+    virtual void OnEvent(Object* sender, StringHash eventType, VariantMap& eventData); //!< Handle event.
     /// Return type info static.
-    static const TypeInfo* GetTypeInfoStatic() { return 0; }
+    static const TypeInfo* GetTypeInfoStatic() { return nullptr; }
     /// Check current type is type of specified type.
     static bool IsTypeOf(StringHash type);
     /// Check current type is type of specified type.
@@ -127,9 +117,11 @@ public:
     /// Subscribe to an event that can be sent by any sender.
     void SubscribeToEvent(StringHash eventType, EventHandler* handler);
     /// Subscribe to an event that can be sent by any sender.
-    void SubscribeToEvent(StringHash eventType, const std::function<void(StringHash, VariantMap&)>& function, void* userData=0);
+    void SubscribeToEvent(StringHash eventType, const std::function<void(StringHash, VariantMap &)> &function,
+                          void *userData = nullptr);
     /// Subscribe to a specific sender's event.
-    void SubscribeToEvent(Object* sender, StringHash eventType, const std::function<void(StringHash, VariantMap&)>& function, void* userData=0);
+    void SubscribeToEvent(Object *sender, StringHash eventType,
+                          const std::function<void(StringHash, VariantMap &)> &function, void *userData = nullptr);
     /// Subscribe to a specific sender's event.
     void SubscribeToEvent(Object* sender, StringHash eventType, EventHandler* handler);
     /// Unsubscribe from an event.
@@ -148,12 +140,6 @@ public:
     void SendEvent(StringHash eventType, VariantMap& eventData);
     /// Return a preallocated map for event data. Used for optimization to avoid constant re-allocation of event data maps.
     VariantMap& GetEventDataMap() const;
-    /// Send event with variadic parameter pairs to all subscribers. The parameter pairs is a list of paramID and paramValue separated by comma, one pair after another.
-    template <typename... Args> void SendEvent(StringHash eventType, Args... args)
-    {
-        SendEvent(eventType, PopulateEventDataMap(GetEventDataMap(), args...));
-    }
-
     /// Return execution context.
     Context* GetContext() const { return context_; }
     /// Return subsystem by type.
@@ -182,18 +168,6 @@ private:
     cilEventHandler FindSpecificEventHandler(Object* sender) const;
     cilEventHandler FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous = 0) const;
     void RemoveEventSender(Object* sender);
-    /// Populate event data map using variadic template. This handles the base case.
-    template <typename T> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue)
-    {
-        eventData[paramID] = paramValue;
-        return eventData;
-    }
-    /// Populate event data map using variadic template.
-    template <typename T, typename... Args> VariantMap& PopulateEventDataMap(VariantMap& eventData, StringHash paramID, T paramValue, Args... args)
-    {
-        eventData[paramID] = paramValue;
-        return PopulateEventDataMap(eventData, args...);
-    }
     /// Event handlers. Sender is null for non-specific handlers.
     std::deque<EventHandler *> eventHandlers_;
 };
@@ -225,10 +199,8 @@ public:
     const QString& GetTypeName() const { return typeInfo_->GetTypeName(); }
 
 protected:
-    /// Execution context.
-    Context* context_;
-    /// Type info.
-    const TypeInfo* typeInfo_;
+    Context* context_; //!< Execution context.
+    const TypeInfo* typeInfo_; //!< Type info.
 };
 
 /// Template implementation of the object factory.
@@ -240,7 +212,6 @@ public:
         ObjectFactory(context,T::GetTypeInfoStatic())
     {
     }
-
     /// Create an object of the specific type.
     virtual SharedPtr<Object> CreateObject() override { return SharedPtr<Object>(new T(context_)); }
 };
@@ -314,28 +285,6 @@ public:
 private:
     /// Class-specific pointer to handler function.
     HandlerFunctionPtr function_;
-};
-/// Template implementation of the event handler invoke helper (std::function instance).
-class EventHandler11Impl final : public EventHandler
-{
-public:
-    /// Construct with receiver and function pointers and userdata.
-    EventHandler11Impl(std::function<void(StringHash, VariantMap&)> function, void* userData = 0) :
-        EventHandler(0, userData),
-        function_(function)
-    {
-        assert(function_);
-    }
-
-    /// Invoke event handler function.
-    void Invoke(VariantMap& eventData)  override
-    {
-        function_(eventType_, eventData);
-    }
-
-private:
-    /// Class-specific pointer to handler function.
-    std::function<void(StringHash, VariantMap&)> function_;
 };
 
 

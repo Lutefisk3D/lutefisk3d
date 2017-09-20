@@ -58,10 +58,10 @@
 #include "../TerrainPatch.h"
 #include "../VertexBuffer.h"
 #include "../Zone.h"
-#include "Texture2D.h"
-#include "Texture3D.h"
-#include "TextureCube.h"
-#include "Texture2DArray.h"
+#include "../Texture2D.h"
+#include "../Texture3D.h"
+#include "../TextureCube.h"
+#include "../Texture2DArray.h"
 
 #include "glbinding/Binding.h"
 #include "glbinding/ContextInfo.h"
@@ -97,11 +97,11 @@ static const GLenum glCmpFunc[] =
     GL_GEQUAL
 };
 static const std::pair<GLenum,GLenum> glTranslatedBlend[MAX_BLENDMODES] = {
-    {GL_ONE,GL_ZERO},
-    {GL_ONE,GL_ONE},
-    {GL_DST_COLOR,GL_ZERO},
-    {GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA},
-    {GL_SRC_ALPHA,GL_ONE},
+    {GL_ONE,GL_ZERO},   //BLEND_REPLACE
+    {GL_ONE,GL_ONE},    //BLEND_ADD
+    {GL_DST_COLOR,GL_ZERO},//BLEND_MULTIPLY
+    {GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA}, //BLEND_ALPHA
+    {GL_SRC_ALPHA,GL_ONE},                 //BLEND_ADDALPHA
     {GL_ONE,GL_ONE_MINUS_SRC_ALPHA},
     {GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA},
     {GL_ONE,GL_ONE}, // subtract
@@ -195,7 +195,6 @@ Graphics::Graphics(Context* context_) :
     m_context(context_),
     impl_(new GraphicsImpl()),
     window_(nullptr),
-    externalWindow_(nullptr),
     width_(0),
     height_(0),
     position_(SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED),
@@ -205,10 +204,11 @@ Graphics::Graphics(Context* context_) :
     resizable_(false),
     highDPI_(false),
     vsync_(false),
-    monitor_(0),
     refreshRate_(0),
+    monitor_(0),
     tripleBuffer_(false),
     sRGB_(false),
+    ourWindowIsEmbedded_(false),
     lightPrepassSupport_(false),
     deferredSupport_(false),
     hardwareShadowSupport_(false),
@@ -327,7 +327,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     }
 
     // With an external window, only the size can change after initial setup, so do not recreate context
-    if (!externalWindow_ || !impl_->context_)
+    if (!ourWindowIsEmbedded_ || !impl_->context_)
     {
         // Close the existing window and OpenGL context, mark GPU objects as lost
         Release(false, true);
@@ -338,7 +338,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
         SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 
-        if (externalWindow_)
+        if (ourWindowIsEmbedded_)
             SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
         else
             SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
@@ -381,17 +381,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
 
         for (;;)
         {
-            if (!externalWindow_)
-                window_ = SDL_CreateWindow(qPrintable(windowTitle_), x, y, width, height, flags);
-            else
-            {
-                if (!window_) {
-                    assert(false);
-                    //window_ = SDL_CreateWindowFrom(externalWindow_, SDL_WINDOW_OPENGL);
-                }
-                fullscreen = false;
-            }
-
+            window_ = SDL_CreateWindow(qPrintable(windowTitle_), x, y, width, height, flags);
             if (window_)
                 break;
             else
@@ -536,7 +526,7 @@ bool Graphics::BeginFrame()
         return false;
 
     // If using an external window, check it for size changes, and reset screen mode if necessary
-    if (externalWindow_)
+    if (ourWindowIsEmbedded_)
     {
         int width, height;
 
@@ -845,7 +835,7 @@ bool Graphics::SetVertexBuffers(const std::vector<VertexBuffer*>& buffers, unsig
 
     for (unsigned i = 0; i < MAX_VERTEX_STREAMS; ++i)
     {
-        VertexBuffer* buffer = 0;
+        VertexBuffer* buffer = nullptr;
         if (i < buffers.size())
             buffer = buffers[i];
         if (buffer != vertexBuffers_[i])
@@ -856,11 +846,6 @@ bool Graphics::SetVertexBuffers(const std::vector<VertexBuffer*>& buffers, unsig
     }
 
     return true;
-}
-
-bool Graphics::SetVertexBuffers(const std::vector<SharedPtr<VertexBuffer>> & buffers, unsigned instanceOffset)
-{
-    return SetVertexBuffers(reinterpret_cast<const std::vector<VertexBuffer*>&>(buffers), instanceOffset);
 }
 
 void Graphics::SetIndexBuffer(IndexBuffer* buffer)
@@ -1591,7 +1576,7 @@ void Graphics::SetViewport(const IntRect& rect)
     // Disable scissor test, needs to be re-enabled by the user
     SetScissorTest(false);
 }
-
+/// Set blending and alpha-to-coverage modes.
 void Graphics::SetBlendMode(BlendMode mode, bool alphaToCoverage)
 {
     if (mode != blendMode_)
@@ -1617,7 +1602,7 @@ void Graphics::SetBlendMode(BlendMode mode, bool alphaToCoverage)
         alphaToCoverage_ = alphaToCoverage;
     }
 }
-
+/// Set color write on/off.
 void Graphics::SetColorWrite(bool enable)
 {
     if (enable != colorWrite_)
@@ -1630,7 +1615,7 @@ void Graphics::SetColorWrite(bool enable)
         colorWrite_ = enable;
     }
 }
-
+/// Set hardware culling mode.
 void Graphics::SetCullMode(CullMode mode)
 {
     if (mode != cullMode_)
@@ -1667,7 +1652,7 @@ void Graphics::SetDepthBias(float constantBias, float slopeScaledBias)
         ClearParameterSource(SP_CAMERA);
     }
 }
-
+/// Set depth compare.
 void Graphics::SetDepthTest(CompareMode mode)
 {
     if (mode != depthTestMode_)
@@ -1676,7 +1661,6 @@ void Graphics::SetDepthTest(CompareMode mode)
         depthTestMode_ = mode;
     }
 }
-
 void Graphics::SetDepthWrite(bool enable)
 {
     if (enable != depthWrite_)
@@ -1904,7 +1888,7 @@ unsigned Graphics::GetMaxBones()
 {
     return 128;
 }
-
+/// Return a shader variation by name and defines.
 ShaderVariation* Graphics::GetShader(ShaderType type, const QString& name, const QString& defines) const
 {
     return GetShader(type, qPrintable(name), qPrintable(defines));
@@ -2169,7 +2153,7 @@ void Graphics::Release(bool clearGPUObjects, bool closeWindow)
         SDL_ShowCursor(SDL_TRUE);
 
         // Do not destroy external window except when shutting down
-        if (!externalWindow_ || clearGPUObjects)
+        if (!ourWindowIsEmbedded_ || clearGPUObjects)
         {
             SDL_DestroyWindow(window_);
             window_ = nullptr;
@@ -2387,8 +2371,7 @@ void Graphics::CheckFeatureSupport()
     deferredSupport_ = false;
 
     int numSupportedRTs = 1;
-    // Work around GLEW failure to check extensions properly from a GL3 context
-    instancingSupport_ = glDrawElementsInstanced != 0 && glVertexAttribDivisor != 0;
+    instancingSupport_ = true;
 
     glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &numSupportedRTs);
 

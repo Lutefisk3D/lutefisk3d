@@ -25,9 +25,9 @@
 #include "Lutefisk3D/Input/InputEvents.h"
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
-#include <QtCore/QSet>
+#include "Lutefisk3D/Math/Vector2.h"
 #include <jlsignal/SignalBase.h>
-//#include "Lutefisk3D/UI/Cursor.h"
+#include <QtCore/QSet>
 
 namespace Urho3D
 {
@@ -50,35 +50,9 @@ class XMLFile;
 
 const IntVector2 MOUSE_POSITION_OFFSCREEN = IntVector2(M_MIN_INT, M_MIN_INT);
 
-/// %Input state for a finger touch.
-struct TouchState
-{
-    /// Return last touched UI element, used by scripting integration.
-    UIElement* GetTouchedElement();
-
-    /// Touch (finger) ID.
-    unsigned touchID_;
-    /// Position in screen coordinates.
-    IntVector2 position_;
-    /// Last position in screen coordinates.
-    IntVector2 lastPosition_;
-    /// Movement since last frame.
-    IntVector2 delta_;
-    /// Finger pressure.
-    float pressure_;
-    /// Last touched UI element from screen joystick.
-    WeakPtr<UIElement> touchedElement_;
-};
-
 /// %Input state for a joystick.
 struct JoystickState
 {
-    /// Construct with defaults.
-    JoystickState() :
-        joystick_(nullptr), controller_(nullptr), screenJoystick_(nullptr)
-    {
-    }
-
     /// Initialize the number of buttons, axes and hats and set them to neutral state.
     void Initialize(unsigned numButtons, unsigned numAxes, unsigned numHats);
     /// Reset button, axis and hat states to neutral.
@@ -101,14 +75,6 @@ struct JoystickState
     /// Return hat position.
     int GetHatPosition(unsigned index) const { return index < hats_.size() ? hats_[index] : HAT_CENTER; }
 
-    /// SDL joystick.
-    SDL_Joystick* joystick_;
-    /// SDL joystick instance ID.
-    SDL_JoystickID joystickID_;
-    /// SDL game controller.
-    SDL_GameController* controller_;
-    /// UI element containing the screen joystick.
-    UIElement* screenJoystick_;
     /// Joystick name.
     QString name_;
     /// Button up/down state.
@@ -119,6 +85,12 @@ struct JoystickState
     std::vector<float> axes_;
     /// POV hat bits.
     std::vector<int> hats_;
+    /// SDL joystick.
+    SDL_Joystick* joystick_=nullptr;
+    /// SDL game controller.
+    SDL_GameController* controller_=nullptr;
+    /// SDL joystick instance ID.
+    SDL_JoystickID joystickID_;
 };
 
 /// %Input subsystem. Converts operating system window messages to input state and events.
@@ -127,7 +99,6 @@ class LUTEFISK3D_EXPORT Input : public jl::SignalObserver
 public:
     /// Construct.
     Input(Context* context);
-    /// Destruct.
     virtual ~Input();
 
     /// Poll for window messages. Called by HandleBeginFrame().
@@ -143,23 +114,6 @@ public:
     /// Reset the mouse grabbed to the last unsuppressed SetMouseGrabbed call
     void ResetMouseGrabbed();
     /// Set the mouse mode.
-    /** Set the mouse mode behaviour.
-     *  MM_ABSOLUTE is the default behaviour, allowing the toggling of operating system cursor visibility and allowing the cursor to escape the window when visible.
-     *  When the operating system cursor is invisible in absolute mouse mode, the mouse is confined to the window.
-     *  If the operating system and UI cursors are both invisible, interaction with the Urho UI will be limited (eg: drag move / drag end events will not trigger).
-     *  SetMouseMode(MM_ABSOLUTE) will call SetMouseGrabbed(false).
-     *
-     *  MM_RELATIVE sets the operating system cursor to invisible and confines the cursor to the window.
-     *  The operating system cursor cannot be set to be visible in this mode via SetMouseVisible(), however changes are tracked and will be restored when another mouse mode is set.
-     *  When the virtual cursor is also invisible, UI interaction will still function as normal (eg: drag events will trigger).
-     *  SetMouseMode(MM_RELATIVE) will call SetMouseGrabbed(true).
-     *
-     *  MM_WRAP grabs the mouse from the operating system and confines the operating system cursor to the window, wrapping the cursor when it is near the edges.
-     *  SetMouseMode(MM_WRAP) will call SetMouseGrabbed(true).
-     *
-     *  MM_FREE does not grab/confine the mouse cursor even when it is hidden. This can be used for cases where the cursor should render using the operating system
-     *  outside the window, and perform custom rendering (with SetMouseVisible(false)) inside.
-    */
     void SetMouseMode(MouseMode mode, bool suppressEvent = false);
     /// Reset the last mouse mode that wasn't suppressed in SetMouseMode
     void ResetMouseMode();
@@ -210,10 +164,6 @@ public:
     int GetMouseMoveWheel() const { return mouseMoveWheel_; }
     /// Return input coordinate scaling. Should return non-unity on High DPI display.
     Vector2 GetInputScale() const { return inputScale_; }
-    /// Return number of active finger touches.
-    unsigned GetNumTouches() const { return touches_.size(); }
-    /// Return active finger touch by index.
-    TouchState* GetTouch(unsigned index) const;
     /// Return number of connected joysticks.
     unsigned GetNumJoysticks() const { return joysticks_.size(); }
     /// Return joystick state by ID, or null if does not exist.
@@ -225,14 +175,6 @@ public:
 
     /// Return whether fullscreen toggle is enabled.
     bool GetToggleFullscreen() const { return toggleFullscreen_; }
-    /// Return whether a virtual joystick is visible.
-    bool IsScreenJoystickVisible(SDL_JoystickID id) const;
-    /// Return whether on-screen keyboard is supported.
-    bool GetScreenKeyboardSupport() const;
-    /// Return whether on-screen keyboard is being shown.
-    bool IsScreenKeyboardVisible() const;
-    /// Return whether touch emulation is enabled.
-    bool GetTouchEmulation() const { return touchEmulation_; }
     /// Return whether the operating system mouse cursor is visible.
     bool IsMouseVisible() const { return mouseVisible_; }
     /// Return whether the mouse is currently being grabbed by an operation.
@@ -259,16 +201,8 @@ private:
     void LoseFocus();
     /// Clear input state.
     void ResetState();
-    /// Clear touch states and send touch end events.
-    void ResetTouches();
     /// Reset input accumulation.
     void ResetInputAccumulation();
-    /// Get the index of a touch based on the touch ID.
-    unsigned GetTouchIndexFromID(unsigned touchID);
-    /// Used internally to return and remove the next available touch index.
-    unsigned PopTouchIndex();
-    /// Push a touch index back into the list of available when finished with it.
-    void PushTouchIndex(unsigned touchID);
     /// Send an input focus or window minimization change event.
     void SendInputFocusEvent();
     /// Handle a mouse button change.
@@ -285,8 +219,6 @@ private:
     void HandleScreenMode(int Width, int Height, bool Fullscreen, bool Borderless, bool Resizable, bool HighDPI, int Monitor, int RefreshRate);
     /// Handle frame start event.
     void HandleBeginFrame(unsigned frameno, float ts);
-    /// Handle touch events from the controls of screen joystick(s).
-    void HandleScreenJoystickTouch(StringHash eventType, VariantMap& eventData);
     /// Handle SDL event.
     void HandleSDLEvent(void* sdlEvent);
 
@@ -306,12 +238,6 @@ private:
     QSet<int> scancodeDown_;
     /// Key pressed state by scancode.
     QSet<int> scancodePress_;
-    /// Active finger touches.
-    HashMap<unsigned, TouchState> touches_;
-    /// List that maps between event touch IDs and normalised touch IDs
-    QList<unsigned> availableTouchIDs_;
-    /// Mapping of touch indices
-    HashMap<unsigned, unsigned> touchIDMap_;
     /// String for text input.
     QString textInput_;
     /// Opened joysticks.
@@ -348,8 +274,6 @@ private:
     MouseMode lastMouseMode_;
     /// Flag to determine whether SDL mouse relative was used.
     bool sdlMouseRelative_;
-    /// Touch emulation mode flag.
-    bool touchEmulation_;
     /// Input focus flag.
     bool inputFocus_;
     /// Minimized flag.

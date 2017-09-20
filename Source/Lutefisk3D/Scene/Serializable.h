@@ -258,43 +258,6 @@ public:
     /// Class-specific pointer to setter function.
     SetFunctionPtr setFunction_;
 };
-/// Template implementation of the attribute accessor that uses free functions invoke helper class.
-template <typename T, typename U, typename Trait> class AttributeAccessorFreeImpl : public AttributeAccessor
-{
-public:
-    typedef typename Trait::ReturnType(*GetFunctionPtr)(const T*);
-    typedef void(*SetFunctionPtr)(T*, typename Trait::ParameterType);
-
-    /// Construct with function pointers.
-    AttributeAccessorFreeImpl(GetFunctionPtr getFunction, SetFunctionPtr setFunction) :
-        getFunction_(getFunction),
-        setFunction_(setFunction)
-    {
-        assert(getFunction_);
-        assert(setFunction_);
-    }
-
-    /// Invoke getter function.
-    virtual void Get(const Serializable* ptr, Variant& dest) const
-    {
-        assert(ptr);
-        const T* classPtr = static_cast<const T*>(ptr);
-        dest = (*getFunction_)(classPtr);
-    }
-
-    /// Invoke setter function.
-    virtual void Set(Serializable* ptr, const Variant& value)
-    {
-        assert(ptr);
-        T* classPtr = static_cast<T*>(ptr);
-        (*setFunction_)(classPtr, value.Get<U>());
-    }
-
-    /// Class-specific pointer to getter function.
-    GetFunctionPtr getFunction_;
-    /// Class-specific pointer to setter function.
-    SetFunctionPtr setFunction_;
-};
 // The following macros need to be used within a class member function such as ClassName::RegisterObject().
 // A variable called "context" needs to exist in the current scope and point to a valid Context object.
 

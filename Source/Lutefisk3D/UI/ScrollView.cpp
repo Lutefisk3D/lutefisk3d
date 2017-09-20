@@ -73,14 +73,10 @@ ScrollView::ScrollView(Context* context) :
     scrollPanel_->SetInternal(true);
     scrollPanel_->SetEnabled(true);
     scrollPanel_->SetClipChildren(true);
-
-    SubscribeToEvent(horizontalScrollBar_, E_SCROLLBARCHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarChanged));
+    horizontalScrollBar_->scrollBarChanged.Connect(this,&ScrollView::HandleScrollBarChanged);
     SubscribeToEvent(horizontalScrollBar_, E_VISIBLECHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarVisibleChanged));
-    SubscribeToEvent(verticalScrollBar_, E_SCROLLBARCHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarChanged));
+    verticalScrollBar_->scrollBarChanged.Connect(this,&ScrollView::HandleScrollBarChanged);
     SubscribeToEvent(verticalScrollBar_, E_VISIBLECHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarVisibleChanged));
-    g_inputSignals.touchBegun.Connect(this,&ScrollView::HandleTouchBegin);
-    g_inputSignals.touchEnd.Connect(this,&ScrollView::HandleTouchEnd);
-    g_inputSignals.touchMove.Connect(this,&ScrollView::HandleTouchMove);
 }
 
 ScrollView::~ScrollView()
@@ -495,7 +491,7 @@ void ScrollView::UpdateView(const IntVector2& position)
     }
 }
 
-void ScrollView::HandleScrollBarChanged(StringHash eventType, VariantMap &eventData)
+void ScrollView::HandleScrollBarChanged(UIElement *el, float v)
 {
     if (!ignoreEvents_)
     {
@@ -522,73 +518,6 @@ void ScrollView::HandleElementResized(UIElement *,int,int,int,int)
 {
     if (!ignoreEvents_)
         OnResize(GetSize(), IntVector2::ZERO);
-}
-void ScrollView::HandleTouchBegin(unsigned, int X, int Y, float) {
-    IntVector2 pos = IntVector2(X, Y);
-
-    // Prevent conflict between touch scroll and scrollbar scroll
-    if (horizontalScrollBar_->IsVisible() && horizontalScrollBar_->IsInsideCombined(pos, true))
-        barScrolling_ = true;
-
-    if (verticalScrollBar_->IsVisible() && verticalScrollBar_->IsInsideCombined(pos, true))
-        barScrolling_ = true;
-
-    // Stop the smooth scrolling
-    touchScrollSpeed_ = Vector2::ZERO;
-    touchScrollSpeedMax_ = Vector2::ZERO;
-}
-void ScrollView::HandleTouchEnd(unsigned, int X, int Y) {
-    // 'Flick' action
-    // Release any auto disabled children
-    if (scrollChildrenDisable_)
-    {
-        touchDistanceSum_ = 0.0f;
-        scrollChildrenDisable_ = false;
-        scrollPanel_->ResetDeepEnabled();
-    }
-
-    barScrolling_ = false;
-    scrollTouchDown_ = false;
-    if (Abs(touchScrollSpeedMax_.x_) > scrollSnapEpsilon_ )
-        touchScrollSpeed_.x_ = touchScrollSpeedMax_.x_;
-    else
-        touchScrollSpeed_.x_ = 0;
-
-    if (Abs(touchScrollSpeedMax_.y_) > scrollSnapEpsilon_ )
-        touchScrollSpeed_.y_ = touchScrollSpeedMax_.y_;
-    else
-        touchScrollSpeed_.y_ = 0;
-    touchScrollSpeedMax_ = Vector2::ZERO;
-}
-
-void ScrollView::HandleTouchMove(unsigned, int, int, int _dX, int _dY, float)
-{
-    if (!barScrolling_)
-    {
-        scrollTouchDown_ = true;
-        // Take new scrolling speed if it's faster than the current accumulated value
-        float dX = -_dX;
-        float dY = -_dY;
-
-        if (Abs(dX) > Abs(touchScrollSpeed_.x_))
-            touchScrollSpeed_.x_ = dX;
-        if (Abs(dY) > Abs(touchScrollSpeed_.y_))
-            touchScrollSpeed_.y_ = dY;
-
-        // Auto disable children
-        touchDistanceSum_ += dX * dX + dY * dY;
-        if (autoDisableChildren_ && touchDistanceSum_ >= autoDisableThreshold_)
-        {
-            if (visible_ && !scrollChildrenDisable_)
-            {
-                scrollChildrenDisable_ = true;
-                scrollPanel_->SetDeepEnabled(false);
-            }
-        }
-
-        touchScrollSpeedMax_.x_ = dX;
-        touchScrollSpeedMax_.y_ = dY;
-    }
 }
 
 void ScrollView::ScrollSmooth(float timeStep)

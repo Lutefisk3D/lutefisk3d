@@ -761,8 +761,8 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
         texture->SetSize(allocator.GetWidth(), allocator.GetHeight(), Graphics::GetRGBAFormat());
 
         unsigned textureDataSize = allocator.GetWidth() * allocator.GetHeight() * 4;
-        SharedArrayPtr<unsigned char> textureData(new unsigned char[textureDataSize]);
-        memset(textureData.Get(), 0, textureDataSize);
+        std::unique_ptr<uint8_t[]> textureData(new unsigned char[textureDataSize]);
+        memset(textureData.get(), 0, textureDataSize);
 
         for (int i = 0; i < tileImageInfos.size(); ++i)
         {
@@ -771,7 +771,7 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
 
             for (int y = 0; y < image->GetHeight(); ++y)
             {
-                memcpy(textureData.Get() + ((info.y + y) * allocator.GetWidth() + info.x) * 4,
+                memcpy(textureData.get() + ((info.y + y) * allocator.GetWidth() + info.x) * 4,
                        image->GetData() + y * image->GetWidth() * 4, image->GetWidth() * 4);
             }
 
@@ -781,7 +781,7 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
             sprite->SetHotSpot(Vector2::ZERO);
             gidToSpriteMapping_[info.tileGid] = sprite;
         }
-        texture->SetData(0, 0, 0, allocator.GetWidth(), allocator.GetHeight(), textureData.Get());
+        texture->SetData(0, 0, 0, allocator.GetWidth(), allocator.GetHeight(), textureData.get());
     }
 
     return true;

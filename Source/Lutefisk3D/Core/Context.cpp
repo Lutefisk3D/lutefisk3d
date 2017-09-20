@@ -21,8 +21,14 @@
 //
 
 #include "Context.h"
+#include "context_p.h"
+
 #include "Thread.h"
+#include "Attribute.h"
 #include "EventProfiler.h"
+
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/IO/FileSystem.h"
@@ -36,9 +42,10 @@
 #endif
 #ifndef MINI_URHO
 #include <SDL2/SDL.h>
+
 #endif
-namespace Urho3D
-{
+namespace Urho3D {
+template class SharedPtr<AttributeAccessor>;
 /*!
   \class Context
   \brief Urho3D execution context. Provides access to subsystems, object factories and attributes, and event receivers.
@@ -57,16 +64,8 @@ namespace Urho3D
   \brief Return all global variables.
 */
 /*!
-  \fn const HashMap<StringHash, SharedPtr<Object> >& Context::GetSubsystems() const
-  \brief Return all subsystems.
-*/
-/*!
-  \fn const HashMap<StringHash, SharedPtr<ObjectFactory> >& Context::GetObjectFactories() const
-  \brief Return all object factories.
-*/
-/*!
-  \fn const HashMap<QString, std::vector<StringHash> >& Context::GetObjectCategories() const
-  \brief Return all object categories.
+  \fn const QString &Context::GetObjectCategory(StringHash objType) const
+  \brief Return category name for given Object type
 */
 /*!
   \fn void Context::RemoveSubsystem()
@@ -109,10 +108,6 @@ namespace Urho3D
   \brief Return network replication attribute descriptions for an object type, or null if none defined.
 */
 /*!
-  \fn const HashMap<StringHash, std::vector<AttributeInfo> >& Context::GetAllAttributes() const
-  \brief Return all registered attributes.
-*/
-/*!
   \fn EventReceiverGroup* Context::GetEventReceivers(Object* sender, StringHash eventType)
   \brief Return event receivers for a sender and event type, or null if they do not exist.
 */
@@ -130,50 +125,17 @@ namespace Urho3D
 */
 
 /*!
-  \var HashMap<StringHash, SharedPtr<ObjectFactory> > Context::factories_
-  \brief Object factories.
- */
-/*!
-  \var HashMap<StringHash, SharedPtr<Object> > Context::subsystems_
-  \brief Subsystems.
- */
-/*!
-  \var HashMap<StringHash, std::vector<AttributeInfo> > Context::attributes_
-  \brief Attribute descriptions per object type.
- */
-/*!
-  \var HashMap<StringHash, std::vector<AttributeInfo> > Context::networkAttributes_
-  \brief Network replication attribute descriptions per object type.
- */
-/*!
-  \var HashMap<StringHash, SharedPtr<EventReceiverGroup> > Context::eventReceivers_
-  \brief Event receivers for non-specific events.
- */
-/*!
-  \var HashMap<Object*, HashMap<StringHash, SharedPtr<EventReceiverGroup> > > Context::specificEventReceivers_
-  \brief Event receivers for specific senders' events.
+  \var HashMap<Object*, HashMap<StringHash, SharedPtr<EventReceiverGroup> > > ContextPrivate::specificEventReceivers_
+  \brief
  */
 /*!
   \var std::vector<Object*> Context::eventSenders_
   \brief Event sender stack.
  */
 /*!
-  \var std::vector<VariantMap*> Context::eventDataMaps_
-  \brief Event data stack.
- */
-/*!
   \var EventHandler* Context::eventHandler_
   \brief Active event handler. Not stored in a stack for performance reasons; is needed only in esoteric cases.
  */
-/*!
-  \var HashMap<QString, std::vector<StringHash> > Context::objectCategories_
-  \brief Object categories.
- */
-/*!
-  \var VariantMap Context::globalVars_
-  \brief Variant map for global variables that can persist throughout application execution.
- */
-
 /*!
   \class EventReceiverGroup
   \brief Tracking structure for event receivers.
@@ -207,10 +169,46 @@ namespace Urho3D
   \var bool EventReceiverGroup::dirty_
   \brief Cleanup required flag.
  */
+class ContextPrivate
+{
+public:
+    ~ContextPrivate()
+    {
+        factories_.clear();
+        subsystems_.clear();
+        eventReceivers_.clear();
+        specificEventReceivers_.clear();
+        attributes_.clear();
+        networkAttributes_.clear();
+        // Delete allocated event data maps
+        for (VariantMap* elem : eventDataMaps_)
+            delete elem;
+    }
+    HashMap<QString, std::vector<StringHash> > objectCategories_;
+    HashMap<StringHash, SharedPtr<ObjectFactory> > factories_;
+    HashMap<StringHash, SharedPtr<Object> > subsystems_;
+    HashMap<StringHash, SharedPtr<EventReceiverGroup> > eventReceivers_; //!<Event receivers for non-specific events.
+    //! Event receivers for specific senders' events.
+    HashMap<Object*, HashMap<StringHash, SharedPtr<EventReceiverGroup> > > specificEventReceivers_;
+    std::vector<VariantMap*> eventDataMaps_; //!<Event data stack.
+    HashMap<StringHash, std::vector<AttributeInfo> > attributes_; //!<Attribute descriptions per object type.
+    //!Network replication attribute descriptions per object type.v
+    HashMap<StringHash, std::vector<AttributeInfo> > networkAttributes_;
+};
 
-
+const QString &Context::GetObjectCategory(StringHash objType) const
+{
+    for (auto iter = d->objectCategories_.begin(),fin=d->objectCategories_.end(); iter!=fin; ++iter)
+    {
+        const std::vector<StringHash> &entries(MAP_VALUE(iter));
+        if(entries.end() != std::find(entries.begin(),entries.end(),objType))
+            return MAP_KEY(iter);
+    }
+    return s_dummy;
+}
 // Keeps track of how many times SDL was initialised so we know when to call SDL_Quit().
 static int sdlInitCounter = 0;
+
 void EventReceiverGroup::BeginSendEvent()
 {
     ++inSend_;
@@ -279,7 +277,7 @@ void RemoveNamedAttribute(HashMap<StringHash, std::vector<AttributeInfo> >& attr
         attributes.erase(i);
 }
 
-Context::Context() : eventHandler_(nullptr)
+Context::Context() : d(new ContextPrivate)
 {
     // Set the main thread ID (assuming the Context is created in it)
     Thread::SetMainThread();
@@ -289,27 +287,20 @@ Context::~Context()
 {
     // Remove subsystems that use SDL in reverse order of construction, so that Graphics can shut down SDL last
     /// \todo Context should not need to know about subsystems
-    m_ResourceCache.release();
+    m_ResourceCache.reset();
     RemoveSubsystem("Audio");
 #ifndef LUTEFISK3D_UILESS
-    m_UISystem.release();
+    m_UISystem.reset();
 #endif
-    m_InputSystem.release();
-    m_Renderer.release();
+    m_InputSystem.reset();
+    m_Renderer.reset();
     m_Graphics.reset();
-    subsystems_.clear();
-    factories_.clear();
-
-    // Delete allocated event data maps
-    for (VariantMap* elem : eventDataMaps_)
-        delete elem;
-    eventDataMaps_.clear();
 }
 /// Create an object by type hash. Return pointer to it or null if no factory found.
 SharedPtr<Object> Context::CreateObject(StringHash objectType)
 {
-    HashMap<StringHash, SharedPtr<ObjectFactory> >::const_iterator i = factories_.find(objectType);
-    if (i != factories_.end())
+    HashMap<StringHash, SharedPtr<ObjectFactory> >::const_iterator i = d->factories_.find(objectType);
+    if (i != d->factories_.end())
         return MAP_VALUE(i)->CreateObject();
     else
         return SharedPtr<Object>();
@@ -320,10 +311,10 @@ void Context::RegisterFactory(ObjectFactory* factory, const char* category)
     if (!factory)
         return;
 
-    factories_[factory->GetType()] = factory;
+    d->factories_[factory->GetType()] = factory;
 
     if (category && category[0]!=0)
-        objectCategories_[category].push_back(factory->GetType());
+        d->objectCategories_[category].push_back(factory->GetType());
 }
 /// Register a subsystem.
 void Context::RegisterSubsystem(StringHash typeHash,Object* object)
@@ -331,14 +322,14 @@ void Context::RegisterSubsystem(StringHash typeHash,Object* object)
     if (!object)
         return;
 
-    subsystems_[typeHash] = object;
+    d->subsystems_[typeHash] = object;
 }
 /// Remove a subsystem.
 void Context::RemoveSubsystem(StringHash objectType)
 {
-    auto i = subsystems_.find(objectType);
-    if (i != subsystems_.end())
-        subsystems_.erase(i);
+    auto i = d->subsystems_.find(objectType);
+    if (i != d->subsystems_.end())
+        d->subsystems_.erase(i);
 }
 /// Register object attribute.
 void Context::RegisterAttribute(StringHash objectType, const AttributeInfo& attr)
@@ -350,16 +341,16 @@ void Context::RegisterAttribute(StringHash objectType, const AttributeInfo& attr
                           GetTypeName(objectType));
         return;
     }
-    attributes_[objectType].push_back(attr);
+    d->attributes_[objectType].push_back(attr);
 
     if (attr.mode_ & AM_NET)
-        networkAttributes_[objectType].push_back(attr);
+        d->networkAttributes_[objectType].push_back(attr);
 }
 /// Remove object attribute.
 void Context::RemoveAttribute(StringHash objectType, const char* name)
 {
-    RemoveNamedAttribute(attributes_, objectType, name);
-    RemoveNamedAttribute(networkAttributes_, objectType, name);
+    RemoveNamedAttribute(d->attributes_, objectType, name);
+    RemoveNamedAttribute(d->networkAttributes_, objectType, name);
 }
 
 /// Update object attribute's default value.
@@ -373,13 +364,13 @@ void Context::UpdateAttributeDefaultValue(StringHash objectType, const char* nam
 ///
 /// \brief Used for optimization to avoid constant re-allocation of event data maps.
 /// \return preallocated map for event data
-VariantMap& Context::GetEventDataMap()
+HashMap<StringHash, Variant> & Context::GetEventDataMap()
 {
     unsigned nestingLevel = eventSenders_.size();
-    while (eventDataMaps_.size() < nestingLevel + 1)
-        eventDataMaps_.push_back(new VariantMap());
+    while (d->eventDataMaps_.size() < nestingLevel + 1)
+        d->eventDataMaps_.push_back(new VariantMap());
 
-    VariantMap& ret = *eventDataMaps_[nestingLevel];
+    HashMap<StringHash, Variant>& ret = *d->eventDataMaps_[nestingLevel];
     ret.clear();
     return ret;
 }
@@ -450,19 +441,19 @@ void Context::CopyBaseAttributes(StringHash baseType, StringHash derivedType)
     const std::vector<AttributeInfo> * baseAttributes(GetAttributes(baseType));
     if(!baseAttributes)
         return;
-    std::vector<AttributeInfo> &target(attributes_[derivedType]);
+    std::vector<AttributeInfo> &target(d->attributes_[derivedType]);
     for (const AttributeInfo& attr : *baseAttributes)
     {
         target.push_back(attr);
         if (attr.mode_ & AM_NET)
-            networkAttributes_[derivedType].push_back(attr);
+            d->networkAttributes_[derivedType].push_back(attr);
     }
 }
 /// Return subsystem by type.
 Object* Context::GetSubsystem(StringHash type) const
 {
-    HashMap<StringHash, SharedPtr<Object> >::const_iterator i = subsystems_.find(type);
-    if (i != subsystems_.end())
+    HashMap<StringHash, SharedPtr<Object> >::const_iterator i = d->subsystems_.find(type);
+    if (i != d->subsystems_.end())
         return MAP_VALUE(i);
     else
         return nullptr;
@@ -479,14 +470,14 @@ Object* Context::GetEventSender() const
 const QString& Context::GetTypeName(StringHash objectType) const
 {
     // Search factories to find the hash-to-name mapping
-    HashMap<StringHash, SharedPtr<ObjectFactory> >::const_iterator i = factories_.find(objectType);
-    return i != factories_.end() ? MAP_VALUE(i)->GetTypeName() : s_dummy;
+    HashMap<StringHash, SharedPtr<ObjectFactory> >::const_iterator i = d->factories_.find(objectType);
+    return i != d->factories_.end() ? MAP_VALUE(i)->GetTypeName() : s_dummy;
 }
 /// Return a specific attribute description for an object, or null if not found.
 AttributeInfo* Context::GetAttribute(StringHash objectType, const char* name)
 {
-    auto i = attributes_.find(objectType);
-    if (i == attributes_.end())
+    auto i = d->attributes_.find(objectType);
+    if (i == d->attributes_.end())
         return nullptr;
 
     std::vector<AttributeInfo>& infos = MAP_VALUE(i);
@@ -496,13 +487,41 @@ AttributeInfo* Context::GetAttribute(StringHash objectType, const char* name)
         if (!j.name_.compare(name))
             return &j;
     }
-
     return nullptr;
+}
+
+const std::vector<AttributeInfo> *Context::GetAttributes(StringHash type) const
+{
+    HashMap<StringHash, std::vector<AttributeInfo> >::const_iterator i = d->attributes_.find(type);
+    return i != d->attributes_.end() ? &(MAP_VALUE(i)) : nullptr;
+}
+
+const std::vector<AttributeInfo> *Context::GetNetworkAttributes(StringHash type) const
+{
+    HashMap<StringHash, std::vector<AttributeInfo> >::const_iterator i = d->networkAttributes_.find(type);
+    return i != d->networkAttributes_.end() ? &(MAP_VALUE(i)) : nullptr;
+}
+
+EventReceiverGroup *Context::GetEventReceivers(Object * sender, StringHash eventType)
+{
+    auto i = d->specificEventReceivers_.find(sender);
+    if (i != d->specificEventReceivers_.end())
+    {
+        auto j = MAP_VALUE(i).find(eventType);
+        return j != MAP_VALUE(i).end() ? MAP_VALUE(j) : nullptr;
+    }
+    return nullptr;
+}
+
+EventReceiverGroup *Context::GetEventReceivers(StringHash eventType)
+{
+    auto i = d->eventReceivers_.find(eventType);
+    return i != d->eventReceivers_.end() ? MAP_VALUE(i) : nullptr;
 }
 /// Add event receiver.
 void Context::AddEventReceiver(Object* receiver, StringHash eventType)
 {
-    SharedPtr<EventReceiverGroup>& group = eventReceivers_[eventType];
+    SharedPtr<EventReceiverGroup>& group = d->eventReceivers_[eventType];
     if (!group)
         group = new EventReceiverGroup();
     group->Add(receiver);
@@ -510,7 +529,7 @@ void Context::AddEventReceiver(Object* receiver, StringHash eventType)
 /// Add event receiver for specific event.
 void Context::AddEventReceiver(Object* receiver, Object* sender, StringHash eventType)
 {
-    SharedPtr<EventReceiverGroup>& group = specificEventReceivers_[sender][eventType];
+    SharedPtr<EventReceiverGroup>& group = d->specificEventReceivers_[sender][eventType];
     if (!group)
         group = new EventReceiverGroup();
     group->Add(receiver);
@@ -518,8 +537,8 @@ void Context::AddEventReceiver(Object* receiver, Object* sender, StringHash even
 /// Remove an event sender from all receivers. Called on its destruction.
 void Context::RemoveEventSender(Object* sender)
 {
-    auto i = specificEventReceivers_.find(sender);
-    if (i == specificEventReceivers_.end())
+    auto i = d->specificEventReceivers_.find(sender);
+    if (i == d->specificEventReceivers_.end())
         return;
     for (const std::pair<const StringHash,SharedPtr<EventReceiverGroup> > & elem : MAP_VALUE(i))
     {
@@ -529,7 +548,7 @@ void Context::RemoveEventSender(Object* sender)
                 receiver->RemoveEventSender(sender);
         }
     }
-    specificEventReceivers_.erase(i);
+    d->specificEventReceivers_.erase(i);
 }
 /// Remove event receiver from non-specific events.
 void Context::RemoveEventReceiver(Object* receiver, StringHash eventType)

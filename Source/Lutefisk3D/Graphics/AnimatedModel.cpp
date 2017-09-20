@@ -102,8 +102,8 @@ void AnimatedModel::RegisterObject(Context* context)
     context->RegisterFactory<AnimatedModel>(GEOMETRY_CATEGORY);
 
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Model", GetModelAttr, SetModelAttr, ResourceRef, ResourceRef(Model::GetTypeStatic()), AM_DEFAULT);
-    URHO3D_ACCESSOR_ATTRIBUTE("Material", GetMaterialsAttr, SetMaterialsAttr, ResourceRefList, ResourceRefList(Material::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Model", GetModelAttr, SetModelAttr, ResourceRef, {Model::GetTypeStatic()}, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Material", GetMaterialsAttr, SetMaterialsAttr, ResourceRefList, {Material::GetTypeStatic()}, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Is Occluder", bool, occluder_, false, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Cast Shadows", bool, castShadows_, false, AM_DEFAULT);
@@ -115,7 +115,7 @@ void AnimatedModel::RegisterObject(Context* context)
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Bone Animation Enabled", GetBonesEnabledAttr, SetBonesEnabledAttr, VariantVector, Variant::emptyVariantVector, AM_FILE | AM_NOEDIT);
     URHO3D_MIXED_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE("Animation States", GetAnimationStatesAttr, SetAnimationStatesAttr,                                                            VariantVector, Variant::emptyVariantVector,                                                            animationStatesStructureElementNames, AM_FILE);
-    URHO3D_ACCESSOR_ATTRIBUTE("Morphs", GetMorphsAttr, SetMorphsAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_DEFAULT | AM_NOEDIT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Morphs", GetMorphsAttr, SetMorphsAttr, std::vector<uint8_t>, Variant::emptyBuffer, AM_DEFAULT | AM_NOEDIT);
 }
 
 bool AnimatedModel::Load(Deserializer& source, bool setInstanceDefault)
@@ -322,7 +322,7 @@ void AnimatedModel::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     }
 }
 
-void AnimatedModel::SetModel(Model* model, bool createBones)
+void AnimatedModel::SetModelWithBones(Model* model, bool createBones)
 {
     if (model == model_)
         return;
@@ -785,7 +785,7 @@ void AnimatedModel::SetModelAttr(const ResourceRef& value)
 {
     ResourceCache* cache =context_->m_ResourceCache.get();
     // When loading a scene, set model without creating the bone nodes (will be assigned later during post-load)
-    SetModel(cache->GetResource<Model>(value.name_), !loading_);
+    SetModelWithBones(cache->GetResource<Model>(value.name_), !loading_);
 }
 
 void AnimatedModel::SetBonesEnabledAttr(const VariantVector& value)
@@ -821,7 +821,7 @@ void AnimatedModel::SetAnimationStatesAttr(const VariantVector& value)
             newState->SetLooped(value[index++].GetBool());
             newState->SetWeight(value[index++].GetFloat());
             newState->SetTime(value[index++].GetFloat());
-            newState->SetLayer((unsigned char)value[index++].GetInt());
+            newState->SetLayer((uint8_t)value[index++].GetInt());
         }
         else
         {
@@ -838,7 +838,7 @@ void AnimatedModel::SetAnimationStatesAttr(const VariantVector& value)
     }
 }
 
-void AnimatedModel::SetMorphsAttr(const std::vector<unsigned char>& value)
+void AnimatedModel::SetMorphsAttr(const std::vector<uint8_t>& value)
 {
     for (unsigned index = 0; index < value.size(); ++index)
         SetMorphWeight(index, (float)value[index] / 255.0f);
@@ -879,11 +879,11 @@ VariantVector AnimatedModel::GetAnimationStatesAttr() const
     return ret;
 }
 
-const std::vector<unsigned char>& AnimatedModel::GetMorphsAttr() const
+const std::vector<uint8_t>& AnimatedModel::GetMorphsAttr() const
 {
     attrBuffer_.clear();
     for (const ModelMorph & morph : morphs_)
-        attrBuffer_.WriteUByte((unsigned char)(morph.weight_ * 255.0f));
+        attrBuffer_.WriteUByte((uint8_t)(morph.weight_ * 255.0f));
 
     return attrBuffer_.GetBuffer();
 }
@@ -1119,11 +1119,11 @@ void AnimatedModel::CloneGeometries()
 
             // Add an additional vertex stream into the clone, which supplies only the morphable vertex data, while the static
             // data comes from the original vertex buffer(s)
-            const std::vector<SharedPtr<VertexBuffer> >& originalBuffers = original->GetVertexBuffers();
+            const std::vector<VertexBuffer *>& originalBuffers = original->GetVertexBuffers();
             unsigned totalBuf = originalBuffers.size();
             for (VertexBuffer* originalBuffer : originalBuffers)
             {
-                if (clonedVertexBuffers.contains(originalBuffer))
+                if (hashContains(clonedVertexBuffers,originalBuffer))
                     ++totalBuf;
             }
             clone->SetNumVertexBuffers(totalBuf);
@@ -1133,7 +1133,7 @@ void AnimatedModel::CloneGeometries()
             {
                 VertexBuffer* originalBuffer = originalBuffers[k];
 
-                if (clonedVertexBuffers.contains(originalBuffer))
+                if (hashContains(clonedVertexBuffers,originalBuffer))
                 {
                     VertexBuffer* clonedBuffer = clonedVertexBuffers[originalBuffer];
                     clone->SetVertexBuffer(l++, originalBuffer);
@@ -1165,7 +1165,7 @@ void AnimatedModel::CopyMorphVertices(void *destVertexData, void *srcVertexData,
     unsigned       tangentOffset = srcBuffer->GetElementOffset(SEM_TANGENT);
     unsigned       vertexSize    = srcBuffer->GetVertexSize();
     float *        dest          = (float *)destVertexData;
-    unsigned char *src           = (unsigned char *)srcVertexData;
+    uint8_t *src           = (uint8_t *)srcVertexData;
 
     while (vertexCount--)
     {
@@ -1374,18 +1374,18 @@ void AnimatedModel::ApplyMorph(VertexBuffer* buffer, void* destVertexData, unsig
     unsigned tangentOffset = buffer->GetElementOffset(SEM_TANGENT);
     unsigned vertexSize = buffer->GetVertexSize();
 
-    unsigned char* srcData = morph.morphData_;
-    unsigned char* destData = (unsigned char*)destVertexData;
+    const uint8_t* srcData = morph.morphData_;
+    uint8_t* destData = (uint8_t*)destVertexData;
 
     while (vertexCount--)
     {
-        unsigned vertexIndex = *((unsigned*)srcData) - morphRangeStart;
+        unsigned vertexIndex = *((const unsigned*)srcData) - morphRangeStart;
         srcData += sizeof(unsigned);
 
         if (elementMask & MASK_POSITION)
         {
             float* dest = (float*)(destData + vertexIndex * vertexSize);
-            float* src = (float*)srcData;
+            const float* src = (const float*)srcData;
             dest[0] += src[0] * weight;
             dest[1] += src[1] * weight;
             dest[2] += src[2] * weight;
@@ -1394,7 +1394,7 @@ void AnimatedModel::ApplyMorph(VertexBuffer* buffer, void* destVertexData, unsig
         if (elementMask & MASK_NORMAL)
         {
             float* dest = (float*)(destData + vertexIndex * vertexSize + normalOffset);
-            float* src = (float*)srcData;
+            const float* src = (const float*)srcData;
             dest[0] += src[0] * weight;
             dest[1] += src[1] * weight;
             dest[2] += src[2] * weight;
@@ -1403,7 +1403,7 @@ void AnimatedModel::ApplyMorph(VertexBuffer* buffer, void* destVertexData, unsig
         if (elementMask & MASK_TANGENT)
         {
             float* dest = (float*)(destData + vertexIndex * vertexSize + tangentOffset);
-            float* src = (float*)srcData;
+            const float* src = (const float*)srcData;
             dest[0] += src[0] * weight;
             dest[1] += src[1] * weight;
             dest[2] += src[2] * weight;

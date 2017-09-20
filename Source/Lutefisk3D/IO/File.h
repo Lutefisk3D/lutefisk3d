@@ -23,7 +23,6 @@
 #pragma once
 
 #include "Lutefisk3D/Container/RefCounted.h"
-#include "Lutefisk3D/Container/ArrayPtr.h"
 #include "Lutefisk3D/IO/AbstractFile.h"
 #include <QtCore/QString>
 
@@ -95,27 +94,27 @@ private:
     /// File name.
     QString fileName_;
     /// Open mode.
-    FileMode mode_;
+    FileMode mode_=FILE_READ;
     /// File handle.
-    void* handle_;
+    void* handle_=nullptr;
     /// Read buffer for Android asset or compressed file loading.
-    SharedArrayPtr<uint8_t> readBuffer_;
+    std::unique_ptr<uint8_t> readBuffer_;
     /// Decompression input buffer for compressed file loading.
-    SharedArrayPtr<uint8_t> inputBuffer_;
+    std::unique_ptr<uint8_t> inputBuffer_;
     /// Read buffer position.
-    unsigned readBufferOffset_;
+    unsigned readBufferOffset_=0;
     /// Bytes in the current read buffer.
-    unsigned readBufferSize_;
+    unsigned readBufferSize_=0;
     /// Start position within a package file, 0 for regular files.
-    unsigned offset_;
+    unsigned offset_=0;
     /// Content checksum.
-    unsigned checksum_;
+    unsigned checksum_=0;
     /// Compression flag.
-    bool compressed_;
+    bool compressed_=false;
     /// Synchronization needed before read -flag.
-    bool readSyncNeeded_;
+    bool readSyncNeeded_=false;
     /// Synchronization needed before write -flag.
-    bool writeSyncNeeded_;
+    bool writeSyncNeeded_=false;
 };
 
 }

@@ -23,7 +23,9 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Math/Vector2.h"
 #include "jlsignal/Signal.h"
+
 namespace Urho3D
 {
 class UIElement;
@@ -114,7 +116,23 @@ struct UiElementSignals  {
     jl::Signal<UIElement *,int,int,IntVector2,int,int,int,int> dragMove;
     /// Drag of a UI Element was canceled by pressing ESC
     jl::Signal<UIElement *,int,int,int,int,int,int> dragCancel;
-
+    void initSignals(jl::ScopedAllocator *allocator)
+    {
+        nameChanged.SetAllocator(allocator);
+        resized.SetAllocator(allocator);
+        click.SetAllocator(allocator);
+        clickEnd.SetAllocator(allocator);
+        doubleClick.SetAllocator(allocator);
+        layoutUpdated.SetAllocator(allocator);
+        focused.SetAllocator(allocator);
+        defocused.SetAllocator(allocator);
+        hoverBegin.SetAllocator(allocator);
+        hoverEnd.SetAllocator(allocator);
+        dragBegin.SetAllocator(allocator);
+        dragEnd.SetAllocator(allocator);
+        dragMove.SetAllocator(allocator);
+        dragCancel.SetAllocator(allocator);
+    }
 };
 
 struct UIButtonSignals {
@@ -141,19 +159,11 @@ struct UISliderSignals {
     jl::Signal<UIElement *,int,bool> sliderPaged; // UIElement *,int offset,bool pressed
 };
 
+struct UIScrollbarSignals {
+    /// UI scrollbar value changed.
+    jl::Signal<UIElement *,float> scrollBarChanged; // UIElement *,float
 
-/// UI progressbar value changed
-URHO3D_EVENT(E_PROGRESSBARCHANGED, ProgressBarChanged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_VALUE, Value);                  // float
-}
-/// UI scrollbar value changed.
-URHO3D_EVENT(E_SCROLLBARCHANGED, ScrollBarChanged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_VALUE, Value);                  // float
-}
+};
 
 /// UI scrollview position changed.
 URHO3D_EVENT(E_VIEWCHANGED, ViewChanged)

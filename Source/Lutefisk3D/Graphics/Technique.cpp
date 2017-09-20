@@ -24,6 +24,7 @@
 
 #include "Lutefisk3D/Core/Context.h"
 #include "Graphics.h"
+#include "GraphicsDefs.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/Core/ProcessUtils.h"
 #include "Lutefisk3D/Core/StringUtils.h"
@@ -36,7 +37,7 @@
 
 namespace Urho3D
 {
-
+template class SharedPtr<Technique>;
 extern const char* cullModeNames[];
 
 const char* blendModeNames[MAX_BLENDMODES+1] =
@@ -54,7 +55,7 @@ const char* blendModeNames[MAX_BLENDMODES+1] =
     nullptr
 };
 
-static const char* compareModeNames[] =
+static const char* compareModeNames[MAX_COMPAREMODES+1] =
 {
     "always",
     "equal",

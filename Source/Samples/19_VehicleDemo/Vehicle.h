@@ -32,9 +32,6 @@ class Constraint;
 class Node;
 class RigidBody;
 
-}
-
-using namespace Urho3D;
 
 const int CTRL_FORWARD = 1;
 const int CTRL_BACK = 2;
@@ -102,3 +99,4 @@ private:
     /// Current left/right steering amount (-1 to 1.)
     float steering_;
 };
+}

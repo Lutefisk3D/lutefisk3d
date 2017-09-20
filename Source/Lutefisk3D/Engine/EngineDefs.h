@@ -21,56 +21,55 @@
 //
 
 #pragma once
-#include <QtCore/QString>
+#include <QtCore/QLatin1String>
 namespace Urho3D
 {
 
 // Engine parameters
-static const QString EP_AUTOLOAD_PATHS("AutoloadPaths");
-static const QString EP_BORDERLESS("Borderless");
-static const QString EP_DUMP_SHADERS("DumpShaders");
-static const QString EP_EVENT_PROFILER("EventProfiler");
-static const QString EP_EXTERNAL_WINDOW("ExternalWindow");
-static const QString EP_FLUSH_GPU("FlushGPU");
-static const QString EP_FORCE_GL2("ForceGL2");
-static const QString EP_FRAME_LIMITER("FrameLimiter");
-static const QString EP_FULL_SCREEN("FullScreen");
-static const QString EP_HEADLESS("Headless");
-static const QString EP_HIGH_DPI("HighDPI");
-static const QString EP_LOG_LEVEL("LogLevel");
-static const QString EP_LOG_NAME("LogName");
-static const QString EP_LOG_QUIET("LogQuiet");
-static const QString EP_LOW_QUALITY_SHADOWS("LowQualityShadows");
-static const QString EP_MATERIAL_QUALITY("MaterialQuality");
-static const QString EP_MONITOR("Monitor");
-static const QString EP_MULTI_SAMPLE("MultiSample");
-static const QString EP_ORIENTATIONS("Orientations");
-static const QString EP_PACKAGE_CACHE_DIR("PackageCacheDir");
-static const QString EP_RENDER_PATH("RenderPath");
-static const QString EP_REFRESH_RATE("RefreshRate");
-static const QString EP_RESOURCE_PACKAGES("ResourcePackages");
-static const QString EP_RESOURCE_PATHS("ResourcePaths");
-static const QString EP_RESOURCE_PREFIX_PATHS("ResourcePrefixPaths");
-static const QString EP_SHADER_CACHE_DIR("ShaderCacheDir");
-static const QString EP_SHADOWS("Shadows");
-static const QString EP_SOUND("Sound");
-static const QString EP_SOUND_BUFFER("SoundBuffer");
-static const QString EP_SOUND_INTERPOLATION("SoundInterpolation");
-static const QString EP_SOUND_MIX_RATE("SoundMixRate");
-static const QString EP_SOUND_STEREO("SoundStereo");
-static const QString EP_TEXTURE_ANISOTROPY("TextureAnisotropy");
-static const QString EP_TEXTURE_FILTER_MODE("TextureFilterMode");
-static const QString EP_TEXTURE_QUALITY("TextureQuality");
-static const QString EP_TIME_OUT("TimeOut");
-static const QString EP_TRIPLE_BUFFER("TripleBuffer");
-static const QString EP_VSYNC("VSync");
-static const QString EP_WINDOW_HEIGHT("WindowHeight");
-static const QString EP_WINDOW_ICON("WindowIcon");
-static const QString EP_WINDOW_POSITION_X("WindowPositionX");
-static const QString EP_WINDOW_POSITION_Y("WindowPositionY");
-static const QString EP_WINDOW_RESIZABLE("WindowResizable");
-static const QString EP_WINDOW_TITLE("WindowTitle");
-static const QString EP_WINDOW_WIDTH("WindowWidth");
-static const QString EP_WORKER_THREADS("WorkerThreads");
+static const QLatin1String EP_AUTOLOAD_PATHS("AutoloadPaths");
+static const QLatin1String EP_BORDERLESS("Borderless");
+static const QLatin1String EP_DUMP_SHADERS("DumpShaders");
+static const QLatin1String EP_EVENT_PROFILER("EventProfiler");
+static const QLatin1String EP_EMBEDDED_WINDOW("EmbeddedWindow");
+static const QLatin1String EP_FLUSH_GPU("FlushGPU");
+static const QLatin1String EP_FRAME_LIMITER("FrameLimiter");
+static const QLatin1String EP_FULL_SCREEN("FullScreen");
+static const QLatin1String EP_HEADLESS("Headless");
+static const QLatin1String EP_HIGH_DPI("HighDPI");
+static const QLatin1String EP_LOG_LEVEL("LogLevel");
+static const QLatin1String EP_LOG_NAME("LogName");
+static const QLatin1String EP_LOG_QUIET("LogQuiet");
+static const QLatin1String EP_LOW_QUALITY_SHADOWS("LowQualityShadows");
+static const QLatin1String EP_MATERIAL_QUALITY("MaterialQuality");
+static const QLatin1String EP_MONITOR("Monitor");
+static const QLatin1String EP_MULTI_SAMPLE("MultiSample");
+static const QLatin1String EP_ORIENTATIONS("Orientations");
+static const QLatin1String EP_PACKAGE_CACHE_DIR("PackageCacheDir");
+static const QLatin1String EP_RENDER_PATH("RenderPath");
+static const QLatin1String EP_REFRESH_RATE("RefreshRate");
+static const QLatin1String EP_RESOURCE_PACKAGES("ResourcePackages");
+static const QLatin1String EP_RESOURCE_PATHS("ResourcePaths");
+static const QLatin1String EP_RESOURCE_PREFIX_PATHS("ResourcePrefixPaths");
+static const QLatin1String EP_SHADER_CACHE_DIR("ShaderCacheDir");
+static const QLatin1String EP_SHADOWS("Shadows");
+static const QLatin1String EP_SOUND("Sound");
+static const QLatin1String EP_SOUND_BUFFER("SoundBuffer");
+static const QLatin1String EP_SOUND_INTERPOLATION("SoundInterpolation");
+static const QLatin1String EP_SOUND_MIX_RATE("SoundMixRate");
+static const QLatin1String EP_SOUND_STEREO("SoundStereo");
+static const QLatin1String EP_TEXTURE_ANISOTROPY("TextureAnisotropy");
+static const QLatin1String EP_TEXTURE_FILTER_MODE("TextureFilterMode");
+static const QLatin1String EP_TEXTURE_QUALITY("TextureQuality");
+static const QLatin1String EP_TIME_OUT("TimeOut");
+static const QLatin1String EP_TRIPLE_BUFFER("TripleBuffer");
+static const QLatin1String EP_VSYNC("VSync");
+static const QLatin1String EP_WINDOW_HEIGHT("WindowHeight");
+static const QLatin1String EP_WINDOW_ICON("WindowIcon");
+static const QLatin1String EP_WINDOW_POSITION_X("WindowPositionX");
+static const QLatin1String EP_WINDOW_POSITION_Y("WindowPositionY");
+static const QLatin1String EP_WINDOW_RESIZABLE("WindowResizable");
+static const QLatin1String EP_WINDOW_TITLE("WindowTitle");
+static const QLatin1String EP_WINDOW_WIDTH("WindowWidth");
+static const QLatin1String EP_WORKER_THREADS("WorkerThreads");
 
 }

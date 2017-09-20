@@ -63,8 +63,8 @@ void ParticleEmitter2D::RegisterObject(Context* context)
 
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable2D);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Particle Effect", GetParticleEffectAttr, SetParticleEffectAttr, ResourceRef, ResourceRef(ParticleEffect2D::GetTypeStatic()), AM_DEFAULT);
-    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Sprite ", GetSpriteAttr, SetSpriteAttr, ResourceRef, ResourceRef(Sprite2D::GetTypeStatic()), AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Particle Effect", GetParticleEffectAttr, SetParticleEffectAttr, ResourceRef, ResourceRef{ParticleEffect2D::GetTypeStatic()}, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Sprite ", GetSpriteAttr, SetSpriteAttr, ResourceRef, ResourceRef{Sprite2D::GetTypeStatic()}, AM_DEFAULT);
     URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Blend Mode", GetBlendMode, SetBlendMode, BlendMode, blendModeNames, BLEND_ALPHA, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Is Emitting", IsEmitting, SetEmitting, bool, true, AM_DEFAULT);
 }
@@ -177,15 +177,13 @@ ResourceRef ParticleEmitter2D::GetSpriteAttr() const
 
 void ParticleEmitter2D::OnSceneSet(Scene* scene)
 {
-    Scene* old_scene = scene; // todo: shouldn't this always unsubscribe from 'old' scene ?
+    Scene* old_scene = GetScene(); // todo: shouldn't this always unsubscribe from 'old' scene ?
     Drawable2D::OnSceneSet(scene);
 
+    if(old_scene && old_scene!=scene)
+        old_scene->scenePostUpdate.Disconnect(this);
     if (scene && IsEnabledEffective())
         scene->scenePostUpdate.Connect(this,&ParticleEmitter2D::HandleScenePostUpdate);
-    else if(!scene) {
-        assert(old_scene);
-        old_scene->scenePostUpdate.Disconnect(this,&ParticleEmitter2D::HandleScenePostUpdate);
-    }
 }
 
 void ParticleEmitter2D::OnWorldBoundingBoxUpdate()

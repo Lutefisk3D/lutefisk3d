@@ -25,6 +25,7 @@
 #include "Material.h"
 #include "Geometry.h"
 #include "Octree.h"
+#include "Light.h"
 #include "Renderer.h"
 #include "Zone.h"
 #include "DebugRenderer.h"
@@ -39,37 +40,10 @@ namespace Urho3D
 
 const char* GEOMETRY_CATEGORY = "Geometry";
 
-SourceBatch::SourceBatch() :
-    distance_(0.0f),
-    geometry_(nullptr),
-    worldTransform_(&Matrix3x4::IDENTITY),
-    numWorldTransforms_(1),
-    instancingData_(nullptr),
-    geometryType_(GEOM_STATIC)
-{
-}
-
-SourceBatch::SourceBatch(const SourceBatch& batch)
-{
-    *this = batch;
-}
-
 SourceBatch::~SourceBatch()
 {
 }
 
-SourceBatch& SourceBatch::operator =(const SourceBatch& rhs)
-{
-    distance_ = rhs.distance_;
-    geometry_ = rhs.geometry_;
-    material_ = rhs.material_;
-    worldTransform_ = rhs.worldTransform_;
-    numWorldTransforms_ = rhs.numWorldTransforms_;
-    instancingData_ = rhs.instancingData_;
-    geometryType_ = rhs.geometryType_;
-
-    return *this;
-}
 Drawable::Drawable(Context* context, unsigned char drawableFlags) :
     Component(context),
     boundingBox_(0.0f, 0.0f),

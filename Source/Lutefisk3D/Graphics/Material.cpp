@@ -49,7 +49,81 @@
 
 namespace Urho3D
 {
+template class HashMap<StringHash, MaterialShaderParameter>;
 
+struct MaterialPrivate : public jl::SignalObserver
+{
+    MaterialPrivate(Material *p) : parent(p) {}
+
+    /// %Shader parameters animation infos.
+    HashMap<StringHash, SharedPtr<ShaderParameterAnimationInfo> > shaderParameterAnimationInfos_;
+    /// XML file used while loading.
+    SharedPtr<XMLFile> loadXMLFile_;
+    /// JSON file used while loading.
+    SharedPtr<JSONFile> loadJSONFile_;
+    /// Associated scene for shader parameter animation updates.
+    WeakPtr<Scene> scene_ = nullptr;
+    WeakPtr<Material> parent;
+    /// Flag for whether is subscribed to animation updates.
+    bool subscribed_=false;
+
+public:
+    void HandleAttributeAnimationGlobalUpdate(float timeStep) {
+        HandleAttributeAnimationUpdate(nullptr,timeStep);
+    }
+
+    /// Update shader parameter animations.
+    void HandleAttributeAnimationUpdate(Scene *, float timeStep)
+    {
+        // Timestep parameter is same no matter what event is being listened to
+        // Keep weak pointer to self to check for destruction caused by event handling
+
+        QStringList finishedNames;
+
+        for (auto &i : shaderParameterAnimationInfos_)
+        {
+            bool finished = ELEMENT_VALUE(i)->Update(timeStep);
+            // If self deleted as a result of an event sent during animation playback, nothing more to do
+            if (parent.Expired())
+                return;
+
+            if (finished)
+                finishedNames.push_back(ELEMENT_VALUE(i)->GetName());
+        }
+
+        // Remove finished animations
+        for (const QString &fin_name : finishedNames)
+            parent->SetShaderParameterAnimation(fin_name, nullptr);
+    }
+    /// Update whether should be subscribed to scene or global update events for shader parameter animation.
+    void UpdateEventSubscription()
+    {
+
+        if (shaderParameterAnimationInfos_.size() && !subscribed_)
+        {
+            if (scene_)
+                scene_->attributeAnimationUpdate.Connect(this,&MaterialPrivate::HandleAttributeAnimationUpdate);
+            else
+                g_coreSignals.update.Connect(this,&MaterialPrivate::HandleAttributeAnimationGlobalUpdate);
+            subscribed_ = true;
+        }
+        else if (subscribed_ && shaderParameterAnimationInfos_.empty())
+        {
+            g_coreSignals.update.Disconnect(this,&MaterialPrivate::HandleAttributeAnimationGlobalUpdate);
+            scene_->attributeAnimationUpdate.Disconnect(this,&MaterialPrivate::HandleAttributeAnimationUpdate);
+            subscribed_ = false;
+        }
+    }
+    void SetScene(Scene *scene)
+    {
+        g_coreSignals.update.Disconnect(this,&MaterialPrivate::HandleAttributeAnimationGlobalUpdate);
+        scene->attributeAnimationUpdate.Disconnect(this,&MaterialPrivate::HandleAttributeAnimationUpdate);
+        subscribed_ = false;
+        scene_ = scene;
+        UpdateEventSubscription();
+
+    }
+};
 extern const char* wrapModeNames[];
 
 static const char* textureUnitNames[] =
@@ -189,10 +263,6 @@ ShaderParameterAnimationInfo::ShaderParameterAnimationInfo(const ShaderParameter
 {
 }
 
-ShaderParameterAnimationInfo::~ShaderParameterAnimationInfo()
-{
-}
-
 void ShaderParameterAnimationInfo::ApplyValue(const Variant& newValue)
 {
     static_cast<Material*>(target_.Get())->SetShaderParameter(name_, newValue);
@@ -200,13 +270,13 @@ void ShaderParameterAnimationInfo::ApplyValue(const Variant& newValue)
 
 Material::Material(Context* context) :
     Resource(context),
+    d(new MaterialPrivate(this)),
     auxViewFrameNumber_(0),
     shaderParameterHash_(0),
     alphaToCoverage_(false),
     lineAntiAlias_(false),
     occlusion_(true),
     specular_(false),
-    subscribed_(false),
     batchedParameterUpdate_(false)
 {
     ResetToDefaults();
@@ -252,7 +322,7 @@ bool Material::BeginLoad(Deserializer& source)
 
     // All loading failed
     ResetToDefaults();
-    loadJSONFile_.Reset();
+    d->loadJSONFile_.Reset();
     return false;
 }
 
@@ -264,36 +334,36 @@ bool Material::EndLoad()
         return true;
 
     bool success = false;
-    if (loadXMLFile_)
+    if (d->loadXMLFile_)
     {
         // If async loading, get the techniques / textures which should be ready now
-        XMLElement rootElem = loadXMLFile_->GetRoot();
+        XMLElement rootElem = d->loadXMLFile_->GetRoot();
         success = Load(rootElem);
     }
 
-    if (loadJSONFile_)
+    if (d->loadJSONFile_)
     {
-        JSONValue rootVal = loadJSONFile_->GetRoot();
+        JSONValue rootVal = d->loadJSONFile_->GetRoot();
         success = Load(rootVal);
     }
 
-    loadXMLFile_.Reset();
-    loadJSONFile_.Reset();
+    d->loadXMLFile_.Reset();
+    d->loadJSONFile_.Reset();
     return success;
 }
 /// Helper function for loading XML files.
 bool Material::BeginLoadXML(Deserializer& source)
 {
     ResetToDefaults();
-    loadXMLFile_ = new XMLFile(context_);
-    if (!loadXMLFile_->Load(source))
+    d->loadXMLFile_ = new XMLFile(context_);
+    if (!d->loadXMLFile_->Load(source))
         return false;
     // If async loading, scan the XML content beforehand for technique & texture resources
     // and request them to also be loaded. Can not do anything else at this point
     if (GetAsyncLoadState() == ASYNC_LOADING)
     {
         ResourceCache* cache =context_->m_ResourceCache.get();
-        XMLElement rootElem = loadXMLFile_->GetRoot();
+        XMLElement rootElem = d->loadXMLFile_->GetRoot();
         XMLElement techniqueElem = rootElem.GetChild("technique");
         while (techniqueElem)
         {
@@ -336,11 +406,11 @@ bool Material::BeginLoadJSON(Deserializer& source)
 {
     // Attempt to load a JSON file
     ResetToDefaults();
-    loadXMLFile_.Reset();
+    d->loadXMLFile_.Reset();
 
     // Attempt to load from JSON file instead
-    loadJSONFile_ = new JSONFile(context_);
-    if (!loadJSONFile_->Load(source))
+    d->loadJSONFile_ = new JSONFile(context_);
+    if (!d->loadJSONFile_->Load(source))
         return false;
 
     // If async loading, scan the XML content beforehand for technique & texture resources
@@ -348,7 +418,7 @@ bool Material::BeginLoadJSON(Deserializer& source)
     if (GetAsyncLoadState() == ASYNC_LOADING)
     {
         ResourceCache* cache =context_->m_ResourceCache.get();
-        const JSONValue& rootVal = loadJSONFile_->GetRoot();
+        const JSONValue& rootVal = d->loadJSONFile_->GetRoot();
 
         JSONArray techniqueArray = rootVal.Get("techniques").GetArray();
         for (const JSONValue &techVal : techniqueArray)
@@ -755,7 +825,7 @@ bool Material::Save(XMLElement& dest) const
     }
 
     // Write shader parameter animations
-    for (auto &elem : shaderParameterAnimationInfos_)
+    for (auto &elem : d->shaderParameterAnimationInfos_)
     {
         ShaderParameterAnimationInfo* info = ELEMENT_VALUE(elem);
         XMLElement parameterAnimationElem = dest.CreateChild("parameteranimation");
@@ -856,8 +926,7 @@ bool Material::Save(JSONValue& dest) const
 
     // Write shader parameter animations
     JSONValue shaderParamAnimationsVal;
-    for (HashMap<StringHash, SharedPtr<ShaderParameterAnimationInfo> >::const_iterator j = shaderParameterAnimationInfos_.begin();
-         j != shaderParameterAnimationInfos_.end(); ++j)
+    for (auto j = d->shaderParameterAnimationInfos_.cbegin(); j != d->shaderParameterAnimationInfos_.cend(); ++j)
     {
         ShaderParameterAnimationInfo* info = j->second;
         JSONValue paramAnimationVal;
@@ -982,17 +1051,14 @@ void Material::SetShaderParameterAnimation(const QString& name, ValueAnimation* 
         }
 
         StringHash nameHash(name);
-        shaderParameterAnimationInfos_[nameHash] = new ShaderParameterAnimationInfo(this, name, animation, wrapMode, speed);
-        UpdateEventSubscription();
+        d->shaderParameterAnimationInfos_[nameHash] = new ShaderParameterAnimationInfo(this, name, animation, wrapMode, speed);
+        d->UpdateEventSubscription();
     }
-    else
+    else if (info)
     {
-        if (info)
-        {
-            StringHash nameHash(name);
-            shaderParameterAnimationInfos_.remove(nameHash);
-            UpdateEventSubscription();
-        }
+        StringHash nameHash(name);
+        d->shaderParameterAnimationInfos_.erase(nameHash);
+        d->UpdateEventSubscription();
     }
 }
 
@@ -1013,13 +1079,7 @@ void Material::SetShaderParameterAnimationSpeed(const QString& name, float speed
 void Material::SetTexture(TextureUnit unit, Texture* texture)
 {
     if (unit < MAX_TEXTURE_UNITS)
-    {
-        if (texture)
-            textures_[unit] = texture;
-
-        else
-            textures_.erase(unit);
-    }
+        textures_[unit] = texture;
 }
 
 void Material::SetUVTransform(const Vector2& offset, float rotation, const Vector2& repeat)
@@ -1094,19 +1154,16 @@ void Material::SetOcclusion(bool enable)
     occlusion_ = enable;
 }
 
+
 void Material::SetScene(Scene* scene)
 {
-    g_coreSignals.update.Disconnect(this,&Material::HandleAttributeGlobalAnimationUpdate);
-    scene->attributeAnimationUpdate.Disconnect(this,&Material::HandleAttributeAnimationUpdate);
-    subscribed_ = false;
-    scene_ = scene;
-    UpdateEventSubscription();
+    d->SetScene(scene);
 }
 
 void Material::RemoveShaderParameter(const QString& name)
 {
     StringHash nameHash(name);
-    shaderParameters_.remove(nameHash);
+    shaderParameters_.erase(nameHash);
 
     if (nameHash == PSP_MATSPECCOLOR)
         specular_ = false;
@@ -1179,8 +1236,7 @@ Pass* Material::GetPass(unsigned index, const QString& passName) const
 
 Texture* Material::GetTexture(TextureUnit unit) const
 {
-    HashMap<TextureUnit, SharedPtr<Texture> >::const_iterator i = textures_.find(unit);
-    return i != textures_.end() ? MAP_VALUE(i).Get() : nullptr;
+    return textures_[unit];
 }
 
 const Variant& Material::GetShaderParameter(const QString& name) const
@@ -1209,7 +1265,7 @@ float Material::GetShaderParameterAnimationSpeed(const QString& name) const
 
 Scene* Material::GetScene() const
 {
-    return scene_;
+    return d->scene_;
 }
 
 QString Material::GetTextureUnitName(TextureUnit unit)
@@ -1240,7 +1296,7 @@ void Material::ResetToDefaults()
     SetTechnique(0, renderer ? renderer->GetDefaultTechnique() :
         context_->m_ResourceCache->GetResource<Technique>("Techniques/NoTexture.xml"));
 
-    textures_.clear();
+    textures_.fill(nullptr);
 
     batchedParameterUpdate_ = true;
     shaderParameters_.clear();
@@ -1296,57 +1352,12 @@ void Material::RefreshMemoryUse()
 ShaderParameterAnimationInfo* Material::GetShaderParameterAnimationInfo(const QString& name) const
 {
     StringHash nameHash(name);
-    auto i = shaderParameterAnimationInfos_.find(nameHash);
-    if (i == shaderParameterAnimationInfos_.end())
+    auto i = d->shaderParameterAnimationInfos_.find(nameHash);
+    if (i == d->shaderParameterAnimationInfos_.end())
         return nullptr;
     return MAP_VALUE(i);
 }
-/// Update whether should be subscribed to scene or global update events for shader parameter animation.
-void Material::UpdateEventSubscription()
-{
 
-    if (shaderParameterAnimationInfos_.size() && !subscribed_)
-    {
-        if (scene_)
-            scene_->attributeAnimationUpdate.Connect(this,&Material::HandleAttributeAnimationUpdate);
-        else
-            g_coreSignals.update.Connect(this,&Material::HandleAttributeGlobalAnimationUpdate);
-        subscribed_ = true;
-    }
-    else if (subscribed_ && shaderParameterAnimationInfos_.empty())
-    {
-        g_coreSignals.update.Disconnect(this,&Material::HandleAttributeGlobalAnimationUpdate);
-        scene_->attributeAnimationUpdate.Disconnect(this,&Material::HandleAttributeAnimationUpdate);
-        subscribed_ = false;
-    }
-}
-void Material::HandleAttributeGlobalAnimationUpdate(float timeStep) {
-
-}
-/// Update shader parameter animations.
-void Material::HandleAttributeAnimationUpdate(Scene*,float timeStep)
-{
-    // Timestep parameter is same no matter what event is being listened to
-    // Keep weak pointer to self to check for destruction caused by event handling
-    WeakPtr<Object> self(this);
-
-    QStringList finishedNames;
-
-    for (auto &i : shaderParameterAnimationInfos_)
-    {
-        bool finished = ELEMENT_VALUE(i)->Update(timeStep);
-        // If self deleted as a result of an event sent during animation playback, nothing more to do
-        if (self.Expired())
-            return;
-
-        if (finished)
-            finishedNames.push_back(ELEMENT_VALUE(i)->GetName());
-    }
-
-    // Remove finished animations
-    for (const QString &fin_name : finishedNames)
-        SetShaderParameterAnimation(fin_name, nullptr);
-}
 /// Reapply shader defines to technique index. By default reapply all.
 void Material::ApplyShaderDefines(unsigned index)
 {

@@ -274,8 +274,8 @@ bool Engine::Initialize(const VariantMap& parameters)
         Graphics* graphics = context_->m_Graphics.get();
         Renderer* renderer = context_->m_Renderer.get();
 
-        if (HasParameter(parameters, EP_EXTERNAL_WINDOW))
-            graphics->SetExternalWindow(GetParameter(parameters, EP_EXTERNAL_WINDOW).GetVoidPtr());
+        if (HasParameter(parameters, EP_EMBEDDED_WINDOW))
+            graphics->SetEmbeddedWindow();
         graphics->SetWindowTitle(GetParameter(parameters, EP_WINDOW_TITLE, "Urho3D").GetString());
         graphics->SetWindowIcon(cache->GetResource<Image>(GetParameter(parameters, EP_WINDOW_ICON, QString()).GetString()));
         graphics->SetFlushGPU(GetParameter(parameters, EP_FLUSH_GPU, false).GetBool());

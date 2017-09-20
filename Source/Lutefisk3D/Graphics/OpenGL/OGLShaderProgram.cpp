@@ -339,7 +339,7 @@ ShaderVariation* ShaderProgram::GetPixelShader() const
 /// Return whether uses a shader parameter.
 bool ShaderProgram::HasParameter(StringHash param) const
 {
-    return shaderParameters_.contains(param);
+    return hashContains(shaderParameters_,param);
 }
 
 /// Return the info for a shader parameter, or null if does not exist.

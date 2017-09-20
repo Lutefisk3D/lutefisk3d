@@ -64,14 +64,6 @@ namespace Urho3D
 //////////////////////////////////////////////////////////
 template class WeakPtr<Graphics>;
 
-void Graphics::SetExternalWindow(void* window)
-{
-    if (!window_)
-        externalWindow_ = window;
-    else
-        URHO3D_LOGERROR("Window already opened, can not set external window");
-}
-
 void Graphics::SetWindowTitle(const QString& windowTitle)
 {
     windowTitle_ = windowTitle;

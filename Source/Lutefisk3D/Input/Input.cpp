@@ -155,7 +155,7 @@ void Input::Update()
             GainFocus();
 
         // Check for losing focus. The window flags are not reliable when using an external window, so prevent losing focus in that case
-        if (inputFocus_ && !graphics_->GetExternalWindow() && (flags & SDL_WINDOW_INPUT_FOCUS) == 0)
+        if (inputFocus_ && (flags & SDL_WINDOW_INPUT_FOCUS) == 0)
             LoseFocus();
     }
     else
@@ -208,14 +208,14 @@ void Input::Update()
         }
     }
 
-    if (graphics_->GetExternalWindow() || ((!sdlMouseRelative_ && !mouseVisible_ && mouseMode_ != MM_FREE) &&
+    if (graphics_->WeAreEmbedded() || ((!sdlMouseRelative_ && !mouseVisible_ && mouseMode_ != MM_FREE) &&
                                            inputFocus_ && (flags & SDL_WINDOW_MOUSE_FOCUS)))
     {
         const IntVector2 mousePosition = GetMousePosition();
         mouseMove_ = mousePosition - lastMousePosition_;
         mouseMoveScaled_ = true; // Already in backbuffer scale, since GetMousePosition() operates in that
 
-        if (graphics_->GetExternalWindow())
+        if (graphics_->WeAreEmbedded())
             lastMousePosition_ = mousePosition;
         else
         {
@@ -258,7 +258,7 @@ void Input::SetMouseVisible(bool enable, bool suppressEvent)
         if (initialized_)
         {
             // External windows can only support visible mouse cursor
-            if (graphics_->GetExternalWindow())
+            if (graphics_->WeAreEmbedded())
             {
                 mouseVisible_ = true;
                 if (!suppressEvent)
@@ -728,7 +728,7 @@ void Input::Initialize()
     graphics_ = graphics;
 
     // In external window mode only visible mouse is supported
-    if (graphics_->GetExternalWindow())
+    if (graphics_->WeAreEmbedded())
         mouseVisible_ = true;
 
     // Set the initial activation

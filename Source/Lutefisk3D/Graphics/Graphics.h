@@ -88,8 +88,9 @@ public:
     /// Destruct. Release the device context and close the window.
     virtual ~Graphics();
 
-    /// Set external window handle. Only effective before setting the initial screen mode.
-    void SetExternalWindow(void* window);
+    /// Inform graphics that our SDL_Window is wrapped in a toolkit's own window.
+    void SetEmbeddedWindow() { assert(!window_); ourWindowIsEmbedded_=true; }
+    bool WeAreEmbedded() const { return ourWindowIsEmbedded_; }
     /// Set window title.
     void SetWindowTitle(const QString& windowTitle);
     /// Set window icon.
@@ -209,17 +210,11 @@ public:
     void SetDepthStencil(Texture2D* texture);
     /// Set viewport.
     void SetViewport(const IntRect& rect);
-    /// Set blending and alpha-to-coverage modes. Alpha-to-coverage is not supported on Direct3D9.
     void SetBlendMode(BlendMode mode, bool alphaToCoverage = false);
-    /// Set color write on/off.
     void SetColorWrite(bool enable);
-    /// Set hardware culling mode.
     void SetCullMode(CullMode mode);
-    /// Set depth bias.
     void SetDepthBias(float constantBias, float slopeScaledBias);
-    /// Set depth compare.
     void SetDepthTest(CompareMode mode);
-    /// Set depth write on/off.
     void SetDepthWrite(bool enable);
     /// Set polygon fill mode.
     void SetFillMode(FillMode mode);
@@ -246,8 +241,6 @@ public:
     bool IsInitialized() const;
     /// Return graphics implementation, which holds the actual API-specific resources.
     GraphicsImpl* GetImpl() const { return impl_; }
-    /// Return OS-specific external window handle. Null if not in use.
-    void* GetExternalWindow() const { return externalWindow_; }
     /// Return SDL window.
     SDL_Window* GetWindow() const { return window_; }
     /// Return window title.
@@ -322,7 +315,6 @@ public:
     int GetMonitorCount() const;
     /// Return hardware format for a compressed image format, or 0 if unsupported.
     gl::GLenum GetFormat(CompressedFormat format) const;
-    /// Return a shader variation by name and defines.
     ShaderVariation* GetShader(ShaderType type, const QString& name, const QString& defines = QString()) const;
     /// Return a shader variation by name and defines.
     ShaderVariation* GetShader(ShaderType type, const char* name, const char* defines) const;
@@ -542,8 +534,6 @@ private:
     QString windowTitle_;
     /// Window icon image.
     WeakPtr<Image> windowIcon_;
-    /// External window, null if not in use (default.)
-    void* externalWindow_;
     /// Window width in pixels.
     int width_;
     /// Window height in pixels.
@@ -572,6 +562,8 @@ private:
     bool flushGPU_;
     /// sRGB conversion on write flag for the main window.
     bool sRGB_;
+    /// If the window we are managing is embedded inside some UI toolkit
+    bool ourWindowIsEmbedded_;
     /// Light pre-pass rendering support flag.
     bool lightPrepassSupport_;
     /// Deferred rendering support flag.

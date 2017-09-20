@@ -321,7 +321,7 @@ void PhysicsWorld::Update(float timeStep)
             const DelayedWorldTransform& transform(MAP_VALUE(i));
 
             // If parent's transform has already been assigned, can proceed
-            if (!delayedWorldTransforms_.contains(transform.parentRigidBody_))
+            if (!hashContains(delayedWorldTransforms_,transform.parentRigidBody_))
             {
                 transform.rigidBody_->ApplyWorldTransform(transform.worldPosition_, transform.worldRotation_);
                 i = delayedWorldTransforms_.erase(i);
@@ -938,7 +938,7 @@ void PhysicsWorld::SendCollisionEvents()
             WeakPtr<Node> nodeWeakB(nodeB);
 
             bool trigger = bodyA->IsTrigger() || bodyB->IsTrigger();
-            bool newCollision = !previousCollisions_.contains(MAP_KEY(elem));
+            bool newCollision = !hashContains(previousCollisions_,MAP_KEY(elem));
 
             contacts_.clear();
 
@@ -1045,7 +1045,7 @@ void PhysicsWorld::SendCollisionEvents()
         {
             const std::pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> > &elem(elem_pair.first);
 
-            if (!currentCollisions_.contains(elem))
+            if (!hashContains(currentCollisions_,elem))
             {
                 RigidBody* bodyA = elem.first;
                 RigidBody* bodyB = elem.second;

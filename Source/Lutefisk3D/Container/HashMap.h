@@ -63,28 +63,18 @@ public:
         return true;
     }
 };
-
-template <typename T,typename U>
-class HashMap : public std::unordered_map<T,U> {
-    typedef std::unordered_map<T,U> ParentClass;
-public:
-    HashMap() {}
-    typedef typename ParentClass::iterator iterator;
-    typedef typename ParentClass::const_iterator const_iterator;
-
-    constexpr bool contains(const T &v) const { return this->find(v)!=this->cend();}
+template<typename K,typename V>
+class HashMap : public std::unordered_map<K,V>
+{
 };
-template <typename T,typename U>
-class FasterHashMap : public sherwood_map<T,U> {
-    typedef sherwood_map<T,U> ParentClass;
-public:
-    FasterHashMap() {}
-    typedef typename ParentClass::iterator iterator;
-    typedef typename ParentClass::const_iterator const_iterator;
-
-    constexpr bool contains(const T &v) const { return this->find(v)!=this->cend();}
+template<typename K,typename V>
+class FasterHashMap : public sherwood_map<K,V>
+{
 };
-
+template<class CONTAINER,class VAL>
+constexpr bool hashContains(const CONTAINER &c,const VAL &v) {
+    return c.find(v)!=c.end();
+}
 template <typename T>
 class HashSet : public std::unordered_set<T> {
 public:

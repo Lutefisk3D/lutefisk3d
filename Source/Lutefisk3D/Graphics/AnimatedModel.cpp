@@ -1123,7 +1123,7 @@ void AnimatedModel::CloneGeometries()
             unsigned totalBuf = originalBuffers.size();
             for (VertexBuffer* originalBuffer : originalBuffers)
             {
-                if (clonedVertexBuffers.contains(originalBuffer))
+                if (hashContains(clonedVertexBuffers,originalBuffer))
                     ++totalBuf;
             }
             clone->SetNumVertexBuffers(totalBuf);
@@ -1133,7 +1133,7 @@ void AnimatedModel::CloneGeometries()
             {
                 VertexBuffer* originalBuffer = originalBuffers[k];
 
-                if (clonedVertexBuffers.contains(originalBuffer))
+                if (hashContains(clonedVertexBuffers,originalBuffer))
                 {
                     VertexBuffer* clonedBuffer = clonedVertexBuffers[originalBuffer];
                     clone->SetVertexBuffer(l++, originalBuffer);

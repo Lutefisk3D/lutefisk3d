@@ -103,9 +103,6 @@ enum TileMapObjectType2D
 class LUTEFISK3D_EXPORT PropertySet2D : public RefCounted
 {
 public:
-    PropertySet2D();
-    virtual ~PropertySet2D();
-
     /// Load from XML element.
     void Load(const XMLElement& element);
     /// Return has property.

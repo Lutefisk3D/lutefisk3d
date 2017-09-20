@@ -141,7 +141,7 @@ void Cursor::DefineShape(const QString& shape, Image* image, const IntRect& imag
 
     ResourceCache* cache = context_->m_ResourceCache.get();
 
-    if (!shapeInfos_.contains(shape))
+    if (!hashContains(shapeInfos_,shape))
         shapeInfos_[shape] = CursorShapeInfo();
 
     CursorShapeInfo& info = shapeInfos_[shape];
@@ -177,7 +177,7 @@ void Cursor::DefineShape(const QString& shape, Image* image, const IntRect& imag
 
 void Cursor::SetShape(const QString& shape)
 {
-    if (shape == QString::null || shape.isEmpty() || shape_ == shape || !shapeInfos_.contains(shape))
+    if (shape == QString::null || shape.isEmpty() || shape_ == shape || !hashContains(shapeInfos_,shape))
         return;
 
     shape_ = shape;

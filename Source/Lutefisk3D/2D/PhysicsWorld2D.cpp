@@ -557,7 +557,7 @@ void PhysicsWorld2D::Update(float timeStep)
             const DelayedWorldTransform2D& transform = MAP_VALUE(i);
 
             // If parent's transform has already been assigned, can proceed
-            if (!delayedWorldTransforms_.contains(transform.parentRigidBody_))
+            if (!hashContains(delayedWorldTransforms_,transform.parentRigidBody_))
             {
                 transform.rigidBody_->ApplyWorldTransform(transform.worldPosition_, transform.worldRotation_);
                 i = delayedWorldTransforms_.erase(i);

@@ -76,7 +76,7 @@ public:
     /// Return all sound sources.
     const std::vector<SoundSource*>& GetSoundSources() const { return soundSources_; }
     /// Return whether the specified master gain has been defined.
-    bool HasMasterGain(const QString& type) const { return masterGain_.contains(type); }
+    bool HasMasterGain(const QString& type) const { return hashContains(masterGain_,type); }
     void AddSoundSource(SoundSource* soundSource);
     void RemoveSoundSource(SoundSource* soundSource);
     /// Return audio thread mutex.

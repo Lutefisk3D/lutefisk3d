@@ -1077,8 +1077,9 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
             // Intel driver bug
             if (shadowMapUsage == TEXTURE_DEPTHSTENCIL && gl::GL_NONE!=dummyColorFormat)
             {
+                //TODO: consider always referencing shadowmap from colorShadowMaps_[searchKey], and assigning new Texture if it's null ?
                 // If no dummy color rendertarget for this size exists yet, create one now
-                if (!colorShadowMaps_.contains(searchKey))
+                if (!hashContains(colorShadowMaps_,searchKey))
                 {
                     colorShadowMaps_[searchKey] = new Texture2D(m_context);
                     colorShadowMaps_[searchKey]->SetNumLevels(1);

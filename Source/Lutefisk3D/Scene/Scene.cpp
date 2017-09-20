@@ -907,7 +907,7 @@ unsigned Scene::GetFreeNodeID(CreateMode mode)
             else
                 d->replicatedNodeID_ = FIRST_REPLICATED_ID;
 
-            if (!d->replicatedNodes_.contains(ret))
+            if (!hashContains(d->replicatedNodes_,ret))
                 return ret;
         }
     }
@@ -921,7 +921,7 @@ unsigned Scene::GetFreeNodeID(CreateMode mode)
             else
                 d->localNodeID_ = FIRST_LOCAL_ID;
 
-            if (!d->localNodes_.contains(ret))
+            if (!hashContains(d->localNodes_,ret))
                 return ret;
         }
     }
@@ -939,7 +939,7 @@ unsigned Scene::GetFreeComponentID(CreateMode mode)
             else
                 d->replicatedComponentID_ = FIRST_REPLICATED_ID;
 
-            if (!d->replicatedComponents_.contains(ret))
+            if (!hashContains(d->replicatedComponents_,ret))
                 return ret;
         }
     }
@@ -953,7 +953,7 @@ unsigned Scene::GetFreeComponentID(CreateMode mode)
             else
                 d->localComponentID_ = FIRST_LOCAL_ID;
 
-            if (!d->localComponents_.contains(ret))
+            if (!hashContains(d->localComponents_,ret))
                 return ret;
         }
     }

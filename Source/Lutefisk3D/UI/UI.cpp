@@ -1228,7 +1228,7 @@ void UI::ProcessHover(const IntVector2& cursorPos, int buttons, int qualifiers, 
                 element->OnHover(element->ScreenToElement(cursorPos), cursorPos, buttons, qualifiers, cursor);
 
                 // Begin hover event
-                if (!hoveredElements_.contains(element))
+                if (!hashContains(hoveredElements_,element))
                 {
                     IntVector2 relativePos = element->ScreenToElement(cursorPos);
                     element->hoverBegin.Emit(element,cursorPos.x_,cursorPos.y_,relativePos.x_,relativePos.y_);
@@ -1267,7 +1267,7 @@ void UI::ProcessHover(const IntVector2& cursorPos, int buttons, int qualifiers, 
             element->OnHover(element->ScreenToElement(cursorPos), cursorPos, buttons, qualifiers, cursor);
 
             // Begin hover event
-            if (!hoveredElements_.contains(element))
+            if (!hashContains(hoveredElements_,element))
             {
                 IntVector2 relativePos = element->ScreenToElement(cursorPos);
                 element->hoverBegin.Emit(element,cursorPos.x_,cursorPos.y_,relativePos.x_,relativePos.y_);
@@ -1321,7 +1321,7 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
             }
 
             // Handle start of drag. Click handling may have caused destruction of the element, so check the pointer again
-            bool dragElementsContain = dragElements_.contains(element);
+            bool dragElementsContain = hashContains(dragElements_,element);
             if (element && !dragElementsContain)
             {
                 DragData* dragData = new DragData();
@@ -1333,7 +1333,7 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
                 dragData->numDragButtons = CountSetBits(dragData->dragButtons);
                 dragElementsCount_++;
 
-                dragElementsContain = dragElements_.contains(element);
+                dragElementsContain = hashContains(dragElements_,element);
             }
             if (element && dragElementsContain && newButton)
             {
@@ -1634,7 +1634,7 @@ void UI::HandleKeyDown(int key,int ,unsigned buttons,int qualifiers, bool )
     if (key == KEY_ESCAPE && HasModalElement())
     {
         UIElement* element = rootModalElement_->GetChild(rootModalElement_->GetNumChildren() - 1);
-        if (element->GetVars().contains(VAR_ORIGIN))
+        if (hashContains(element->GetVars(),VAR_ORIGIN))
             // If it is a popup, dismiss by defocusing it
             SetFocusElement(nullptr);
         else

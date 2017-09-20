@@ -30,7 +30,7 @@ static const QLatin1String EP_AUTOLOAD_PATHS("AutoloadPaths");
 static const QLatin1String EP_BORDERLESS("Borderless");
 static const QLatin1String EP_DUMP_SHADERS("DumpShaders");
 static const QLatin1String EP_EVENT_PROFILER("EventProfiler");
-static const QLatin1String EP_EXTERNAL_WINDOW("ExternalWindow");
+static const QLatin1String EP_EMBEDDED_WINDOW("EmbeddedWindow");
 static const QLatin1String EP_FLUSH_GPU("FlushGPU");
 static const QLatin1String EP_FRAME_LIMITER("FrameLimiter");
 static const QLatin1String EP_FULL_SCREEN("FullScreen");

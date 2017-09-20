@@ -299,7 +299,7 @@ bool JSONValue::Contains(const QString& key) const
     if  (GetValueType() != JSON_OBJECT)
         return false;
 
-    return objectValue_->contains(key);
+    return hashContains(*objectValue_,key);
 }
 
 void JSONValue::Clear()

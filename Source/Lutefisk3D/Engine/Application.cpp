@@ -98,7 +98,7 @@ void Application::ErrorExit(const QString& message)
     if (message.isEmpty())
     {
         ErrorDialog(m_appName, startupErrors_.length() ? startupErrors_ :
-            "Application has been terminated due to unexpected error.");
+                                                         "Application has been terminated due to unexpected error.");
     }
     else
         ErrorDialog(m_appName, message);

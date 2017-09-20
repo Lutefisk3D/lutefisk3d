@@ -1867,7 +1867,7 @@ void View::RenderQuad(RenderPathCommand& command)
             continue;
 
         StringHash nameHash(rtInfo.name_);
-        if (!d->renderTargets_.contains(nameHash))
+        if (!hashContains(d->renderTargets_,nameHash))
             continue;
 
         QString invSizeName = rtInfo.name_ + "InvSize";
@@ -3108,7 +3108,7 @@ Texture *View::FindNamedTexture(const QString &name, bool isRenderTarget, bool i
 {
     // Check rendertargets first
     StringHash nameHash(name);
-    if (d->renderTargets_.contains(nameHash))
+    if (hashContains(d->renderTargets_,nameHash))
         return d->renderTargets_[nameHash];
 
     // Then the resource system

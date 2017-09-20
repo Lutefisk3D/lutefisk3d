@@ -136,14 +136,6 @@ bool TileMapInfo2D::PositionToTileIndex(int& x, int& y, const Vector2& position)
     return x >= 0 && x < width_ && y >= 0 && y < height_;
 }
 
-PropertySet2D::PropertySet2D()
-{
-}
-
-PropertySet2D::~PropertySet2D()
-{
-}
-
 void PropertySet2D::Load(const XMLElement& element)
 {
     assert(element.GetName() == "properties");
@@ -153,7 +145,7 @@ void PropertySet2D::Load(const XMLElement& element)
 
 bool PropertySet2D::HasProperty(const QString& name) const
 {
-    return nameToValueMapping_.contains(name);
+    return hashContains(nameToValueMapping_,name);
 }
 
 const QString& PropertySet2D::GetProperty(const QString& name) const

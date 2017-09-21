@@ -32,10 +32,8 @@
 #include "Lutefisk3D/Resource/XMLFile.h"
 
 using namespace gl;
-
 namespace Urho3D
 {
-template class HashMap<TextureUnit, SharedPtr<Texture> >;
 static const char* addressModeNames[] =
 {
     "wrap",

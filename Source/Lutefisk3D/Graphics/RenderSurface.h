@@ -26,10 +26,6 @@
 #include "Lutefisk3D/Container/Ptr.h"
 #include <memory>
 
-namespace gl {
-enum class GLenum : uint32_t;
-}
-
 namespace Urho3D
 {
 class Viewport;
@@ -67,7 +63,7 @@ public:
     /// Mark the GPU resource destroyed on graphics context destruction. Only used on OpenGL.
     void OnDeviceLost();
     /// Create renderbuffer that cannot be sampled as a texture. Only used on OpenGL.
-    bool CreateRenderBuffer(unsigned width, unsigned height, gl::GLenum format, int multiSample);
+    bool CreateRenderBuffer(unsigned width, unsigned height, uint32_t format, int multiSample);
 
     /// Return width.
     int GetWidth() const;
@@ -99,7 +95,7 @@ public:
     Texture* GetParentTexture() const { return parentTexture_; }
 
     /// Return surface's OpenGL target.
-    gl::GLenum GetTarget() const { return target_; }
+    uint32_t GetTarget() const { return target_; }
 
     /// Return OpenGL renderbuffer if created.
     unsigned GetRenderBuffer() const { return renderBuffer_; }
@@ -116,7 +112,7 @@ private:
     /// OpenGL renderbuffer name.
     unsigned renderBuffer_=0;
     /// OpenGL target.
-    gl::GLenum target_;
+    uint32_t target_;
     /// Update mode for viewports.
     RenderSurfaceUpdateMode updateMode_;
     /// Update queued flag.

@@ -340,7 +340,7 @@ bool FontFaceBitmap::Save(Serializer& dest, int pointSize, const QString& indent
     return xml->Save(dest, indentation);
 }
 
-unsigned FontFaceBitmap::ConvertFormatToNumComponents(gl::GLenum format)
+unsigned FontFaceBitmap::ConvertFormatToNumComponents(uint32_t format)
 {
     if (format == Graphics::GetRGBAFormat())
         return 4;

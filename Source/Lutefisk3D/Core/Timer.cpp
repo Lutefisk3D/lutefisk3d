@@ -110,7 +110,7 @@ void Time::BeginFrame(float timeStep)
     {
         URHO3D_PROFILE_CTX(m_context,BeginFrame);
         // Frame begin event
-        g_coreSignals.beginFrame.Emit(frameNumber_,timeStep_);
+        g_coreSignals.beginFrame(frameNumber_,timeStep_);
     }
 }
 
@@ -118,7 +118,7 @@ void Time::EndFrame()
 {
     {
         URHO3D_PROFILE_CTX(m_context,EndFrame);
-        g_coreSignals.endFrame.Emit();
+        g_coreSignals.endFrame();
     }
 
     Profiler* profiler = m_context->m_ProfilerSystem.get();

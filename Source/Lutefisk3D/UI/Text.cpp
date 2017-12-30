@@ -46,7 +46,7 @@ const char* textEffects[] =
 };
 
 static const float MIN_ROW_SPACING = 0.5f;
-
+template class SharedPtr<Text>;
 extern const char* horizontalAlignments[];
 extern const char* UI_CATEGORY;
 
@@ -738,7 +738,7 @@ void Text::UpdateCharLocations()
             {
                 // Store glyph's location for rendering. Verify that glyph page is valid
                 if (glyph->page_ < pageGlyphLocations_.size())
-                    pageGlyphLocations_[glyph->page_].push_back(GlyphLocation(x, y, glyph));
+                    pageGlyphLocations_[glyph->page_].emplace_back(GlyphLocation{x, y, glyph});
                 x += glyph->advanceX_;
                 if (i < printText_.size() - 1)
                     x += face->GetKerning(c.unicode(), printText_[i + 1].unicode());

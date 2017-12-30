@@ -108,6 +108,21 @@ void Thread::SetPriority(int priority)
         pthread_setschedprio(*thread, priority);
 #endif
 }
+
+ThreadID Thread::ThreadId() const
+{
+#ifdef _WIN32
+    if (handle_)
+        return ::GetThreadId(handle_);
+#elif defined(__linux__)
+    if (handle_)
+    {
+        pthread_t *thread = (pthread_t *)handle_;
+        return *thread;
+    }
+#endif
+    return 0;
+}
 /// Set the current thread as the main thread.
 void Thread::SetMainThread()
 {

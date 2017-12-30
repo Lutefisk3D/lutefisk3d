@@ -54,9 +54,9 @@ public:
     static void RegisterObject(Context* context);
 
     /// Handle startup. Called by LogicComponent base class.
-    virtual void Start() override;
+    void Start() override;
     /// Handle physics world update. Called by LogicComponent base class.
-    virtual void FixedUpdate(float timeStep) override;
+    void FixedUpdate(float timeStep) override;
 
     /// Movement controls. Assigned by the main program each frame.
     Controls controls_;

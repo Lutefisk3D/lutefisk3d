@@ -30,7 +30,8 @@
 #include <algorithm>
 
 using namespace Urho3D;
-template class Urho3D::SharedPtr<Urho3D::Object>;
+template class LUTEFISK3D_EXPORT SharedPtr<Object>;
+
 namespace
 {
 /// Template implementation of the event handler invoke helper (std::function instance).

@@ -207,7 +207,7 @@ void Decals::MoveCamera(float timeStep)
     // Right mouse button controls mouse cursor visibility: hide when pressed
     UI* ui = m_context->m_UISystem.get();
     Input* input = m_context->m_InputSystem.get();
-    ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MOUSEB_RIGHT));
+    ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MouseButton::RIGHT));
 
     // Do not move if the UI has a focused element (the console)
     if (ui->GetFocusElement())
@@ -246,7 +246,7 @@ void Decals::MoveCamera(float timeStep)
         drawDebug_ = !drawDebug_;
 
     // Paint decal with the left mousebutton; cursor must be visible
-    if (ui->GetCursor()->IsVisible() && input->GetMouseButtonPress(MOUSEB_LEFT))
+    if (ui->GetCursor()->IsVisible() && input->GetMouseButtonPress(MouseButton::LEFT))
         PaintDecal();
 }
 

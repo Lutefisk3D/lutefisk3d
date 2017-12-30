@@ -43,7 +43,7 @@ public:
     /// Return UI rendering batches.
     virtual void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor) override;
     /// React to mouse click begin.
-    virtual void OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor) override;
+    virtual void OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor) override;
     /// React to a key press.
     virtual void OnKey(int key, int buttons, int qualifiers) override;
 

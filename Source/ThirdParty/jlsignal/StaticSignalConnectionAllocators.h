@@ -6,7 +6,7 @@
 
 namespace jl {
 
-typedef Signal<void> TDummySignal;
+typedef Signal<> TDummySignal;
 
 template< unsigned _Size >
 class StaticSignalConnectionAllocator : public StaticObjectPoolAllocator< TDummySignal::eAllocationSize, _Size >

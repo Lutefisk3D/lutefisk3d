@@ -49,11 +49,13 @@
 
 namespace Urho3D
 {
-template class HashMap<StringHash, MaterialShaderParameter>;
+template class LUTEFISK3D_EXPORT HashMap<StringHash, MaterialShaderParameter>;
+template class LUTEFISK3D_EXPORT SharedPtr<Material>;
 
 struct MaterialPrivate : public jl::SignalObserver
 {
-    MaterialPrivate(Material *p) : parent(p) {}
+    MaterialPrivate(Material *p,Context *ctx) : SignalObserver(ctx->m_observer_allocator),
+        parent(p) {}
 
     /// %Shader parameters animation infos.
     HashMap<StringHash, SharedPtr<ShaderParameterAnimationInfo> > shaderParameterAnimationInfos_;
@@ -270,7 +272,8 @@ void ShaderParameterAnimationInfo::ApplyValue(const Variant& newValue)
 
 Material::Material(Context* context) :
     Resource(context),
-    d(new MaterialPrivate(this)),
+    SignalObserver(context->m_observer_allocator),
+    d(new MaterialPrivate(this, context)),
     auxViewFrameNumber_(0),
     shaderParameterHash_(0),
     alphaToCoverage_(false),

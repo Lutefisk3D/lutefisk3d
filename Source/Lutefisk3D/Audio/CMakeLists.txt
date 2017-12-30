@@ -21,11 +21,9 @@ set(SOURCE
 )
 
 install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Audio )
-set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} SDL2_LIB STB PARENT_SCOPE)
+set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} openal_IMP STB PARENT_SCOPE)
 set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} PARENT_SCOPE)
 
 if(UNIT_TESTING)
-#add_lutefisk_test(AttributeTests)
-#add_lutefisk_test(ContextTests)
 endif()
 

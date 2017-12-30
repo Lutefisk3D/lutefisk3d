@@ -52,7 +52,11 @@ class Profiler;
 class EventProfiler;
 class Renderer;
 class WorkQueue;
-
+enum OSInterfaceFlags {
+    GFX_SYS = 1,
+    INPUT_SYS = 2,
+    AUDIO_SYS = 4,
+};
 template<class T> class ObjectFactoryImpl;
 template<class U,class V> class HashMap;
 template<class T> class SharedPtr;
@@ -93,8 +97,6 @@ public:
     void RemoveAttribute(StringHash objectType, const char* name);
     void UpdateAttributeDefaultValue(StringHash objectType, const char* name, const Variant& defaultValue);
     HashMap<StringHash, Variant>& GetEventDataMap();
-    bool RequireSDL(unsigned int sdlFlags);
-    void ReleaseSDL();
 
     void CopyBaseAttributes(StringHash baseType, StringHash derivedType);
 
@@ -134,6 +136,7 @@ private:
     std::unique_ptr<ContextPrivate> d;
     std::vector<Object*> eventSenders_;
     EventHandler* eventHandler_=nullptr;
+    uint32_t initializedOSInterfaces_=0; //OSInterfaceFlags
 };
 
 class Context_EventGuard

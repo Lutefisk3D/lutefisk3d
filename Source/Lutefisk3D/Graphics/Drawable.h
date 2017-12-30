@@ -24,6 +24,7 @@
 
 #include "Lutefisk3D/Math/BoundingBox.h"
 #include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/Graphics/Material.h"
 
 namespace Urho3D
 {
@@ -53,7 +54,7 @@ class RayOctreeQuery;
 class Zone;
 struct RayQueryResult;
 struct WorkItem;
-
+extern template class SharedPtr<Material>;
 /// Geometry update type.
 enum UpdateGeometryType
 {
@@ -78,6 +79,7 @@ struct FrameInfo
 /// Source data for a 3D geometry draw call.
 struct LUTEFISK3D_EXPORT SourceBatch
 {
+    SourceBatch();
     ~SourceBatch();
     float distance_=0;              //!< Distance from camera.
     Geometry * geometry_=nullptr;   //!< Geometry.

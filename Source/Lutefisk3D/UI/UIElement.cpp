@@ -555,7 +555,7 @@ bool UIElement::FilterAttributes(XMLElement& dest) const
 void UIElement::SetName(const QString& name)
 {
     name_ = name;
-    nameChanged.Emit(this);
+    nameChanged(this);
 }
 
 void UIElement::SetPosition(const IntVector2& position)
@@ -606,7 +606,7 @@ void UIElement::SetSize(const IntVector2& size)
             OnResize(size_, delta);
             UpdateLayout();
 
-            resized.Emit(this,size_.x_,size_.y_,delta.x_,delta.y_);
+            resized(this,size_.x_,size_.y_,delta.x_,delta.y_);
         }
     }
 
@@ -1219,7 +1219,7 @@ void UIElement::UpdateLayout()
                 children_[i]->UpdateAnchoring();
         }
     }
-    layoutUpdated.Emit(this);
+    layoutUpdated(this);
     EnableLayoutUpdate();
 }
 

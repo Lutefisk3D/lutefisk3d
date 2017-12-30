@@ -3,7 +3,7 @@ project(Lutefisk3D CXX C)
 #SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
 #set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "/usr/bin/time -f \"%E : %C -> Inputs %I, Outputs %O\"")
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH})
-
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include(cotire)
 set(COTIRE_ADD_UNITY_BUILD FALSE)
 ADD_DEFINITIONS(-D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS)
@@ -27,6 +27,8 @@ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Qt5Core 5.8.0)
 find_package(Qt5Xml  5.8.0)
 find_package(Qt5Gui  5.8.0)
+find_package(Qt5Widgets  5.8.0) # only used to display message box in one place.. consider removal ?
+find_package(Qt5Quick 5.8.0) # only used if QUI is selected
 find_package(Threads REQUIRED)
 
 set(LUTEFISK3D_AS_DLLS TRUE)

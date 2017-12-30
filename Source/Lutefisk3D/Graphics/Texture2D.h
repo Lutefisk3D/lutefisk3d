@@ -48,7 +48,7 @@ public:
     void OnDeviceReset() override;
     /// Release the texture.
     virtual void Release() override;
-    bool SetSize(int width, int height, gl::GLenum format, TextureUsage usage = TEXTURE_STATIC, int multiSample = 1, bool autoResolve = true);
+    bool SetSize(int width, int height, uint32_t format, TextureUsage usage = TEXTURE_STATIC, int multiSample = 1, bool autoResolve = true);
     bool SetData(unsigned level, int x, int y, int width, int height, const void* data);
     bool SetData(Image *image, bool useAlpha = false);
     bool GetData(unsigned level, void* dest) const;

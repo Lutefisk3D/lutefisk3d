@@ -104,7 +104,7 @@ void View3D::SetView(Scene* scene, Camera* camera, bool ownScene)
     QueueUpdate();
 }
 
-void View3D::SetFormat(gl::GLenum format)
+void View3D::SetFormat(uint32_t format)
 {
     if (format != rttFormat_)
     {
@@ -159,11 +159,11 @@ void View3D::ResetScene()
     {
         RefCount* refCount = scene_->RefCountPtr();
         ++refCount->refs_;
-        scene_ = 0;
+        scene_ = nullptr;
         --refCount->refs_;
     }
     else
-        scene_ = 0;
+        scene_ = nullptr;
 }
 
 void View3D::HandleRenderSurfaceUpdate()

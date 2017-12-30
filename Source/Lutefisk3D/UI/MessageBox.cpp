@@ -37,6 +37,7 @@ namespace Urho3D
 
 MessageBox::MessageBox(Context* context, const QString& messageString, const QString& titleString, XMLFile* layoutFile, XMLFile* styleFile) :
     Object(context),
+    SignalObserver(context->m_observer_allocator),
     window_(nullptr),
     titleText_(nullptr),
     messageText_(nullptr),
@@ -131,12 +132,12 @@ const QString& MessageBox::GetMessage() const
 }
 void MessageBox::HandleModalChange(UIElement *,bool ) {
     //TODO: this assumes any change in modality shoud ACK the dialog
-    messageACK.Emit(false);
+    messageACK(false);
     ReleaseRef();
 }
 void MessageBox::HandleMessageAcknowledged(UIElement *elem)
 {
-    messageACK.Emit(elem == okButton_);
+    messageACK(elem == okButton_);
     // Self destruct
     ReleaseRef();
 }

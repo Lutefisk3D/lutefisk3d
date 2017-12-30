@@ -108,19 +108,19 @@ void UIComponent::OnNodeSet(Node* node)
     }
     else
     {
-        model_->SetMaterial(0);
+        model_->SetMaterial(nullptr);
         if (isStaticModelOwned_)
         {
             model_->GetNode()->RemoveComponent<StaticModel>();
             isStaticModelOwned_ = false;
         }
-        model_ = 0;
+        model_ = nullptr;
     }
 
     UI* ui = context_->m_UISystem.get();
     // May be null on shutdown
     if (ui)
-        ui->SetRenderToTexture(this, node != 0);
+        ui->SetRenderToTexture(this, node != nullptr);
 }
 
 void UIComponent::OnElementResized(UIElement *res,int width,int height,int dx,int dy)

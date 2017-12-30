@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Graphics/Drawable.h"
+#include "Lutefisk3D/Graphics/Texture.h"
 #include "Lutefisk3D/Graphics/BiasParameters.h"
 namespace Urho3D
 {

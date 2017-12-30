@@ -18,8 +18,8 @@ namespace ssvu
         class AnyClass {};
         using AnyPtrThis = AnyClass*;
         using AnyPtrFunc = void(AnyClass::*)();
-        template<typename TReturn = void, typename... TArgs> using AnyPtrFuncT = TReturn(AnyClass::*)(TArgs...);
-        template<typename TReturn = void, typename... TArgs> using AnyPtrStaticFuncT = TReturn(*)(TArgs...);
+        template<typename... TArgs> using AnyPtrFuncT = void(AnyClass::*)(TArgs...);
+        template<typename... TArgs> using AnyPtrStaticFuncT = void(*)(TArgs...);
 
         constexpr std::size_t SingleMemFuncPtrSize{sizeof(void(AnyClass::*)())};
 
@@ -35,7 +35,7 @@ namespace ssvu
             inline static AnyPtrThis convert(const TThis*, TFunc, AnyPtrFunc&) noexcept
             {
                 static_assert(false, "Unsupported member function pointer on this compiler");
-                return 0;
+                return nullptr;
             }
         };
         template<>
@@ -149,12 +149,12 @@ namespace ssvu
             }
         };
 
-        template<typename TReturn, typename... TArgs>
+        template<typename... TArgs>
         struct Closure
         {
         private:
-            using PtrFuncT = AnyPtrFuncT<TReturn, TArgs...>;
-            using PtrStaticFuncT = AnyPtrStaticFuncT<TReturn, TArgs...>;
+            using PtrFuncT = AnyPtrFuncT<TArgs...>;
+            using PtrStaticFuncT = AnyPtrStaticFuncT<TArgs...>;
             AnyPtrThis ptrThis{nullptr};
             AnyPtrFunc ptrFunction{nullptr};
 
@@ -181,14 +181,14 @@ namespace ssvu
             inline PtrStaticFuncT getStaticFunc() const noexcept		{ return horrible_cast<PtrStaticFuncT>(this); }
         };
 
-        template<typename TReturn, typename... TArgs>
+        template<typename... TArgs>
         class FastFuncImpl
         {
         protected:
-            using PtrStaticFuncT = AnyPtrStaticFuncT<TReturn, TArgs...>;
+            using PtrStaticFuncT = AnyPtrStaticFuncT<TArgs...>;
         private:
-            Closure<TReturn, TArgs...> closure;
-            inline TReturn invokeStaticFunc(TArgs... mArgs) const { return (*(closure.getStaticFunc()))(std::forward<TArgs>(mArgs)...); }
+            Closure<TArgs...> closure;
+            inline void invokeStaticFunc(TArgs... mArgs) const { (*(closure.getStaticFunc()))(std::forward<TArgs>(mArgs)...); }
 
         protected:
             template<class TThis, class TFunc> inline void bind(TThis* mThis, TFunc mFunc) noexcept { closure.bind(mThis, mFunc); }
@@ -202,7 +202,7 @@ namespace ssvu
 
 
             inline FastFuncImpl& operator=(PtrStaticFuncT mFunc) noexcept	{ bind(mFunc); return *this;}
-            inline TReturn operator()(TArgs... mArgs) const					{ return (closure.getPtrThis()->*(closure.getPtrFunction()))(std::forward<TArgs>(mArgs)...); }
+            inline void operator()(TArgs... mArgs) const					{ (closure.getPtrThis()->*(closure.getPtrFunction()))(std::forward<TArgs>(mArgs)...); }
 
             inline bool operator==(std::nullptr_t) const noexcept				{ return closure == nullptr; }
             inline bool operator==(const FastFuncImpl& mImpl) const noexcept	{ return closure == mImpl.closure; }
@@ -216,19 +216,19 @@ namespace ssvu
     }
 
     template<typename T> struct MemFuncToFunc;
-    template<typename TReturn, typename TThis, typename... TArgs> struct MemFuncToFunc<TReturn(TThis::*)(TArgs...) const> { using Type = TReturn(*)(TArgs...); };
+    template<typename TThis, typename... TArgs> struct MemFuncToFunc<void(TThis::*)(TArgs...) const> { using Type = void(*)(TArgs...); };
 
     #define ENABLE_IF_CONV_TO_FUN_PTR(x)		typename std::enable_if<std::is_constructible<typename MemFuncToFunc<decltype(&std::decay<x>::type::operator())>::Type, x>::value>::type* = nullptr
     #define ENABLE_IF_NOT_CONV_TO_FUN_PTR(x)	typename std::enable_if<!std::is_constructible<typename MemFuncToFunc<decltype(&std::decay<x>::type::operator())>::Type, x>::value>::type* = nullptr
     #define ENABLE_IF_SAME_TYPE(x, y)			typename = typename std::enable_if<!std::is_same<x, typename std::decay<y>::type>{}>::type
 
     template<typename T> class FastFunc;
-    template<typename TReturn, typename... TArgs>
-    class FastFunc<TReturn(TArgs...)>
-        : public Internal::FastFuncImpl<TReturn, TArgs...>
+    template<typename... TArgs>
+    class FastFunc<void(TArgs...)>
+        : public Internal::FastFuncImpl<TArgs...>
     {
     private:
-        using BaseType = Internal::FastFuncImpl<TReturn, TArgs...>;
+        using BaseType = Internal::FastFuncImpl<TArgs...>;
         std::shared_ptr<void> storage;
         template<typename T> inline static void funcDeleter(void* mPtr) { static_cast<T*>(mPtr)->~T(); operator delete(mPtr); }
 
@@ -270,8 +270,8 @@ namespace ssvu
         class AnyClass;
         using AnyPtrThis = AnyClass*;
         using AnyPtrFunc = void(AnyClass::*)();
-        template<typename TReturn = void, typename... TArgs> using AnyPtrFuncT = TReturn(AnyClass::*)(TArgs...);
-        template<typename TReturn = void, typename... TArgs> using AnyPtrStaticFuncT = TReturn(*)(TArgs...);
+        template<typename... TArgs> using AnyPtrFuncT = void(AnyClass::*)(TArgs...);
+        template<typename... TArgs> using AnyPtrStaticFuncT = void(*)(TArgs...);
 
         constexpr std::size_t SingleMemFuncPtrSize{ sizeof(void(AnyClass::*)()) };
 
@@ -279,7 +279,7 @@ namespace ssvu
         template<class TOut, class TIn> inline TOut horrible_cast(TIn mIn) noexcept{ HorribleUnion<TOut, TIn> u; static_assert(sizeof(TIn) == sizeof(u) && sizeof(TIn) == sizeof(TOut), "Cannot use horrible_cast<>"); u.in = mIn; return u.out; }
         template<class TOut, class TIn> inline TOut unsafe_horrible_cast(TIn mIn) noexcept{ HorribleUnion<TOut, TIn> u; u.in = mIn; return u.out; }
 
-            template<std::size_t TN>
+        template<std::size_t TN>
         struct SimplifyMemFunc
         {
             template<class TThis, class TFunc>
@@ -300,12 +300,12 @@ namespace ssvu
             }
         };
 
-        template<typename TReturn, typename... TArgs>
+        template<typename... TArgs>
         struct Closure
         {
         private:
-            using PtrFuncT = AnyPtrFuncT<TReturn, TArgs...>;
-            using PtrStaticFuncT = AnyPtrStaticFuncT<TReturn, TArgs...>;
+            using PtrFuncT = AnyPtrFuncT<TArgs...>;
+            using PtrStaticFuncT = AnyPtrStaticFuncT<TArgs...>;
             AnyPtrThis ptrThis{ nullptr };
             AnyPtrFunc ptrFunction{ nullptr };
 
@@ -332,13 +332,13 @@ namespace ssvu
             inline PtrStaticFuncT getStaticFunc() const noexcept{ return horrible_cast<PtrStaticFuncT>(this); }
         };
 
-        template<typename TReturn, typename... TArgs>
+        template<typename... TArgs>
         class FastFuncImpl
         {
         private:
-            using PtrStaticFuncT = AnyPtrStaticFuncT<TReturn, TArgs...>;
-            Closure<TReturn, TArgs...> closure;
-            inline TReturn invokeStaticFunc(TArgs... mArgs) const { return (*(closure.getStaticFunc()))(std::forward<TArgs>(mArgs)...); }
+            using PtrStaticFuncT = AnyPtrStaticFuncT<TArgs...>;
+            Closure<TArgs...> closure;
+            inline void invokeStaticFunc(TArgs... mArgs) const { (*(closure.getStaticFunc()))(std::forward<TArgs>(mArgs)...); }
 
         protected:
             template<class TThis, class TFunc> inline void bind(TThis* mThis, TFunc mFunc) noexcept{ closure.bind(mThis, mFunc); }
@@ -352,7 +352,7 @@ namespace ssvu
 
 
             inline FastFuncImpl& operator=(PtrStaticFuncT mFunc) noexcept{ bind(mFunc); return *this; }
-            inline TReturn operator()(TArgs... mArgs) const					{ return (closure.getPtrThis()->*(closure.getPtrFunction()))(std::forward<TArgs>(mArgs)...); }
+            inline void operator()(TArgs... mArgs) const					{ (closure.getPtrThis()->*(closure.getPtrFunction()))(std::forward<TArgs>(mArgs)...); }
 
             inline bool operator==(std::nullptr_t) const noexcept{ return closure == nullptr; }
             inline bool operator==(const FastFuncImpl& mImpl) const noexcept{ return closure == mImpl.closure; }
@@ -367,19 +367,19 @@ namespace ssvu
 
     template<typename T> struct MemFuncToFunc;
     template<typename TReturn, typename TThis, typename... TArgs>
-    struct MemFuncToFunc<TReturn(TThis::*)(TArgs...) const> { using Type = TReturn(*)(TArgs...); };
+    struct MemFuncToFunc<TReturn(TThis::*)(TArgs...) const> { using Type = void(*)(TArgs...); };
 
 #define ENABLE_IF_CONV_TO_FUN_PTR(x)        typename std::enable_if<std::is_constructible<typename MemFuncToFunc<decltype(&std::decay<x>::type::operator())>::Type, x>::value>::type* = nullptr
 #define ENABLE_IF_NOT_CONV_TO_FUN_PTR(x)	typename std::enable_if<!std::is_constructible<typename MemFuncToFunc<decltype(&std::decay<x>::type::operator())>::Type, x>::value>::type* = nullptr
 #define ENABLE_IF_SAME_TYPE(x, y)	typename = typename std::enable_if<!std::is_same<x, typename std::decay<y>::type>{}>::type
 
     template<typename T> class FastFunc;
-    template<typename TReturn, typename... TArgs>
-    class FastFunc<TReturn(TArgs...)>
-        : public Internal::FastFuncImpl<TReturn, TArgs...>
+    template<typename... TArgs>
+    class FastFunc<void(TArgs...)>
+        : public Internal::FastFuncImpl<TArgs...>
     {
     private:
-        using BaseType = Internal::FastFuncImpl<TReturn, TArgs...>;
+        using BaseType = Internal::FastFuncImpl<TArgs...>;
         std::shared_ptr<void> storage;
         template<typename T> inline static void funcDeleter(void* mPtr) { static_cast<T*>(mPtr)->~T(); operator delete(mPtr); }
 

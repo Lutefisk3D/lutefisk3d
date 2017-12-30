@@ -55,7 +55,7 @@ public:
     virtual void Release() override;
 
     /// Set size, format and usage. Zero size will follow application window size. Return true if successful.
-    bool SetSize(int width, int height, int depth, gl::GLenum format, TextureUsage usage = TEXTURE_STATIC);
+    bool SetSize(int width, int height, int depth, uint32_t format, TextureUsage usage = TEXTURE_STATIC);
     /// Set data either partially or fully on a mip level. Return true if successful.
     bool SetData(unsigned level, int x, int y, int z, int width, int height, int depth, const void* data);
     /// Set data from an image. Return true if successful. Optionally make a single channel image alpha-only.

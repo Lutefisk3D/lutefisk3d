@@ -30,6 +30,7 @@ namespace Urho3D
 class Component; class PhysicsWorld;
 class Node;
 class RigidBody;
+using NodeID = void *;
 struct PhysicsSignals
 {
     jl::ScopedAllocator *m_allocator;
@@ -53,11 +54,11 @@ struct PhysicsSignals
     /// Physics collision ended. Global event sent by the PhysicsWorld.
     PhysicsCollisionEnd collisionEnd;
     /// Node's physics collision started. Source is a nodes participating in a collision.
-    HashMap<void *, NodeCollision> nodeCollisionStart;
+    HashMap<NodeID, NodeCollision> nodeCollisionStart;
     /// Node's physics collision ongoing. Sent by scene nodes participating in a collision.
-    HashMap<void *, NodeCollision> nodeCollision;
+    HashMap<NodeID, NodeCollision> nodeCollision;
     /// Node's physics collision ended. Sent by scene nodes participating in a collision.
-    HashMap<void *, NodeCollisionEnd> nodeCollisionEnd;
+    HashMap<NodeID, NodeCollisionEnd> nodeCollisionEnd;
 
     template <class Y,class X>
     void connectNodeCollision(void *src, Y *pObject,

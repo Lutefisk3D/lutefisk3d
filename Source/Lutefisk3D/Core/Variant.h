@@ -362,7 +362,7 @@ public:
     }
 
     /// Assign from unsigned 64 bit integer.
-    Variant& operator =(unsigned long long rhs)
+    Variant& operator =(uint64_t rhs)
     {
         SetType(VAR_INT64);
         *reinterpret_cast<long long*>(&value_) = (long long)rhs;
@@ -581,7 +581,7 @@ public:
     bool operator ==(long long rhs) const { return type_ == VAR_INT64 ? *reinterpret_cast<const long long*>(&value_.int_) == rhs : false; }
 
     /// Test for equality with an unsigned integer. To return true, both the type and value must match.
-    bool operator ==(unsigned long long rhs) const { return type_ == VAR_INT64 ? *reinterpret_cast<const unsigned long long*>(&value_.int_) == (int)rhs : false; }
+    bool operator ==(uint64_t rhs) const { return type_ == VAR_INT64 ? *reinterpret_cast<const uint64_t*>(&value_.int_) == (int)rhs : false; }
     bool operator == (bool rhs) const { return type_ == VAR_BOOL ? value_.bool_ == rhs : false; }
     /// Test for equality with a float. To return true, both the type and value must match.
     bool operator == (float rhs) const { return type_ == VAR_FLOAT ? value_.float_ == rhs : false; }
@@ -664,7 +664,7 @@ public:
     /// Test for inequality with an 64 bit integer.
     bool operator !=(long long rhs) const { return !(*this == rhs); }
     /// Test for inequality with an unsigned 64 bit integer.
-    bool operator !=(unsigned long long rhs) const { return !(*this == rhs); }
+    bool operator !=(uint64_t rhs) const { return !(*this == rhs); }
     /// Test for inequality with a bool.
     bool operator != (bool rhs) const { return !(*this == rhs); }
     /// Test for inequality with a float.
@@ -753,16 +753,16 @@ public:
     }
 
     /// Return unsigned 64 bit int or zero on type mismatch. Floats and doubles are converted.
-    unsigned long long GetUInt64() const
+    uint64_t GetUInt64() const
     {
         if (type_ == VAR_INT64)
-            return *(reinterpret_cast<const unsigned long long*>(&value_));
+            return *(reinterpret_cast<const uint64_t*>(&value_));
         else if (type_ == VAR_INT)
-            return static_cast<unsigned long long>(value_.int_);
+            return static_cast<uint64_t>(value_.int_);
         else if (type_ == VAR_FLOAT)
-            return (unsigned long long)value_.float_;
+            return (uint64_t)value_.float_;
         else if (type_ == VAR_DOUBLE)
-            return (unsigned long long)*reinterpret_cast<const double*>(&value_);
+            return (uint64_t)*reinterpret_cast<const double*>(&value_);
         else
             return 0;
     }
@@ -929,7 +929,7 @@ template<typename T> constexpr VariantType GetVariantType();
 template<> constexpr VariantType GetVariantType<int>() { return VAR_INT; }
 template<> constexpr VariantType GetVariantType<unsigned>() { return VAR_INT; }
 template<> constexpr VariantType GetVariantType<long long>() { return VAR_INT64; }
-template<> constexpr VariantType GetVariantType<unsigned long long>() { return VAR_INT64; }
+template<> constexpr VariantType GetVariantType<uint64_t>() { return VAR_INT64; }
 template<> constexpr VariantType GetVariantType<bool>() { return VAR_BOOL; }
 template<> constexpr VariantType GetVariantType<float>() { return VAR_FLOAT; }
 template<> constexpr VariantType GetVariantType<double>() { return VAR_DOUBLE; }

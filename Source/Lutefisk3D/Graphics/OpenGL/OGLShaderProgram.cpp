@@ -27,7 +27,7 @@
 #include "../../Graphics/ShaderVariation.h"
 #include "../../IO/Log.h"
 
-using namespace gl;
+#include <GL/glew.h>
 
 namespace Urho3D
 {
@@ -95,7 +95,7 @@ void ShaderProgram::Release()
         if (graphics_->GetShaderProgram() == this)
             graphics_->SetShaders(nullptr, nullptr);
 
-        gl::glDeleteProgram(object_);
+        glDeleteProgram(object_);
     }
 
     object_ = 0;
@@ -119,26 +119,26 @@ bool ShaderProgram::Link()
     if (!vertexShader_ || !pixelShader_ || !vertexShader_->GetGPUObject() || !pixelShader_->GetGPUObject())
         return false;
 
-    object_ = gl::glCreateProgram();
+    object_ = glCreateProgram();
     if (!object_)
     {
         linkerOutput_ = "Could not create shader program";
         return false;
     }
 
-    gl::glAttachShader(object_, vertexShader_->GetGPUObject());
-    gl::glAttachShader(object_, pixelShader_->GetGPUObject());
-    gl::glLinkProgram(object_);
+    glAttachShader(object_, vertexShader_->GetGPUObject());
+    glAttachShader(object_, pixelShader_->GetGPUObject());
+    glLinkProgram(object_);
 
     int linked, length;
-    gl::glGetProgramiv(object_, gl::GL_LINK_STATUS, &linked);
+    glGetProgramiv(object_, GL_LINK_STATUS, &linked);
     if (!linked)
     {
-        gl::glGetProgramiv(object_, gl::GL_INFO_LOG_LENGTH, &length);
+        glGetProgramiv(object_, GL_INFO_LOG_LENGTH, &length);
         QByteArray linkerMessage(length,0);
         int outLength;
-        gl::glGetProgramInfoLog(object_, length, &outLength, linkerMessage.data());
-        gl::glDeleteProgram(object_);
+        glGetProgramInfoLog(object_, length, &outLength, linkerMessage.data());
+        glDeleteProgram(object_);
         linkerOutput_ = linkerMessage;
         object_ = 0;
     }

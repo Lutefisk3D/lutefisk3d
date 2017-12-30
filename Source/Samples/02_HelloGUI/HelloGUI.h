@@ -63,7 +63,7 @@ private:
     /// Handle drag end for the fish button.
     void HandleDragEnd(UIElement *, int, int, int, int, int, int);
     /// Handle any UI control being clicked.
-    void HandleControlClicked(UIElement *clicked,int, int, int, unsigned, int);
+    void HandleControlClicked(UIElement *clicked, int, int, MouseButton, unsigned, int);
     /// Handle close button pressed and released.
     void HandleClosePressed(UIElement *);
 

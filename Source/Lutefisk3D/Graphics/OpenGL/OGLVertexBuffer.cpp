@@ -25,12 +25,10 @@
 #include "../../Graphics/VertexBuffer.h"
 #include "../../IO/Log.h"
 
-#include "glbinding/gl33ext/functions.h"
-#include "glbinding/gl33ext/enum.h"
-#include "glbinding/gl33ext/boolean.h"
+#include <GL/glew.h>
 #include <cstring>
 
-using namespace gl;
+#include <GL/glew.h>
 
 namespace Urho3D
 {

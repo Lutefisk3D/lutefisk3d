@@ -31,9 +31,6 @@
 #include "Lutefisk3D/Graphics/Viewport.h"
 #include "jlsignal/SignalBase.h"
 
-namespace gl {
-enum class GLenum : uint32_t;
-}
 namespace Urho3D
 {
 class Geometry;
@@ -61,7 +58,7 @@ struct BatchQueue;
 class ShaderVariation;
 struct Batch;
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
-extern template class LUTEFISK3D_EXPORT SharedPtr<ShaderVariation>;
+extern template class SharedPtr<ShaderVariation>;
 
 static const int SHADOW_MIN_PIXELS = 64;
 static const int INSTANCING_BUFFER_DEFAULT_SIZE = 1024;
@@ -318,7 +315,7 @@ public:
     Geometry* GetLightGeometry(Light* light);
     Geometry* GetQuadGeometry();
     Texture2D* GetShadowMap(Light* light, Camera* camera, unsigned viewWidth, unsigned viewHeight);
-    Texture *GetScreenBuffer(int width, int height, gl::GLenum format, int multiSample, bool autoResolve, bool cubemap,
+    Texture *GetScreenBuffer(int width, int height, uint32_t format, int multiSample, bool autoResolve, bool cubemap,
                              bool filtered, bool srgb, unsigned persistentKey = 0);
     RenderSurface* GetDepthStencil(int width, int height, int multiSample, bool autoResolve);
     OcclusionBuffer* GetOcclusionBuffer(Camera* camera);

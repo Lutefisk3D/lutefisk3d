@@ -56,26 +56,24 @@ namespace Urho3D
 
 extern const char* SUBSYSTEM_CATEGORY;
 const char* PHYSICS_CATEGORY = "Physics";
-
-struct PhysicsWorldPrivate : public btIDebugDraw {
+struct PhysicsWorldPrivate final : public btIDebugDraw 
+{
     PhysicsWorldPrivate(PhysicsWorld *o);
     ~PhysicsWorldPrivate();
-    friend void InternalPreTickCallback(btDynamicsWorld *world, btScalar timeStep);
-    friend void InternalTickCallback(btDynamicsWorld *world, btScalar timeStep);
     /// Check if an AABB is visible for debug drawing.
-    virtual bool isVisible(const btVector3& aabbMin, const btVector3& aabbMax) override;
+    bool isVisible(const btVector3& aabbMin, const btVector3& aabbMax) override;
     /// Draw a physics debug line.
-    virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override;
+    void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override;
     /// Log warning from the physics engine.
-    virtual void reportErrorWarning(const char* warningString) override;
+    void reportErrorWarning(const char* warningString) override;
     /// Draw a physics debug contact point. Not implemented.
-    virtual void drawContactPoint(const btVector3& pointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override;
+    void drawContactPoint(const btVector3& pointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override;
     /// Draw physics debug 3D text. Not implemented.
-    virtual void draw3dText(const btVector3& location,const char* textString) override;
+    void draw3dText(const btVector3& location,const char* textString) override;
     /// Set debug draw flags.
-    virtual void setDebugMode(int debugMode) override { debugMode_ = debugMode; }
+    void setDebugMode(int debugMode) override { debugMode_ = debugMode; }
     /// Return debug draw flags.
-    virtual int getDebugMode() const override { return debugMode_; }
+    int getDebugMode() const override { return debugMode_; }
     void PreStep(float ts) { owner->PreStep(ts); }
     void PostStep(float ts) { owner->PostStep(ts); }
 
@@ -222,8 +220,8 @@ PhysicsWorldPrivate::PhysicsWorldPrivate(PhysicsWorld * o) : owner(o) {
     world_->getDispatchInfo().m_useContinuous = true;
     world_->getSolverInfo().m_splitImpulse = false; // Disable by default for performance
     world_->setDebugDrawer(this);
-    world_->setInternalTickCallback(InternalPreTickCallback, static_cast<void*>(this), true);
-    world_->setInternalTickCallback(InternalTickCallback, static_cast<void*>(this), false);
+    world_->setInternalTickCallback((btInternalTickCallback)InternalPreTickCallback, static_cast<void*>(this), true);
+    world_->setInternalTickCallback((btInternalTickCallback)InternalTickCallback, static_cast<void*>(this), false);
     world_->setSynchronizeAllMotionStates(true);
 }
 
@@ -845,7 +843,7 @@ void PhysicsWorld::HandleSceneSubsystemUpdate(Scene *, float ts)
 void PhysicsWorld::PreStep(float timeStep)
 {
     // Send pre-step event
-    pre_step.Emit(this,timeStep);
+    pre_step(this,timeStep);
 
     // Start profiling block for the actual simulation step
 #ifdef LUTEFISK3D_PROFILING
@@ -866,7 +864,7 @@ void PhysicsWorld::PostStep(float timeStep)
     SendCollisionEvents();
 
     // Send post-step event
-    post_step.Emit(this,timeStep);
+    post_step(this,timeStep);
 }
 
 void PhysicsWorld::SendCollisionEvents()
@@ -971,12 +969,12 @@ void PhysicsWorld::SendCollisionEvents()
             // Send separate collision start event if collision is new
             if (newCollision)
             {
-                collisionStart.Emit(this,nodeA,nodeB,bodyA,bodyB,trigger,contacts_.GetBuffer());
+                collisionStart(this,nodeA,nodeB,bodyA,bodyB,trigger,contacts_.GetBuffer());
                 // Skip rest of processing if either of the nodes or bodies is removed as a response to the event
                 if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                     continue;
             }
-            collision.Emit(this,nodeA,nodeB,bodyA,bodyB,trigger,contacts_.GetBuffer());
+            collision(this,nodeA,nodeB,bodyA,bodyB,trigger,contacts_.GetBuffer());
             if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                 continue;
 
@@ -984,14 +982,14 @@ void PhysicsWorld::SendCollisionEvents()
             {
                 auto iter = nodeCollisionStart.find(nodeA);
                 if(iter!=nodeCollisionStart.end()) {
-                    iter->second.Emit(bodyA,nodeB,bodyB,trigger,contacts_.GetBuffer());
+                    iter->second(bodyA,nodeB,bodyB,trigger,contacts_.GetBuffer());
                     if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                         continue;
                 }
             }
             auto iter = nodeCollision.find(nodeA);
             if(iter!=nodeCollision.end()) {
-                iter->second.Emit(bodyA,nodeB,bodyB,trigger,contacts_.GetBuffer());
+                iter->second(bodyA,nodeB,bodyB,trigger,contacts_.GetBuffer());
                 if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                     continue;
             }
@@ -1027,14 +1025,14 @@ void PhysicsWorld::SendCollisionEvents()
             {
                 auto iter = nodeCollisionStart.find(nodeB);
                 if(iter!=nodeCollisionStart.end()) {
-                    iter->second.Emit(bodyB,nodeA,bodyA,trigger,contacts_.GetBuffer());
+                    iter->second(bodyB,nodeA,bodyA,trigger,contacts_.GetBuffer());
                     if (!nodeWeakA || !nodeWeakB || !MAP_KEY(elem).first || !MAP_KEY(elem).second)
                         continue;
                 }
             }
             iter = nodeCollision.find(nodeB);
             if(iter!=nodeCollision.end()) {
-                iter->second.Emit(bodyB,nodeA,bodyA,trigger,contacts_.GetBuffer());
+                iter->second(bodyB,nodeA,bodyA,trigger,contacts_.GetBuffer());
             }
         }
     }
@@ -1068,20 +1066,20 @@ void PhysicsWorld::SendCollisionEvents()
                 WeakPtr<Node> nodeWeakA(nodeA);
                 WeakPtr<Node> nodeWeakB(nodeB);
 
-                collisionEnd.Emit(this,nodeA,nodeB,bodyA,bodyB,trigger);
+                collisionEnd(this,nodeA,nodeB,bodyA,bodyB,trigger);
                 // Skip rest of processing if either of the nodes or bodies is removed as a response to the event
                 if (!nodeWeakA || !nodeWeakB || !elem.first || !elem.second)
                     continue;
 
                 auto iter = nodeCollisionEnd.find(nodeA);
                 if(iter!=nodeCollisionEnd.end()) {
-                    iter->second.Emit(bodyA,nodeB,bodyB,trigger);
+                    iter->second(bodyA,nodeB,bodyB,trigger);
                     if (!nodeWeakA || !nodeWeakB || !elem.first || !elem.second)
                         continue;
                 }
                 iter = nodeCollisionEnd.find(nodeB);
                 if(iter!=nodeCollisionEnd.end()) {
-                    iter->second.Emit(bodyB,nodeA,bodyA,trigger);
+                    iter->second(bodyB,nodeA,bodyA,trigger);
                 }
             }
         }

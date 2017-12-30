@@ -27,7 +27,7 @@
 #include "Text.h"
 #include "UI.h"
 #include "UIEvents.h"
-#include <SDL2/SDL_keyboard.h>
+
 namespace Urho3D
 {
 
@@ -111,9 +111,9 @@ void LineEdit::Update(float timeStep)
     cursor_->SetVisible(cursorVisible);
 }
 
-void LineEdit::OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor)
+void LineEdit::OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor)
 {
-    if (button == MOUSEB_LEFT && cursorMovable_)
+    if (button == MouseButton::LEFT && cursorMovable_)
     {
         unsigned pos = GetCharIndex(position);
         if (pos != M_MAX_UNSIGNED)
@@ -124,9 +124,9 @@ void LineEdit::OnClickBegin(const IntVector2& position, const IntVector2& screen
     }
 }
 
-void LineEdit::OnDoubleClick(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor)
+void LineEdit::OnDoubleClick(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor)
 {
-    if (button == MOUSEB_LEFT)
+    if (button == MouseButton::LEFT)
         text_->SetSelection(0);
 }
 
@@ -347,8 +347,8 @@ void LineEdit::OnKey(int key, int buttons, int qualifiers)
 
     case KEY_UP:
     case KEY_DOWN:
-    case KEY_PAGEUP:
-    case KEY_PAGEDOWN:
+    case KEY_PAGE_UP:
+    case KEY_PAGE_DOWN:
         {
             using namespace UnhandledKey;
 
@@ -392,14 +392,13 @@ void LineEdit::OnKey(int key, int buttons, int qualifiers)
         }
         break;
 
-    case KEY_RETURN:
-    case KEY_RETURN2:
+    case KEY_ENTER:
     case KEY_KP_ENTER:
         {
             // If using the on-screen keyboard, defocus this element to hide it now
             if (context_->m_UISystem->GetUseScreenKeyboard() && HasFocus())
                 SetFocus(false);
-            textFinished.Emit(this,line_,0.0f);
+            textFinished(this,line_,0.0f);
             return;
         }
     default: break;
@@ -583,8 +582,6 @@ void LineEdit::UpdateCursor()
     cursor_->SetSize(cursor_->GetWidth(), text_->GetRowHeight());
 
     IntVector2 screenPosition = ElementToScreen(cursor_->GetPosition());
-    SDL_Rect rect = {screenPosition.x_, screenPosition.y_, cursor_->GetSize().x_, cursor_->GetSize().y_};
-    SDL_SetTextInputRect(&rect);
     // Scroll if necessary
     int sx = -GetChildOffset().x_;
     int left = clipBorder_.left_;

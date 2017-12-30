@@ -99,7 +99,7 @@ private:
     void HandleReleased(UIElement *);
     /// Handle global focus change to check for hiding the popup.
     void HandleFocusChanged(UIElement *element, UIElement *clickedElement, bool wasClick);
-    void HandleMouseClick(UIElement *elem, int, int, int, unsigned, int);
+    void HandleMouseClick(UIElement *elem, int, int, MouseButton, unsigned, int);
     void HandleFocusChange(UIElement *elem, UIElement *clickedElem);
     /// Handle keypress for checking accelerator.
     void HandleKeyDown(int key, int, unsigned, int qualifiers, bool repeat);

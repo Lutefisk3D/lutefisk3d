@@ -160,7 +160,7 @@ struct FileSystemPrivate : public jl::SignalObserver
     unsigned nextAsyncExecID_=1;
     /// Flag for executing engine console commands as OS-specific system command. set to true in constructor.
     bool executeConsoleCommands_=false;
-
+    FileSystemPrivate(Context *ctx) : SignalObserver(ctx->m_observer_allocator) {}
     ~FileSystemPrivate() {
     // If any async exec items pending, delete them
         if (!asyncExecQueue_.empty())
@@ -196,7 +196,7 @@ struct FileSystemPrivate : public jl::SignalObserver
             AsyncExecRequest* request = *i;
             if (request->IsCompleted())
             {
-                g_ioSignals.asyncExecFinished.Emit(request->GetRequestID(),request->GetExitCode());
+                g_ioSignals.asyncExecFinished(request->GetRequestID(),request->GetExitCode());
                 delete request;
                 i = asyncExecQueue_.erase(i);
             }
@@ -234,7 +234,7 @@ struct FileSystemPrivate : public jl::SignalObserver
 
 
 
-FileSystem::FileSystem(Context* context) : m_context(context), d(new FileSystemPrivate)
+FileSystem::FileSystem(Context* context) : m_context(context), d(new FileSystemPrivate(context))
 {
     g_coreSignals.beginFrame.Connect(d.get(),&FileSystemPrivate::HandleBeginFrame);
 

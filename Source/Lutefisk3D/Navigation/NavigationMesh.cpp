@@ -367,7 +367,7 @@ bool NavigationMesh::Allocate(const BoundingBox& boundingBox, unsigned maxTiles)
     URHO3D_LOGDEBUG("Allocated empty navigation mesh with max " + QString::number(maxTiles) + " tiles");
 
     // Send a notification event to concerned parties that we've been fully rebuilt
-    navigationMeshRebuilt.Emit(node_,this);
+    navigationMeshRebuilt(node_,this);
     return true;
 }
 bool NavigationMesh::Build()
@@ -442,7 +442,7 @@ bool NavigationMesh::Build()
         // Send a notification event to concerned parties that we've been fully rebuilt
         URHO3D_LOGDEBUG(QString("Built navigation mesh with %1 tiles").arg(numTiles));
         // Send a notification event to concerned parties that we've been fully rebuilt
-        navigationMeshRebuilt.Emit(node_,this);
+        navigationMeshRebuilt(node_,this);
         return true;
     }
 }
@@ -562,7 +562,7 @@ void NavigationMesh::RemoveTile(const IntVector2& tile)
     navMesh_->removeTile(tileRef, 0, 0);
 
     // Send event
-    navigationTileRebuilt.Emit(GetNode(),this,tile);
+    navigationTileRebuilt(GetNode(),this,tile);
 }
 
 void NavigationMesh::RemoveAllTiles()
@@ -577,7 +577,7 @@ void NavigationMesh::RemoveAllTiles()
     }
 
     // Send event
-    navigationAllTilesRemoved.Emit(GetNode(),this);
+    navigationAllTilesRemoved(GetNode(),this);
 }
 
 Vector3 NavigationMesh::FindNearestPoint(const Vector3& point, const Vector3& extents, const dtQueryFilter* filter,
@@ -1257,7 +1257,7 @@ bool NavigationMesh::ReadTile(Deserializer& source, bool silent)
 
     // Send event
     if (!silent)
-        g_navigationSignals.navigationTileAdded.Emit(GetNode(),this,IntVector2(x, z));
+        g_navigationSignals.navigationTileAdded(GetNode(),this,IntVector2(x, z));
     return true;
 }
 
@@ -1475,7 +1475,7 @@ bool NavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geometryList
     }
 
     // Send a notification of the rebuild of this tile to anyone interested
-    navigationAreaRebuilt.Emit(node_,this,tileBoundingBox.min_,tileBoundingBox.max_);
+    navigationAreaRebuilt(node_,this,tileBoundingBox.min_,tileBoundingBox.max_);
     return true;
 }
 

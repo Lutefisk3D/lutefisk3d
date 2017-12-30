@@ -28,7 +28,6 @@
 #include "Renderer.h"
 #include "RenderSurface.h"
 
-#include <glbinding/gl33core/functions.h>
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/IO/FileSystem.h"
@@ -37,7 +36,8 @@
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 
-using namespace gl;
+#include <GL/glew.h>
+
 namespace Urho3D
 {
 template class LUTEFISK3D_EXPORT SharedPtr<Texture2D>;
@@ -45,7 +45,7 @@ template class LUTEFISK3D_EXPORT SharedPtr<Texture2D>;
 Texture2D::Texture2D(Context* context) :
     Texture(context)
 {
-    target_ = gl::GL_TEXTURE_2D;
+    target_ = GL_TEXTURE_2D;
 }
 
 Texture2D::~Texture2D()
@@ -216,7 +216,7 @@ bool Texture2D::SetData(unsigned level, int x, int y, int width, int height, con
     graphics_->SetTextureForUpdate(this);
 
     bool wholeLevel = x == 0 && y == 0 && width == levelWidth && height == levelHeight;
-    gl::GLenum format = GetSRGB() ? GetSRGBFormat(format_) : format_;
+    uint32_t format = GetSRGB() ? GetSRGBFormat(format_) : format_;
 
     if (!IsCompressed())
     {
@@ -514,7 +514,7 @@ bool Texture2D::Create()
     Autoresolve true means the multisampled texture will be automatically resolved to 1-sample after being rendered to and before being sampled as a texture.
     Autoresolve false means the multisampled texture will be read as individual samples in the shader and is not supported on Direct3D9.
 */
-bool Texture2D::SetSize(int width, int height, gl::GLenum format, TextureUsage usage, int multiSample, bool autoResolve)
+bool Texture2D::SetSize(int width, int height, uint32_t format, TextureUsage usage, int multiSample, bool autoResolve)
 {
     if (width <= 0 || height <= 0)
     {

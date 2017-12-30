@@ -65,7 +65,7 @@ public:
     /// Write an 8-bit integer.
     bool WriteByte(signed char value);
     /// Write a 64-bit unsigned integer.
-    bool WriteUInt64(unsigned long long value);
+    bool WriteUInt64(uint64_t value);
     /// Write a 32-bit unsigned integer.
     bool WriteUInt(unsigned value);
     /// Write a 16-bit unsigned integer.

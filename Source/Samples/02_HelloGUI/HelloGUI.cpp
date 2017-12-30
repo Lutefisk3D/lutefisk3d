@@ -199,7 +199,7 @@ void HelloGUI::HandleClosePressed(UIElement *)
     engine_->Exit();
 }
 
-void HelloGUI::HandleControlClicked(UIElement *clicked,int, int, int, unsigned, int)
+void HelloGUI::HandleControlClicked(UIElement *clicked,int, int, MouseButton, unsigned, int)
 {
     // Get the Text control acting as the Window's title
     Text* windowTitle = static_cast<Text*>(window_->GetChild("WindowTitle", true));

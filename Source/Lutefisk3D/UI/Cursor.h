@@ -27,7 +27,7 @@
 #include "Lutefisk3D/Graphics/Texture.h"
 #include "Lutefisk3D/Container/HashMap.h"
 
-struct SDL_Cursor;
+struct GLFWcursor;
 namespace Urho3D
 {
 
@@ -38,14 +38,9 @@ enum CursorShape
     CS_IBEAM,
     CS_CROSS,
     CS_RESIZEVERTICAL,
-    CS_RESIZEDIAGONAL_TOPRIGHT,
     CS_RESIZEHORIZONTAL,
-    CS_RESIZEDIAGONAL_TOPLEFT,
-    CS_RESIZE_ALL,
     CS_ACCEPTDROP,
     CS_REJECTDROP,
-    CS_BUSY,
-    CS_BUSY_ARROW,
     CS_MAX_SHAPES
 };
 
@@ -57,8 +52,8 @@ struct CursorShapeInfo
         imageRect_(IntRect::ZERO),
         hotSpot_(IntVector2::ZERO),
         osCursor_(nullptr),
-        systemDefined_(false),
-        systemCursor_(-1)
+        systemCursor_(-1),
+        systemDefined_(false)
     {
     }
 
@@ -67,8 +62,8 @@ struct CursorShapeInfo
         imageRect_(IntRect::ZERO),
         hotSpot_(IntVector2::ZERO),
         osCursor_(nullptr),
-        systemDefined_(false),
-        systemCursor_(systemCursor)
+        systemCursor_(systemCursor),
+        systemDefined_(false)
     {
     }
 
@@ -81,17 +76,17 @@ struct CursorShapeInfo
     /// Hotspot coordinates.
     IntVector2 hotSpot_;
     /// OS cursor.
-    SDL_Cursor* osCursor_;
-    /// Whether the OS cursor is system defined.
-    bool systemDefined_;
+    GLFWcursor* osCursor_;
     /// System cursor index.
     int systemCursor_;
+    /// Whether the OS cursor is system defined.
+    bool systemDefined_;
 };
 
 /// Mouse cursor %UI element.
 class LUTEFISK3D_EXPORT Cursor : public BorderImage
 {
-    URHO3D_OBJECT(Cursor,BorderImage);
+    URHO3D_OBJECT(Cursor,BorderImage)
 
 public:
     /// Construct.

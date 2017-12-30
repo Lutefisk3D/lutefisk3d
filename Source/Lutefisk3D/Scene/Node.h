@@ -452,15 +452,15 @@ public:
     /// Set network position attribute.
     void SetNetPositionAttr(const Vector3& value);
     /// Set network rotation attribute.
-    void SetNetRotationAttr(const std::vector<unsigned char>& value);
+    void SetNetRotationAttr(const std::vector<uint8_t>& value);
     /// Set network parent attribute.
-    void SetNetParentAttr(const std::vector<unsigned char>& value);
+    void SetNetParentAttr(const std::vector<uint8_t>& value);
     /// Return network position attribute.
     const Vector3& GetNetPositionAttr() const;
     /// Return network rotation attribute.
-    const std::vector<unsigned char>& GetNetRotationAttr() const;
+    const std::vector<uint8_t>& GetNetRotationAttr() const;
     /// Return network parent attribute.
-    const std::vector<unsigned char>& GetNetParentAttr() const;
+    const std::vector<uint8_t>& GetNetParentAttr() const;
     /// Load components and optionally load child nodes.
     bool Load(Deserializer& source, SceneResolver& resolver, bool loadChildren = true, bool rewriteIDs = false, CreateMode mode = REPLICATED);
     /// Load components from XML data and optionally load child nodes.

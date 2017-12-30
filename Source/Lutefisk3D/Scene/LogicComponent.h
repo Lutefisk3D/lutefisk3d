@@ -49,7 +49,7 @@ class LUTEFISK3D_EXPORT LogicComponent : public Component
     ~LogicComponent() override = default;
 
     /// Handle enabled/disabled state change. Changes update event subscription.
-    virtual void OnSetEnabled() override;
+    void OnSetEnabled() override;
     /// Called when the component is added to a scene node. Other components may not yet exist.
     virtual void Start() {}
     /// Called before the first update. At this point all other components of the node should exist. Will also be called if update events are not wanted; in that case the event is immediately unsubscribed afterward.

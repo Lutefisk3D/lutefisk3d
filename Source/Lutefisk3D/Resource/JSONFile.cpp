@@ -38,7 +38,7 @@ using namespace rapidjson;
 
 namespace Urho3D
 {
-template class SharedPtr<JSONFile>;
+template class LUTEFISK3D_EXPORT SharedPtr<JSONFile>;
 
 JSONFile::JSONFile(Context* context) :
     Resource(context)

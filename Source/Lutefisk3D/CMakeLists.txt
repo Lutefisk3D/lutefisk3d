@@ -33,6 +33,7 @@ if(NOT LUTEFISK3D_HEADLESS)
     add_subdirectory(Graphics)
     if(NOT LUTEFISK3D_UILESS)
         add_subdirectory(UI)
+        add_subdirectory(QUI)
     endif()
 else()
     set(LUTEFISK3D_2DLESS TRUE)
@@ -63,15 +64,19 @@ GENERATE_EXPORT_HEADER(Lutefisk3D)
 target_include_directories(Lutefisk3D PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(Lutefisk3D PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 
-qt5_use_modules(Lutefisk3D LINK_PUBLIC Core Gui)
+qt5_use_modules(Lutefisk3D LINK_PUBLIC Core Gui Widgets)
 set_property(TARGET Lutefisk3D PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+set_target_properties (Lutefisk3D PROPERTIES LINK_FLAGS "-Wl,--gc-sections") # -Wl,--print-gc-sections
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+set_target_properties (Lutefisk3D PROPERTIES LINK_FLAGS "-Wl,--gc-sections") # -Wl,--print-gc-sections
+endif()
+
 set_target_properties(Lutefisk3D PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 set_target_properties(Lutefisk3D PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "Core/Lutefisk3D.h")
 cotire(Lutefisk3D)
-get_target_property(_prefixHeader Lutefisk3D COTIRE_CXX_PREFIX_HEADER)
 
-
-message(${Lutefisk3D_LINK_LIBRARIES})
 add_dependencies(Lutefisk3D ${Lutefisk3D_LINK_LIBRARIES} ${Lutefisk3D_DEPENDENCIES})
 
 target_link_libraries(Lutefisk3D PRIVATE

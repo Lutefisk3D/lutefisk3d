@@ -43,17 +43,17 @@ public:
     static void RegisterObject(Context* context);
 
     /// Return whether is visible and inside a scissor rectangle and should be rendered.
-    virtual bool IsWithinScissor(const IntRect& currentScissor) override;
+    bool IsWithinScissor(const IntRect& currentScissor) override;
     /// Update and return screen position.
-    virtual const IntVector2& GetScreenPosition() const override;
+    const IntVector2& GetScreenPosition() const override;
     /// Return UI rendering batches.
-    virtual void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor) override;
+    void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor) override;
     /// React to position change.
-    virtual void OnPositionSet(const IntVector2& newPosition) override;
+    void OnPositionSet(const IntVector2& newPosition) override;
     /// Convert screen coordinates to element coordinates.
-    virtual IntVector2 ScreenToElement(const IntVector2& screenPosition) override;
+    IntVector2 ScreenToElement(const IntVector2& screenPosition) override;
     /// Convert element coordinates to screen coordinates.
-    virtual IntVector2 ElementToScreen(const IntVector2& position) override;
+    IntVector2 ElementToScreen(const IntVector2& position) override;
 
     /// Set floating point position.
     void SetPosition(const Vector2& position);

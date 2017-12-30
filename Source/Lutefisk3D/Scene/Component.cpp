@@ -103,7 +103,7 @@ void Component::SetEnabled(bool enable)
         Scene* scene = GetScene();
         if (scene != nullptr)
         {
-            scene->componentEnabledChanged.Emit(scene,node_,this);
+            scene->componentEnabledChanged(scene,node_,this);
         }
     }
 }

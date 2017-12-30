@@ -126,7 +126,7 @@ bool BackgroundLoader::QueueResource(StringHash type, const QString& name, bool 
 
         if (sendEventOnFailure && Thread::IsMainThread())
         {
-            g_resourceSignals.unknownResourceType.Emit(type);
+            g_resourceSignals.unknownResourceType(type);
         }
 
         backgroundLoadQueue_.erase(key);
@@ -271,7 +271,7 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
 
     if (!success && item.sendEventOnFailure_)
     {
-        g_resourceSignals.loadFailed.Emit(resource->GetName());
+        g_resourceSignals.loadFailed(resource->GetName());
     }
 
     // Store to the cache just before sending the event; use same mechanism as for manual resources
@@ -279,7 +279,7 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
         owner_->AddManualResource(resource);
 
     // Send event, either success or failure
-    g_resourceSignals.resourceBackgroundLoaded.Emit(resource->GetName(),success,resource);
+    g_resourceSignals.resourceBackgroundLoaded(resource->GetName(),success,resource);
 
 }
 

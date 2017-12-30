@@ -62,18 +62,6 @@ void RefCounted::ReleaseRef()
     if (!refCount_->refs_)
         delete this;
 }
-
-int RefCounted::Refs() const
-{
-    return refCount_->refs_;
-}
-
-int RefCounted::WeakRefs() const
-{
-    // Subtract one to not return the internally held reference
-    return refCount_->weakRefs_ - 1;
-}
-
 }
 #include <memory>
 template class std::unique_ptr<uint8_t[]>;

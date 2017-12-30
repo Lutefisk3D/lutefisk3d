@@ -675,7 +675,7 @@ void Serializable::SetTemporary(bool enable)
     if (enable != temporary_)
     {
         temporary_ = enable;
-        g_sceneSignals.temporaryChanged.Emit(this);
+        g_sceneSignals.temporaryChanged(this);
     }
 }
 
@@ -832,7 +832,7 @@ bool Serializable::ReadDeltaUpdate(Deserializer& source)
             }
             else
             {
-                g_sceneSignals.interceptNetworkUpdate.Emit(this, timeStamp,
+                g_sceneSignals.interceptNetworkUpdate(this, timeStamp,
                                                            RemapAttributeIndex(GetAttributes(), attr, i), attr.name_,
                                                            source.ReadVariant(attr.type_));
             }
@@ -866,7 +866,7 @@ bool Serializable::ReadLatestDataUpdate(Deserializer& source)
             }
             else
             {
-                g_sceneSignals.interceptNetworkUpdate.Emit(this, timeStamp,
+                g_sceneSignals.interceptNetworkUpdate(this, timeStamp,
                                                            RemapAttributeIndex(GetAttributes(), attr, i), attr.name_,
                                                            source.ReadVariant(attr.type_));
 

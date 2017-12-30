@@ -60,38 +60,43 @@ struct LUTEFISK3D_EXPORT NodePrivate
     StringHash nameHash_;
     void notifyListeners(Node *n) {
         // Notify listener components first, then mark child nodes
-        for (std::vector<WeakPtr<Component> >::iterator i = listeners_.begin(); i != listeners_.end();)
+        size_t count_to_notify=listeners_.size();
+        for (size_t current=0; current<count_to_notify;)
         {
-            Component *c = *i;
+            WeakPtr<Component> &c(listeners_[current]);
             if (c != nullptr)
             {
                 c->OnMarkedDirty(n);
-                ++i;
+                ++current;
             }
             // If listener has expired, erase from list (swap with the last element to avoid O(n^2) behavior)
             else
             {
-                *i = listeners_.back();
-                listeners_.pop_back();
+                c = std::move(listeners_[--count_to_notify]);
             }
         }
+        if(count_to_notify!=listeners_.size())
+            listeners_.erase(listeners_.begin()+(listeners_.size()-count_to_notify),listeners_.end());
     }
     void notifyListenersEnabled(Node *holder) {
         // Notify listener components of the state change
-        for (std::vector<WeakPtr<Component> >::iterator i = listeners_.begin(); i != listeners_.end();)
+        size_t count_to_notify=listeners_.size();
+        for (size_t current=0; current<count_to_notify;)
         {
-            if (*i != nullptr)
+            WeakPtr<Component> &c(listeners_[current]);
+            if (c != nullptr)
             {
-                (*i)->OnNodeSetEnabled(holder);
-                ++i;
+                c->OnNodeSetEnabled(holder);
+                ++current;
             }
             // If listener has expired, erase from list (swap and pop since we don't care about order)
             else
             {
-                *i = listeners_.back();
-                listeners_.pop_back();
+                c = std::move(listeners_[--count_to_notify]);
             }
         }
+        if(count_to_notify!=listeners_.size())
+            listeners_.erase(listeners_.begin()+(listeners_.size()-count_to_notify),listeners_.end());
     }
     void addListener(Component *component)
     {
@@ -399,7 +404,7 @@ void Node::SetName(const QString& name)
         // Send change event
         if (scene_ != nullptr)
         {
-            scene_->nodeNameChagned.Emit(scene_, this);
+            scene_->nodeNameChagned(scene_, this);
         }
     }
 }
@@ -424,7 +429,7 @@ void Node::AddTag(const QString & tag)
     scene_->NodeTagAdded(this, tag);
 
     // Send event
-    scene_->nodeTagAdded.Emit(scene_,this,tag);
+    scene_->nodeTagAdded(scene_,this,tag);
 
     // Sync
     MarkNetworkUpdate();
@@ -456,7 +461,7 @@ bool Node::RemoveTag(const QString & tag)
     {
         scene_->NodeTagRemoved(this, tag);
         // Send event
-        scene_->nodeTagRemoved.Emit(scene_,this,tag);
+        scene_->nodeTagRemoved(scene_,this,tag);
     }
 
     // Sync
@@ -474,7 +479,7 @@ void Node::RemoveAllTags()
             scene_->NodeTagRemoved(this, impl_->tags_[i]);
 
             // Send event
-            scene_->nodeTagRemoved.Emit(scene_,this,impl_->tags_[i]);
+            scene_->nodeTagRemoved(scene_,this,impl_->tags_[i]);
         }
     }
 
@@ -613,7 +618,9 @@ void Node::Translate(const Vector3& delta, TransformSpace space)
             break;
 
         case TS_WORLD:
-            position_ += (parent_ == scene_ || (parent_ == nullptr)) ? delta : parent_->GetWorldTransform().Inverse() * Vector4(delta, 0.0f);
+            position_ += (parent_ == scene_ || (parent_ == nullptr))
+                             ? delta
+                             : parent_->GetWorldTransform().Inverse() * Vector4(delta, 0.0f);
             break;
     }
 
@@ -846,7 +853,7 @@ void Node::AddChild(Node* node, unsigned index)
             if (scene_ != nullptr)
             {
                 // Otherwise do not remove from the scene during reparenting, just send the necessary change event
-                scene_->nodeRemoved.Emit(scene_,oldParent,node);
+                scene_->nodeRemoved(scene_,oldParent,node);
             }
             auto it = std::find(oldParent->children_.begin(),oldParent->children_.end(),nodeShared);
             if(it!=oldParent->children_.end())
@@ -869,7 +876,7 @@ void Node::AddChild(Node* node, unsigned index)
     // Send change event
     if (scene_ != nullptr)
     {
-        scene_->nodeAdded.Emit(scene_,this,node);
+        scene_->nodeAdded(scene_,this,node);
     }
 }
 
@@ -994,7 +1001,7 @@ Component* Node::CloneComponent(Component* component, CreateMode mode, unsigned 
         }
         cloneComponent->ApplyAttributes();
     }
-    scene_->componentCloned.Emit(scene_,component,cloneComponent);
+    scene_->componentCloned(scene_,component,cloneComponent);
     return cloneComponent;
 }
 
@@ -1837,7 +1844,7 @@ void Node::AddComponent(Component* component, unsigned id, CreateMode mode)
     // Send change event
     if (scene_ != nullptr)
     {
-        scene_->componentAdded.Emit(scene_,this,component);
+        scene_->componentAdded(scene_,this,component);
     }
 }
 
@@ -1986,7 +1993,7 @@ void Node::SetEnabled(bool enable, bool recursive, bool storeSelf)
         // Send change event
         if (scene_ != nullptr)
         {
-            scene_->nodeEnabledChanged.Emit(scene_,this);
+            scene_->nodeEnabledChanged(scene_,this);
         }
 
         for (auto & elem : components_)
@@ -1996,7 +2003,7 @@ void Node::SetEnabled(bool enable, bool recursive, bool storeSelf)
             // Send change event for the component
             if (scene_ != nullptr)
             {
-                scene_->componentEnabledChanged.Emit(scene_,this,elem);
+                scene_->componentEnabledChanged(scene_,this,elem);
             }
         }
     }
@@ -2060,7 +2067,7 @@ void Node::RemoveChild(std::vector<SharedPtr<Node> >::iterator i)
     // Send change event. Do not send when this node is already being destroyed
     if (Refs() > 0 && (scene_ != nullptr))
     {
-        scene_->nodeRemoved.Emit(scene_,this,child);
+        scene_->nodeRemoved(scene_,this,child);
     }
 
     child->parent_ = nullptr;
@@ -2159,7 +2166,7 @@ Node* Node::CloneRecursive(Node* parent, SceneResolver& resolver, CreateMode mod
 
         node->CloneRecursive(cloneNode, resolver, mode);
     }
-    scene_->nodeCloned.Emit(scene_,this,cloneNode);
+    scene_->nodeCloned(scene_,this,cloneNode);
     return cloneNode;
 }
 
@@ -2169,7 +2176,7 @@ void Node::RemoveComponent(std::vector<SharedPtr<Component> >::iterator i)
     // Send node change event. Do not send when already being destroyed
     if (Refs() > 0 && (scene_ != nullptr))
     {
-        scene_->componentRemoved.Emit(scene_,this,(*i).Get());
+        scene_->componentRemoved(scene_,this,(*i).Get());
     }
 
     RemoveListener(*i);

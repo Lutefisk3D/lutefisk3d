@@ -20,6 +20,7 @@ set(INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/CoreDecls.h
 )
 set(SOURCE
+    ${CMAKE_CURRENT_SOURCE_DIR}/Attribute.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Condition.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Context.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/EventProfiler.cpp

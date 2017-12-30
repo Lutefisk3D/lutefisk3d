@@ -33,10 +33,6 @@
 #include <vector>
 #include <stdint.h>
 
-
-namespace gl {
-enum class GLenum : uint32_t;
-}
 namespace Urho3D
 {
 
@@ -78,7 +74,7 @@ struct LUTEFISK3D_EXPORT RenderTargetInfo
     void Load(const XMLElement& element);
     QString              name_;                        //!< Name.
     QString              tag_;                         //!< Tag name.
-    gl::GLenum           format_;                      //!< Texture format.
+    uint32_t             format_;                      //!< Texture format.
     Vector2              size_        = Vector2::ZERO; //!< Absolute size or multiplier.
     RenderTargetSizeMode sizeMode_    = SIZE_ABSOLUTE; //!< Size mode.
     int                  multiSample_ = 1;             //!< Multisampling level (1 = no multisampling).

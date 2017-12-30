@@ -35,13 +35,12 @@ namespace Urho3D
 class LUTEFISK3D_EXPORT BufferedSoundStream : public SoundStream
 {
 public:
-    /// Construct.
     BufferedSoundStream();
-    /// Destruct.
-    ~BufferedSoundStream();
+    ~BufferedSoundStream() override;
 
-    /// Produce sound data into destination. Return number of bytes produced. Called by SoundSource from the mixing thread.
-    virtual unsigned GetData(signed char* dest, unsigned numBytes);
+    /// Produce sound data into destination. Return number of bytes produced. Called by SoundSource from the mixing
+    /// thread.
+    unsigned GetData(signed char *dest, unsigned numBytes) override;
 
     /// Buffer sound data. Makes a copy of it.
     void AddData(void* data, unsigned numBytes);

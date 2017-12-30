@@ -86,9 +86,9 @@ signed char Deserializer::ReadByte()
     return ret;
 }
 
-unsigned long long Deserializer::ReadUInt64()
+uint64_t Deserializer::ReadUInt64()
 {
-    unsigned long long ret;
+    uint64_t ret;
     Read(&ret, sizeof ret);
     return ret;
 }

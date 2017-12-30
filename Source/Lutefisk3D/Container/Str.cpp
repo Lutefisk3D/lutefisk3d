@@ -20,7 +20,8 @@
 // THE SOFTWARE.
 //
 
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 #include "Lutefisk3D/Container/Str.h"
 namespace Urho3D {
-const QString s_dummy;
+const  QString s_dummy;
 }

@@ -31,8 +31,18 @@
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 
-using namespace gl;
+#include <GL/glew.h>
 
+namespace std {
+
+template<> struct hash<Urho3D::TextureUnit>
+{
+    size_t operator()(Urho3D::TextureUnit v) const {
+        return std::hash<unsigned>()(v);
+    }
+};
+
+}
 namespace Urho3D
 {
 template class HashMap<TextureUnit, SharedPtr<Texture> >;
@@ -59,6 +69,7 @@ static const char* filterModeNames[] =
 Texture::Texture(Context* context) :
     ResourceWithMetadata(context),
     GPUObject(context->m_Graphics.get()),
+    SignalObserver(context->m_observer_allocator),
     target_(GL_NONE),
     format_(GL_NONE),
     usage_(TEXTURE_STATIC),
@@ -302,8 +313,8 @@ unsigned Texture::CheckMaxLevels(int width, int height, int depth, unsigned requ
 void Texture::CheckTextureBudget(StringHash type)
 {
     ResourceCache* cache = context_->m_ResourceCache.get();
-    unsigned long long textureBudget = cache->GetMemoryBudget(type);
-    unsigned long long textureUse = cache->GetMemoryUse(type);
+    uint64_t textureBudget = cache->GetMemoryBudget(type);
+    uint64_t textureUse = cache->GetMemoryUse(type);
     if (!textureBudget)
         return;
 

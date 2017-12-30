@@ -21,6 +21,5 @@ add_library(jlsignal STATIC
     ${jlsignal_INCLUDES}
     )
 set_property(TARGET jlsignal PROPERTY POSITION_INDEPENDENT_CODE ON)
-
 install(TARGETS jlsignal ARCHIVE DESTINATION lib)
 install(FILES ${jlsignal_INCLUDES} DESTINATION include/jlsignal)

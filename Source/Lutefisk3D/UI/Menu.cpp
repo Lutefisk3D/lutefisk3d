@@ -57,14 +57,16 @@ Menu::~Menu()
     if (popup_ && showPopup_)
         ShowPopup(false);
 }
-void Menu::HandleMouseClick(UIElement *elem,int, int, int, unsigned, int) {
-    HandleFocusChanged(elem,nullptr,true);
+void Menu::HandleMouseClick(UIElement *elem, int, int, MouseButton, unsigned, int)
+{
+    HandleFocusChanged(elem, nullptr, true);
 }
-void Menu::HandleFocusChange(UIElement *elem,UIElement *clickedElem) {
-    HandleFocusChanged(elem,clickedElem,false);
+void Menu::HandleFocusChange(UIElement *elem, UIElement *clickedElem)
+{
+    HandleFocusChanged(elem, clickedElem, false);
 }
 
-void Menu::RegisterObject(Context* context)
+void Menu::RegisterObject(Context *context)
 {
     context->RegisterFactory<Menu>(UI_CATEGORY);
 

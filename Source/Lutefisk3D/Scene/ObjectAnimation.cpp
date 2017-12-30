@@ -31,6 +31,7 @@
 
 namespace Urho3D
 {
+//instantiate the template
 template class LUTEFISK3D_EXPORT SharedPtr<ObjectAnimation>;
 const char* wrapModeNames[] =
 {
@@ -191,7 +192,7 @@ void ObjectAnimation::AddAttributeAnimation(const QString& name, ValueAnimation*
 
     attributeAnimation->SetOwner(this);
     attributeAnimationInfos_[name] = new ValueAnimationInfo(attributeAnimation, wrapMode, speed);
-    attributeAnimationAdded.Emit(this,name);
+    attributeAnimationAdded(this,name);
 }
 /// Remove attribute animation, attribute name can in following format: "attribute" or "#0/#1/attribute" or ""#0/#1/@component#1/attribute.
 void ObjectAnimation::RemoveAttributeAnimation(const QString& name)
@@ -199,7 +200,7 @@ void ObjectAnimation::RemoveAttributeAnimation(const QString& name)
     HashMap<QString, SharedPtr<ValueAnimationInfo> >::iterator i = attributeAnimationInfos_.find(name);
     if (i != attributeAnimationInfos_.end())
     {
-        attributeAnimationRemoved.Emit(this,name);
+        attributeAnimationRemoved(this,name);
         MAP_VALUE(i)->GetAnimation()->SetOwner(nullptr);
         attributeAnimationInfos_.erase(i);
     }
@@ -214,7 +215,7 @@ void ObjectAnimation::RemoveAttributeAnimation(ValueAnimation* attributeAnimatio
     {
         if (MAP_VALUE(i)->GetAnimation() == attributeAnimation)
         {
-            attributeAnimationRemoved.Emit(this,MAP_KEY(i));
+            attributeAnimationRemoved(this,MAP_KEY(i));
             attributeAnimation->SetOwner(nullptr);
             attributeAnimationInfos_.erase(i);
             return;
@@ -247,5 +248,4 @@ ValueAnimationInfo* ObjectAnimation::GetAttributeAnimationInfo(const QString& na
         return MAP_VALUE(i);
     return nullptr;
 }
-
 }

@@ -30,10 +30,6 @@
 #include "../ConstantBuffer.h"
 #include "../ShaderProgram.h"
 #include "../Texture2D.h"
-#include "glbinding/gl33ext/enum.h"
-#include "glbinding/gl33ext/functions.h"
-
-typedef void *SDL_GLContext;
 
 namespace Urho3D
 {
@@ -78,12 +74,7 @@ public:
     /// Construct.
     GraphicsImpl();
 
-    /// Return the GL Context.
-    const SDL_GLContext& GetGLContext() { return context_; }
-
 private:
-    /// SDL OpenGL context.
-    SDL_GLContext context_;
     /// IOS system framebuffer handle.
     unsigned systemFBO_;
     /// Active texture unit.
@@ -109,9 +100,9 @@ private:
     /// Current pixel format.
     int pixelFormat_;
     /// Map for FBO's per resolution and format.
-    HashMap<unsigned long long, FrameBufferObject> frameBuffers_;
+    HashMap<uint64_t, FrameBufferObject> frameBuffers_;
     /// OpenGL texture types in use.
-    gl::GLenum textureTypes_[MAX_TEXTURE_UNITS];
+    uint32_t textureTypes_[MAX_TEXTURE_UNITS];
     /// Constant buffer search map.
     ConstantBufferMap allConstantBuffers_;
     /// Currently bound constant buffers.

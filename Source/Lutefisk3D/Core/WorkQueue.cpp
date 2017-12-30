@@ -62,6 +62,7 @@ private:
 };
 
 WorkQueue::WorkQueue(Context* context) :
+    SignalObserver(context->m_observer_allocator),
     m_context(context),
     shutDown_(false),
     pausing_(false),
@@ -329,7 +330,7 @@ void WorkQueue::PurgeCompleted(unsigned priority)
         if (workitem->completed_ && workitem->priority_ >= priority)
         {
             if (workitem->sendEvent_)
-                workItemCompleted.Emit(i->Get());
+                workItemCompleted(i->Get());
 
             ReturnToPool(workitem);
 

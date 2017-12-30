@@ -54,9 +54,13 @@ public:
     /// Decrement reference count and delete self if no more references. Can also be called outside of a SharedPtr for traditional reference counting.
     void ReleaseRef();
     /// Return reference count.
-    int Refs() const;
+    int Refs() const { return refCount_->refs_; }
     /// Return weak reference count.
-    int WeakRefs() const;
+    /// \note does not count the internally held reference
+    int WeakRefs() const
+    {
+        return refCount_->weakRefs_ - 1;
+    }
     /// Return pointer to the reference count structure.
     RefCount* RefCountPtr() { return refCount_; }
 

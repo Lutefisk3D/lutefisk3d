@@ -58,7 +58,7 @@ private:
     /// Handle the logic update event.
     void HandleUpdate(float timeStep);
     /// Handle mouse button down event.
-    void HandleMouseButtonDown(int, unsigned, int);
+    void HandleMouseButtonDown(MouseButton, unsigned, int);
 
     /// Spriter nodes.
     SharedPtr<Node> spriterNode_;

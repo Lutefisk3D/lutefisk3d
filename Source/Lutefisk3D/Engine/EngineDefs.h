@@ -43,7 +43,6 @@ static const QLatin1String EP_LOW_QUALITY_SHADOWS("LowQualityShadows");
 static const QLatin1String EP_MATERIAL_QUALITY("MaterialQuality");
 static const QLatin1String EP_MONITOR("Monitor");
 static const QLatin1String EP_MULTI_SAMPLE("MultiSample");
-static const QLatin1String EP_ORIENTATIONS("Orientations");
 static const QLatin1String EP_PACKAGE_CACHE_DIR("PackageCacheDir");
 static const QLatin1String EP_RENDER_PATH("RenderPath");
 static const QLatin1String EP_REFRESH_RATE("RefreshRate");
@@ -54,9 +53,7 @@ static const QLatin1String EP_SHADER_CACHE_DIR("ShaderCacheDir");
 static const QLatin1String EP_SHADOWS("Shadows");
 static const QLatin1String EP_SOUND("Sound");
 static const QLatin1String EP_SOUND_BUFFER("SoundBuffer");
-static const QLatin1String EP_SOUND_INTERPOLATION("SoundInterpolation");
-static const QLatin1String EP_SOUND_MIX_RATE("SoundMixRate");
-static const QLatin1String EP_SOUND_STEREO("SoundStereo");
+static const QLatin1String EP_SOUND_MIX_RATE("SoundMixRate"); // 0 - use device's default rate
 static const QLatin1String EP_TEXTURE_ANISOTROPY("TextureAnisotropy");
 static const QLatin1String EP_TEXTURE_FILTER_MODE("TextureFilterMode");
 static const QLatin1String EP_TEXTURE_QUALITY("TextureQuality");

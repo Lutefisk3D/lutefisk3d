@@ -35,10 +35,8 @@ class LUTEFISK3D_EXPORT SoundListener : public Serializable //Component
     URHO3D_OBJECT(SoundListener,Serializable)
 
 public:
-    /// Construct.
     SoundListener(Context* context);
-    /// Destruct.
-    virtual ~SoundListener();
+    ~SoundListener() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
     bool IsEnabled() const { return enabled_; }

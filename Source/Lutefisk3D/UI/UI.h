@@ -232,17 +232,17 @@ private:
     /// Handle button hover.
     void ProcessHover(const IntVector2& windowCursorPos, int buttons, int qualifiers, Cursor* cursor);
     /// Handle button begin.
-    void ProcessClickBegin(const IntVector2& windowCursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
+    void ProcessClickBegin(const IntVector2& windowCursorPos, MouseButton button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle button end.
-    void ProcessClickEnd(const IntVector2& windowCursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
+    void ProcessClickEnd(const IntVector2& windowCursorPos, MouseButton button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle mouse move.
     void ProcessMove(const IntVector2& windowCursorPos, const IntVector2& cursorDeltaPos, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle screen mode event.
     void HandleScreenMode(int, int, bool, bool, bool, bool, int, int);
     /// Handle mouse button down event.
-    void HandleMouseButtonDown(int button, unsigned buttons, int quals);
+    void HandleMouseButtonDown(MouseButton button, unsigned buttons, int quals);
     /// Handle mouse button up event.
-    void HandleMouseButtonUp(int Button, unsigned Buttons, int Qualifiers);
+    void HandleMouseButtonUp(MouseButton Button, unsigned Buttons, int Qualifiers);
     /// Handle mouse move event.
     void HandleMouseMove(int x, int y, int DX, int DY, unsigned, int quals);
     /// Handle mouse wheel event.

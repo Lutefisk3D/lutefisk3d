@@ -66,6 +66,6 @@ LUTEFISK3D_EXPORT void SetMiniDumpDir(const QString& pathName);
 /// Return minidump write location.
 LUTEFISK3D_EXPORT QString GetMiniDumpDir();
 /// Return the total amount of useable memory.
-LUTEFISK3D_EXPORT unsigned long long GetTotalMemory();
+LUTEFISK3D_EXPORT uint64_t GetTotalMemory();
 
 }

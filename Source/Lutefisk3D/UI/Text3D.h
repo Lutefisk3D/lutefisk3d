@@ -35,7 +35,7 @@ class Text;
 /// 3D text component.
 class LUTEFISK3D_EXPORT Text3D : public Drawable
 {
-    URHO3D_OBJECT(Text3D,Drawable);
+    URHO3D_OBJECT(Text3D,Drawable)
 
 public:
     /// Construct.

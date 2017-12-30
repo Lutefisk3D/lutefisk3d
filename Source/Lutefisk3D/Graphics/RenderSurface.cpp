@@ -27,8 +27,8 @@
 #include "GraphicsImpl.h"
 #include "Renderer.h"
 #include "Texture.h"
+#include <GL/glew.h>
 
-using namespace gl;
 namespace Urho3D
 {
 struct RenderSurfacePrivate
@@ -53,7 +53,7 @@ RenderSurface::~RenderSurface()
     Release();
 }
 
-bool RenderSurface::CreateRenderBuffer(unsigned width, unsigned height, GLenum format, int multiSample)
+bool RenderSurface::CreateRenderBuffer(unsigned width, unsigned height, uint32_t format, int multiSample)
 {
     Graphics* graphics = parentTexture_->GetGraphics();
     if (!graphics)
@@ -112,7 +112,7 @@ void RenderSurface::Release()
         graphics->CleanupRenderSurface(this);
 
         if (renderBuffer_)
-            glDeleteRenderbuffersEXT(1, &renderBuffer_);
+            glDeleteRenderbuffers(1, &renderBuffer_);
     }
 
     renderBuffer_ = 0;

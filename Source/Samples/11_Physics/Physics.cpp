@@ -246,7 +246,7 @@ void Physics::MoveCamera(float timeStep)
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 
     // "Shoot" a physics object with left mousebutton
-    if (input->GetMouseButtonPress(MOUSEB_LEFT))
+    if (input->GetMouseButtonPress(MouseButton::LEFT))
         SpawnObject();
 
     // Check for loading/saving the scene. Save the scene to the file Data/Scenes/Physics.xml relative to the executable

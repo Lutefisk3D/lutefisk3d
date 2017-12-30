@@ -21,7 +21,7 @@
 //
 
 #pragma once
-
+#include <Lutefisk3D/Core/Lutefisk3D.h>
 #include <QtCore/QString>
 #include <QtCore/qhash.h>
 
@@ -29,7 +29,7 @@ namespace Urho3D
 {
 static const int CONVERSION_BUFFER_LENGTH = 128;
 static const int MATRIX_CONVERSION_BUFFER_LENGTH = 256;
-extern const QString s_dummy;
+LUTEFISK3D_EXPORT extern const QString s_dummy;
 }
 
 namespace std {

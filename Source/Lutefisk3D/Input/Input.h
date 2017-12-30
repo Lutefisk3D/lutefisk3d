@@ -29,6 +29,7 @@
 #include <jlsignal/SignalBase.h>
 #include <QtCore/QSet>
 
+struct GLFWwindow;
 namespace Urho3D
 {
 
@@ -37,7 +38,6 @@ enum MouseMode : uint8_t
 {
     MM_ABSOLUTE = 0,
     MM_RELATIVE,
-    MM_WRAP,
     MM_FREE,
     MM_INVALID,
 };
@@ -59,7 +59,7 @@ struct JoystickState
     void Reset();
 
     /// Return whether is a game controller. Game controllers will use standardized axis and button mappings.
-    bool IsController() const { return controller_ != nullptr; }
+    bool IsController() const { return false; }
     /// Return number of buttons.
     unsigned GetNumButtons() const { return buttons_.size(); }
     /// Return number of axes.
@@ -73,7 +73,10 @@ struct JoystickState
     /// Return axis position.
     float GetAxisPosition(unsigned index) const { return index < axes_.size() ? axes_[index] : 0.0f; }
     /// Return hat position.
-    int GetHatPosition(unsigned index) const { return index < hats_.size() ? hats_[index] : HAT_CENTER; }
+    HatPosition GetHatPosition(unsigned index) const
+    {
+        return index < hats_.size() ? hats_[index] : HatPosition::CENTERED;
+    }
 
     /// Joystick name.
     QString name_;
@@ -84,13 +87,8 @@ struct JoystickState
     /// Axis position from -1 to 1.
     std::vector<float> axes_;
     /// POV hat bits.
-    std::vector<int> hats_;
-    /// SDL joystick.
-    SDL_Joystick* joystick_=nullptr;
-    /// SDL game controller.
-    SDL_GameController* controller_=nullptr;
-    /// SDL joystick instance ID.
-    SDL_JoystickID joystickID_;
+    std::vector<HatPosition> hats_;
+    int joystickID_;
 };
 
 /// %Input subsystem. Converts operating system window messages to input state and events.
@@ -122,16 +120,8 @@ public:
     /// Center the mouse position.
     void CenterMousePosition();
 
-    /// Return keycode from key name.
-    int GetKeyFromName(const QString& name) const;
-    /// Return keycode from scancode.
-    int GetKeyFromScancode(int scancode) const;
     /// Return name of key from keycode.
     QString GetKeyName(int key) const;
-    /// Return scancode from keycode.
-    int GetScancodeFromKey(int key) const;
-    /// Return scancode from key name.
-    int GetScancodeFromName(const QString& name) const;
     /// Return name of key from scancode.
     QString GetScancodeName(int scancode) const;
     /// Check if a key is held down.
@@ -143,9 +133,9 @@ public:
     /// Check if a key has been pressed on this frame by scancode.
     bool GetScancodePress(int scancode) const;
     /// Check if a mouse button is held down.
-    bool GetMouseButtonDown(unsigned button) const;
+    bool GetMouseButtonDown(MouseButton button) const;
     /// Check if a mouse button has been pressed on this frame.
-    bool GetMouseButtonPress(unsigned button) const;
+    bool GetMouseButtonPress(MouseButton button) const;
     /// Check if a qualifier key is held down.
     bool GetQualifierDown(int qualifier) const;
     /// Check if a qualifier key has been pressed on this frame.
@@ -167,7 +157,7 @@ public:
     /// Return number of connected joysticks.
     unsigned GetNumJoysticks() const { return joysticks_.size(); }
     /// Return joystick state by ID, or null if does not exist.
-    JoystickState* GetJoystick(SDL_JoystickID id);
+    JoystickState* GetJoystick(int id);
     /// Return joystick state by index, or null if does not exist. 0 = first connected joystick.
     JoystickState* GetJoystickByIndex(unsigned index);
     /// Return joystick state by name, or null if does not exist.
@@ -188,29 +178,30 @@ public:
     /// Return whether application window is minimized.
     bool IsMinimized() const;
 
-private:
-    /// Initialize when screen mode initially set.
-    void Initialize();
-    /// Open a joystick and return its ID. Return -1 if no joystick.
-    SDL_JoystickID OpenJoystick(unsigned index);
-    /// Setup internal joystick structures.
-    void ResetJoysticks();
+    // These methods allow for raising driving the input externally.
     /// Prepare input state for application gaining input focus.
     void GainFocus();
     /// Prepare input state for application losing input focus.
     void LoseFocus();
+    /// Handle a mouse button change.
+    void SetMouseButton(MouseButton button, bool newState);
+    /// Handle a key change.
+    void SetKey(int key, int scancode, bool newState);
+    /// Handle mouse wheel change.
+    void SetMouseWheel(int delta);
+private:
+    /// Initialize when screen mode initially set.
+    void Initialize();
+    /// Open a joystick and return its ID. Return -1 if no joystick.
+    int OpenJoystick(unsigned index);
+    /// Setup internal joystick structures.
+    void ResetJoysticks();
     /// Clear input state.
     void ResetState();
     /// Reset input accumulation.
     void ResetInputAccumulation();
     /// Send an input focus or window minimization change event.
     void SendInputFocusEvent();
-    /// Handle a mouse button change.
-    void SetMouseButton(unsigned button, bool newState);
-    /// Handle a key change.
-    void SetKey(int key, int scancode, bool newState);
-    /// Handle mouse wheel change.
-    void SetMouseWheel(int delta);
     /// Suppress next mouse movement.
     void SuppressNextMouseMove();
     /// Unsuppress mouse movement.
@@ -219,14 +210,13 @@ private:
     void HandleScreenMode(int Width, int Height, bool Fullscreen, bool Borderless, bool Resizable, bool HighDPI, int Monitor, int RefreshRate);
     /// Handle frame start event.
     void HandleBeginFrame(unsigned frameno, float ts);
-    /// Handle SDL event.
-    void HandleSDLEvent(void* sdlEvent);
 
-    /// Set SDL mouse mode relative.
-    void SetMouseModeRelative(SDL_bool enable);
-    /// Set SDL mouse mode absolute.
-    void SetMouseModeAbsolute(SDL_bool enable);
-
+    void ResetMousePos();
+    void updateJostickStates();
+    static void mouseMovedInWindow(GLFWwindow *win,double x,double y);
+    static void iconificationChanged(GLFWwindow *w, int state);
+    static void windowMoved(GLFWwindow *w,int xpos,int ypos);
+    static void windowResized(GLFWwindow *w,int width,int h);
     Context *m_context;
     /// Graphics subsystem.
     WeakPtr<Graphics> graphics_;
@@ -241,7 +231,7 @@ private:
     /// String for text input.
     QString textInput_;
     /// Opened joysticks.
-    HashMap<SDL_JoystickID, JoystickState> joysticks_;
+    HashMap<int, JoystickState> joysticks_;
     /// Mouse buttons' down state.
     unsigned mouseButtonDown_;
     /// Mouse buttons' pressed state.
@@ -251,13 +241,12 @@ private:
     /// Last mouse position before being set to not visible.
     IntVector2 lastVisibleMousePosition_;
     /// Mouse movement since last frame.
-    IntVector2 mouseMove_;
+    Vector2 mouseMove_;
+    Vector2 mousePosLastUpdate_;
     /// Mouse wheel movement since last frame.
     int mouseMoveWheel_;
     /// Input coordinate scaling. Non-unity when window and backbuffer have different sizes (e.g. Retina display.)
     Vector2 inputScale_;
-    /// SDL window ID.
-    unsigned windowID_;
     /// Fullscreen toggle flag.
     bool toggleFullscreen_;
     /// Operating system mouse cursor visible flag.

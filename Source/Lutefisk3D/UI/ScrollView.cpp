@@ -126,7 +126,7 @@ void ScrollView::Update(float timeStep)
             UIElement* dragElement = dragElements[i];
             int dragButtons = dragElement->GetDragButtonCombo();
 
-            if (dragButtons != MOUSEB_LEFT)
+            if (dragButtons != 1<<int(MouseButton::LEFT))
                 continue;
 
             UIElement* dragParent = dragElement->GetParent();
@@ -240,12 +240,12 @@ void ScrollView::OnKey(int key, int buttons, int qualifiers)
         }
         break;
 
-    case KEY_PAGEUP:
+    case KEY_PAGE_UP:
         if (verticalScrollBar_->IsVisible())
             verticalScrollBar_->ChangeValue(-pageStep_);
         break;
 
-    case KEY_PAGEDOWN:
+    case KEY_PAGE_DOWN:
         if (verticalScrollBar_->IsVisible())
             verticalScrollBar_->ChangeValue(pageStep_);
         break;

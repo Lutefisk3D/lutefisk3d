@@ -33,6 +33,7 @@ extern const char *blendModeNames[];
 extern const char *horizontalAlignments[];
 extern const char *verticalAlignments[];
 extern const char *UI_CATEGORY;
+template class SharedPtr<Sprite>;
 
 Sprite::Sprite(Context *context)
     : UIElement(context),

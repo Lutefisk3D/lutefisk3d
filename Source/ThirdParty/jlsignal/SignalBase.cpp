@@ -2,7 +2,6 @@
 
 using namespace jl;
 
-ScopedAllocator* jl::SignalObserver::s_pCommonAllocator = NULL;
 ScopedAllocator* SignalBase::s_pCommonAllocator = NULL;
 
 jl::SignalObserver::~SignalObserver()

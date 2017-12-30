@@ -25,7 +25,6 @@ public:
     // Interface for child classes
 protected:
     // Disallow instances of this class
-    SignalObserver() { SetConnectionAllocator( s_pCommonAllocator ); }
     SignalObserver( ScopedAllocator* pAllocator ) { SetConnectionAllocator( pAllocator ); }
 
     // Hmm, a bit of a hack, but if a derived type caches pointers to signals,
@@ -60,13 +59,6 @@ public:
 
 private:
     SignalList m_oSignals;
-
-    // Global allocator
-public:
-    static void SetCommonConnectionAllocator( ScopedAllocator* pAllocator ) { s_pCommonAllocator = pAllocator; }
-
-private:
-    static ScopedAllocator* s_pCommonAllocator;
 };
 
 class SignalBase

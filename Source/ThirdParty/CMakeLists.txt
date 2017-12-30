@@ -47,15 +47,18 @@ macro(set_static_lib_properties basename)
     SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION_DEBUG ${${basename}_LIBRARY_STATIC_D} )
     SET_PROPERTY(TARGET ${basename}_IMP APPEND PROPERTY IMPORTED_LOCATION_RELEASE ${${basename}_LIBRARY_STATIC} )
 endmacro()
+macro(add_3rdparty_subdir name)
+	add_subdirectory(${name})
+	set_target_properties(${name} PROPERTIES FOLDER ThirdParty)
+endmacro()
 link_directories(${ThirdParty_Install_Dir}/lib)
 
 include(ExternalProject_CEREAL.cmake)
-add_subdirectory(jlsignal)
+add_3rdparty_subdir(jlsignal)
 #add_subdirectory(LibCpuId)
-add_subdirectory(PugiXml)
-add_subdirectory(LZ4)
-
-add_subdirectory(rapidjson)
+add_3rdparty_subdir(PugiXml)
+add_3rdparty_subdir(LZ4)
+add_3rdparty_subdir(rapidjson)
 
 # *_BuiltFile is setting up the location of the built library - needed for ninja generator
 if(NOT UNIX)
@@ -63,58 +66,18 @@ if(NOT UNIX)
 endif()
 set(ThirdParty_Install_Dir ${PROJECT_BINARY_DIR}/ThirdParty_Builds)
 if(NOT LUTEFISK3D_HEADLESS)
-    if(UNIX OR MINGW)
-        set(SDL2_BuiltFile ${ThirdParty_Install_Dir}/lib/libSDL2.a)
-    else()
-        set(SDL2_BuiltFile ${ThirdParty_Install_Dir}/lib/SDL2.lib)
-    endif()
-
-    ExternalProject_Add(
-        SDL2
-        DOWNLOAD_COMMAND ""
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/SDL
-        UPDATE_COMMAND ""
-        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSDL_SHARED:BOOL=OFF -DSDL_STATIC_PIC:BOOL=ON -DRENDER_D3D:BOOL=OFF -DVIDEO_OPENGLES:BOOL=OFF -DSDL_FILESYSTEM:BOOL=ON -DVIDEO_WAYLAND:BOOL=OFF -DVIDEO_MIR:BOOL=OFF -DSDL_RENDERER:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=${ThirdParty_Install_Dir} -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-        INSTALL_DIR ${ThirdParty_Install_Dir}/
-        BUILD_BYPRODUCTS ${SDL2_BuiltFile}
-    )
-    ADD_LIBRARY(SDL2_LIB STATIC IMPORTED GLOBAL)
-    SET_TARGET_PROPERTIES(SDL2_LIB PROPERTIES IMPORTED_LOCATION ${SDL2_BuiltFile})
-    add_dependencies(SDL2_LIB SDL2)
-
-    if(UNIX OR MINGW)
-        set(GLBINDING_BuiltFile ${ThirdParty_Install_Dir}/lib/libglbinding.a)
-        set(GLBINDING_BuiltFileD ${ThirdParty_Install_Dir}/lib/libglbinding.a)
-    else()
-        set(GLBINDING_BuiltFile ${ThirdParty_Install_Dir}/lib/glbinding.lib)
-        set(GLBINDING_BuiltFileD ${ThirdParty_Install_Dir}/lib/glbindingd.lib)
-    endif()
-    ExternalProject_Add(
-        glbinding
-        DOWNLOAD_COMMAND ""
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glbinding
-        UPDATE_COMMAND ""
-        CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_SHARED_LIBS:BOOL=OFF -DOPTION_BUILD_TESTS:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=${ThirdParty_Install_Dir} -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-        INSTALL_DIR ${ThirdParty_Install_Dir}/
-        BUILD_BYPRODUCTS ${GLBINDING_BuiltFile}
-    )
-    ADD_LIBRARY(glbinding_LIB STATIC IMPORTED GLOBAL)
-    add_dependencies(glbinding_LIB glbinding)
-    FIND_PACKAGE(OpenGL REQUIRED)
-    SET_TARGET_PROPERTIES(glbinding_LIB PROPERTIES
-        IMPORTED_LOCATION ${GLBINDING_BuiltFile}
-        IMPORTED_LOCATION_DEBUG ${GLBINDING_BuiltFileD}
-        IMPORTED_LINK_INTERFACE_LIBRARIES "${OPENGL_LIBRARIES}"
-    )
+    include(ExternalProject_GLFW3.cmake)
+    include(ExternalProject_GLEW.cmake)
 endif()
 if(NOT LUTEFISK3D_NAVIGATIONLESS)
-    add_subdirectory(Recast)
-    add_subdirectory(Detour)
-    add_subdirectory(DetourTileCache)
-    add_subdirectory(DetourCrowd)
+    add_3rdparty_subdir(Recast)
+    add_3rdparty_subdir(Detour)
+    add_3rdparty_subdir(DetourTileCache)
+    add_3rdparty_subdir(DetourCrowd)
 endif()
 if(NOT LUTEFISK3D_SOUNDLESS)
-    add_subdirectory(STB)
+    add_3rdparty_subdir(STB)
+    include(ExternalProject_OpenAL.cmake)
 endif()
 
 
@@ -139,14 +102,18 @@ if(NOT LUTEFISK3D_NETLESS)
 
 endif()
 if(NOT LUTEFISK3D_UILESS)
-    add_subdirectory(FreeType)
+    add_3rdparty_subdir(FreeType)
 endif()
 if(NOT LUTEFISK3D_2DLESS)
-    add_subdirectory(Box2D)
+    add_3rdparty_subdir(Box2D)
 endif()
 
 if(NOT LUTEFISK3D_PHYSICLESS)
-	set(USE_MSVC_RUNTIME_LIBRARY_DLL TRUE)
+    set(USE_MSVC_RUNTIME_LIBRARY_DLL TRUE)
     add_subdirectory(Bullet)
-    add_subdirectory(StanHull)
+	set_target_properties(BulletCollision PROPERTIES FOLDER ThirdParty/Bullet)
+	set_target_properties(BulletDynamics PROPERTIES FOLDER ThirdParty/Bullet)
+	set_target_properties(BulletSoftBody PROPERTIES FOLDER ThirdParty/Bullet)
+	set_target_properties(LinearMath PROPERTIES FOLDER ThirdParty/Bullet)
+    add_3rdparty_subdir(StanHull)
 endif()

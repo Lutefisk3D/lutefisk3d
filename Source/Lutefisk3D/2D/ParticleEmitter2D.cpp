@@ -279,13 +279,13 @@ void ParticleEmitter2D::HandleScenePostUpdate(Scene *,float ts)
     {
         // Make a weak pointer to self to check for destruction during event handling
         WeakPtr<ParticleEmitter2D> self(this);
-        particlesDuration.Emit(node_,effect_);
+        particlesDuration(node_,effect_);
         if(self.Expired())
             return;
     }
 
     if (hadParticles && 0==numParticles_)
-        particlesEnd.Emit(node_,effect_);
+        particlesEnd(node_,effect_);
 }
 
 void ParticleEmitter2D::Update(float timeStep)

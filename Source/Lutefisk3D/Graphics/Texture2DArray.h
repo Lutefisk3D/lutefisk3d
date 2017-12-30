@@ -60,7 +60,7 @@ public:
     /// Set the number of layers in the texture. To be used before SetData.
     void SetLayers(unsigned layers);
     /// Set layers, size, format and usage. Set layers to zero to leave them unchanged. Return true if successful.
-    bool SetSize(unsigned layers, int width, int height, gl::GLenum format, TextureUsage usage = TEXTURE_STATIC);
+    bool SetSize(unsigned layers, int width, int height, uint32_t format, TextureUsage usage = TEXTURE_STATIC);
     /// Set data either partially or fully on a layer's mip level. Return true if successful.
     bool SetData(unsigned layer, unsigned level, int x, int y, int width, int height, const void* data);
     /// Set data of one layer from a stream. Return true if successful.

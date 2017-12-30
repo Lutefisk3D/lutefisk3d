@@ -24,9 +24,8 @@ set (CMAKE_CXX_STANDARD 14)
 #set(CMAKE_AUTOMOC ON)
 SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt5Core 5.8.0)
-find_package(Qt5Xml  5.8.0)
-find_package(Qt5Gui  5.8.0)
+find_package(Qt5 COMPONENTS Core Xml Gui REQUIRED)
+
 find_package(Threads REQUIRED)
 
 set(LUTEFISK3D_AS_DLLS TRUE)

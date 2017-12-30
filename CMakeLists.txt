@@ -24,11 +24,9 @@ set (CMAKE_CXX_STANDARD 14)
 #set(CMAKE_AUTOMOC ON)
 SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt5Core 5.8.0)
-find_package(Qt5Xml  5.8.0)
-find_package(Qt5Gui  5.8.0)
-find_package(Qt5Widgets  5.8.0) # only used to display message box in one place.. consider removal ?
-find_package(Qt5Quick 5.8.0) # only used if QUI is selected
+find_package(Qt5 COMPONENTS Core Xml Gui Widgets Quick REQUIRED)
+#Widgets only used to display message box in one place.. consider removal ?
+#Quick only used if QUI is selected
 find_package(Threads REQUIRED)
 
 set(LUTEFISK3D_AS_DLLS TRUE)

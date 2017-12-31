@@ -4,6 +4,7 @@ set(INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/Animation.h
     ${CMAKE_CURRENT_SOURCE_DIR}/AnimationState.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Batch.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/BiasParameters.h
     ${CMAKE_CURRENT_SOURCE_DIR}/BillboardSet.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Camera.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ConstantBuffer.cpp

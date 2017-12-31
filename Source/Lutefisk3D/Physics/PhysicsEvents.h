@@ -24,7 +24,8 @@
 
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Core/Object.h"
-#include "jlsignal/Signal.h"
+#include "Lutefisk3D/Engine/jlsignal/Signal.h"
+
 namespace Urho3D
 {
 class Component; class PhysicsWorld;

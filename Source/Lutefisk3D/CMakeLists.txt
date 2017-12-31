@@ -21,6 +21,7 @@ set(MinimalSources
     Graphics/GraphicsEvents.cpp
     ${MinimalHeaders}
 )
+
 add_subdirectory(Container)
 add_subdirectory(Core)
 add_subdirectory(Math)
@@ -80,7 +81,7 @@ cotire(Lutefisk3D)
 add_dependencies(Lutefisk3D ${Lutefisk3D_LINK_LIBRARIES} ${Lutefisk3D_DEPENDENCIES})
 
 target_link_libraries(Lutefisk3D PRIVATE
-    Threads::Threads $<TARGET_OBJECTS:jlsignal>
+    Threads::Threads
     ${CMAKE_DL_LIBS}
     ${ThirdParty_requisites}
     ${Lutefisk3D_LINK_LIBRARIES}

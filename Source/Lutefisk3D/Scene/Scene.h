@@ -25,8 +25,8 @@
 
 #include "Lutefisk3D/Scene/Node.h"
 #include "Lutefisk3D/Scene/SceneEvents.h"
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 
-#include <jlsignal/SignalBase.h>
 #include <QtCore/QSet>
 
 namespace Urho3D

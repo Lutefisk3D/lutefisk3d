@@ -26,7 +26,7 @@
 #include "Lutefisk3D/Container/Ptr.h"
 #include "Lutefisk3D/UI/Cursor.h"
 #include "Lutefisk3D/UI/UIBatch.h"
-#include "jlsignal/SignalBase.h"
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 
 namespace Urho3D
 {

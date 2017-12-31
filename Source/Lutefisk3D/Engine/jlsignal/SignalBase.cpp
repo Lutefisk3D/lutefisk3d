@@ -1,8 +1,12 @@
+#include "SignalBase.h"
+
 #include "Signal.h"
 
 using namespace jl;
-
-ScopedAllocator* SignalBase::s_pCommonAllocator = NULL;
+namespace
+{
+ScopedAllocator* s_pCommonAllocator = NULL;
+}
 
 jl::SignalObserver::~SignalObserver()
 {
@@ -31,5 +35,12 @@ void jl::SignalObserver::DisconnectAllSignals()
     
     m_oSignals.clear();
 }
+ScopedAllocator *SignalBase::defaultAllocator()
+{
+    return s_pCommonAllocator;
+}
 
-ScopedAllocator *SignalBase::defaultAllocator() { return s_pCommonAllocator; }
+void jl::SignalBase::SetCommonConnectionAllocator(jl::ScopedAllocator *pAllocator)
+{
+    s_pCommonAllocator = pAllocator;
+}

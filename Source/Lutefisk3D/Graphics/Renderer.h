@@ -29,7 +29,7 @@
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include "Lutefisk3D/Graphics/Drawable.h"
 #include "Lutefisk3D/Graphics/Viewport.h"
-#include "jlsignal/SignalBase.h"
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 
 namespace Urho3D
 {

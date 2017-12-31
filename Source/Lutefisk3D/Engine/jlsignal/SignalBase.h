@@ -1,6 +1,8 @@
 #ifndef _JL_SIGNAL_BASE_H_
 #define _JL_SIGNAL_BASE_H_
 
+#include "Lutefisk3D/lutefisk3d_export.h"
+
 #include "Utils.h"
 #include "DoublyLinkedList.h"
 
@@ -61,7 +63,7 @@ private:
     SignalList m_oSignals;
 };
 
-class SignalBase
+class LUTEFISK3D_EXPORT SignalBase
 {
 public:
     virtual ~SignalBase() = default;
@@ -84,10 +86,7 @@ private:
 
     // Global allocator
 public:
-    static void SetCommonConnectionAllocator( ScopedAllocator* pAllocator ) { s_pCommonAllocator = pAllocator; }
-
-protected:
-    static ScopedAllocator* s_pCommonAllocator;
+    static void SetCommonConnectionAllocator( ScopedAllocator* pAllocator );
 };
 
 } // namespace jl

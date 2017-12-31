@@ -54,7 +54,6 @@ endmacro()
 link_directories(${ThirdParty_Install_Dir}/lib)
 
 include(ExternalProject_CEREAL.cmake)
-add_3rdparty_subdir(jlsignal)
 #add_subdirectory(LibCpuId)
 add_3rdparty_subdir(PugiXml)
 add_3rdparty_subdir(LZ4)

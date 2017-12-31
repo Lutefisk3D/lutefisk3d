@@ -33,8 +33,8 @@
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Container/Str.h"
 #include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 
-#include <jlsignal/SignalBase.h>
 #include <QtCore/QProcess>
 #include <QtCore/QDir>
 #include <QtCore/QDirIterator>

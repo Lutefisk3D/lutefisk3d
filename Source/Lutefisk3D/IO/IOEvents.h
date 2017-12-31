@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "jlsignal/Signal.h"
+#include "Lutefisk3D/Engine/jlsignal/Signal.h"
 
 class QString;
 

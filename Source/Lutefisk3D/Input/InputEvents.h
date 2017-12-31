@@ -23,8 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
-#include <jlsignal/Signal.h>
-
+#include "Lutefisk3D/Engine/jlsignal/Signal.h"
 
 namespace Urho3D
 {

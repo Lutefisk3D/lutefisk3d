@@ -10,6 +10,8 @@ set(SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/EngineEvents.cpp
 
 )
+add_subdirectory(jlsignal)
+
 install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Engine)
 if(UNIT_TESTING)
 #add_lutefisk_test(AttributeTests)

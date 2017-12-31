@@ -24,7 +24,7 @@
 
 #include "Lutefisk3D/Scene/Serializable.h"
 #include "Lutefisk3D/Container/HashMap.h"
-#include "jlsignal/SignalBase.h"
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 
 namespace Urho3D
 {

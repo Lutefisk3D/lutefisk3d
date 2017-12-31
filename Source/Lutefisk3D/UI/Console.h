@@ -22,7 +22,7 @@
 
 #pragma once
 #include "Lutefisk3D/Core/Object.h"
-#include "jlsignal/SignalBase.h"
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 #include <QtCore/QMap>
 #include <utility>
 

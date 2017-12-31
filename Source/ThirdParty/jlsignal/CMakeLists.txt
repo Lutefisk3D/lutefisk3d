@@ -15,11 +15,11 @@ set(jlsignal_INCLUDES
     ScopedAllocator.h
     StaticSignalConnectionAllocators.h
 )
-add_library(jlsignal STATIC
+add_library(jlsignal OBJECT
     ObjectPool.cpp
     SignalBase.cpp
     ${jlsignal_INCLUDES}
     )
 set_property(TARGET jlsignal PROPERTY POSITION_INDEPENDENT_CODE ON)
-install(TARGETS jlsignal ARCHIVE DESTINATION lib)
+#install(TARGETS jlsignal ARCHIVE DESTINATION lib)
 install(FILES ${jlsignal_INCLUDES} DESTINATION include/jlsignal)

@@ -80,7 +80,7 @@ cotire(Lutefisk3D)
 add_dependencies(Lutefisk3D ${Lutefisk3D_LINK_LIBRARIES} ${Lutefisk3D_DEPENDENCIES})
 
 target_link_libraries(Lutefisk3D PRIVATE
-    Threads::Threads
+    Threads::Threads $<TARGET_OBJECTS:jlsignal>
     ${CMAKE_DL_LIBS}
     ${ThirdParty_requisites}
     ${Lutefisk3D_LINK_LIBRARIES}

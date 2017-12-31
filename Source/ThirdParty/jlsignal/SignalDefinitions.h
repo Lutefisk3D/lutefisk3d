@@ -46,8 +46,8 @@ private:
 
     ConnectionList m_oConnections;
 public:
-    Signal() { SetAllocator( s_pCommonAllocator ); }
-    Signal( ScopedAllocator* pAllocator ) { SetAllocator( pAllocator ); }
+    Signal() { }
+    Signal( ScopedAllocator* pAllocator ) { SetAllocator( defaultAllocator() ); }
 
     virtual ~Signal()
     {

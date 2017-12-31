@@ -31,3 +31,5 @@ void jl::SignalObserver::DisconnectAllSignals()
     
     m_oSignals.clear();
 }
+
+ScopedAllocator *SignalBase::defaultAllocator() { return s_pCommonAllocator; }

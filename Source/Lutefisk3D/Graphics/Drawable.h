@@ -54,7 +54,7 @@ class RayOctreeQuery;
 class Zone;
 struct RayQueryResult;
 struct WorkItem;
-extern template class SharedPtr<Material>;
+//extern template class SharedPtr<Material>;
 /// Geometry update type.
 enum UpdateGeometryType
 {

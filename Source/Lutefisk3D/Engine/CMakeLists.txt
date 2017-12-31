@@ -16,5 +16,5 @@ if(UNIT_TESTING)
 #add_lutefisk_test(ContextTests)
 endif()
 
-set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} jlsignal PARENT_SCOPE)
+set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} PARENT_SCOPE)
 set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} PARENT_SCOPE)

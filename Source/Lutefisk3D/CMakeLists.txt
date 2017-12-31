@@ -104,6 +104,8 @@ install(TARGETS Lutefisk3D EXPORT lutefis3d-targets
             LIBRARY DESTINATION lib
             INCLUDES DESTINATION include
 )
+
 install(EXPORT lutefis3d-targets DESTINATION lib/Lutefisk3D)
 install(FILES ${MinimalHeaders} DESTINATION include/Lutefisk3D )
 install(FILES ${PROJECT_BINARY_DIR}/Source/Lutefisk3D/lutefisk3d_export.h DESTINATION include/Lutefisk3D)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/ThirdParty_Builds/bin/ DESTINATION bin)

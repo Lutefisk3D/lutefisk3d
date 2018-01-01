@@ -45,7 +45,6 @@ template<> struct hash<Urho3D::TextureUnit>
 }
 namespace Urho3D
 {
-template class HashMap<TextureUnit, SharedPtr<Texture> >;
 static const char* addressModeNames[] =
 {
     "wrap",

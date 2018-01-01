@@ -270,7 +270,7 @@ void ShaderParameterAnimationInfo::ApplyValue(const Variant& newValue)
     static_cast<Material*>(target_.Get())->SetShaderParameter(name_, newValue);
 }
 
-Material::Material(Context* context) :
+Material::Material(Context* context, bool skip_reset) :
     Resource(context),
     SignalObserver(context->m_observer_allocator),
     d(new MaterialPrivate(this, context)),
@@ -282,7 +282,8 @@ Material::Material(Context* context) :
     specular_(false),
     batchedParameterUpdate_(false)
 {
-    ResetToDefaults();
+    if(false==skip_reset)
+        ResetToDefaults();
 }
 
 Material::~Material()
@@ -1187,7 +1188,7 @@ void Material::ReleaseShaders()
 
 SharedPtr<Material> Material::Clone(const QString& cloneName) const
 {
-    SharedPtr<Material> ret(new Material(context_));
+    SharedPtr<Material> ret(new Material(context_,true));
 
     ret->SetName(cloneName);
     ret->techniques_ = techniques_;

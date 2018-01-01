@@ -104,7 +104,7 @@ class LUTEFISK3D_EXPORT Material : public Resource, public jl::SignalObserver
 
 public:
     /// Construct.
-    Material(Context* context);
+    Material(Context* context,bool skip_reset=false);
     /// Destruct.
     ~Material() override;
     /// Register object factory.

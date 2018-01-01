@@ -30,7 +30,7 @@ class Signal final : public SignalBase
 {
 public:
 
-    using Delegate = ssvu::FastFunc< void(Types...) > ;
+    using Delegate = generic::delegate< void(Types...) > ;
     struct Connection
     {
         Delegate d;
@@ -69,7 +69,7 @@ public:
 
     // Connects instance methods. Class X should be equal to Y, or an ancestor type.
     template< class X, class Y >
-    void Connect( Y* pObject, void (X::*fpMethod)(Types...) )
+    void Connect( Y* pObject, void (X::*const fpMethod)(Types...) )
     {
         if ( ! pObject )
             return;
@@ -85,7 +85,7 @@ public:
 
     // Connects const instance methods. Class X should be equal to Y, or an ancestor type.
     template< class X, class Y >
-    void Connect( Y* pObject, void (X::*fpMethod)(Types...) const )
+    void Connect( Y* pObject, void (X::*const fpMethod)(Types...) const )
     {
         if ( ! pObject )
             return;
@@ -94,7 +94,7 @@ public:
         SignalObserver* pObserver = static_cast<SignalObserver*>( pObject );
         JL_SIGNAL_LOG( "Signal %p connecting to Observer %p (object %p, method %p)\n", this, pObserver, pObject, BruteForceCast<void*>(fpMethod) );
 
-        Connection c = { Delegate(pObject, fpMethod), pObserver };
+        Connection c = { Delegate(pObject,fpMethod), pObserver };
         JL_CHECKED_CALL( m_oConnections.Add( c ) );
         NotifyObserverConnect( pObserver );
     }

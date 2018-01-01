@@ -49,8 +49,8 @@
 
 namespace Urho3D
 {
-template class LUTEFISK3D_EXPORT HashMap<StringHash, MaterialShaderParameter>;
-template class LUTEFISK3D_EXPORT SharedPtr<Material>;
+//template class LUTEFISK3D_EXPORT HashMap<StringHash, MaterialShaderParameter>;
+//template class LUTEFISK3D_EXPORT SharedPtr<Material>;
 
 struct MaterialPrivate : public jl::SignalObserver
 {

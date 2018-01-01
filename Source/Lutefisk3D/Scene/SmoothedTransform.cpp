@@ -102,7 +102,7 @@ void SmoothedTransform::SetTargetPosition(const Vector3& position)
         GetScene()->updateSmoothing.Connect(this,&SmoothedTransform::Update);
         subscribed_ = true;
     }
-    targetPositionChanged.Emit();
+    targetPositionChanged();
 }
 
 void SmoothedTransform::SetTargetRotation(const Quaternion& rotation)
@@ -116,7 +116,7 @@ void SmoothedTransform::SetTargetRotation(const Quaternion& rotation)
         subscribed_ = true;
     }
 
-    targetRotationChanged.Emit();
+    targetRotationChanged();
 }
 
 void SmoothedTransform::SetTargetWorldPosition(const Vector3& position)

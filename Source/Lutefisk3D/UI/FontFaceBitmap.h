@@ -25,11 +25,6 @@
 #include "Lutefisk3D/UI/FontFace.h"
 #include <QtCore/QString>
 
-namespace gl
-{
-enum class GLenum : uint32_t;
-}
-
 namespace Urho3D
 {
 
@@ -54,7 +49,7 @@ public:
 
 private:
     /// Convert graphics format to number of components.
-    unsigned ConvertFormatToNumComponents(gl::GLenum format);
+    unsigned ConvertFormatToNumComponents(uint32_t format);
     /// Save font face texture as image resource.
     SharedPtr<Image> SaveFaceTexture(Texture2D* texture);
     /// Save font face texture as image file.

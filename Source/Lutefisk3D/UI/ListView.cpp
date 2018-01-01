@@ -126,7 +126,7 @@ public:
     }
 
     /// Handle mouse click on overlays by toggling the expansion state of the corresponding item
-    void HandleUIMouseClick(UIElement *overlay,int, int, int, unsigned, int)
+    void HandleUIMouseClick(UIElement *overlay,int, int, MouseButton, unsigned, int)
     {
         if (overlay)
         {
@@ -231,8 +231,7 @@ void ListView::OnKey(int key, int buttons, int qualifiers)
             }
             break;
 
-        case KEY_RETURN:
-        case KEY_RETURN2:
+        case KEY_ENTER:
         case KEY_KP_ENTER:
             if (selection != M_MAX_UNSIGNED && hierarchyMode_)
             {
@@ -249,11 +248,11 @@ void ListView::OnKey(int key, int buttons, int qualifiers)
             delta = 1;
             break;
 
-        case KEY_PAGEUP:
+        case KEY_PAGE_UP:
             pageDirection = -1;
             // Fallthru
 
-        case KEY_PAGEDOWN:
+        case KEY_PAGE_DOWN:
             {
                 // Convert page step to pixels and see how many items have to be skipped to reach that many pixels
                 if (selection == M_MAX_UNSIGNED)
@@ -992,7 +991,7 @@ void ListView::EnsureItemVisibility(UIElement* item)
     SetViewPosition(newView);
 }
 
-void ListView::HandleUIMouseClick(UIElement* element,int button, unsigned buttons, int qualifiers )
+void ListView::HandleUIMouseClick(UIElement* element,MouseButton button, unsigned buttons, int qualifiers )
 {
     // Disregard the click end if a drag is going on
     if (selectOnClickEnd_ && context_->m_UISystem->IsDragging())
@@ -1010,7 +1009,7 @@ void ListView::HandleUIMouseClick(UIElement* element,int button, unsigned button
         return;
     }
 
-    if (button == MOUSEB_LEFT)
+    if (button == MouseButton::LEFT)
     {
         // Single selection
         if (!multiselect_ || !qualifiers)
@@ -1069,13 +1068,13 @@ void ListView::HandleUIMouseClick(UIElement* element,int button, unsigned button
     clickEventData[ItemClicked::P_ELEMENT] = this;
     clickEventData[ItemClicked::P_ITEM] = element;
     clickEventData[ItemClicked::P_SELECTION] = i;
-    clickEventData[ItemClicked::P_BUTTON] = button;
+    clickEventData[ItemClicked::P_BUTTON] = int(button);
     clickEventData[ItemClicked::P_BUTTONS] = buttons;
     clickEventData[ItemClicked::P_QUALIFIERS] = qualifiers;
     SendEvent(E_ITEMCLICKED, clickEventData);
 }
 
-void ListView::HandleUIMouseDoubleClick(UIElement *element,int, int, int button, unsigned buttons, int qualifiers)
+void ListView::HandleUIMouseDoubleClick(UIElement *element, int, int, MouseButton button, unsigned buttons, int qualifiers)
 {
     // Check if the clicked element belongs to the list
     unsigned i = FindItem(element);
@@ -1086,7 +1085,7 @@ void ListView::HandleUIMouseDoubleClick(UIElement *element,int, int, int button,
     clickEventData[ItemDoubleClicked::P_ELEMENT] = this;
     clickEventData[ItemDoubleClicked::P_ITEM] = element;
     clickEventData[ItemDoubleClicked::P_SELECTION] = i;
-    clickEventData[ItemDoubleClicked::P_BUTTON] = button;
+    clickEventData[ItemDoubleClicked::P_BUTTON] = int(button);
     clickEventData[ItemDoubleClicked::P_BUTTONS] = buttons;
     clickEventData[ItemDoubleClicked::P_QUALIFIERS] = qualifiers;
     SendEvent(E_ITEMDOUBLECLICKED, clickEventData);
@@ -1122,11 +1121,11 @@ void ListView::HandleFocusGained(UIElement *,bool )
     if (highlightMode_ == HM_FOCUS)
         UpdateSelectionEffect();
 }
-void ListView::handleMouseClick(UIElement *e,int, int, int button, unsigned buttons, int qualifier)
+void ListView::handleMouseClick(UIElement *e,int, int, MouseButton button, unsigned buttons, int qualifier)
 {
     HandleUIMouseClick(e,button,buttons,qualifier);
 }
-void ListView::handleMouseClickEnd(UIElement *e,UIElement *,int, int, int button, unsigned buttons, int qualifier)
+void ListView::handleMouseClickEnd(UIElement *e,UIElement *,int, int, MouseButton button, unsigned buttons, int qualifier)
 {
     HandleUIMouseClick(e,button,buttons,qualifier);
 }

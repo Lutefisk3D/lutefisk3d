@@ -54,9 +54,7 @@
 #include "Lutefisk3D/IO/FileSystem.h"
 #include "Lutefisk3D/IO/Log.h"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
-
+#include <GLFW/glfw3.h>
 namespace Urho3D
 {
 //////////////////////////////////////////////////////////
@@ -67,21 +65,21 @@ template class WeakPtr<Graphics>;
 void Graphics::SetWindowTitle(const QString& windowTitle)
 {
     windowTitle_ = windowTitle;
-    if (window_)
-        SDL_SetWindowTitle(window_, qPrintable(windowTitle_));
+    if(window2_)
+        glfwSetWindowTitle(window2_,qPrintable(windowTitle_));
 }
 
 void Graphics::SetWindowIcon(Image* windowIcon)
 {
     windowIcon_ = windowIcon;
-    if (window_)
+    if (window2_)
         CreateWindowIcon();
 }
 
 void Graphics::SetWindowPosition(const IntVector2& position)
 {
-    if (window_)
-        SDL_SetWindowPosition(window_, position.x_, position.y_);
+    if(window2_)
+        glfwSetWindowPos(window2_,position.x_, position.y_);
     else
         position_ = position; // Sets as initial position for OpenWindow()
 }
@@ -89,12 +87,6 @@ void Graphics::SetWindowPosition(const IntVector2& position)
 void Graphics::SetWindowPosition(int x, int y)
 {
     SetWindowPosition(IntVector2(x, y));
-}
-
-void Graphics::SetOrientations(const QString& orientations)
-{
-    orientations_ = orientations.trimmed();
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, qPrintable(orientations_));
 }
 
 bool Graphics::ToggleFullscreen()
@@ -163,7 +155,7 @@ void Graphics::SetShaderParameter(StringHash param, const Variant& value)
 
 IntVector2 Graphics::GetWindowPosition() const
 {
-    if (window_)
+    if (window2_)
         return position_;
     return IntVector2::ZERO;
 }
@@ -171,15 +163,22 @@ IntVector2 Graphics::GetWindowPosition() const
 std::vector<IntVector3> Graphics::GetResolutions(int monitor) const
 {
     std::vector<IntVector3> ret;
-    unsigned numModes = (unsigned)SDL_GetNumDisplayModes(monitor);
+    int monitor_count=0;
+    GLFWmonitor** known_monitors = glfwGetMonitors(&monitor_count);
+    if (monitor >= monitor_count || monitor < 0)
+        monitor = 0; // this monitor is not present, use first monitor
+    GLFWmonitor* selected_monitor = known_monitors[monitor];
+    int numModes=0;
+    const GLFWvidmode * modes = glfwGetVideoModes(selected_monitor,&numModes);
+    if(!modes)
+        return ret;
 
-    for (unsigned i = 0; i < numModes; ++i)
+    for (int i = 0; i < numModes; ++i)
     {
-        SDL_DisplayMode mode;
-        SDL_GetDisplayMode(monitor, i, &mode);
-        int width = mode.w;
-        int height  = mode.h;
-        int rate = mode.refresh_rate;
+        const GLFWvidmode &mode(modes[i]);
+        int width = mode.width;
+        int height  = mode.height;
+        int rate = mode.refreshRate;
 
         // Store mode if unique
         bool unique = true;
@@ -200,30 +199,35 @@ std::vector<IntVector3> Graphics::GetResolutions(int monitor) const
 }
 IntVector2 Graphics::GetDesktopResolution(int monitor) const
 {
-    SDL_DisplayMode mode;
-    SDL_GetDesktopDisplayMode(monitor, &mode);
-    return IntVector2(mode.w, mode.h);
+    int monitor_count=0;
+    GLFWmonitor** known_monitors = glfwGetMonitors(&monitor_count);
+    if (monitor >= monitor_count || monitor < 0)
+        monitor = 0; // this monitor is not present, use first monitor
+    const GLFWvidmode * mode = glfwGetVideoMode(known_monitors[monitor]);
+    return IntVector2(mode->width, mode->height);
 }
 
 int Graphics::GetMonitorCount() const
 {
-    return SDL_GetNumVideoDisplays();
+    int monitor_count=0;
+    GLFWmonitor** known_monitors = glfwGetMonitors(&monitor_count);
+    return monitor_count;
 }
 
 void Graphics::Maximize()
 {
-    if (!window_)
+    if (!window2_)
         return;
 
-    SDL_MaximizeWindow(window_);
+    glfwMaximizeWindow(window2_);
 }
 
 void Graphics::Minimize()
 {
-    if (!window_)
+    if (!window2_)
         return;
 
-    SDL_MinimizeWindow(window_);
+    glfwIconifyWindow(window2_);
 }
 
 void Graphics::BeginDumpShaders(const QString& fileName)
@@ -347,14 +351,13 @@ void Graphics::CleanupScratchBuffers()
 
 void Graphics::CreateWindowIcon()
 {
-    if (windowIcon_)
+    if (!windowIcon_)
+        return;
+    auto surface(windowIcon_->GetGLFWImage());
+    if (surface)
     {
-        SDL_Surface* surface = windowIcon_->GetSDLSurface();
-        if (surface)
-        {
-            SDL_SetWindowIcon(window_, surface);
-            SDL_FreeSurface(surface);
-        }
+        glfwSetWindowIcon(window2_,1,surface.get());
+        delete [] surface->pixels;
     }
 }
 

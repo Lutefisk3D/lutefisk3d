@@ -28,10 +28,14 @@
 #include "../Shader.h"
 //#include "../ShaderProgram.h"
 #include <QString>
-using namespace gl;
+
+#include <GL/glew.h>
 
 namespace Urho3D
 {
+template class LUTEFISK3D_EXPORT SharedPtr<ShaderVariation>;
+template class LUTEFISK3D_EXPORT HashMap<StringHash, SharedPtr<ShaderVariation> >;
+
 const char* ShaderVariation::elementSemanticNames[] =
 {
     "POS",

@@ -24,7 +24,7 @@
 
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
-#include "jlsignal/SignalBase.h"
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 #include <list>
 
 namespace Urho3D

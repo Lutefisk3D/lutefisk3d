@@ -60,15 +60,15 @@ private:
     /// Handle a sound effect button click.
     void HandlePlaySound(UIElement *);
     /// Handle "play music" button click.
-    void HandlePlayMusic(StringHash eventType, VariantMap& eventData);
+    void HandlePlayMusic(UIElement *el);
     /// Handle "stop music" button click.
-    void HandleStopMusic(StringHash eventType, VariantMap& eventData);
+    void HandleStopMusic(UIElement *el);
     /// Handle sound effects volume slider change.
-    void HandleSoundVolume(StringHash eventType, VariantMap& eventData);
+    void HandleSoundVolume(UIElement *, float newVolume);
     /// Handle music volume slider change.
-    void HandleMusicVolume(StringHash eventType, VariantMap& eventData);
+    void HandleMusicVolume(UIElement *, float newVolume);
     /// Handle sound effect finished.
-    void HandleSoundFinished(Node *soundNode, SoundSource *src, Sound *);
+    void HandleSoundFinished(Node *soundNode, SoundSource *src, SharedPtr<Sound>);
 };
 
 

@@ -34,13 +34,14 @@
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Resource/XMLFile.h"
 
+#include <GL/glew.h>
 namespace Urho3D
 {
 
 Texture3D::Texture3D(Context* context) :
     Texture(context)
 {
-    target_ = gl::GL_TEXTURE_3D;
+    target_ = GL_TEXTURE_3D;
 }
 
 Texture3D::~Texture3D()
@@ -150,7 +151,7 @@ bool Texture3D::EndLoad()
     return success;
 }
 
-bool Texture3D::SetSize(int width, int height, int depth, gl::GLenum format, TextureUsage usage)
+bool Texture3D::SetSize(int width, int height, int depth, uint32_t format, TextureUsage usage)
 {
     if (width <= 0 || height <= 0 || depth <= 0)
     {

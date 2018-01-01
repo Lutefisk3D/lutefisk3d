@@ -63,8 +63,8 @@ template<> inline unsigned MakeHash(const long long& value)
     return (value >> 32) | (value & 0xffffffff);
 }
 
-/// Unsigned long long hash function.
-template<> inline unsigned MakeHash(const unsigned long long& value)
+/// uint64_t hash function.
+template<> inline unsigned MakeHash(const uint64_t& value)
 {
     return (value >> 32) | (value & 0xffffffff);
 }

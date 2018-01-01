@@ -330,7 +330,7 @@ bool DynamicNavigationMesh::Allocate(const BoundingBox& boundingBox, unsigned ma
     }
 
     // Send a notification event to concerned parties that we've been fully rebuilt
-    navigationMeshRebuilt.Emit(node_,this);
+    navigationMeshRebuilt(node_,this);
     return true;
 }
 
@@ -464,7 +464,7 @@ bool DynamicNavigationMesh::Build()
         URHO3D_LOGDEBUG(QString("Built navigation mesh with %1 tiles").arg(numTiles));
 
         // Send a notification event to concerned parties that we've been fully rebuilt
-        navigationMeshRebuilt.Emit(node_,this);
+        navigationMeshRebuilt(node_,this);
 
         // Scan for obstacles to insert into us
         std::vector<Node*> obstacles;
@@ -804,7 +804,7 @@ bool DynamicNavigationMesh::ReadTiles(Deserializer& source, bool silent)
     {
         for (unsigned i = 0; i < tileQueue_.size(); ++i)
         {
-            navigationTileRebuilt.Emit(GetNode(),this,tileQueue_[i]);
+            navigationTileRebuilt(GetNode(),this,tileQueue_[i]);
         }
     }
     return true;
@@ -972,7 +972,7 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
     }
 
     // Send a notification of the rebuild of this tile to anyone interested
-    navigationAreaRebuilt.Emit(node_,this,tileBoundingBox.min_,tileBoundingBox.max_);
+    navigationAreaRebuilt(node_,this,tileBoundingBox.min_,tileBoundingBox.max_);
 
     return retCt;
 }

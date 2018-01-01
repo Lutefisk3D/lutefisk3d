@@ -87,7 +87,7 @@ public:
     /// Read an 8-bit integer.
     signed char ReadByte();
     /// Read a 64-bit unsigned integer.
-    unsigned long long ReadUInt64();
+    uint64_t ReadUInt64();
     /// Read a 32-bit unsigned integer.
     unsigned ReadUInt();
     /// Read a 16-bit unsigned integer.

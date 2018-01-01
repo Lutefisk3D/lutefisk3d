@@ -147,7 +147,7 @@ struct PhysicsWorld2D_private : public b2ContactListener, public b2Draw
         auto serializedContacts(contactInfo.Serialize(contacts_));
         // Send global event
         bool enabled=contact->IsEnabled();
-        m_owner->update_contact.Emit(
+        m_owner->update_contact(
                     m_owner,
                     contactInfo.bodyA_.Get(),
                     contactInfo.bodyB_.Get(),
@@ -165,7 +165,7 @@ struct PhysicsWorld2D_private : public b2ContactListener, public b2Draw
 
         if (contactInfo.nodeA_ && contactInfo.nodeA_->physics2dSignals_)
         {
-            contactInfo.nodeA_->physics2dSignals_->updated_contacts.Emit(
+            contactInfo.nodeA_->physics2dSignals_->updated_contacts(
                         contactInfo.bodyA_.Get(),
                         contactInfo.nodeB_.Get(),
                         contactInfo.bodyB_.Get(),
@@ -179,7 +179,7 @@ struct PhysicsWorld2D_private : public b2ContactListener, public b2Draw
         // still be notified
         if (contactInfo.nodeB_ && contactInfo.nodeA_->physics2dSignals_)
         {
-            contactInfo.nodeB_->physics2dSignals_->updated_contacts.Emit(
+            contactInfo.nodeB_->physics2dSignals_->updated_contacts(
                         contactInfo.bodyB_.Get(),
                         contactInfo.nodeA_.Get(),
                         contactInfo.bodyA_.Get(),
@@ -278,7 +278,7 @@ public:
         for (ContactInfo& contactInfo : beginContactInfos_)
         {
             auto serializedContacts(contactInfo.Serialize(contacts_));
-            m_owner->begin_contact.Emit(
+            m_owner->begin_contact(
                         m_owner,
                         contactInfo.bodyA_.Get(),
                         contactInfo.bodyB_.Get(),
@@ -292,7 +292,7 @@ public:
 
             if (contactInfo.nodeA_ && contactInfo.nodeA_->physics2dSignals_)
             {
-                contactInfo.nodeA_->physics2dSignals_->begin_contact.Emit(
+                contactInfo.nodeA_->physics2dSignals_->begin_contact(
                             contactInfo.bodyA_.Get(),
                             contactInfo.nodeB_.Get(),
                             contactInfo.bodyB_.Get(),
@@ -304,7 +304,7 @@ public:
 
             if (contactInfo.nodeB_ && contactInfo.nodeB_->physics2dSignals_)
             {
-                contactInfo.nodeB_->physics2dSignals_->begin_contact.Emit(
+                contactInfo.nodeB_->physics2dSignals_->begin_contact(
                             contactInfo.bodyB_.Get(),
                             contactInfo.nodeA_.Get(),
                             contactInfo.bodyA_.Get(),
@@ -324,7 +324,7 @@ public:
         for (ContactInfo& contactInfo : endContactInfos_)
         {
             auto serializedContacts(contactInfo.Serialize(contacts_));
-            m_owner->end_contact.Emit(
+            m_owner->end_contact(
                         m_owner,
                         contactInfo.bodyA_.Get(),
                         contactInfo.bodyB_.Get(),
@@ -338,7 +338,7 @@ public:
 
             if (contactInfo.nodeA_ && contactInfo.nodeA_->physics2dSignals_)
             {
-                contactInfo.nodeA_->physics2dSignals_->end_contact.Emit(
+                contactInfo.nodeA_->physics2dSignals_->end_contact(
                             contactInfo.bodyA_.Get(),
                             contactInfo.nodeB_.Get(),
                             contactInfo.bodyB_.Get(),
@@ -350,7 +350,7 @@ public:
 
             if (contactInfo.nodeB_ && contactInfo.nodeB_->physics2dSignals_)
             {
-                contactInfo.nodeB_->physics2dSignals_->end_contact.Emit(
+                contactInfo.nodeB_->physics2dSignals_->end_contact(
                             contactInfo.bodyB_.Get(),
                             contactInfo.nodeA_.Get(),
                             contactInfo.bodyA_.Get(),
@@ -528,7 +528,7 @@ void PhysicsWorld2D::Update(float timeStep)
 {
     URHO3D_PROFILE(UpdatePhysics2D);
 
-    pre_step.Emit(this,timeStep);
+    pre_step(this,timeStep);
 
     PhysicsWorld2D_private *tgt = static_cast <PhysicsWorld2D_private *>(privateData_);
     tgt->physicsStepping_ = true;
@@ -569,7 +569,7 @@ void PhysicsWorld2D::Update(float timeStep)
     tgt->SendBeginContactEvents();
     tgt->SendEndContactEvents();
 
-    post_step.Emit(this,timeStep);
+    post_step(this,timeStep);
 }
 
 void PhysicsWorld2D::DrawDebugGeometry()

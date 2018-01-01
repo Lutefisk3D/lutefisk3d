@@ -58,6 +58,7 @@ namespace Urho3D
 
 Console::Console(Context* context) :
     Object(context),
+    SignalObserver(context->m_observer_allocator),
     autoVisibleOnError_(false),
     historyRows_(DEFAULT_HISTORY_SIZE),
     historyPosition_(0),
@@ -367,7 +368,7 @@ void Console::HandleTextFinished(UIElement *,const QString &,float)
     if (!line.isEmpty())
     {
         // Send the command as an event for script subsystem
-        g_consoleSignals.consoleCommand.Emit(line,static_cast<Text*>(interpreters_->GetSelectedItem())->GetText());
+        g_consoleSignals.consoleCommand(line,static_cast<Text*>(interpreters_->GetSelectedItem())->GetText());
 
         // Make sure the line isn't the same as the last one
         if (history_.empty() || line != history_.back())

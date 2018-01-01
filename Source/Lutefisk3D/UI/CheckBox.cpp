@@ -66,9 +66,9 @@ void CheckBox::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& ver
     BorderImage::GetBatches(batches, vertexData, currentScissor, offset);
 }
 
-void CheckBox::OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor)
+void CheckBox::OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor)
 {
-    if (button == MOUSEB_LEFT && editable_)
+    if (button == MouseButton::LEFT && editable_)
         SetChecked(!checked_);
 }
 
@@ -77,7 +77,7 @@ void CheckBox::OnKey(int key, int buttons, int qualifiers)
     if (HasFocus() && key == KEY_SPACE)
     {
         // Simulate LMB click
-        OnClickBegin(IntVector2(), IntVector2(), MOUSEB_LEFT, 0, 0, nullptr);
+        OnClickBegin(IntVector2(), IntVector2(), MouseButton::LEFT, 0, 0, nullptr);
     }
 }
 

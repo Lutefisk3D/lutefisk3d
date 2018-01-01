@@ -33,16 +33,12 @@
 #include <utility>
 #include <functional>
 #include <array>
-
 namespace std {
 extern template
 class unique_ptr<uint8_t[]>;
 }
-namespace gl {
-enum class GLenum : uint32_t;
-}
 struct SDL_Window;
-
+typedef struct GLFWwindow GLFWwindow;
 namespace Urho3D
 {
 enum CompressedFormat : unsigned;
@@ -83,13 +79,12 @@ struct ScratchBuffer
 class LUTEFISK3D_EXPORT Graphics : public RefCounted
 {
 public:
-    /// Construct.
     Graphics(Context* context_);
     /// Destruct. Release the device context and close the window.
     virtual ~Graphics();
 
     /// Inform graphics that our SDL_Window is wrapped in a toolkit's own window.
-    void SetEmbeddedWindow() { assert(!window_); ourWindowIsEmbedded_=true; }
+    void SetEmbeddedWindow() { assert(!window2_); ourWindowIsEmbedded_=true; }
     bool WeAreEmbedded() const { return ourWindowIsEmbedded_; }
     /// Set window title.
     void SetWindowTitle(const QString& windowTitle);
@@ -109,8 +104,6 @@ public:
     void SetDither(bool enable);
     /// Set whether to flush the GPU command buffer to prevent multiple frames being queued and uneven frame timesteps. Default off, may decrease performance if enabled. Not currently implemented on OpenGL.
     void SetFlushGPU(bool enable);
-    /// Set allowed screen orientations as a space-separated list of "LandscapeLeft", "LandscapeRight", "Portrait" and "PortraitUpsideDown". Affects currently only iOS platform.
-    void SetOrientations(const QString& orientations);
     /// Toggle between full screen and windowed mode. Return true if successful.
     bool ToggleFullscreen();
     /// Close the window.
@@ -241,8 +234,8 @@ public:
     bool IsInitialized() const;
     /// Return graphics implementation, which holds the actual API-specific resources.
     GraphicsImpl* GetImpl() const { return impl_; }
-    /// Return SDL window.
-    SDL_Window* GetWindow() const { return window_; }
+    /// Return GLFW window.
+    GLFWwindow * GetWindow() const { return window2_; }
     /// Return window title.
     const QString& GetWindowTitle() const { return windowTitle_; }
     /// Return graphics API name.
@@ -281,8 +274,6 @@ public:
     /// Return whether the GPU command buffer is flushed each frame.
     bool GetFlushGPU() const { return flushGPU_; }
 
-    /// Return allowed screen orientations.
-    const QString& GetOrientations() const { return orientations_; }
     /// Return whether graphics context is lost and can not render or load GPU resources.
     bool IsDeviceLost() const;
     /// Return number of primitives drawn this frame.
@@ -290,11 +281,11 @@ public:
     /// Return number of batches drawn this frame.
     unsigned GetNumBatches() const { return numBatches_; }
     /// Return dummy color texture format for shadow maps. Is "GL_NONE" (consume no video memory) if supported.
-    gl::GLenum GetDummyColorFormat() const { return dummyColorFormat_; }
+    uint32_t GetDummyColorFormat() const { return dummyColorFormat_; }
     /// Return shadow map depth texture format, or 0 if not supported.
-    gl::GLenum GetShadowMapFormat() const { return shadowMapFormat_; }
+    uint32_t GetShadowMapFormat() const { return shadowMapFormat_; }
     /// Return 24-bit shadow map depth texture format, or 0 if not supported.
-    gl::GLenum GetHiresShadowMapFormat() const { return hiresShadowMapFormat_; }
+    uint32_t GetHiresShadowMapFormat() const { return hiresShadowMapFormat_; }
     /// Return whether hardware instancing is supported.
     bool GetInstancingSupport() const { return instancingSupport_; }
     /// Return whether light pre-pass rendering is supported.
@@ -314,7 +305,7 @@ public:
     /// Return the number of currently connected monitors.
     int GetMonitorCount() const;
     /// Return hardware format for a compressed image format, or 0 if unsupported.
-    gl::GLenum GetFormat(CompressedFormat format) const;
+    uint32_t GetFormat(CompressedFormat format) const;
     ShaderVariation* GetShader(ShaderType type, const QString& name, const QString& defines = QString()) const;
     /// Return a shader variation by name and defines.
     ShaderVariation* GetShader(ShaderType type, const char* name, const char* defines) const;
@@ -428,39 +419,39 @@ public:
     Context *GetContext() const { return m_context; }
 
     /// Return the API-specific alpha texture format.
-    static gl::GLenum GetAlphaFormat();
+    static uint32_t GetAlphaFormat();
     /// Return the API-specific luminance texture format.
-    static gl::GLenum GetLuminanceFormat();
+    static uint32_t GetLuminanceFormat();
     /// Return the API-specific luminance alpha texture format.
-    static gl::GLenum GetLuminanceAlphaFormat();
+    static uint32_t GetLuminanceAlphaFormat();
     /// Return the API-specific RGB texture format.
-    static gl::GLenum GetRGBFormat();
+    static uint32_t GetRGBFormat();
     /// Return the API-specific RGBA texture format.
-    static gl::GLenum GetRGBAFormat();
+    static uint32_t GetRGBAFormat();
     /// Return the API-specific RGBA 16-bit texture format.
-    static gl::GLenum GetRGBA16Format();
+    static uint32_t GetRGBA16Format();
     /// Return the API-specific RGBA 16-bit float texture format.
-    static gl::GLenum GetRGBAFloat16Format();
+    static uint32_t GetRGBAFloat16Format();
     /// Return the API-specific RGBA 32-bit float texture format.
-    static gl::GLenum GetRGBAFloat32Format();
+    static uint32_t GetRGBAFloat32Format();
     /// Return the API-specific RG 16-bit texture format.
-    static gl::GLenum GetRG16Format();
+    static uint32_t GetRG16Format();
     /// Return the API-specific RG 16-bit float texture format.
-    static gl::GLenum GetRGFloat16Format();
+    static uint32_t GetRGFloat16Format();
     /// Return the API-specific RG 32-bit float texture format.
-    static gl::GLenum GetRGFloat32Format();
+    static uint32_t GetRGFloat32Format();
     /// Return the API-specific single channel 16-bit float texture format.
-    static gl::GLenum GetFloat16Format();
+    static uint32_t GetFloat16Format();
     /// Return the API-specific single channel 32-bit float texture format.
-    static gl::GLenum GetFloat32Format();
+    static uint32_t GetFloat32Format();
     /// Return the API-specific linear depth texture format.
-    static gl::GLenum GetLinearDepthFormat();
+    static uint32_t GetLinearDepthFormat();
     /// Return the API-specific hardware depth-stencil texture format.
-    static gl::GLenum GetDepthStencilFormat();
+    static uint32_t GetDepthStencilFormat();
     /// Return the API-specific readable hardware depth format, or 0 if not supported.
-    static gl::GLenum GetReadableDepthFormat();
+    static uint32_t GetReadableDepthFormat();
     /// Return the API-specific texture format from a textual description, for example "rgb".
-    static gl::GLenum GetFormat(const QString& formatName);
+    static uint32_t GetFormat(const QString& formatName);
     /// Return UV offset required for pixel perfect rendering.
     static const Vector2& GetPixelUVOffset() { return pixelUVOffset; }
     /// Return maximum number of supported bones for skinning.
@@ -510,7 +501,7 @@ private:
     /// Bind a framebuffer using either extension or core functionality. Used only on OpenGL.
     void BindFramebuffer(unsigned fbo);
     /// Bind a framebuffer color attachment using either extension or core functionality. Used only on OpenGL.
-    void BindColorAttachment(unsigned index, gl::GLenum target, unsigned object, bool isRenderBuffer);
+    void BindColorAttachment(unsigned index, uint32_t target, unsigned object, bool isRenderBuffer);
     /// Bind a framebuffer depth attachment using either extension or core functionality. Used only on OpenGL.
     void BindDepthAttachment(unsigned object, bool isRenderBuffer);
     /// Bind a framebuffer stencil attachment using either extension or core functionality. Used only on OpenGL.
@@ -528,16 +519,16 @@ private:
     Mutex gpuObjectMutex_;
     /// Implementation.
     GraphicsImpl* impl_;
-    /// SDL window.
-    SDL_Window* window_;
+    /// GLFW window.
+    GLFWwindow* window2_ = nullptr;
     /// Window title.
     QString windowTitle_;
     /// Window icon image.
     WeakPtr<Image> windowIcon_;
     /// Window width in pixels.
-    int width_;
+    int width_=0;
     /// Window height in pixels.
-    int height_;
+    int height_=0;
     /// Window position.
     IntVector2 position_;
     /// Multisampling mode.
@@ -587,17 +578,17 @@ private:
     /// Scratch buffers.
     std::vector<ScratchBuffer> scratchBuffers_;
     /// Shadow map dummy color texture format.
-    gl::GLenum dummyColorFormat_;
+    uint32_t dummyColorFormat_;
     /// Shadow map depth texture format.
-    gl::GLenum shadowMapFormat_;
+    uint32_t shadowMapFormat_;
     /// Shadow map 24-bit depth texture format.
-    gl::GLenum hiresShadowMapFormat_;
+    uint32_t hiresShadowMapFormat_;
     /// Vertex buffers in use.
     std::array<VertexBuffer*,MAX_VERTEX_STREAMS> vertexBuffers_;
     /// Index buffer in use.
     IndexBuffer* indexBuffer_;
     /// Current vertex declaration hash.
-    unsigned long long vertexDeclarationHash_;
+    uint64_t vertexDeclarationHash_;
     /// Current primitive type.
     unsigned primitiveType_;
     /// Vertex shader in use.
@@ -676,8 +667,6 @@ private:
     mutable QString lastShaderName_;
     /// Shader precache utility.
     SharedPtr<ShaderPrecache> shaderPrecache_;
-    /// Allowed screen orientations.
-    QString orientations_;
     /// Graphics API name.
     QString apiName_;
 

@@ -35,9 +35,8 @@
 #include "Lutefisk3D/UI/UI.h"
 
 #include <cstring>
-
-#include <SDL2/SDL.h>
-
+#include <QtCore/QDebug>
+#include <GLFW/glfw3.h>
 // Use a "click inside window to focus" mechanism on desktop platforms when the mouse cursor is hidden
 // TODO: For now, in this particular case only, treat all the ARM on Linux as "desktop" (e.g. RPI, odroid, etc), revisit this again when we support "mobile" ARM on Linux
 #if defined(_WIN32) || (defined(__APPLE__)) || (defined(__linux__))
@@ -46,19 +45,12 @@
 
 namespace Urho3D
 {
-const int SCREEN_JOYSTICK_START_ID = 0x40000000;
+namespace
+{
+} // end of anonymous namespace
 const StringHash VAR_BUTTON_KEY_BINDING("VAR_BUTTON_KEY_BINDING");
 const StringHash VAR_BUTTON_MOUSE_BUTTON_BINDING("VAR_BUTTON_MOUSE_BUTTON_BINDING");
 const StringHash VAR_LAST_KEYSYM("VAR_LAST_KEYSYM");
-
-/// Convert SDL keycode if necessary.
-int ConvertSDLKeyCode(int keySym, int scanCode)
-{
-    if (scanCode == SCANCODE_AC_BACK)
-        return KEY_ESCAPE;
-    else
-        return SDL_tolower(keySym);
-}
 
 void JoystickState::Initialize(unsigned numButtons, unsigned numAxes, unsigned numHats)
 {
@@ -80,17 +72,17 @@ void JoystickState::Reset()
     for (unsigned i = 0; i < axes_.size(); ++i)
         axes_[i] = 0.0f;
     for (unsigned i = 0; i < hats_.size(); ++i)
-        hats_[i] = HAT_CENTER;
+        hats_[i] = HatPosition::CENTERED;
 }
 
 Input::Input(Context* context) :
+    SignalObserver(context->m_observer_allocator),
     m_context(context),
     mouseButtonDown_(0),
     mouseButtonPress_(0),
     lastVisibleMousePosition_(MOUSE_POSITION_OFFSCREEN),
     mouseMoveWheel_(0),
     inputScale_(Vector2::ONE),
-    windowID_(0),
     toggleFullscreen_(true),
     mouseVisible_(false),
     lastMouseVisible_(false),
@@ -106,8 +98,6 @@ Input::Input(Context* context) :
     mouseMoveScaled_(false),
     initialized_(false)
 {
-    m_context->RequireSDL(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
-
     g_graphicsSignals.newScreenMode.Connect(this,&Input::HandleScreenMode);
 
     // Try to initialize right now, but skip if screen mode is not yet set
@@ -116,9 +106,173 @@ Input::Input(Context* context) :
 
 Input::~Input()
 {
-    m_context->ReleaseSDL();
+}
+static void onGlfwFocus(GLFWwindow *w,int focus)
+{
+    if(focus==GLFW_TRUE)
+    {
+
+    }
+}
+static void onGlfwKey(GLFWwindow *w,int key,int scancode,int action,int modbits)
+{
+    GLFW_KEY_UNKNOWN;
+    Input *inp = static_cast<Input *>(glfwGetWindowUserPointer(w));
+    if(!inp)
+        return;
+    if(action==GLFW_PRESS || action==GLFW_RELEASE)
+        inp->SetKey(key, scancode, action==GLFW_PRESS);
+
+}
+static void onGlfwChar(GLFWwindow *w,unsigned codep)
+{
+    g_inputSignals.textInput(QChar(codep));
+}
+static void onGlfwMouseButton(GLFWwindow *w,int button,int action,int mods)
+{
+    Input *inp = static_cast<Input *>(glfwGetWindowUserPointer(w));
+    if(!inp)
+        return;
+    inp->SetMouseButton(MouseButton(button),action==GLFW_PRESS);
+}
+void Input::mouseMovedInWindow(GLFWwindow *w,double x,double y)
+{
+    Input *inp = static_cast<Input *>(glfwGetWindowUserPointer(w));
+    if(!inp)
+        return;
+    inp->mousePosLastUpdate_ = {static_cast<float>(x),static_cast<float>(y)};
+//    if ((inp->IsMouseVisible() || inp->GetMouseMode() == MM_FREE))
+//    {
+        inp->lastMousePosition_.x_ = x;
+        inp->lastMousePosition_.y_ = y;
+        inp->mouseMoveScaled_ = false;
+
+        if (!inp->suppressNextMouseMove_)
+        {
+            Vector2 deltafrombase = inp->mousePosLastUpdate_-inp->mouseMove_;
+            g_inputSignals.mouseMove(
+                        (int)(x * inp->inputScale_.x_),(int)(y * inp->inputScale_.y_),
+                        // The "on-the-fly" motion data needs to be scaled now, though this may reduce accuracy
+                        (int)(deltafrombase.x_ * inp->inputScale_.x_),(int)(deltafrombase.y_ * inp->inputScale_.y_),
+                        inp->mouseButtonDown_,inp->GetQualifiers()
+                        );
+        }
+//    }
 }
 
+static void mouseScrolledInWindow(GLFWwindow *w, double xoffset, double yoffset)
+{
+    Input *inp = static_cast<Input *>(glfwGetWindowUserPointer(w));
+    if(!inp)
+        return;
+    inp->SetMouseWheel(xoffset);
+
+}
+static void joysticConfigurationChanged(int joyId,int state)
+{
+    if(state==GLFW_CONNECTED)
+        g_inputSignals.joystickConnected(joyId);
+    if(state==GLFW_DISCONNECTED)
+        g_inputSignals.joystickDisconnected(joyId);
+}
+void Input::updateJostickStates()
+{
+    for(int joy_id = GLFW_JOYSTICK_1; joy_id<GLFW_JOYSTICK_LAST; ++joy_id)
+    {
+        if( 0==glfwJoystickPresent(joy_id) )
+            continue;
+        JoystickState& state(joysticks_[joy_id]);
+        int button_count = 0;
+        const uint8_t *states=glfwGetJoystickButtons(joy_id,&button_count);
+        if(!states)
+            continue;
+        if(state.buttons_.size()!=button_count)
+        {
+            state.buttons_.resize(button_count);
+            state.buttonPress_.resize(button_count);
+        }
+        for(unsigned button=0; button<button_count; ++button)
+        {
+            if(state.buttons_[button] != bool(states[button]==GLFW_PRESS))
+            {
+                if(states[button]==GLFW_PRESS)
+                {
+                    state.buttons_[button] = true;
+                    state.buttonPress_[button] = true;
+                    g_inputSignals.joystickButtonDown(joy_id,button);
+                }
+                else
+                {
+                    state.buttons_[button] = false;
+                    g_inputSignals.joystickButtonUp(joy_id,button);
+                }
+            }
+        }
+        int axis_count = 0;
+        const float *axis_states = glfwGetJoystickAxes(joy_id,&axis_count);
+        if(axis_count>=0 && state.axes_.size()!=axis_count)
+            state.axes_.resize(axis_count);
+        for(unsigned axis=0; axis<axis_count; ++axis)
+        {
+            if(state.axes_[axis]!=axis_states[axis])
+            {
+                state.axes_[axis] = axis_states[axis];
+                g_inputSignals.joystickAxisMove(joy_id,axis,axis_states[axis]);
+            }
+        }
+        //TODO: waiting for GLFW 3.3 to properly handle joystick Hat events.
+        //  if (evt.jhat.hat < state.hats_.size())
+        //  {
+        //  state.hats_[evt.jhat.hat] = evt.jhat.value;
+        //  g_inputSignals.joystickHatMove(joystickID,evt.jhat.hat,evt.jhat.value);
+        //  }
+    }
+}
+void Input::iconificationChanged(GLFWwindow *w,int state)
+{
+    Input *inp = static_cast<Input *>(glfwGetWindowUserPointer(w));
+    if(!inp)
+        return;
+    if(GLFW_TRUE==state)
+    {
+        inp->minimized_=true;
+        inp->SendInputFocusEvent();
+    }
+    else
+    {
+        inp->minimized_=false;
+        inp->SendInputFocusEvent();
+    }
+}
+void Input::windowMoved(GLFWwindow *w,int x,int y)
+{
+    Input *inp = static_cast<Input *>(glfwGetWindowUserPointer(w));
+    if(!inp)
+        return;
+    inp->graphics_->OnWindowMoved();
+}
+void Input::windowResized(GLFWwindow *w,int width,int h)
+{
+    Input *inp = static_cast<Input *>(glfwGetWindowUserPointer(w));
+    if(!inp)
+        return;
+    inp->graphics_->OnWindowResized();
+
+}
+//TODO: handle per-window drop
+static void onFileDropped(GLFWwindow *w,int count,const char **names)
+{
+    for(int i=0; i<count; ++i)
+    {
+        QString path = GetInternalPath(QString(names[i]));
+        g_inputSignals.dropFile(path);
+    }
+}
+//TODO: handle per-window close
+static void onWindowClosed(GLFWwindow *w)
+{
+    g_inputSignals.exitRequested();
+}
 void Input::Update()
 {
     assert(initialized_);
@@ -126,28 +280,43 @@ void Input::Update()
     URHO3D_PROFILE_CTX(m_context,UpdateInput);
 
     bool mouseMoved = false;
-    if (mouseMove_ != IntVector2::ZERO)
+    if (mouseMove_ != mousePosLastUpdate_)
         mouseMoved = true;
 
+    // Check for focus change this frame
+    GLFWwindow* window = graphics_->GetWindow();
     ResetInputAccumulation();
+    if(window && !glfwGetWindowUserPointer(window))
+    {
+        glfwSetWindowUserPointer(window,this);
+        glfwSetWindowFocusCallback(window,onGlfwFocus);
+        glfwSetKeyCallback(window,onGlfwKey);
+        glfwSetCharCallback(window,onGlfwChar);
+        glfwSetMouseButtonCallback(window,onGlfwMouseButton);
+        glfwSetCursorPosCallback(window,mouseMovedInWindow);
+        glfwSetScrollCallback(window,&mouseScrolledInWindow);
+        glfwSetJoystickCallback(joysticConfigurationChanged);
+        glfwSetWindowIconifyCallback(window,iconificationChanged);
+        glfwSetWindowPosCallback(window,windowMoved);
+        glfwSetFramebufferSizeCallback(window,windowResized);
+        glfwSetDropCallback(window,onFileDropped);
+        glfwSetWindowCloseCallback(window,onWindowClosed);
 
-    SDL_Event evt;
-    while (SDL_PollEvent(&evt))
-        HandleSDLEvent(&evt);
+    }
+    glfwPollEvents();
+    updateJostickStates();
 
-    if (suppressNextMouseMove_ && (mouseMove_ != IntVector2::ZERO || mouseMoved))
+    if (suppressNextMouseMove_ && (mouseMove_ != mousePosLastUpdate_ || mouseMoved))
         UnsuppressMouseMove();
 
-    // Check for focus change this frame
-    SDL_Window* window = graphics_->GetWindow();
-    unsigned flags = window ? SDL_GetWindowFlags(window) & (SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS) : 0;
+    bool flags = window ? glfwGetWindowAttrib(window,GLFW_FOCUSED) : 0;
     if (window)
     {
 #ifdef REQUIRE_CLICK_TO_FOCUS
         // When using the "click to focus" mechanism, only focus automatically in fullscreen or non-hidden mouse mode
-        if (!inputFocus_ && ((mouseVisible_ || mouseMode_ == MM_FREE) || graphics_->GetFullscreen()) && (flags & SDL_WINDOW_INPUT_FOCUS))
+        if (!inputFocus_ && ((mouseVisible_ || mouseMode_ == MM_FREE) || graphics_->GetFullscreen()) && flags)
 #else
-        if (!inputFocus_ && (flags & SDL_WINDOW_INPUT_FOCUS))
+        if (!inputFocus_ && flags)
 #endif
             focusedThisFrame_ = true;
 
@@ -155,64 +324,16 @@ void Input::Update()
             GainFocus();
 
         // Check for losing focus. The window flags are not reliable when using an external window, so prevent losing focus in that case
-        if (inputFocus_ && (flags & SDL_WINDOW_INPUT_FOCUS) == 0)
+        if (inputFocus_ && !flags)
             LoseFocus();
     }
     else
         return;
 
-    // Handle mouse mode MM_WRAP
-    if (mouseVisible_ && mouseMode_ == MM_WRAP)
-    {
-        IntVector2 windowPos = graphics_->GetWindowPosition();
-        IntVector2 mpos;
-        SDL_GetGlobalMouseState(&mpos.x_, &mpos.y_);
-        mpos -= windowPos;
-
-        const int buffer = 5;
-        const int width = graphics_->GetWidth() - buffer * 2;
-        const int height = graphics_->GetHeight() - buffer * 2;
-        // SetMousePosition utilizes backbuffer coordinate system, scale now from window coordinates
-        mpos.x_ = (int)(mpos.x_ * inputScale_.x_);
-        mpos.y_ = (int)(mpos.y_ * inputScale_.y_);
-
-        bool warp = false;
-        if (mpos.x_ < buffer)
-        {
-            warp = true;
-            mpos.x_ += width;
-        }
-
-        if (mpos.x_ > buffer + width)
-        {
-            warp = true;
-            mpos.x_ -= width;
-        }
-
-        if (mpos.y_ < buffer)
-        {
-            warp = true;
-            mpos.y_ += height;
-        }
-
-        if (mpos.y_ > buffer + height)
-        {
-            warp = true;
-            mpos.y_ -= height;
-        }
-
-        if (warp)
-        {
-            SetMousePosition(mpos);
-            SuppressNextMouseMove();
-        }
-    }
-
-    if (graphics_->WeAreEmbedded() || ((!sdlMouseRelative_ && !mouseVisible_ && mouseMode_ != MM_FREE) &&
-                                           inputFocus_ && (flags & SDL_WINDOW_MOUSE_FOCUS)))
+    if (graphics_->WeAreEmbedded())
     {
         const IntVector2 mousePosition = GetMousePosition();
-        mouseMove_ = mousePosition - lastMousePosition_;
+        mouseMove_ = Vector2(mousePosition - lastMousePosition_);
         mouseMoveScaled_ = true; // Already in backbuffer scale, since GetMousePosition() operates in that
 
         if (graphics_->WeAreEmbedded())
@@ -223,25 +344,21 @@ void Input::Update()
             CenterMousePosition();
         }
         // Send mouse move event if necessary
-        if (mouseMove_ != IntVector2::ZERO)
+        if (mouseMove_ != mousePosLastUpdate_)
         {
             if (!suppressNextMouseMove_)
             {
-                g_inputSignals.mouseMove.Emit(mousePosition.x_, mousePosition.y_, mouseMove_.x_, mouseMove_.y_,
+                g_inputSignals.mouseMove(mousePosition.x_, mousePosition.y_, mouseMove_.x_, mouseMove_.y_,
                                               mouseButtonDown_, GetQualifiers());
             }
         }
-    }
-    else if (!mouseVisible_ && sdlMouseRelative_ && inputFocus_ && (flags & SDL_WINDOW_MOUSE_FOCUS))
-    {
-        // Keep the cursor trapped in window.
-        CenterMousePosition();
     }
 }
 
 void Input::SetMouseVisible(bool enable, bool suppressEvent)
 {
     const bool startMouseVisible = mouseVisible_;
+    GLFWwindow* window = graphics_->GetWindow();
 
     // In mouse mode relative, the mouse should be invisible
     if (mouseMode_ == MM_RELATIVE)
@@ -252,77 +369,69 @@ void Input::SetMouseVisible(bool enable, bool suppressEvent)
         enable = false;
     }
 
-    // SDL Raspberry Pi "video driver" does not have proper OS mouse support yet, so no-op for now
-    if (enable != mouseVisible_)
+    if (enable == mouseVisible_)
+        return;
+    if (initialized_)
     {
-        if (initialized_)
+        // External windows can only support visible mouse cursor
+        if (graphics_->WeAreEmbedded())
         {
-            // External windows can only support visible mouse cursor
-            if (graphics_->WeAreEmbedded())
-            {
-                mouseVisible_ = true;
-                if (!suppressEvent)
-                    lastMouseVisible_ = true;
-                return;
-            }
-
-            if (!enable && inputFocus_)
-            {
-                if (mouseVisible_)
-                    lastVisibleMousePosition_ = GetMousePosition();
-
-                if (mouseMode_ == MM_ABSOLUTE)
-                    SetMouseModeAbsolute(SDL_TRUE);
-                SDL_ShowCursor(SDL_FALSE);
-                mouseVisible_ = false;
-            }
-            else if (mouseMode_ != MM_RELATIVE)
-            {
-                SetMouseGrabbed(false, suppressEvent);
-
-                SDL_ShowCursor(SDL_TRUE);
-                mouseVisible_ = true;
-
-                if (mouseMode_ == MM_ABSOLUTE)
-                    SetMouseModeAbsolute(SDL_FALSE);
-
-                // Update cursor position
-                Cursor* cursor = m_context->m_UISystem->GetCursor();
-                // If the UI Cursor was visible, use that position instead of last visible OS cursor position
-                if (cursor && cursor->IsVisible())
-                {
-                    IntVector2 pos = cursor->GetScreenPosition();
-                    if (pos != MOUSE_POSITION_OFFSCREEN)
-                    {
-                        SetMousePosition(pos);
-                        lastMousePosition_ = pos;
-                    }
-                }
-                else
-                {
-                    if (lastVisibleMousePosition_ != MOUSE_POSITION_OFFSCREEN)
-                    {
-                        SetMousePosition(lastVisibleMousePosition_);
-                        lastMousePosition_ = lastVisibleMousePosition_;
-                    }
-                }
-            }
-        }
-        else
-        {
-            // Allow to set desired mouse visibility before initialization
-            mouseVisible_ = enable;
-        }
-
-        if (mouseVisible_ != startMouseVisible)
-        {
-            SuppressNextMouseMove();
+            mouseVisible_ = true;
             if (!suppressEvent)
-            {
-                lastMouseVisible_ = mouseVisible_;
-                g_inputSignals.mouseVisibleChanged.Emit(mouseVisible_);
+                lastMouseVisible_ = true;
+            return;
+        }
 
+        if (!enable && inputFocus_)
+        {
+            if (mouseVisible_)
+                lastVisibleMousePosition_ = GetMousePosition();
+            glfwSetInputMode(window, GLFW_CURSOR,
+                             mouseMode_ == MM_RELATIVE ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_HIDDEN);
+            mouseVisible_ = false;
+        }
+        else if (mouseMode_ != MM_RELATIVE)
+        {
+            glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+
+            mouseVisible_ = true;
+
+            // Update cursor position
+            Cursor *cursor = m_context->m_UISystem->GetCursor();
+            // If the UI Cursor was visible, use that position instead of last visible OS cursor position
+            if (cursor && cursor->IsVisible())
+            {
+                IntVector2 pos = cursor->GetScreenPosition();
+                if (pos != MOUSE_POSITION_OFFSCREEN)
+                {
+                    SetMousePosition(pos);
+                    lastMousePosition_ = pos;
+                }
             }
+            else
+            {
+                if (lastVisibleMousePosition_ != MOUSE_POSITION_OFFSCREEN)
+                {
+                    SetMousePosition(lastVisibleMousePosition_);
+                    lastMousePosition_ = lastVisibleMousePosition_;
+                }
+            }
+        }
+    }
+    else
+    {
+        // Allow to set desired mouse visibility before initialization
+        mouseVisible_ = enable;
+    }
+
+    if (mouseVisible_ != startMouseVisible)
+    {
+        SuppressNextMouseMove();
+        if (!suppressEvent)
+        {
+            lastMouseVisible_ = mouseVisible_;
+            g_inputSignals.mouseVisibleChanged(mouseVisible_);
+
         }
     }
 }
@@ -345,25 +454,6 @@ void Input::ResetMouseGrabbed()
 {
     SetMouseGrabbed(lastMouseGrabbed_, true);
 }
-
-
-void Input::SetMouseModeAbsolute(SDL_bool enable)
-{
-    SDL_Window* const window = graphics_->GetWindow();
-
-    SDL_SetWindowGrab(window, enable);
-}
-
-void Input::SetMouseModeRelative(SDL_bool enable)
-{
-    SDL_Window* const window = graphics_->GetWindow();
-
-    int result = SDL_SetRelativeMouseMode(enable);
-    sdlMouseRelative_ = enable && (result == 0);
-
-    if (result == -1)
-        SDL_SetWindowGrab(window, enable);
-}
 /** Set the mouse mode behaviour.
  *  MM_ABSOLUTE is the default behaviour, allowing the toggling of operating system cursor visibility and allowing the cursor to escape the window when visible.
  *  When the operating system cursor is invisible in absolute mouse mode, the mouse is confined to the window.
@@ -375,9 +465,6 @@ void Input::SetMouseModeRelative(SDL_bool enable)
  *  When the virtual cursor is also invisible, UI interaction will still function as normal (eg: drag events will trigger).
  *  SetMouseMode(MM_RELATIVE) will call SetMouseGrabbed(true).
  *
- *  MM_WRAP grabs the mouse from the operating system and confines the operating system cursor to the window, wrapping the cursor when it is near the edges.
- *  SetMouseMode(MM_WRAP) will call SetMouseGrabbed(true).
- *
  *  MM_FREE does not grab/confine the mouse cursor even when it is hidden. This can be used for cases where the cursor should render using the operating system
  *  outside the window, and perform custom rendering (with SetMouseVisible(false)) inside.
 */
@@ -388,48 +475,54 @@ void Input::SetMouseMode(MouseMode mode, bool suppressEvent)
     if (mode != mouseMode_)
     {
         if (initialized_)
-    {
-        SuppressNextMouseMove();
-
-        mouseMode_ = mode;
-        SDL_Window* const window = graphics_->GetWindow();
-
-        Cursor* const cursor = m_context->m_UISystem->GetCursor();
-
-        // Handle changing from previous mode
-        if (previousMode == MM_ABSOLUTE)
         {
-            if (!mouseVisible_)
-                SetMouseModeAbsolute(SDL_FALSE);
-        }
-        if (previousMode == MM_RELATIVE)
-        {
-            SetMouseModeRelative(SDL_FALSE);
-            ResetMouseVisible();
-        }
-        else if (previousMode == MM_WRAP)
-            SDL_SetWindowGrab(window, SDL_FALSE);
+            SuppressNextMouseMove();
 
-        // Handle changing to new mode
-        if (mode == MM_ABSOLUTE)
-        {
-            if (!mouseVisible_)
-                SetMouseModeAbsolute(SDL_TRUE);
-        }
-        else if (mode == MM_RELATIVE)
-        {
-            SetMouseVisible(false, true);
-            SetMouseModeRelative(SDL_TRUE);
-        }
-        else if (mode == MM_WRAP)
-        {
-            SetMouseGrabbed(true, suppressEvent);
-            SDL_SetWindowGrab(window, SDL_TRUE);
-        }
+            mouseMode_ = mode;
+            GLFWwindow* const window = graphics_->GetWindow();
 
-        if (mode != MM_WRAP)
+            Cursor* const cursor = m_context->m_UISystem->GetCursor();
+
+            // Handle changing from previous mode
+            if (previousMode == MM_ABSOLUTE)
+            {
+                if (!mouseVisible_ && window)
+                {
+                    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+                }
+            }
+            if (previousMode == MM_RELATIVE)
+            {
+                qDebug() << "Unhandled mouse  mode switch";
+                //SetMouseModeRelative(SDL_FALSE);
+                ResetMouseVisible();
+            }
+
+            // Handle changing to new mode
+            if (mode == MM_ABSOLUTE && window)
+            {
+                if (!mouseVisible_)
+                    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+                else
+                    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+
+            }
+            else if (mode == MM_RELATIVE && window)
+            {
+                SetMouseVisible(false, true);
+                glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+                //qDebug() << "Unhandled mouse mode switch";
+                //SetMouseModeRelative(SDL_TRUE);
+            }
+            else if (mode == MM_FREE && window)
+            {
+                if (!mouseVisible_)
+                    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_HIDDEN);
+                else
+                    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+            }
             SetMouseGrabbed(!(mouseVisible_ || (cursor && cursor->IsVisible())), suppressEvent);
-    }
+        }
         else
         {
             // Allow to set desired mouse mode before initialization
@@ -442,7 +535,7 @@ void Input::SetMouseMode(MouseMode mode, bool suppressEvent)
         lastMouseMode_ = mode;
         if (mouseMode_ != previousMode)
         {
-            g_inputSignals.mouseModeChanged.Emit(mode,IsMouseLocked());
+            g_inputSignals.mouseModeChanged(mode,IsMouseLocked());
         }
     }
 }
@@ -462,25 +555,23 @@ static void PopulateKeyBindingMap(HashMap<QString, int>& keyBindingMap)
     if (!keyBindingMap.empty())
         return;
     keyBindingMap.emplace("SPACE", KEY_SPACE);
-    keyBindingMap.emplace("LCTRL", KEY_LCTRL);
-    keyBindingMap.emplace("RCTRL", KEY_RCTRL);
-    keyBindingMap.emplace("LSHIFT", KEY_LSHIFT);
-    keyBindingMap.emplace("RSHIFT", KEY_RSHIFT);
-    keyBindingMap.emplace("LALT", KEY_LALT);
-    keyBindingMap.emplace("RALT", KEY_RALT);
-    keyBindingMap.emplace("LGUI", KEY_LGUI);
-    keyBindingMap.emplace("RGUI", KEY_RGUI);
+    keyBindingMap.emplace("LCTRL", KEY_LEFT_CONTROL);
+    keyBindingMap.emplace("RCTRL", KEY_RIGHT_CONTROL);
+    keyBindingMap.emplace("LSHIFT", KEY_LEFT_SHIFT);
+    keyBindingMap.emplace("RSHIFT", KEY_RIGHT_SHIFT);
+    keyBindingMap.emplace("LALT", KEY_LEFT_ALT);
+    keyBindingMap.emplace("RALT", KEY_RIGHT_ALT);
+    keyBindingMap.emplace("LGUI", KEY_LEFT_SUPER);
+    keyBindingMap.emplace("RGUI", KEY_RIGHT_SUPER);
     keyBindingMap.emplace("TAB", KEY_TAB);
-    keyBindingMap.emplace("RETURN", KEY_RETURN);
-    keyBindingMap.emplace("RETURN2", KEY_RETURN2);
+    keyBindingMap.emplace("RETURN", KEY_ENTER);
     keyBindingMap.emplace("ENTER", KEY_KP_ENTER);
-    keyBindingMap.emplace("SELECT", KEY_SELECT);
     keyBindingMap.emplace("LEFT", KEY_LEFT);
     keyBindingMap.emplace("RIGHT", KEY_RIGHT);
     keyBindingMap.emplace("UP", KEY_UP);
     keyBindingMap.emplace("DOWN", KEY_DOWN);
-    keyBindingMap.emplace("PAGEUP", KEY_PAGEUP);
-    keyBindingMap.emplace("PAGEDOWN", KEY_PAGEDOWN);
+    keyBindingMap.emplace("PAGEUP", KEY_PAGE_UP);
+    keyBindingMap.emplace("PAGEDOWN", KEY_PAGE_DOWN);
     keyBindingMap.emplace("F1", KEY_F1);
     keyBindingMap.emplace("F2", KEY_F2);
     keyBindingMap.emplace("F3", KEY_F3);
@@ -499,87 +590,63 @@ static void PopulateMouseButtonBindingMap(HashMap<QString, int>& mouseButtonBind
 {
     if (!mouseButtonBindingMap.empty())
         return;
-    mouseButtonBindingMap.emplace("LEFT", SDL_BUTTON_LEFT);
-    mouseButtonBindingMap.emplace("MIDDLE", SDL_BUTTON_MIDDLE);
-    mouseButtonBindingMap.emplace("RIGHT", SDL_BUTTON_RIGHT);
-    mouseButtonBindingMap.emplace("X1", SDL_BUTTON_X1);
-    mouseButtonBindingMap.emplace("X2", SDL_BUTTON_X2);
+    mouseButtonBindingMap.emplace("LEFT", GLFW_MOUSE_BUTTON_LEFT);
+    mouseButtonBindingMap.emplace("MIDDLE", GLFW_MOUSE_BUTTON_MIDDLE);
+    mouseButtonBindingMap.emplace("RIGHT", GLFW_MOUSE_BUTTON_RIGHT);
+    mouseButtonBindingMap.emplace("X1", GLFW_MOUSE_BUTTON_4);
+    mouseButtonBindingMap.emplace("X2", GLFW_MOUSE_BUTTON_5);
 }
 
-SDL_JoystickID Input::OpenJoystick(unsigned index)
+int Input::OpenJoystick(unsigned index)
 {
-    SDL_Joystick* joystick = SDL_JoystickOpen(index);
-    if (!joystick)
+    int joy_exists = glfwJoystickPresent(index);
+    if (!joy_exists)
     {
         URHO3D_LOGERROR(QString("Cannot open joystick #%1").arg(index) );
         return -1;
     }
 
     // Create joystick state for the new joystick
-    int joystickID = SDL_JoystickInstanceID(joystick);
-    JoystickState& state = joysticks_[joystickID];
-    state.joystick_ = joystick;
-    state.joystickID_ = joystickID;
-    state.name_ = SDL_JoystickName(joystick);
-    if (SDL_IsGameController(index))
-        state.controller_ = SDL_GameControllerOpen(index);
+    JoystickState& state = joysticks_[index];
+    state.joystickID_ = index;
 
-    unsigned numButtons = (unsigned)SDL_JoystickNumButtons(joystick);
-    unsigned numAxes = (unsigned)SDL_JoystickNumAxes(joystick);
-    unsigned numHats = (unsigned)SDL_JoystickNumHats(joystick);
+    state.name_ = glfwGetJoystickName(index);
+    //    if (SDL_IsGameController(index))
+    //        state.controller_ = SDL_GameControllerOpen(index);
+
+    int numButtons=0;
+    int numAxes = 0;
+    int numHats = 0;
+    glfwGetJoystickButtons(index,&numButtons);
+    glfwGetJoystickAxes(index,&numAxes);
+    //TODO: waiting for glfw 3.3 glfwGetJoystickHats
 
     // When the joystick is a controller, make sure there's enough axes & buttons for the standard controller mappings
-    if (state.controller_)
-    {
-        if (numButtons < SDL_CONTROLLER_BUTTON_MAX)
-            numButtons = SDL_CONTROLLER_BUTTON_MAX;
-        if (numAxes < SDL_CONTROLLER_AXIS_MAX)
-            numAxes = SDL_CONTROLLER_AXIS_MAX;
-    }
 
     state.Initialize(numButtons, numAxes, numHats);
 
-    return joystickID;
-}
-
-int Input::GetKeyFromName(const QString& name) const
-{
-    return SDL_GetKeyFromName(qPrintable(name));
-}
-
-int Input::GetKeyFromScancode(int scancode) const
-{
-    return SDL_GetKeyFromScancode((SDL_Scancode)scancode);
+    return index;
 }
 
 QString Input::GetKeyName(int key) const
 {
-    return SDL_GetKeyName(key);
-}
 
-int Input::GetScancodeFromKey(int key) const
-{
-    return SDL_GetScancodeFromKey(key);
-}
-
-int Input::GetScancodeFromName(const QString& name) const
-{
-    return SDL_GetScancodeFromName(qPrintable(name));
+    return glfwGetKeyName(key,0);
 }
 
 QString Input::GetScancodeName(int scancode) const
 {
-    return SDL_GetScancodeName((SDL_Scancode)scancode);
+    return glfwGetKeyName(GLFW_KEY_UNKNOWN,scancode);
 }
 
 bool Input::GetKeyDown(int key) const
 {
-    return keyDown_.contains(SDL_tolower(key));
+    return keyDown_.contains(key);
 }
 
 bool Input::GetKeyPress(int key) const
 {
-    return keyPress_.contains(SDL_tolower(key));
+    return keyPress_.contains(key);
 }
 
 bool Input::GetScancodeDown(int scancode) const
@@ -592,24 +659,24 @@ bool Input::GetScancodePress(int scancode) const
     return scancodePress_.contains(scancode);
 }
 
-bool Input::GetMouseButtonDown(unsigned button) const
+bool Input::GetMouseButtonDown(MouseButton button) const
 {
-    return (mouseButtonDown_ & button) != 0;
+    return (mouseButtonDown_ & 1<<int(button)) != 0;
 }
 
-bool Input::GetMouseButtonPress(unsigned button) const
+bool Input::GetMouseButtonPress(MouseButton button) const
 {
-    return (mouseButtonPress_ & button) != 0;
+    return (mouseButtonPress_ & 1<<int(button)) != 0;
 }
 
 bool Input::GetQualifierDown(int qualifier) const
 {
     if (qualifier == QUAL_SHIFT)
-        return GetKeyDown(KEY_LSHIFT) || GetKeyDown(KEY_RSHIFT);
+        return GetKeyDown(KEY_LEFT_SHIFT) || GetKeyDown(KEY_RIGHT_SHIFT);
     if (qualifier == QUAL_CTRL)
-        return GetKeyDown(KEY_LCTRL) || GetKeyDown(KEY_RCTRL);
+        return GetKeyDown(KEY_LEFT_CONTROL) || GetKeyDown(KEY_RIGHT_CONTROL);
     if (qualifier == QUAL_ALT)
-        return GetKeyDown(KEY_LALT) || GetKeyDown(KEY_RALT);
+        return GetKeyDown(KEY_LEFT_ALT) || GetKeyDown(KEY_RIGHT_ALT);
 
     return false;
 }
@@ -617,11 +684,11 @@ bool Input::GetQualifierDown(int qualifier) const
 bool Input::GetQualifierPress(int qualifier) const
 {
     if (qualifier == QUAL_SHIFT)
-        return GetKeyPress(KEY_LSHIFT) || GetKeyPress(KEY_RSHIFT);
+        return GetKeyPress(KEY_LEFT_SHIFT) || GetKeyPress(KEY_RIGHT_SHIFT);
     if (qualifier == QUAL_CTRL)
-        return GetKeyPress(KEY_LCTRL) || GetKeyPress(KEY_RCTRL);
+        return GetKeyPress(KEY_LEFT_CONTROL) || GetKeyPress(KEY_RIGHT_CONTROL);
     if (qualifier == QUAL_ALT)
-        return GetKeyPress(KEY_LALT) || GetKeyPress(KEY_RALT);
+        return GetKeyPress(KEY_LEFT_ALT) || GetKeyPress(KEY_RIGHT_ALT);
 
     return false;
 }
@@ -646,32 +713,44 @@ IntVector2 Input::GetMousePosition() const
     if (!initialized_)
         return ret;
 
-    SDL_GetMouseState(&ret.x_, &ret.y_);
-    ret.x_ = (int)(ret.x_ * inputScale_.x_);
-    ret.y_ = (int)(ret.y_ * inputScale_.y_);
+    double x=0,y=0;
+    GLFWwindow *win = graphics_->GetWindow();
+    if(win)
+        glfwGetCursorPos(win,&x, &y);
+    ret.x_ = (int)(x * inputScale_.x_);
+    ret.y_ = (int)(y * inputScale_.y_);
 
     return ret;
 }
 IntVector2 Input::GetMouseMove() const
 {
     if (!suppressNextMouseMove_)
-        return mouseMoveScaled_ ? mouseMove_ : IntVector2((int)(mouseMove_.x_ * inputScale_.x_), (int)(mouseMove_.y_ * inputScale_.y_));
+    {
+        Vector2 posdelta = mousePosLastUpdate_ - mouseMove_;
+        return mouseMoveScaled_ ? IntVector2(posdelta.x_,posdelta.y_) : IntVector2((int)(posdelta.x_ * inputScale_.x_), (int)(posdelta.y_ * inputScale_.y_));
+    }
     else
         return IntVector2::ZERO;
 }
 
 int Input::GetMouseMoveX() const
 {
+
     if (!suppressNextMouseMove_)
-        return mouseMoveScaled_ ? mouseMove_.x_ : (int)(mouseMove_.x_ * inputScale_.x_);
+    {
+        Vector2 posdelta = mousePosLastUpdate_ - mouseMove_;
+        return int(mouseMoveScaled_ ? posdelta.x_ : (posdelta.x_ * inputScale_.x_));
+    }
     else
         return 0;
 }
 
 int Input::GetMouseMoveY() const
 {
-    if (!suppressNextMouseMove_)
-        return mouseMoveScaled_ ? mouseMove_.y_ : mouseMove_.y_ * inputScale_.y_;
+    if (!suppressNextMouseMove_) {
+        Vector2 posdelta = mousePosLastUpdate_ - mouseMove_;
+        return int(mouseMoveScaled_ ? posdelta.y_ : posdelta.y_ * inputScale_.y_);
+    }
     else
         return 0;
 }
@@ -696,10 +775,10 @@ JoystickState* Input::GetJoystickByName(const QString& name)
             return &(MAP_VALUE(i));
     }
 
-    return 0;
+    return nullptr;
 }
 
-JoystickState* Input::GetJoystick(SDL_JoystickID id)
+JoystickState* Input::GetJoystick(int id)
 {
     auto i = joysticks_.find(id);
     return i != joysticks_.end() ? &MAP_VALUE(i) : nullptr;
@@ -746,9 +825,12 @@ void Input::ResetJoysticks()
     joysticks_.clear();
 
     // Open each detected joystick automatically on startup
-    unsigned size = static_cast<unsigned>(SDL_NumJoysticks());
+    unsigned size = GLFW_JOYSTICK_LAST;
     for (unsigned i = 0; i < size; ++i)
-        OpenJoystick(i);
+    {
+        if(0!=glfwJoystickPresent(i))
+            OpenJoystick(i);
+    }
 }
 
 void Input::ResetInputAccumulation()
@@ -757,7 +839,7 @@ void Input::ResetInputAccumulation()
     keyPress_.clear();
     scancodePress_.clear();
     mouseButtonPress_ = 0;
-    mouseMove_ = IntVector2::ZERO;
+    ResetMousePos();
     mouseMoveWheel_ = 0;
     for (auto i = joysticks_.begin(); i != joysticks_.end(); ++i)
     {
@@ -782,8 +864,8 @@ void Input::GainFocus()
     SuppressNextMouseMove();
 
     // Re-establish mouse cursor hiding as necessary
-    if (!mouseVisible_)
-        SDL_ShowCursor(SDL_FALSE);
+    //    if (!mouseVisible_)
+    //        SDL_ShowCursor(SDL_FALSE);
 
     SendInputFocusEvent();
 }
@@ -796,7 +878,7 @@ void Input::LoseFocus()
     focusedThisFrame_ = false;
 
     // Show the mouse cursor when inactive
-    SDL_ShowCursor(SDL_TRUE);
+    //    SDL_ShowCursor(SDL_TRUE);
 
     // Change mouse mode -- removing any cursor grabs, etc.
     const MouseMode mm = mouseMode_;
@@ -806,7 +888,18 @@ void Input::LoseFocus()
 
     SendInputFocusEvent();
 }
-
+void Input::ResetMousePos()
+{
+    Graphics* graphics = m_context->m_Graphics.get();
+    double mx=0;
+    double my=0;
+    if(graphics && graphics->GetWindow())
+    {
+        glfwGetCursorPos(graphics->GetWindow(),&mx,&my);
+    }
+    mouseMove_ = mousePosLastUpdate_;
+    mousePosLastUpdate_=mouseMove_;
+}
 void Input::ResetState()
 {
     keyDown_.clear();
@@ -819,40 +912,40 @@ void Input::ResetState()
         ELEMENT_VALUE(elem).Reset();
 
     // Use SetMouseButton() to reset the state so that mouse events will be sent properly
-    SetMouseButton(MOUSEB_LEFT, false);
-    SetMouseButton(MOUSEB_RIGHT, false);
-    SetMouseButton(MOUSEB_MIDDLE, false);
+    SetMouseButton(MouseButton::LEFT, false);
+    SetMouseButton(MouseButton::RIGHT, false);
+    SetMouseButton(MouseButton::MIDDLE, false);
 
-    mouseMove_ = IntVector2::ZERO;
+    ResetMousePos();
     mouseMoveWheel_ = 0;
     mouseButtonPress_ = 0;
 }
 
 void Input::SendInputFocusEvent()
 {
-    g_inputSignals.inputFocus.Emit(HasFocus(),IsMinimized());
+    g_inputSignals.inputFocus(HasFocus(),IsMinimized());
 }
 
-void Input::SetMouseButton(unsigned button, bool newState)
+void Input::SetMouseButton(MouseButton button, bool newState)
 {
     if (newState)
     {
-        if (!(mouseButtonDown_ & button))
-            mouseButtonPress_ |= button;
+        if (!(mouseButtonDown_ & 1<<int(button)))
+            mouseButtonPress_ |= 1<<int(button);
 
-        mouseButtonDown_ |= button;
+        mouseButtonDown_ |= 1<<int(button);
     }
     else
     {
-        if (!(mouseButtonDown_ & button))
+        if (!(mouseButtonDown_ & 1<<int(button)))
             return;
 
-        mouseButtonDown_ &= ~button;
+        mouseButtonDown_ &= ~(1<<int(button));
     }
     if(newState)
-        g_inputSignals.mouseButtonDown.Emit(button,mouseButtonDown_,GetQualifiers());
+        g_inputSignals.mouseButtonDown(button,mouseButtonDown_,GetQualifiers());
     else
-        g_inputSignals.mouseButtonUp.Emit(button,mouseButtonDown_,GetQualifiers());
+        g_inputSignals.mouseButtonUp(button,mouseButtonDown_,GetQualifiers());
 }
 
 void Input::SetKey(int key, int scancode, bool newState)
@@ -881,12 +974,12 @@ void Input::SetKey(int key, int scancode, bool newState)
             return;
     }
     if(newState)
-        g_inputSignals.keyDown.Emit(key,scancode,mouseButtonDown_,GetQualifiers(),repeat);
+        g_inputSignals.keyDown(key,scancode,mouseButtonDown_,GetQualifiers(),repeat);
     else
-        g_inputSignals.keyUp.Emit(key,scancode,mouseButtonDown_,GetQualifiers());
+        g_inputSignals.keyUp(key,scancode,mouseButtonDown_,GetQualifiers());
 
-    if ((key == KEY_RETURN || key == KEY_RETURN2 || key == KEY_KP_ENTER) && newState && !repeat && toggleFullscreen_ &&
-            (GetKeyDown(KEY_LALT) || GetKeyDown(KEY_RALT)))
+    if ((key == KEY_ENTER || key == KEY_KP_ENTER) && newState && !repeat && toggleFullscreen_ &&
+            (GetKeyDown(KEY_LEFT_ALT) || GetKeyDown(KEY_RIGHT_ALT)))
         graphics_->ToggleFullscreen();
 }
 
@@ -896,7 +989,7 @@ void Input::SetMouseWheel(int delta)
     if (delta)
     {
         mouseMoveWheel_ += delta;
-        g_inputSignals.mouseWheel.Emit(delta,mouseButtonDown_,GetQualifiers());
+        g_inputSignals.mouseWheel(delta,mouseButtonDown_,GetQualifiers());
     }
 }
 
@@ -904,8 +997,7 @@ void Input::SetMousePosition(const IntVector2& position)
 {
     if (!graphics_)
         return;
-
-    SDL_WarpMouseInWindow(graphics_->GetWindow(), (int)(position.x_ / inputScale_.x_), (int)(position.y_ / inputScale_.y_));
+    glfwSetCursorPos(graphics_->GetWindow(),(int)(position.x_ / inputScale_.x_), (int)(position.y_ / inputScale_.y_));
 }
 
 void Input::CenterMousePosition()
@@ -921,306 +1013,14 @@ void Input::CenterMousePosition()
 void Input::SuppressNextMouseMove()
 {
     suppressNextMouseMove_ = true;
-    mouseMove_ = IntVector2::ZERO;
+    ResetMousePos();
 }
 
 void Input::UnsuppressMouseMove()
 {
     suppressNextMouseMove_ = false;
-    mouseMove_ = IntVector2::ZERO;
+    ResetMousePos();
     lastMousePosition_ = GetMousePosition();
-}
-
-void Input::HandleSDLEvent(void* sdlEvent)
-{
-    SDL_Event& evt = *static_cast<SDL_Event*>(sdlEvent);
-
-    // While not having input focus, skip key/mouse/touch/joystick events, except for the "click to focus" mechanism
-    if (!inputFocus_ && evt.type >= SDL_KEYDOWN && evt.type <= SDL_MULTIGESTURE)
-    {
-#ifdef REQUIRE_CLICK_TO_FOCUS
-        // Require the click to be at least 1 pixel inside the window to disregard clicks in the title bar
-        if (evt.type == SDL_MOUSEBUTTONDOWN && evt.button.x > 0 && evt.button.y > 0 && evt.button.x < graphics_->GetWidth() - 1 &&
-                evt.button.y < graphics_->GetHeight() - 1)
-        {
-            focusedThisFrame_ = true;
-            // Do not cause the click to actually go throughfin
-            return;
-        }
-        else if (evt.type == SDL_FINGERDOWN)
-        {
-            // When focusing by touch, call GainFocus() immediately as it resets the state; a touch has sustained state
-            // which should be kept
-            GainFocus();
-        }
-        else
-#endif
-            return;
-    }
-
-    // Possibility for custom handling or suppression of default handling for the SDL event
-    {
-        bool wasConsumed = false;
-        g_inputSignals.rawSDLInput.Emit(&evt,wasConsumed);
-        if (wasConsumed)
-            return;
-    }
-
-    switch (evt.type)
-    {
-    case SDL_KEYDOWN:
-        SetKey(ConvertSDLKeyCode(evt.key.keysym.sym, evt.key.keysym.scancode), evt.key.keysym.scancode, true);
-        break;
-
-    case SDL_KEYUP:
-        SetKey(ConvertSDLKeyCode(evt.key.keysym.sym, evt.key.keysym.scancode), evt.key.keysym.scancode, false);
-        break;
-
-    case SDL_TEXTINPUT:
-    {
-        textInput_ = QString::fromUtf8(evt.text.text);
-        if (!textInput_.isEmpty())
-        {
-            g_inputSignals.textInput.Emit(textInput_);
-        }
-    }
-        break;
-    case SDL_TEXTEDITING:
-        {
-            textInput_ = QString::fromUtf8(evt.text.text);
-            g_inputSignals.textEditing.Emit(textInput_,evt.edit.start,evt.edit.length);
-        }
-        break;
-    case SDL_MOUSEBUTTONDOWN:
-        SetMouseButton(1 << (evt.button.button - 1), true);
-        break;
-
-    case SDL_MOUSEBUTTONUP:
-        SetMouseButton(1 << (evt.button.button - 1), false);
-        break;
-
-    case SDL_MOUSEMOTION:
-        if ((sdlMouseRelative_ || mouseVisible_ || mouseMode_ == MM_FREE))
-        {
-            // Accumulate without scaling for accuracy, needs to be scaled to backbuffer coordinates when asked
-            mouseMove_.x_ += evt.motion.xrel;
-            mouseMove_.y_ += evt.motion.yrel;
-            mouseMoveScaled_ = false;
-
-            if (!suppressNextMouseMove_)
-            {
-                g_inputSignals.mouseMove.Emit(
-                            (int)(evt.motion.x * inputScale_.x_),(int)(evt.motion.y * inputScale_.y_),
-                            // The "on-the-fly" motion data needs to be scaled now, though this may reduce accuracy
-                            (int)(evt.motion.xrel * inputScale_.x_),(int)(evt.motion.yrel * inputScale_.y_),
-                            mouseButtonDown_,GetQualifiers()
-                            );
-            }
-        }
-        break;
-
-    case SDL_MOUSEWHEEL:
-        SetMouseWheel(evt.wheel.y);
-        break;
-
-    case SDL_DOLLARRECORD:
-    {
-        g_inputSignals.gestureRecorded.Emit((unsigned)evt.dgesture.gestureId);
-    }
-        break;
-
-    case SDL_DOLLARGESTURE:
-    {
-        g_inputSignals.gestureInput.Emit((unsigned)evt.dgesture.gestureId,
-                                         int(evt.dgesture.x * graphics_->GetWidth()),
-                                         int(evt.dgesture.y * graphics_->GetHeight()),
-                                         int(evt.dgesture.numFingers),
-                                         evt.dgesture.error
-                                         );
-    }
-        break;
-
-    case SDL_MULTIGESTURE:
-    {
-        g_inputSignals.multiGesture.Emit(
-                    int(evt.mgesture.x * graphics_->GetWidth()),
-                    int(evt.mgesture.y * graphics_->GetHeight()),
-                    int(evt.mgesture.numFingers),
-                    M_RADTODEG * evt.mgesture.dTheta,
-                    evt.mgesture.dDist
-                    );
-    }
-        break;
-
-    case SDL_JOYDEVICEADDED:
-    {
-        SDL_JoystickID joystickID = OpenJoystick((unsigned)evt.jdevice.which);
-
-        g_inputSignals.joystickConnected.Emit(joystickID);
-    }
-        break;
-
-    case SDL_JOYDEVICEREMOVED:
-    {
-        joysticks_.erase(evt.jdevice.which);
-        g_inputSignals.joystickDisconnected.Emit(evt.jdevice.which);
-    }
-        break;
-
-    case SDL_JOYBUTTONDOWN:
-    {
-        unsigned button = evt.jbutton.button;
-        SDL_JoystickID joystickID = evt.jbutton.which;
-        JoystickState& state = joysticks_[joystickID];
-
-        // Skip ordinary joystick event for a controller
-        if (!state.controller_)
-        {
-            if (button < state.buttons_.size())
-            {
-                state.buttons_[button] = true;
-                state.buttonPress_[button] = true;
-                g_inputSignals.joystickButtonDown.Emit(joystickID,button);
-            }
-        }
-    }
-        break;
-
-    case SDL_JOYBUTTONUP:
-    {
-        unsigned button = evt.jbutton.button;
-        SDL_JoystickID joystickID = evt.jbutton.which;
-        JoystickState& state = joysticks_[joystickID];
-
-        if (!state.controller_)
-        {
-            if (button < state.buttons_.size())
-            {
-                if (!state.controller_)
-                    state.buttons_[button] = false;
-                g_inputSignals.joystickButtonUp.Emit(joystickID,button);
-            }
-        }
-    }
-        break;
-
-    case SDL_JOYAXISMOTION:
-    {
-        SDL_JoystickID joystickID = evt.jaxis.which;
-        JoystickState& state = joysticks_[joystickID];
-
-        if (!state.controller_)
-        {
-            float clampedPosition = Clamp((float)evt.jaxis.value / 32767.0f, -1.0f, 1.0f);
-
-            if (evt.jaxis.axis < state.axes_.size())
-            {
-                // If the joystick is a controller, only use the controller axis mappings
-                // (we'll also get the controller event)
-                if (!state.controller_)
-                    state.axes_[evt.jaxis.axis] = clampedPosition;
-                g_inputSignals.joystickAxisMove.Emit(joystickID,evt.jaxis.axis,clampedPosition);
-            }
-        }
-    }
-        break;
-
-    case SDL_JOYHATMOTION:
-    {
-        SDL_JoystickID joystickID = evt.jaxis.which;
-        JoystickState& state = joysticks_[joystickID];
-
-        if (evt.jhat.hat < state.hats_.size())
-        {
-            state.hats_[evt.jhat.hat] = evt.jhat.value;
-            g_inputSignals.joystickHatMove.Emit(joystickID,evt.jhat.hat,evt.jhat.value);
-        }
-    }
-        break;
-
-    case SDL_CONTROLLERBUTTONDOWN:
-    {
-        unsigned button = evt.cbutton.button;
-        SDL_JoystickID joystickID = evt.cbutton.which;
-        JoystickState& state = joysticks_[joystickID];
-
-        if (button < state.buttons_.size())
-        {
-            state.buttons_[button] = true;
-            state.buttonPress_[button] = true;
-            g_inputSignals.joystickButtonDown.Emit(joystickID,button);
-        }
-    }
-        break;
-
-    case SDL_CONTROLLERBUTTONUP:
-    {
-        unsigned button = evt.cbutton.button;
-        SDL_JoystickID joystickID = evt.cbutton.which;
-        JoystickState& state = joysticks_[joystickID];
-
-        if (button < state.buttons_.size())
-        {
-            state.buttons_[button] = false;
-            g_inputSignals.joystickButtonUp.Emit(joystickID,button);
-        }
-    }
-        break;
-
-    case SDL_CONTROLLERAXISMOTION:
-    {
-        SDL_JoystickID joystickID = evt.caxis.which;
-        JoystickState& state = joysticks_[joystickID];
-
-        float clampedPosition = Clamp((float)evt.caxis.value / 32767.0f, -1.0f, 1.0f);
-
-        if (evt.caxis.axis < state.axes_.size())
-        {
-            state.axes_[evt.caxis.axis] = clampedPosition;
-            g_inputSignals.joystickAxisMove.Emit(joystickID,evt.jaxis.axis,clampedPosition);
-        }
-    }
-        break;
-
-    case SDL_WINDOWEVENT:
-    {
-        switch (evt.window.event)
-        {
-        case SDL_WINDOWEVENT_MINIMIZED:
-            minimized_ = true;
-            SendInputFocusEvent();
-            break;
-
-        case SDL_WINDOWEVENT_MAXIMIZED:
-        case SDL_WINDOWEVENT_RESTORED:
-                minimized_ = false;
-                SendInputFocusEvent();
-            break;
-
-        case SDL_WINDOWEVENT_RESIZED:
-            graphics_->OnWindowResized();
-            break;
-        case SDL_WINDOWEVENT_MOVED:
-            graphics_->OnWindowMoved();
-            break;
-        default: break;
-        }
-    }
-        break;
-
-    case SDL_DROPFILE:
-    {
-        QString path = GetInternalPath(QString(evt.drop.file));
-        SDL_free(evt.drop.file);
-        g_inputSignals.dropFile.Emit(path);
-    }
-        break;
-
-    case SDL_QUIT:
-        g_inputSignals.exitRequested.Emit();
-        break;
-    default: break;
-    }
 }
 
 void Input::HandleScreenMode(int Width, int Height, bool Fullscreen, bool Borderless, bool Resizable, bool HighDPI,
@@ -1231,19 +1031,18 @@ void Input::HandleScreenMode(int Width, int Height, bool Fullscreen, bool Border
 
     // Re-enable cursor clipping, and re-center the cursor (if needed) to the new screen size, so that there is no erroneous
     // mouse move event. Also get new window ID if it changed
-    SDL_Window* window = graphics_->GetWindow();
-    windowID_ = SDL_GetWindowID(window);
+    GLFWwindow* window = graphics_->GetWindow();
 
     if (graphics_->GetFullscreen() || !mouseVisible_)
         focusedThisFrame_ = true;
 
     // After setting a new screen mode we should not be minimized
-    minimized_ = (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) != 0;
+    minimized_ = glfwGetWindowAttrib(window,GLFW_ICONIFIED);
     // Calculate input coordinate scaling from SDL window to backbuffer ratio
     int winWidth, winHeight;
     int gfxWidth = graphics_->GetWidth();
     int gfxHeight = graphics_->GetHeight();
-    SDL_GetWindowSize(window, &winWidth, &winHeight);
+    glfwGetWindowSize(window, &winWidth, &winHeight);
     if (winWidth > 0 && winHeight > 0 && gfxWidth > 0 && gfxHeight > 0)
     {
         inputScale_.x_ = (float)gfxWidth / (float)winWidth;
@@ -1256,9 +1055,9 @@ void Input::HandleScreenMode(int Width, int Height, bool Fullscreen, bool Border
 void Input::HandleBeginFrame(unsigned frameno,float ts)
 {
     // Update input right at the beginning of the frame
-    g_inputSignals.inputBegin.Emit();
+    g_inputSignals.inputBegin();
     Update();
-    g_inputSignals.inputEnd.Emit();
+    g_inputSignals.inputEnd();
 }
 
 }

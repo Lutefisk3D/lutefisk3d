@@ -35,9 +35,7 @@
 #include "Lutefisk3D/Graphics/RenderSurface.h"
 
 //#include "../../DebugNew.h"
-#include "glbinding/gl33ext/functions.h"
-
-using namespace gl;
+#include <GL/glew.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
@@ -152,13 +150,13 @@ bool Texture2DArray::SetData(unsigned layer, unsigned level, int x, int y, int w
     graphics_->SetTextureForUpdate(this);
 
     bool wholeLevel = x == 0 && y == 0 && width == levelWidth && height == levelHeight && layer == 0;
-    gl::GLenum  format = GetSRGB() ? GetSRGBFormat(format_) : format_;
+    uint32_t  format = GetSRGB() ? GetSRGBFormat(format_) : format_;
 
     if (!IsCompressed())
     {
         if (wholeLevel)
             glTexImage3D(target_, level, format, width, height, layers_, 0, GetExternalFormat(format_),
-                GetDataType(format_), 0);
+                GetDataType(format_), nullptr);
         glTexSubImage3D(target_, level, x, y, layer, width, height, 1, GetExternalFormat(format_),
             GetDataType(format_), data);
     }
@@ -166,7 +164,7 @@ bool Texture2DArray::SetData(unsigned layer, unsigned level, int x, int y, int w
     {
         if (wholeLevel)
             glCompressedTexImage3D(target_, level, format, width, height, layers_, 0,
-                GetDataSize(width, height, layers_), 0);
+                GetDataSize(width, height, layers_), nullptr);
         glCompressedTexSubImage3D(target_, level, x, y, layer, width, height, 1, format,
             GetDataSize(width, height), data);
     }
@@ -226,7 +224,7 @@ bool Texture2DArray::SetData(unsigned layer, Image *image, bool useAlpha)
         unsigned char* levelData = image->GetData();
         int levelWidth = image->GetWidth();
         int levelHeight = image->GetHeight();
-        gl::GLenum  format = GL_NONE;
+        uint32_t  format = GL_NONE;
 
         // Discard unnecessary mip levels
         for (unsigned i = 0; i < mipsToSkip_[quality]; ++i)
@@ -304,7 +302,7 @@ bool Texture2DArray::SetData(unsigned layer, Image *image, bool useAlpha)
         int width = image->GetWidth();
         int height = image->GetHeight();
         unsigned levels = image->GetNumCompressedLevels();
-        gl::GLenum format = graphics_->GetFormat(image->GetCompressedFormat());
+        uint32_t format = graphics_->GetFormat(image->GetCompressedFormat());
         bool needDecompress = false;
 
         if (format==GL_NONE)
@@ -430,16 +428,16 @@ bool Texture2DArray::Create()
     // Ensure that our texture is bound to OpenGL texture unit 0
     graphics_->SetTextureForUpdate(this);
 
-    gl::GLenum format = GetSRGB() ? GetSRGBFormat(format_) : format_;
-    gl::GLenum externalFormat = GetExternalFormat(format_);
-    gl::GLenum dataType = GetDataType(format_);
+    uint32_t format = GetSRGB() ? GetSRGBFormat(format_) : format_;
+    uint32_t externalFormat = GetExternalFormat(format_);
+    uint32_t dataType = GetDataType(format_);
 
     // If not compressed, create the initial level 0 texture with null data
     bool success = true;
     if (!IsCompressed())
     {
         glGetError();
-        glTexImage3D(target_, 0, format, width_, height_, layers_, 0, externalFormat, dataType, 0);
+        glTexImage3D(target_, 0, format, width_, height_, layers_, 0, externalFormat, dataType, nullptr);
         if (glGetError()!=GL_NONE)
             success = false;
     }
@@ -466,7 +464,7 @@ bool Texture2DArray::Create()
 
     // Set initial parameters, then unbind the texture
     UpdateParameters();
-    graphics_->SetTexture(0, 0);
+    graphics_->SetTexture(0, nullptr);
 
     return success;
 }

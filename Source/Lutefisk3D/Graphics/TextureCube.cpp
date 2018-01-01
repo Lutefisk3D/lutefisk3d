@@ -36,6 +36,8 @@
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Core/StringUtils.h"
 
+#include <GL/glew.h>
+
 namespace Urho3D
 {
 
@@ -57,7 +59,7 @@ static SharedPtr<Image> GetTileImage(Image* src, int tileX, int tileY, int tileW
 TextureCube::TextureCube(Context* context) :
     Texture(context)
 {
-    target_ = gl::GL_TEXTURE_CUBE_MAP;
+    target_ = GL_TEXTURE_CUBE_MAP;
 
     // Default to clamp mode addressing
     addressMode_[COORD_U] = ADDRESS_CLAMP;
@@ -251,7 +253,7 @@ bool TextureCube::EndLoad()
     return true;
 }
 
-bool TextureCube::SetSize(int size, gl::GLenum format, TextureUsage usage, int multiSample)
+bool TextureCube::SetSize(int size, uint32_t format, TextureUsage usage, int multiSample)
 {
     if (size <= 0)
     {
@@ -285,7 +287,7 @@ bool TextureCube::SetSize(int size, gl::GLenum format, TextureUsage usage, int m
         for (unsigned i = 0; i < MAX_CUBEMAP_FACES; ++i)
         {
             renderSurfaces_[i] = new RenderSurface(this);
-            renderSurfaces_[i]->target_ = gl::GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
+            renderSurfaces_[i]->target_ = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
         }
 
         // Nearest filtering and mipmaps disabled by default

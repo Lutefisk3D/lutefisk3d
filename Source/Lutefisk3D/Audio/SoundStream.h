@@ -31,9 +31,7 @@ namespace Urho3D
 class LUTEFISK3D_EXPORT SoundStream : public RefCounted
 {
 public:
-    /// Construct.
     SoundStream();
-    /// Destruct.
     ~SoundStream();
 
     /// Seek to sample number

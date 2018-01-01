@@ -1,0 +1,5 @@
+set(SOURCES)
+add_executable(qui_testbed main.cpp ${SOURCES})
+qt5_use_modules(qui_testbed Core Gui Quick)
+target_link_libraries(qui_testbed Lutefisk3D Threads::Threads)
+set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} Qt5::Quick PARENT_SCOPE)

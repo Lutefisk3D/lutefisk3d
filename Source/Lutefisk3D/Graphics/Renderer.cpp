@@ -49,6 +49,7 @@
 #include "Lutefisk3D/Graphics/Zone.h"
 #include "Light.h"
 
+#include <GL/glew.h>
 
 namespace Urho3D
 {
@@ -390,6 +391,7 @@ inline std::vector<VertexElement> CreateInstancingBufferElements(unsigned numExt
 }
 
 Renderer::Renderer(Context* context) :
+    SignalObserver(context->m_observer_allocator),
     m_context(context),
     defaultZone_(new Zone(context))
 {
@@ -791,7 +793,7 @@ void Renderer::Update(float timeStep)
         UpdateQueuedViewport(i);
 
     // Gather queued & autoupdated render surfaces
-    g_graphicsSignals.renderSurfaceUpdate.Emit();
+    g_graphicsSignals.renderSurfaceUpdate();
 
     // Update viewports that were added as result of the event above
     for (unsigned i = numMainViewports; i < queuedViewports_.size(); ++i)
@@ -857,7 +859,7 @@ void Renderer::Render()
     RemoveUnusedBuffers();
 
     // All views done, custom rendering can now be done before UI
-    g_graphicsSignals.endAllViewsRender.Emit();
+    g_graphicsSignals.endAllViewsRender();
 }
 
 /// Add debug geometry to the debug renderer.
@@ -1027,7 +1029,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
     }
 
     // Find format and usage of the shadow map
-    gl::GLenum shadowMapFormat = gl::GL_NONE;
+    uint32_t shadowMapFormat = 0;
     TextureUsage shadowMapUsage = TEXTURE_DEPTHSTENCIL;
     int multiSample = 1;
 
@@ -1051,12 +1053,12 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
         break;
     }
 
-    if (gl::GL_NONE==shadowMapFormat)
+    if (GL_NONE==shadowMapFormat)
         return nullptr;
 
     SharedPtr<Texture2D> newShadowMap(new Texture2D(m_context));
     int retries = 3;
-    gl::GLenum dummyColorFormat = graphics_->GetDummyColorFormat();
+    uint32_t dummyColorFormat = graphics_->GetDummyColorFormat();
     // Disable mipmaps from the shadow map
     newShadowMap->SetNumLevels(1);
 
@@ -1075,15 +1077,16 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
             newShadowMap->SetShadowCompare(shadowMapUsage == TEXTURE_DEPTHSTENCIL);
             // Create dummy color texture for the shadow map if necessary: Direct3D9, or OpenGL when working around an OS X +
             // Intel driver bug
-            if (shadowMapUsage == TEXTURE_DEPTHSTENCIL && gl::GL_NONE!=dummyColorFormat)
+            if (shadowMapUsage == TEXTURE_DEPTHSTENCIL && GL_NONE!=dummyColorFormat)
             {
                 //TODO: consider always referencing shadowmap from colorShadowMaps_[searchKey], and assigning new Texture if it's null ?
                 // If no dummy color rendertarget for this size exists yet, create one now
                 if (!hashContains(colorShadowMaps_,searchKey))
                 {
-                    colorShadowMaps_[searchKey] = new Texture2D(m_context);
-                    colorShadowMaps_[searchKey]->SetNumLevels(1);
-                    colorShadowMaps_[searchKey]->SetSize(width, height, dummyColorFormat, TEXTURE_RENDERTARGET);
+                    Texture2D *tex=new Texture2D(m_context);
+                    colorShadowMaps_[searchKey] = tex;
+                    tex->SetNumLevels(1);
+                    tex->SetSize(width, height, dummyColorFormat, TEXTURE_RENDERTARGET);
                 }
                 // Link the color rendertarget to the shadow map
                 newShadowMap->GetRenderSurface()->SetLinkedRenderTarget(colorShadowMaps_[searchKey]->GetRenderSurface());
@@ -1105,7 +1108,7 @@ Texture2D* Renderer::GetShadowMap(Light* light, Camera* camera, unsigned viewWid
 
 /// Allocate a rendertarget or depth-stencil texture for deferred rendering or postprocessing. Should only be called
 /// during actual rendering, not before.
-Texture *Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, int multiSample, bool autoResolve,
+Texture *Renderer::GetScreenBuffer(int width, int height, uint32_t format, int multiSample, bool autoResolve,
                                    bool cubemap, bool filtered, bool srgb, unsigned persistentKey)
 {
     bool depthStencil = (format == Graphics::GetDepthStencilFormat()) || (format == Graphics::GetReadableDepthFormat());
@@ -1157,7 +1160,7 @@ Texture *Renderer::GetScreenBuffer(int width, int height, gl::GLenum format, int
             newTex2D->SetSize(width, height, format, depthStencil ? TEXTURE_DEPTHSTENCIL : TEXTURE_RENDERTARGET, multiSample, autoResolve);
         // OpenGL hack: clear persistent floating point screen buffers to ensure the initial contents aren't illegal (NaN)?
         // Otherwise eg. the AutoExposure post process will not work correctly
-        if (persistentKey && Texture::GetDataType(format) == gl::GL_FLOAT)
+        if (persistentKey && Texture::GetDataType(format) == GL_FLOAT)
         {
             // Note: this loses current rendertarget assignment
             graphics_->ResetRenderTargets();

@@ -36,10 +36,7 @@
 #include "../../Resource/XMLFile.h"
 #include "Lutefisk3D/Resource/Image.h"
 
-#include "glbinding/gl33ext/functions.h"
-#include "glbinding/gl33ext/enum.h"
-#include "glbinding/gl33ext/boolean.h"
-using namespace gl;
+#include <GL/glew.h>
 
 namespace Urho3D
 {

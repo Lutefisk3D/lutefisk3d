@@ -132,7 +132,7 @@ void SceneAndUILoad::MoveCamera(float timeStep)
     // Right mouse button controls mouse cursor visibility: hide when pressed
     UI* ui = m_context->m_UISystem.get();
     Input* input = m_context->m_InputSystem.get();
-    ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MOUSEB_RIGHT));
+    ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MouseButton::RIGHT));
 
     // Do not move if the UI has a focused element
     if (ui->GetFocusElement())

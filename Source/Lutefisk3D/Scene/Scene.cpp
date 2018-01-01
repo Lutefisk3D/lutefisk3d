@@ -838,13 +838,13 @@ void Scene::Update(float timeStep)
     timeStep *= timeScale_;
 
     // Update variable timestep logic
-    g_sceneSignals.sceneUpdate.Emit(this,timeStep);
+    g_sceneSignals.sceneUpdate(this,timeStep);
 
     // Update scene attribute animation.
-    attributeAnimationUpdate.Emit(this,timeStep);
+    attributeAnimationUpdate(this,timeStep);
 
     // Update scene subsystems. If a physics world is present, it will be updated, triggering fixed timestep logic updates
-    sceneSubsystemUpdate.Emit(this,timeStep);
+    sceneSubsystemUpdate(this,timeStep);
 
     // Update transform smoothing
     {
@@ -853,11 +853,11 @@ void Scene::Update(float timeStep)
         float constant = 1.0f - Clamp(powf(2.0f, -timeStep * smoothingConstant_), 0.0f, 1.0f);
         float squaredSnapThreshold = snapThreshold_ * snapThreshold_;
 
-        updateSmoothing.Emit(constant,squaredSnapThreshold);
+        updateSmoothing(constant,squaredSnapThreshold);
     }
 
     // Post-update variable timestep logic
-    scenePostUpdate.Emit(this,timeStep);
+    scenePostUpdate(this,timeStep);
 
     // Note: using a float for elapsed time accumulation is inherently inaccurate. The purpose of this value is
     // primarily to update material animation effects, as it is available to shaders. It can be reset by calling
@@ -1292,7 +1292,7 @@ void Scene::UpdateAsyncLoading()
         if (asyncLoadTimer.GetUSecS() >= asyncLoadingMs_ * 1000)
             break;
     }
-    asyncLoadProgress.Emit(this, GetAsyncProgress(), d->asyncProgress_.loadedNodes_, d->asyncProgress_.totalNodes_,
+    asyncLoadProgress(this, GetAsyncProgress(), d->asyncProgress_.loadedNodes_, d->asyncProgress_.totalNodes_,
                            d->asyncProgress_.loadedResources_, d->asyncProgress_.totalResources_);
 }
 
@@ -1306,7 +1306,7 @@ void Scene::FinishAsyncLoading()
     }
 
     StopAsyncLoading();
-    asyncLoadFinished.Emit(this);
+    asyncLoadFinished(this);
 }
 
 void Scene::FinishLoading(Deserializer* source)

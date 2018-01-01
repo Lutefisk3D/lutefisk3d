@@ -24,7 +24,7 @@
 
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Container/Ptr.h"
-#include "jlsignal/Signal.h"
+#include "Lutefisk3D/Engine/jlsignal/Signal.h"
 #include <vector>
 #include <deque>
 #include <set>

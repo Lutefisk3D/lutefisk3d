@@ -52,6 +52,7 @@
 #include "Lutefisk3D/UI/UI.h"
 #endif
 
+#include <GL/glew.h>
 #include <QDebug>
 #include <algorithm>
 
@@ -1722,7 +1723,7 @@ void View::ExecuteRenderPathCommands()
                 break;
             case CMD_SENDEVENT:
                 {
-                    g_graphicsSignals.renderPathEvent.Emit(command.eventName_);
+                    g_graphicsSignals.renderPathEvent(command.eventName_);
                 }
                 break;
             default:
@@ -2008,7 +2009,7 @@ void View::AllocateScreenBuffers()
     }
 
     // Follow final rendertarget format, or use RGB to match the backbuffer format
-    gl::GLenum format = renderTarget_ != nullptr ? renderTarget_->GetParentTexture()->GetFormat() : Graphics::GetRGBFormat();
+    uint32_t format = renderTarget_ != nullptr ? renderTarget_->GetParentTexture()->GetFormat() : Graphics::GetRGBFormat();
 
     // If HDR rendering is enabled use RGBA16f and reserve a buffer
     bool hdrRendering = renderer_->GetHDRRendering();
@@ -3101,7 +3102,7 @@ RenderSurface* View::GetRenderSurfaceFromTexture(Texture* texture, CubeMapFace f
 void View::SendViewEvent(jl::Signal<View *, Texture *, RenderSurface *, Scene *, Camera *> &eventType)
 {
     //    renderer_->SendEvent(eventType, eventData);
-    eventType.Emit(this, (renderTarget_ != nullptr ? renderTarget_->GetParentTexture() : nullptr),renderTarget_,
+    eventType(this, (renderTarget_ != nullptr ? renderTarget_->GetParentTexture() : nullptr),renderTarget_,
                    scene_, cullCamera_);
 }
 Texture *View::FindNamedTexture(const QString &name, bool isRenderTarget, bool isVolumeMap)

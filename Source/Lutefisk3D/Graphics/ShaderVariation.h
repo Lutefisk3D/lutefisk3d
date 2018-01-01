@@ -27,9 +27,6 @@
 #include "Lutefisk3D/Graphics/GPUObject.h"
 #include "Lutefisk3D/Graphics/GraphicsDefs.h"
 #include <QtCore/QString>
-namespace gl {
-enum class GLenum : uint32_t;
-}
 
 namespace Urho3D
 {
@@ -52,13 +49,8 @@ struct LUTEFISK3D_EXPORT ShaderParameter
         int location_;
     };
 
-    union
-    {
-        /// Parameter size. Used only on Direct3D11 to calculate constant buffer size.
-        unsigned size_;
-        /// Parameter OpenGL type.
-        gl::GLenum glType_;
-    };
+    /// Parameter OpenGL type.
+    uint32_t glType_;
 
     /// Constant buffer index. Only used on Direct3D11.
     unsigned buffer_;

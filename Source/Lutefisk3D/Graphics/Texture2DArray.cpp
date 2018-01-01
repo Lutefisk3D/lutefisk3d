@@ -35,6 +35,7 @@
 #include "Lutefisk3D/Resource/XMLFile.h"
 #include "Lutefisk3D/Resource/Image.h"
 
+#include <GL/glew.h>
 namespace Urho3D
 {
 
@@ -42,7 +43,7 @@ Texture2DArray::Texture2DArray(Context* context) :
     Texture(context),
     layers_(0)
 {
-    target_ = gl::GL_TEXTURE_2D_ARRAY;
+    target_ = GL_TEXTURE_2D_ARRAY;
 }
 
 Texture2DArray::~Texture2DArray()
@@ -142,7 +143,7 @@ void Texture2DArray::SetLayers(unsigned layers)
     layers_ = layers;
 }
 
-bool Texture2DArray::SetSize(unsigned layers, int width, int height, gl::GLenum format, TextureUsage usage)
+bool Texture2DArray::SetSize(unsigned layers, int width, int height, uint32_t format, TextureUsage usage)
 {
     if (width <= 0 || height <= 0)
     {

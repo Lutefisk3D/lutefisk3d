@@ -45,14 +45,10 @@ struct LUTEFISK3D_EXPORT PhysicsRaycastResult2D
         return position_ != rhs.position_ || normal_ != rhs.normal_ || distance_ != rhs.distance_ || body_ != rhs.body_;
     }
 
-    /// Hit worldspace position.
-    Vector2 position_;
-    /// Hit worldspace normal.
-    Vector2 normal_;
-    /// Hit distance from ray origin.
-    float distance_;
-    /// Rigid body that was hit.
-    RigidBody2D* body_ = nullptr;
+    Vector2      position_;       //!< Hit worldspace position.
+    Vector2      normal_;         //!< Hit worldspace normal.
+    float        distance_;       //!< Hit distance from ray origin.
+    RigidBody2D *body_ = nullptr; //!< Rigid body that was hit.
 };
 
 /// Delayed world transform assignment for parented 2D rigidbodies.
@@ -77,7 +73,7 @@ public:
     /// Construct.
     PhysicsWorld2D(Context* scontext);
     /// Destruct.
-    virtual ~PhysicsWorld2D();
+    ~PhysicsWorld2D() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -124,9 +120,11 @@ public:
     void AddDelayedWorldTransform(const DelayedWorldTransform2D& transform);
 
     /// Perform a physics world raycast and return all hits.
-    void Raycast(std::vector<PhysicsRaycastResult2D>& results, const Vector2& startPoint, const Vector2& endPoint, unsigned collisionMask = M_MAX_UNSIGNED);
+    void Raycast(std::vector<PhysicsRaycastResult2D> &results, const Vector2 &startPoint, const Vector2 &endPoint,
+                 unsigned collisionMask = M_MAX_UNSIGNED);
     /// Perform a physics world raycast and return the closest hit.
-    void RaycastSingle(PhysicsRaycastResult2D& result, const Vector2& startPoint, const Vector2& endPoint, unsigned collisionMask = M_MAX_UNSIGNED);
+    void RaycastSingle(PhysicsRaycastResult2D &result, const Vector2 &startPoint, const Vector2 &endPoint,
+                       unsigned collisionMask = M_MAX_UNSIGNED);
     /// Return rigid body at point.
     RigidBody2D* GetRigidBody(const Vector2& point, unsigned collisionMask = M_MAX_UNSIGNED);
     /// Return rigid body at screen point.

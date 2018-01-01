@@ -108,7 +108,7 @@ public:
 
     }
 };
-struct SignalAllocator : public AllocatorWrapper<jl::Signal<void>::eAllocationSize>
+struct SignalAllocator : public AllocatorWrapper<jl::Signal<>::eAllocationSize>
 {
 };
 struct ObserverAllocator : public AllocatorWrapper<jl::SignalObserver::eAllocationSize>
@@ -134,6 +134,7 @@ extern const char* logLevelPrefixes[];
 
 Engine::Engine(Context* context) :
     Object(context),
+    SignalObserver(nullptr),
     timeStep_(0.0f),
     timeStepSmoothing_(2),
     minFps_(10),
@@ -154,7 +155,6 @@ Engine::Engine(Context* context) :
     context->m_signal_allocator = &oSignalConnectionAllocator;
     context->m_observer_allocator = &oObserverConnectionAllocator;
     jl::SignalBase::SetCommonConnectionAllocator( &oSignalConnectionAllocator );
-    jl::SignalObserver::SetCommonConnectionAllocator( &oObserverConnectionAllocator );
     SetConnectionAllocator(&oObserverConnectionAllocator);
     g_coreSignals.init(&oSignalConnectionAllocator);
     g_consoleSignals.init(&oSignalConnectionAllocator);
@@ -279,7 +279,6 @@ bool Engine::Initialize(const VariantMap& parameters)
         graphics->SetWindowTitle(GetParameter(parameters, EP_WINDOW_TITLE, "Urho3D").GetString());
         graphics->SetWindowIcon(cache->GetResource<Image>(GetParameter(parameters, EP_WINDOW_ICON, QString()).GetString()));
         graphics->SetFlushGPU(GetParameter(parameters, EP_FLUSH_GPU, false).GetBool());
-        graphics->SetOrientations(GetParameter(parameters, EP_ORIENTATIONS, "LandscapeLeft LandscapeRight").GetString());
 
         if (HasParameter(parameters, EP_WINDOW_POSITION_X) && HasParameter(parameters, EP_WINDOW_POSITION_Y))
             graphics->SetWindowPosition(GetParameter(parameters, EP_WINDOW_POSITION_X).GetInt(), GetParameter(parameters, EP_WINDOW_POSITION_Y).GetInt());
@@ -318,10 +317,7 @@ bool Engine::Initialize(const VariantMap& parameters)
         {
             GetSubsystem<Audio>()->SetMode(
                 GetParameter(parameters, EP_SOUND_BUFFER, 100).GetInt(),
-                GetParameter(parameters, EP_SOUND_MIX_RATE, 44100).GetInt(),
-                GetParameter(parameters, EP_SOUND_STEREO, true).GetBool(),
-                GetParameter(parameters, EP_SOUND_INTERPOLATION, true).GetBool()
-                        );
+                GetParameter(parameters, EP_SOUND_MIX_RATE, 0).GetInt());
         }
     }
 
@@ -696,16 +692,16 @@ void Engine::Update()
         URHO3D_LOGERROR("Sending events is only supported from the main thread");
         return;
     }
-    g_coreSignals.update.Emit(timeStep_);
+    g_coreSignals.update(timeStep_);
 
     // Logic post-update event
-    g_coreSignals.postUpdate.Emit(timeStep_);
+    g_coreSignals.postUpdate(timeStep_);
 
     // Rendering update event
-    g_coreSignals.renderUpdate.Emit(timeStep_);
+    g_coreSignals.renderUpdate(timeStep_);
 
     // Post-render update event
-    g_coreSignals.postRenderUpdate.Emit(timeStep_);
+    g_coreSignals.postRenderUpdate(timeStep_);
 }
 /// Render after frame update.
 void Engine::Render()
@@ -817,16 +813,8 @@ VariantMap Engine::ParseParameters(const QStringList& arguments)
                 ret[EP_FRAME_LIMITER] = false;
             else if (argument == "flushgpu")
                 ret[EP_FLUSH_GPU] = true;
-            else if (argument == "landscape")
-                ret[EP_ORIENTATIONS] = "LandscapeLeft LandscapeRight " + ret[EP_ORIENTATIONS].GetString();
-            else if (argument == "portrait")
-                ret[EP_ORIENTATIONS] = "Portrait PortraitUpsideDown " + ret[EP_ORIENTATIONS].GetString();
             else if (argument == "nosound")
                 ret[EP_SOUND] = false;
-            else if (argument == "noip")
-                ret[EP_SOUND_INTERPOLATION] = false;
-            else if (argument == "mono")
-                ret[EP_SOUND_STEREO] = false;
             else if (argument == "prepass")
                 ret[EP_RENDER_PATH] = "RenderPaths/Prepass.xml";
             else if (argument == "deferred")

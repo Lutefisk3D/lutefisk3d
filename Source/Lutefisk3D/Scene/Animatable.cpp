@@ -39,6 +39,7 @@ extern const char* wrapModeNames[];
 
 Animatable::Animatable(Context* context) :
     Serializable(context),
+    SignalObserver(context->m_observer_allocator),
     animationEnabled_(true)
 {
 }
@@ -51,6 +52,7 @@ void Animatable::RegisterObject(Context* context)
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Object Animation", GetObjectAnimationAttr, SetObjectAnimationAttr, ResourceRef, ResourceRef{ObjectAnimation::GetTypeStatic()}, AM_DEFAULT);
 }
 
+/// Load from XML data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
 bool Animatable::LoadXML(const XMLElement& source, bool setInstanceDefault)
 {
     if (!Serializable::LoadXML(source, setInstanceDefault))
@@ -96,7 +98,7 @@ bool Animatable::LoadXML(const XMLElement& source, bool setInstanceDefault)
 
     return true;
 }
-
+/// Load from JSON data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
 bool Animatable::LoadJSON(const JSONValue& source, bool setInstanceDefault)
 {
     if (!Serializable::LoadJSON(source, setInstanceDefault))
@@ -154,7 +156,7 @@ bool Animatable::LoadJSON(const JSONValue& source, bool setInstanceDefault)
 
     return true;
 }
-
+/// Save as XML data. Return true if successful.
 bool Animatable::SaveXML(XMLElement& dest) const
 {
     if (!Serializable::SaveXML(dest))
@@ -187,7 +189,7 @@ bool Animatable::SaveXML(XMLElement& dest) const
 
     return true;
 }
-
+/// Save as JSON data. Return true if successful.
 bool Animatable::SaveJSON(JSONValue& dest) const
 {
     if (!Serializable::SaveJSON(dest))
@@ -217,14 +219,14 @@ bool Animatable::SaveJSON(JSONValue& dest) const
             return false;
 
         attributeValue.Set("wrapmode", wrapModeNames[ELEMENT_VALUE(i)->GetWrapMode()]);
-        attributeValue.Set("speed", (float) ELEMENT_VALUE(i)->GetSpeed());
+        attributeValue.Set("speed", ELEMENT_VALUE(i)->GetSpeed());
 
         attributeAnimationValue.Set(attr.name_, attributeValue);
     }
 
     return true;
 }
-
+/// Set automatic update of animation, default true.
 void Animatable::SetAnimationEnabled(bool enable)
 {
     if (objectAnimation_ != nullptr)
@@ -246,7 +248,7 @@ void Animatable::SetAnimationEnabled(bool enable)
 
     animationEnabled_ = enable;
 }
-
+/// Set time position of all attribute animations or an object animation manually. Automatic update should be disabled in this case.
 void Animatable::SetAnimationTime(float time)
 {
     if (objectAnimation_ != nullptr)
@@ -267,6 +269,7 @@ void Animatable::SetAnimationTime(float time)
             MAP_VALUE(i)->SetTime(time);
     }
 }
+/// Set object animation.
 void Animatable::SetObjectAnimation(ObjectAnimation* objectAnimation)
 {
     if (objectAnimation == objectAnimation_)

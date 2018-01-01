@@ -55,14 +55,14 @@ public:
     /// Define the scene and camera to use in rendering. When ownScene is true the View3D will take ownership of them with shared pointers.
     void SetView(Scene* scene, Camera* camera, bool ownScene = true);
     /// Set render texture pixel format. Default is RGB.
-    void SetFormat(gl::GLenum format);
+    void SetFormat(uint32_t format);
     /// Set render target auto update mode. Default is true.
     void SetAutoUpdate(bool enable);
     /// Queue manual update on the render texture.
     void QueueUpdate();
 
     /// Return render texture pixel format.
-    gl::GLenum GetFormat() const { return rttFormat_; }
+    uint32_t GetFormat() const { return rttFormat_; }
     /// Return whether render target updates automatically.
     bool GetAutoUpdate() const { return autoUpdate_; }
     /// Return scene.
@@ -95,7 +95,7 @@ private:
     /// Own scene.
     bool ownScene_;
     /// Render texture format.
-    gl::GLenum rttFormat_;
+    uint32_t rttFormat_;
     /// Render texture auto update mode.
     bool autoUpdate_;
 };

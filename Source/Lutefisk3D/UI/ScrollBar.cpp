@@ -285,7 +285,7 @@ void ScrollBar::HandleForwardButtonPressed(UIElement *)
 void ScrollBar::HandleSliderChanged(UIElement *,float)
 {
     // Send the event forward
-    scrollBarChanged.Emit(this,slider_->GetValue());
+    scrollBarChanged(this,slider_->GetValue());
 }
 
 void ScrollBar::HandleSliderPaged(UIElement *,int offset,bool pressed)
@@ -300,19 +300,19 @@ void ScrollBar::HandleSliderPaged(UIElement *,int offset,bool pressed)
     if (pressed)
     {
         if (offset < 0)
-            backButton_->OnClickBegin(IntVector2::ZERO, backButton_->ElementToScreen(IntVector2::ZERO), MOUSEB_LEFT,
-                                      MOUSEB_LEFT, 0, nullptr);
+            backButton_->OnClickBegin(IntVector2::ZERO, backButton_->ElementToScreen(IntVector2::ZERO), MouseButton::LEFT,
+                                      1<<int(MouseButton::LEFT), 0, nullptr);
         else
             forwardButton_->OnClickBegin(IntVector2::ZERO, forwardButton_->ElementToScreen(IntVector2::ZERO),
-                                         MOUSEB_LEFT, MOUSEB_LEFT, 0, nullptr);
+                                         MouseButton::LEFT, 1<<int(MouseButton::LEFT), 0, nullptr);
     }
     else
     {
         if (offset < 0)
-            backButton_->OnClickEnd(IntVector2::ZERO, backButton_->ElementToScreen(IntVector2::ZERO), MOUSEB_LEFT, 0, 0,
+            backButton_->OnClickEnd(IntVector2::ZERO, backButton_->ElementToScreen(IntVector2::ZERO), MouseButton::LEFT, 0, 0,
                                     nullptr, backButton_);
         else
-            forwardButton_->OnClickEnd(IntVector2::ZERO, forwardButton_->ElementToScreen(IntVector2::ZERO), MOUSEB_LEFT,
+            forwardButton_->OnClickEnd(IntVector2::ZERO, forwardButton_->ElementToScreen(IntVector2::ZERO), MouseButton::LEFT,
                                        0, 0, nullptr, forwardButton_);
     }
 }

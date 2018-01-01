@@ -28,7 +28,7 @@
 #include "Lutefisk3D/Scene/ValueAnimationInfo.h"
 #include "Lutefisk3D/Math/Vector4.h"
 #include "Lutefisk3D/Core/Variant.h"
-
+#include <array>
 namespace Urho3D
 {
 
@@ -45,6 +45,7 @@ class XMLFile;
 extern template class SharedPtr<XMLFile>;
 extern template class SharedPtr<JSONFile>;
 extern template class SharedPtr<Technique>;
+
 extern const char* cullModeNames[];
 static const constexpr uint8_t DEFAULT_RENDER_ORDER = 128;
 
@@ -54,7 +55,7 @@ struct MaterialShaderParameter
     QString name_; //!< Name.
     Variant value_; //!< Value.
 };
-extern template class HashMap<StringHash, MaterialShaderParameter>;
+//extern template class HashMap<StringHash, MaterialShaderParameter>;
 /// %Material's technique list entry.
 struct TechniqueEntry
 {
@@ -101,9 +102,9 @@ class LUTEFISK3D_EXPORT Material : public Resource, public jl::SignalObserver
 {
     URHO3D_OBJECT(Material,Resource)
 
-    public:
-        /// Construct.
-        Material(Context* context);
+public:
+    /// Construct.
+    Material(Context* context);
     /// Destruct.
     ~Material() override;
     /// Register object factory.
@@ -188,7 +189,7 @@ class LUTEFISK3D_EXPORT Material : public Resource, public jl::SignalObserver
     /// Return texture by unit.
     Texture* GetTexture(TextureUnit unit) const;
     /// Return all textures.
-    const std::array<SharedPtr<Texture>,MAX_TEXTURE_UNITS> & GetTextures() const { return textures_; }
+    const std::array<Texture *,MAX_TEXTURE_UNITS> & GetTextures() const { return textures_; }
     /// Return additional vertex shader defines.
     const QString& GetVertexShaderDefines() const { return vertexShaderDefines_; }
     /// Return additional pixel shader defines.
@@ -246,7 +247,7 @@ private:
     /// Techniques.
     std::vector<TechniqueEntry> techniques_;
     /// Textures.
-    std::array<SharedPtr<Texture>,MAX_TEXTURE_UNITS> textures_;
+    std::array<Texture *,MAX_TEXTURE_UNITS> textures_;
     /// %Shader parameters.
     HashMap<StringHash, MaterialShaderParameter> shaderParameters_;
     /// Vertex shader defines.

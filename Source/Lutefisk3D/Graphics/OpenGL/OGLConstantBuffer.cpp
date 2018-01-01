@@ -25,6 +25,7 @@
 #include "../GraphicsImpl.h"
 #include "../../IO/Log.h"
 
+#include <GL/glew.h>
 namespace Urho3D
 {
 
@@ -37,7 +38,7 @@ void ConstantBuffer::Release()
 
         graphics_->SetUBO(0);
 
-        gl::glDeleteBuffers(1, &object_);
+        glDeleteBuffers(1, &object_);
         object_ = 0;
     }
 
@@ -71,9 +72,9 @@ bool ConstantBuffer::SetSize(unsigned size)
     if (graphics_)
     {
         if (!object_)
-            gl::glGenBuffers(1, &object_);
+            glGenBuffers(1, &object_);
         graphics_->SetUBO(object_);
-        gl::glBufferData(gl::GL_UNIFORM_BUFFER, size_, shadowData_.get(), gl::GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, size_, shadowData_.get(), GL_DYNAMIC_DRAW);
     }
 
     return true;
@@ -84,7 +85,7 @@ void ConstantBuffer::Apply()
     if (dirty_ && object_)
     {
         graphics_->SetUBO(object_);
-        gl::glBufferData(gl::GL_UNIFORM_BUFFER, size_, shadowData_.get(), gl::GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, size_, shadowData_.get(), GL_DYNAMIC_DRAW);
         dirty_ = false;
     }
 }

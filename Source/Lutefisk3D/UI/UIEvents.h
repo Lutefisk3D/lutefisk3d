@@ -24,20 +24,20 @@
 
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Math/Vector2.h"
-#include "jlsignal/Signal.h"
+#include "Lutefisk3D/Engine/jlsignal/Signal.h"
 
 namespace Urho3D
 {
 class UIElement;
-
+enum class  MouseButton : int;
 struct UISignals {
     /// Global mouse click in the UI. Sent by the UI subsystem.
-    jl::Signal<UIElement *,int, int, int, unsigned, int> mouseClickUI; //Element,x,y,Button,Buttons,Qualifiers
+    jl::Signal<UIElement *,int, int, MouseButton, unsigned, int> mouseClickUI; //Element,x,y,Button,Buttons,Qualifiers
     /// Global mouse click end in the UI. Sent by the UI subsystem.
     //Element,BeginElement,x,y,Button,Buttons,Qualifiers
-    jl::Signal<UIElement *,UIElement *,int, int, int, unsigned, int> mouseClickEndUI;
+    jl::Signal<UIElement *,UIElement *,int, int, MouseButton, unsigned, int> mouseClickEndUI;
     /// Global mouse double click in the UI. Sent by the UI subsystem.
-    jl::Signal<UIElement *,int, int, int, unsigned, int> mouseDoubleClickUI; //Element,x,y,Button,Buttons,Qualifiers
+    jl::Signal<UIElement *,int, int, MouseButton, unsigned, int> mouseDoubleClickUI; //Element,x,y,Button,Buttons,Qualifiers
 
     /// Drag and drop finish.
     jl::Signal<UIElement *,UIElement *,bool> dragDropFinish; // Source,Target,Accept
@@ -85,12 +85,12 @@ struct UiElementSignals  {
     jl::Signal<UIElement *,int,int,int,int> resized;
 
     /// Mouse click on a UI element. Parameters are same as in UIMouseClick event, but is sent by the element.
-    jl::Signal<UIElement *,int, int, int, unsigned, int> click; //Element,x,y,Button,Buttons,Qualifiers
+    jl::Signal<UIElement *,int, int, MouseButton, unsigned, int> click; //Element,x,y,Button,Buttons,Qualifiers
     /// Mouse click end on a UI element. Parameters are same as in UIMouseClickEnd event, but is sent by the element.
     //Element,BeginElement,x,y,Button,Buttons,Qualifiers
-    jl::Signal<UIElement *,UIElement *,int, int, int, unsigned, int> clickEnd;
+    jl::Signal<UIElement *,UIElement *,int, int, MouseButton, unsigned, int> clickEnd;
     /// Mouse double click on a UI element. Parameters are same as in UIMouseDoubleClick event, but is sent by the element.
-    jl::Signal<UIElement *,int, int, int, unsigned, int> doubleClick; //Element,x,y,Button,Buttons,Qualifiers
+    jl::Signal<UIElement *,int, int, MouseButton, unsigned, int> doubleClick; //Element,x,y,Button,Buttons,Qualifiers
 
     /// UI element layout updated.
     jl::Signal<UIElement *> layoutUpdated;

@@ -33,7 +33,7 @@
 #include "../../Core/StringUtils.h"
 #include "../../Core/Profiler.h"
 
-using namespace gl;
+#include <GL/glew.h>
 
 namespace Urho3D
 {
@@ -200,7 +200,7 @@ unsigned Texture::GetRowDataSize(int width) const
         return 0;
     }
 }
-gl::GLenum Texture::GetExternalFormat(GLenum format)
+uint32_t Texture::GetExternalFormat(GLenum format)
 {
     if (format == GL_DEPTH_COMPONENT16 || format == GL_DEPTH_COMPONENT24 || format == GL_DEPTH_COMPONENT32)
         return GL_DEPTH_COMPONENT;
@@ -222,7 +222,7 @@ gl::GLenum Texture::GetExternalFormat(GLenum format)
         return format;
 }
 
-gl::GLenum Texture::GetDataType(GLenum format)
+uint32_t Texture::GetDataType(GLenum format)
 {
     if (format == GL_DEPTH24_STENCIL8_EXT)
         return GL_UNSIGNED_INT_24_8_EXT;
@@ -236,7 +236,7 @@ gl::GLenum Texture::GetDataType(GLenum format)
         return GL_UNSIGNED_BYTE;
 }
 
-gl::GLenum Texture::GetSRGBFormat(gl::GLenum format)
+uint32_t Texture::GetSRGBFormat(uint32_t format)
 {
     if (!graphics_)
         return format;

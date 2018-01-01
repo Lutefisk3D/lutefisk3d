@@ -26,11 +26,10 @@
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
 #include "Lutefisk3D/Container/HashMap.h"
-#include "jlsignal/SignalBase.h"
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 namespace Urho3D
 {
 
-class AudioImpl;
 class Sound;
 class SoundListener;
 class SoundSource;
@@ -39,15 +38,17 @@ extern const char* AUDIO_CATEGORY;
 /// %Audio subsystem.
 class LUTEFISK3D_EXPORT Audio : public Object, public jl::SignalObserver
 {
+    struct AudioPrivate;
+
     URHO3D_OBJECT(Audio,Object)
     friend void SDLAudioCallback(void *userdata, uint8_t* stream, int len);
 public:
     /// Construct.
     Audio(Context* context);
     /// Destruct. Terminate the audio thread and free the audio buffer.
-    virtual ~Audio();
+    ~Audio() override;
 
-    bool SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpolation = true);
+    bool SetMode(int bufferLengthMSec, int freq=0);
     void Update(float timeStep);
     bool Play();
     void Stop();
@@ -62,14 +63,10 @@ public:
     unsigned GetSampleSize() const { return sampleSize_; }
     /// Return mixing rate.
     int GetMixRate() const { return mixRate_; }
-    /// Return whether output is interpolated.
-    bool GetInterpolation() const { return interpolation_; }
-    /// Return whether output is stereo.
-    bool IsStereo() const { return stereo_; }
     /// Return whether audio is being output.
     bool IsPlaying() const { return playing_; }
     /// Return whether an audio stream has been reserved.
-    bool IsInitialized() const { return deviceID_ != 0; }
+    bool IsInitialized() const;
     float GetMasterGain(const QString& type) const;
     bool IsSoundTypePaused(const QString& type) const;
     SoundListener* GetListener() const;
@@ -79,24 +76,20 @@ public:
     bool HasMasterGain(const QString& type) const { return hashContains(masterGain_,type); }
     void AddSoundSource(SoundSource* soundSource);
     void RemoveSoundSource(SoundSource* soundSource);
+
     /// Return audio thread mutex.
     Mutex& GetMutex() { return audioMutex_; }
     float GetSoundSourceMasterGain(StringHash typeHash) const;
     /// Final multiplier for for audio byte conversion
     static const int SAMPLE_SIZE_MUL = 1;
 private:
-    void MixOutput(void *dest, unsigned samples);
     void Release();
     void UpdateInternal(float timeStep);
-
-    std::unique_ptr<int[]> clipBuffer_; ///< Clipping buffer for mixing.
+    std::unique_ptr<AudioPrivate> d;
     Mutex audioMutex_;  ///< Audio thread mutex.
-    unsigned deviceID_; ///< SDL audio device ID.
     unsigned sampleSize_; ///< Sample size.
     unsigned fragmentSize_; ///< Clip buffer size in samples.
     int mixRate_;       ///< Mixing rate.
-    bool interpolation_;///< Mixing interpolation flag.
-    bool stereo_;       ///< Stereo flag.
     bool playing_;      ///< Playing flag.
     HashMap<StringHash, float> masterGain_;///< Master gain by sound source type.
     HashSet<StringHash> pausedSoundTypes_;///< Paused sound types.

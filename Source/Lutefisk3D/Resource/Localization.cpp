@@ -99,7 +99,7 @@ void Localization::SetLanguage(int index)
     if (index != languageIndex_)
     {
         languageIndex_ = index;
-        g_resourceSignals.changeLanguage.Emit();
+        g_resourceSignals.changeLanguage();
     }
 }
 

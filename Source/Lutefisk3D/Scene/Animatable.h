@@ -24,7 +24,7 @@
 
 #include "Lutefisk3D/Scene/Serializable.h"
 #include "Lutefisk3D/Container/HashMap.h"
-#include "jlsignal/SignalBase.h"
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 
 namespace Urho3D
 {
@@ -34,9 +34,9 @@ class ValueAnimation;
 class AttributeAnimationInfo;
 class ObjectAnimation;
 enum WrapMode : int;
-extern template class LUTEFISK3D_EXPORT SharedPtr<ObjectAnimation>;
-extern template class LUTEFISK3D_EXPORT HashSet<const AttributeInfo*>;
-extern template class LUTEFISK3D_EXPORT HashMap<QString, SharedPtr<AttributeAnimationInfo> >;
+//extern template class SharedPtr<ObjectAnimation>;
+//extern template class HashSet<const AttributeInfo*>;
+//extern template class HashMap<QString, SharedPtr<AttributeAnimationInfo> >;
 
 /// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an
 /// object animation to it.
@@ -50,18 +50,12 @@ public:
     /// Register object factory.
     static void RegisterObject(Context* context);
 
-    /// Load from XML data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
-    /// Save as XML data. Return true if successful.
-    virtual bool SaveXML(XMLElement& dest) const override;
-    /// Load from JSON data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
-    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
-    /// Save as JSON data. Return true if successful.
-    virtual bool SaveJSON(JSONValue& dest) const override;
+    bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    bool SaveXML(XMLElement& dest) const override;
+    bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
+    bool SaveJSON(JSONValue& dest) const override;
 
-    /// Set automatic update of animation, default true.
     void SetAnimationEnabled(bool enable);
-    /// Set time position of all attribute animations or an object animation manually. Automatic update should be disabled in this case.
     void SetAnimationTime(float time);
     /// Set object animation.
     void SetObjectAnimation(ObjectAnimation* objectAnimation);

@@ -26,6 +26,7 @@
 #include "../../Graphics/IndexBuffer.h"
 #include "../../IO/Log.h"
 
+#include <GL/glew.h>
 #include <cstring>
 
 namespace Urho3D
@@ -53,21 +54,18 @@ void IndexBuffer::Release()
 {
     Unlock();
 
-    if (object_)
+    if (!object_ || !graphics_)
+        return;
+
+    if (!graphics_->IsDeviceLost())
     {
-        if (!graphics_)
-            return;
+        if (graphics_->GetIndexBuffer() == this)
+            graphics_->SetIndexBuffer(nullptr);
 
-        if (!graphics_->IsDeviceLost())
-        {
-            if (graphics_->GetIndexBuffer() == this)
-                graphics_->SetIndexBuffer(nullptr);
-
-            gl::glDeleteBuffers(1, &object_);
-        }
-
-        object_ = 0;
+        glDeleteBuffers(1, &object_);
     }
+
+    object_ = 0;
 }
 
 bool IndexBuffer::SetData(const void* data)
@@ -92,7 +90,7 @@ bool IndexBuffer::SetData(const void* data)
         if (!graphics_->IsDeviceLost())
         {
             graphics_->SetIndexBuffer(this);
-            gl::glBufferData(gl::GL_ELEMENT_ARRAY_BUFFER, indexCount_ * indexSize_, data, dynamic_ ? gl::GL_DYNAMIC_DRAW : gl::GL_STATIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount_ * indexSize_, data, dynamic_ ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
         }
         else
         {
@@ -140,9 +138,9 @@ bool IndexBuffer::SetDataRange(const void* data, unsigned start, unsigned count,
         {
             graphics_->SetIndexBuffer(this);
             if (!discard || start != 0)
-                gl::glBufferSubData(gl::GL_ELEMENT_ARRAY_BUFFER, start * indexSize_, count * indexSize_, data);
+                glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, start * indexSize_, count * indexSize_, data);
             else
-                gl::glBufferData(gl::GL_ELEMENT_ARRAY_BUFFER, count * indexSize_, data, dynamic_ ? gl::GL_DYNAMIC_DRAW : gl::GL_STATIC_DRAW);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * indexSize_, data, dynamic_ ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
         }
         else
         {
@@ -236,7 +234,7 @@ bool IndexBuffer::Create()
 
 
         if (!object_)
-            gl::glGenBuffers(1, &object_);
+            glGenBuffers(1, &object_);
         if (!object_)
         {
             URHO3D_LOGERROR("Failed to create index buffer");
@@ -244,7 +242,7 @@ bool IndexBuffer::Create()
         }
 
         graphics_->SetIndexBuffer(this);
-        gl::glBufferData(gl::GL_ELEMENT_ARRAY_BUFFER, indexCount_ * indexSize_, nullptr, dynamic_ ? gl::GL_DYNAMIC_DRAW : gl::GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount_ * indexSize_, nullptr, dynamic_ ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
 
     return true;
@@ -261,7 +259,7 @@ bool IndexBuffer::UpdateToGPU()
 void* IndexBuffer::MapBuffer(unsigned start, unsigned count, bool discard)
 {
     // Never called on OpenGL
-    return 0;
+    return nullptr;
 }
 
 void IndexBuffer::UnmapBuffer()

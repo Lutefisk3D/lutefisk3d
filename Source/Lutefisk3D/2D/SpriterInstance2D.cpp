@@ -150,7 +150,7 @@ void SpriterInstance::Update(float deltaTime)
             Node* senderNode = owner_->GetNode();
             if (senderNode)
             {
-                animationFinished.Emit(senderNode,animation_,animation_->name_,looping_);
+                animationFinished(senderNode,animation_,animation_->name_,looping_);
             }
         }
     }

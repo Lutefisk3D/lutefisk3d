@@ -25,15 +25,16 @@
 #include "Lutefisk3D/Scene/AnimationDefs.h"
 #include "Lutefisk3D/Resource/Resource.h"
 #include "Lutefisk3D/Scene/SceneEvents.h"
+#include "Lutefisk3D/Scene/ValueAnimationInfo.h"
 namespace Urho3D
 {
 
 class ValueAnimation;
-class ValueAnimationInfo;
+//class ValueAnimationInfo;
 class XMLElement;
 class JSONValue;
-
-/// Object animation class, an object animation include one or more attribute animations and theirs wrap mode and speed for an Animatable object.
+//extern template class SharedPtr<ValueAnimationInfo>;
+/// Object animation class, an object animation includes one or more attribute animations and their wrap mode and speed for an Animatable object.
 class LUTEFISK3D_EXPORT ObjectAnimation : public Resource, public ObjectAnimationSignals
 {
     URHO3D_OBJECT(ObjectAnimation,Resource )
@@ -44,8 +45,8 @@ public:
 
     static void RegisterObject(Context* context);
 
-    virtual bool BeginLoad(Deserializer& source) override;
-    virtual bool Save(Serializer& dest) const override;
+    bool BeginLoad(Deserializer& source) override;
+    bool Save(Serializer& dest) const override;
     bool LoadXML(const XMLElement& source);
     bool SaveXML(XMLElement& dest) const;
     bool LoadJSON(const JSONValue& source);

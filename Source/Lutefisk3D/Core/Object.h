@@ -40,7 +40,7 @@ using VariantMap = HashMap<StringHash, Variant>;
 class Context;
 class EventHandler;
 class Object;
-extern template class LUTEFISK3D_EXPORT SharedPtr<Object>;
+//extern template class SharedPtr<Object>;
 /// Type info.
 class LUTEFISK3D_EXPORT TypeInfo
 {

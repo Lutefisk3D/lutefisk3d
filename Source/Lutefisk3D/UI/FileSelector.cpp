@@ -48,6 +48,7 @@ static bool CompareEntries(const FileSelectorEntry& lhs, const FileSelectorEntry
 
 FileSelector::FileSelector(Context* context) :
     Object(context),
+    SignalObserver(context->m_observer_allocator),
     directoryMode_(false),
     ignoreEvents_(false)
 {
@@ -422,7 +423,7 @@ void FileSelector::HandleFileDoubleClicked(StringHash eventType, VariantMap& eve
     if (ignoreEvents_)
         return;
 
-    if (eventData[ItemDoubleClicked::P_BUTTON] == MOUSEB_LEFT)
+    if (MouseButton(eventData[ItemDoubleClicked::P_BUTTON].GetInt()) == MouseButton::LEFT)
         EnterFile();
 }
 
@@ -434,7 +435,7 @@ void FileSelector::HandleFileListKey(StringHash eventType, VariantMap& eventData
     using namespace UnhandledKey;
 
     int key = eventData[P_KEY].GetInt();
-    if (key == KEY_RETURN || key == KEY_RETURN2 || key == KEY_KP_ENTER)
+    if (key == KEY_ENTER || key == KEY_KP_ENTER)
     {
         bool entered = EnterFile();
         // When a key is used to enter a directory, select the first file if no selection

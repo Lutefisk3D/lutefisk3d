@@ -15,8 +15,8 @@
 // Not so stable but used in many places
 #include "Lutefisk3D/Core/Variant.h"
 
-#include <jlsignal/SignalBase.h>
-#include <jlsignal/Signal.h>
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
+#include "Lutefisk3D/Engine/jlsignal/Signal.h"
 
 #include <QtCore/QString>
 #include <QtCore/QSet>

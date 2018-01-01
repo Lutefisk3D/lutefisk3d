@@ -64,6 +64,7 @@ static const char* checkDirs[] =
 static const SharedPtr<Resource> noResource;
 
 ResourceCache::ResourceCache(Context* context) :
+    SignalObserver(context->m_observer_allocator),
     m_context(context),
     autoReloadResources_(false),
     returnFailedResources_(false),
@@ -373,7 +374,7 @@ bool ResourceCache::ReloadResource(Resource* resource)
     if (!resource)
         return false;
 
-    resource->reloadStarted.Emit();
+    resource->reloadStarted();
 
     bool success = false;
     std::unique_ptr<File> file = GetFile(resource->GetName());
@@ -384,13 +385,13 @@ bool ResourceCache::ReloadResource(Resource* resource)
     {
         resource->ResetUseTimer();
         UpdateResourceGroup(resource->GetType());
-        resource->reloadFinished.Emit();
+        resource->reloadFinished();
         return true;
     }
 
     // If reloading failed, do not remove the resource from cache, to allow for a new live edit to
     // attempt loading again
-    resource->reloadFailed.Emit();
+    resource->reloadFailed();
     return false;
 }
 /// Reload a resource based on filename. Causes also reload of dependent resources if necessary.
@@ -535,7 +536,7 @@ std::unique_ptr<File> ResourceCache::GetFile(const QString& nameIn, bool sendEve
 
         if (Thread::IsMainThread())
         {
-            g_resourceSignals.resourceNotFound.Emit(name.isEmpty()? nameIn:name);
+            g_resourceSignals.resourceNotFound(name.isEmpty()? nameIn:name);
         }
     }
 
@@ -601,7 +602,7 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
 
         if (sendEventOnFailure)
         {
-            g_resourceSignals.unknownResourceType.Emit(type);
+            g_resourceSignals.unknownResourceType(type);
         }
 
         return nullptr;
@@ -620,7 +621,7 @@ Resource* ResourceCache::GetResource(StringHash type, const QString& nameIn, boo
         // Error should already been logged by corresponding resource descendant class
         if (sendEventOnFailure)
         {
-            g_resourceSignals.loadFailed.Emit(name);
+            g_resourceSignals.loadFailed(name);
         }
 
         if (!returnFailedResources_)
@@ -682,7 +683,7 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QStrin
 
         if (sendEventOnFailure)
         {
-            g_resourceSignals.unknownResourceType.Emit(type);
+            g_resourceSignals.unknownResourceType(type);
         }
 
         return SharedPtr<Resource>();
@@ -701,7 +702,7 @@ SharedPtr<Resource> ResourceCache::GetTempResource(StringHash type, const QStrin
         // Error should already been logged by corresponding resource descendant class
         if (sendEventOnFailure)
         {
-            g_resourceSignals.loadFailed.Emit(name);
+            g_resourceSignals.loadFailed(name);
         }
 
         return SharedPtr<Resource>();
@@ -1082,7 +1083,7 @@ void ResourceCache::HandleBeginFrame(unsigned FrameNumber,float timeStep)
             ReloadResourceWithDependencies(fileName);
 
             // Finally send a general file changed event even if the file was not a tracked resource
-            g_resourceSignals.fileChanged.Emit(watcher->GetPath() + fileName,fileName);
+            g_resourceSignals.fileChanged(watcher->GetPath() + fileName,fileName);
         }
     }
 

@@ -32,7 +32,7 @@
 #include "../../Core/Context.h"
 #include "../../Core/Profiler.h"
 
-using namespace gl;
+#include <GL/glew.h>
 
 namespace Urho3D
 {

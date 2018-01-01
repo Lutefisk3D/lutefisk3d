@@ -27,7 +27,7 @@
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Container/Ptr.h"      // for SharedPtr
 #include "Lutefisk3D/Math/StringHash.h"    // for StringHash
-#include <jlsignal/SignalBase.h>
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 #include <QtCore/QSet>
 #include <deque>
 

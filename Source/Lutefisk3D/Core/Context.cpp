@@ -41,7 +41,8 @@
 #include "Lutefisk3D/UI/UI.h"
 #endif
 #ifndef MINI_URHO
-#include <SDL2/SDL.h>
+
+#include <GLFW/glfw3.h>
 
 #endif
 namespace Urho3D {
@@ -373,59 +374,6 @@ HashMap<StringHash, Variant> & Context::GetEventDataMap()
     HashMap<StringHash, Variant>& ret = *d->eventDataMaps_[nestingLevel];
     ret.clear();
     return ret;
-}
-///
-/// \brief Initialises the specified SDL systems, if not already.
-/// \param sdlFlags
-/// \return true if successful.
-/// \note This call must be matched with ReleaseSDL() when SDL functions are no longer required, even if this call fails.
-bool Context::RequireSDL(unsigned int sdlFlags)
-{
-#ifndef MINI_URHO
-    // Always increment, the caller must match with ReleaseSDL(), regardless of
-    // what happens.
-    ++sdlInitCounter;
-
-    // Need to call SDL_Init() at least once before SDL_InitSubsystem()
-    if (sdlInitCounter == 0)
-    {
-        URHO3D_LOGDEBUG("Initialising SDL");
-        if (SDL_Init(0) != 0)
-        {
-            URHO3D_LOGERROR(QString("Failed to initialise SDL: %1").arg(SDL_GetError()));
-            return false;
-        }
-    }
-
-    Uint32 remainingFlags = sdlFlags & ~SDL_WasInit(0);
-    if (remainingFlags != 0)
-    {
-        if (SDL_InitSubSystem(remainingFlags) != 0)
-        {
-            URHO3D_LOGERROR(QString("Failed to initialise SDL subsystem: %1").arg(SDL_GetError()));
-            return false;
-        }
-    }
-#endif
-
-    return true;
-}
-/// Indicate that you are done with using SDL. Must be called after using RequireSDL().
-void Context::ReleaseSDL()
-{
-#ifndef MINI_URHO
-    --sdlInitCounter;
-
-    if (sdlInitCounter == 0)
-    {
-        URHO3D_LOGDEBUG("Quitting SDL");
-        SDL_QuitSubSystem(SDL_INIT_EVERYTHING);
-        SDL_Quit();
-    }
-
-    if (sdlInitCounter < 0)
-        URHO3D_LOGERROR("Too many calls to Context::ReleaseSDL()!");
-#endif
 }
 
 /// Copy base class attributes to derived class.

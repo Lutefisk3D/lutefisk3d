@@ -180,13 +180,13 @@ void Urho2DSprite::MoveCamera(float timeStep)
     if (input->GetKeyDown(KEY_D))
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 
-    if (input->GetKeyDown(KEY_PAGEUP))
+    if (input->GetKeyDown(KEY_PAGE_UP))
     {
         Camera* camera = cameraNode_->GetComponent<Camera>();
         camera->SetZoom(camera->GetZoom() * 1.01f);
     }
 
-    if (input->GetKeyDown(KEY_PAGEDOWN))
+    if (input->GetKeyDown(KEY_PAGE_DOWN))
     {
         Camera* camera = cameraNode_->GetComponent<Camera>();
         camera->SetZoom(camera->GetZoom() * 0.99f);

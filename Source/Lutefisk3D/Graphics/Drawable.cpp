@@ -39,6 +39,9 @@ namespace Urho3D
 {
 
 const char* GEOMETRY_CATEGORY = "Geometry";
+SourceBatch::SourceBatch() 
+{
+}
 
 SourceBatch::~SourceBatch()
 {

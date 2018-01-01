@@ -23,9 +23,8 @@
 #pragma once
 
 #include "Lutefisk3D/Core/ProcessUtils.h"
-
+#include  <QtWidgets/QApplication>
 #if defined(_WIN32) && !defined(URHO3D_WIN32_CONSOLE)
-//#include "Lutefisk3D/Core/MiniDump.h"
 #include <windows.h>
 #ifdef _MSC_VER
 #include <crtdbg.h>
@@ -37,42 +36,22 @@
 // MSVC debug mode: use memory leak reporting
 #if defined(_MSC_VER) && defined(_DEBUG) && !defined(URHO3D_WIN32_CONSOLE)
 #define URHO3D_DEFINE_MAIN(function) \
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd) \
+int main(int argc,char **argv) \
 { \
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); \
-    Urho3D::ParseArguments(QString::fromWCharArray(GetCommandLineW())); \
+    QApplication q_app(argc,argv);\
+    Urho3D::ParseArguments(argc, argv); \
+    q_app.processEvents();\
     return function; \
 }
-// MSVC release mode: write minidump on crash
-#elif defined(_MSC_VER) && defined(URHO3D_MINIDUMPS) && !defined(URHO3D_WIN32_CONSOLE)
-#define URHO3D_DEFINE_MAIN(function) \
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd) \
-{ \
-    Urho3D::ParseArguments(QString::fromWCharArray(GetCommandLineW())); \
-    int exitCode; \
-    __try \
-    { \
-        exitCode = function; \
-    } \
-    __except(Urho3D::WriteMiniDump("Urho3D", GetExceptionInformation())) \
-    { \
-    } \
-    return exitCode; \
-}
-// Other Win32 or minidumps disabled: just execute the function
-#elif defined(_WIN32) && !defined(URHO3D_WIN32_CONSOLE)
-#define URHO3D_DEFINE_MAIN(function) \
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd) \
-{ \
-    Urho3D::ParseArguments(QString::fromWCharArray(GetCommandLineW())); \
-    return function; \
-}
-// Linux or OS X: use main
+// windows and non-debug or non-windows
 #else
 #define URHO3D_DEFINE_MAIN(function) \
 int main(int argc, char** argv) \
 { \
+    QApplication q_app(argc,argv);\
     Urho3D::ParseArguments(argc, argv); \
+    q_app.processEvents();\
     return function; \
 }
 #endif

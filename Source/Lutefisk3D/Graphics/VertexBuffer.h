@@ -175,7 +175,7 @@ public:
     SharedArrayPtr<unsigned char> GetShadowDataShared() const { return shadowData_; }
 
     /// Return buffer hash for building vertex declarations. Used internally.
-    unsigned long long GetBufferHash(unsigned streamIndex) { return elementHash_ << (streamIndex * 16); }
+    uint64_t GetBufferHash(unsigned streamIndex) { return elementHash_ << (streamIndex * 16); }
 
     /// Return element with specified type and semantic from a vertex element list, or null if does not exist.
     static const VertexElement* GetElement(const std::vector<VertexElement>& elements, VertexElementType type, VertexElementSemantic semantic, unsigned char index = 0);
@@ -217,7 +217,7 @@ private:
     /// Vertex elements.
     std::vector<VertexElement> elements_;
     /// Vertex element hash.
-    unsigned long long elementHash_;
+    uint64_t elementHash_;
     /// Vertex element legacy bitmask.
     unsigned elementMask_;
     /// Buffer locking state.

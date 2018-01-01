@@ -45,9 +45,9 @@ public:
     /// React to mouse hover.
     virtual void OnHover(const IntVector2& position, const IntVector2& screenPosition,  int buttons, int qualifiers, Cursor* cursor) override;
     /// React to mouse click begin.
-    virtual void OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor) override;
+    virtual void OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor) override;
     /// React to mouse click end.
-    virtual void OnClickEnd(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor, UIElement* beginElement) override;
+    virtual void OnClickEnd(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor, UIElement* beginElement) override;
     /// React to mouse drag begin.
     virtual void OnDragBegin(const IntVector2& position, const IntVector2& screenPosition, int buttons, int qualifiers, Cursor* cursor) override;
     /// React to mouse drag motion.

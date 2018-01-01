@@ -23,7 +23,8 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
-#include "jlsignal/Signal.h"
+#include "Lutefisk3D/Engine/jlsignal/Signal.h"
+
 // For prestep / poststep events, which are the same for 2D and 3D physics. The events themselves don't depend
 // on whether 3D physics support or Bullet has been compiled in.
 #include "Lutefisk3D/Physics/PhysicsEvents.h"
@@ -36,32 +37,42 @@ class Node;
 class CollisionShape2D;
 struct Physics2DWorldSignals
 {
+    /// Node update contact. Sent by scene nodes participating in a collision.
+    using ContactsUpdated = jl::Signal<RigidBody2D *, Node *, RigidBody2D *, const std::vector<uint8_t> &,
+                                       CollisionShape2D *, CollisionShape2D *, bool &>;
+    /// Node begin contact. Sent by scene nodes participating in a collision.
+    using ContactStarted = jl::Signal<RigidBody2D *, Node *, RigidBody2D *,  const std::vector<uint8_t> &,
+    CollisionShape2D *, CollisionShape2D *>;
+    /// Node end contact. Sent by scene nodes participating in a collision.
+    using NodeContactEnded = jl::Signal<RigidBody2D *, Node *, RigidBody2D *,  const std::vector<uint8_t> &,
+    CollisionShape2D *, CollisionShape2D *>;
+
     // vector<> is a buffer containing position (Vector2), normal (Vector2), negative overlap distance (float). Normal
     // is the same for all points.
     /// Physics update contact. Global event sent by PhysicsWorld2D.
-    jl::Signal<PhysicsWorld2D *, RigidBody2D *, RigidBody2D *, Node *, Node *, const std::vector<unsigned char> &,
+    jl::Signal<PhysicsWorld2D *, RigidBody2D *, RigidBody2D *, Node *, Node *, const std::vector<uint8_t> &,
                CollisionShape2D *, CollisionShape2D *, bool &/*enabled inout*/>
         update_contact;
     /// Physics begin contact. Global event sent by PhysicsWorld2D.
-    jl::Signal<PhysicsWorld2D *, RigidBody2D *, RigidBody2D *, Node *, Node *, const std::vector<unsigned char> &,
+    jl::Signal<PhysicsWorld2D *, RigidBody2D *, RigidBody2D *, Node *, Node *, const std::vector<uint8_t> &,
                CollisionShape2D *, CollisionShape2D *>
         begin_contact;
     /// Physics end contact. Global event sent by PhysicsWorld2D.
-    jl::Signal<PhysicsWorld2D *, RigidBody2D *, RigidBody2D *, Node *, Node *, const std::vector<unsigned char> &,
+    jl::Signal<PhysicsWorld2D *, RigidBody2D *, RigidBody2D *, Node *, Node *, const std::vector<uint8_t> &,
                CollisionShape2D *, CollisionShape2D *>
         end_contact;
 };
 struct Physics2DNodeSignals {
     /// Node update contact. Sent by scene nodes participating in a collision.
-    jl::Signal<RigidBody2D *, Node *, RigidBody2D *,  const std::vector<unsigned char> &,
+    jl::Signal<RigidBody2D *, Node *, RigidBody2D *,  const std::vector<uint8_t> &,
                CollisionShape2D *, CollisionShape2D *, bool &/*enabled inout*/>
         updated_contacts;
     /// Node begin contact. Sent by scene nodes participating in a collision.
-    jl::Signal<RigidBody2D *, Node *, RigidBody2D *,  const std::vector<unsigned char> &,
+    jl::Signal<RigidBody2D *, Node *, RigidBody2D *,  const std::vector<uint8_t> &,
                CollisionShape2D *, CollisionShape2D *>
         begin_contact;
     /// Node end contact. Sent by scene nodes participating in a collision.
-    jl::Signal<RigidBody2D *, Node *, RigidBody2D *,  const std::vector<unsigned char> &,
+    jl::Signal<RigidBody2D *, Node *, RigidBody2D *,  const std::vector<uint8_t> &,
                CollisionShape2D *, CollisionShape2D *>
         end_contact;
 };

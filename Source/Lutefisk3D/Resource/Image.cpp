@@ -33,8 +33,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <QtGui/QImage>
-#include <SDL2/SDL.h>
-
+#include <GLFW/glfw3.h>
 #ifndef MAKEFOURCC
 #define MAKEFOURCC(ch0, ch1, ch2, ch3) ((unsigned)(ch0) | ((unsigned)(ch1) << 8) | ((unsigned)(ch2) << 16) | ((unsigned)(ch3) << 24))
 #endif
@@ -1934,35 +1933,35 @@ Image* Image::GetSubimage(const IntRect& rect) const
     }
 }
 ///
-/// \brief Return an SDL surface from the image, or null if failed.
+/// \brief Return a GLFWimage from the image, or null if failed.
 /// Only RGB images are supported.
 /// Specify rect to only return partial image. You must free the surface yourself.
 /// \param rect
-/// \return SDL surface from the image, or null if failed
+/// \return GLFWimage from the image, or null if failed
 ///
-SDL_Surface* Image::GetSDLSurface(const IntRect& rect) const
+std::unique_ptr<GLFWimage> Image::GetGLFWImage(const IntRect& rect) const
 {
+
     if (!data_)
         return nullptr;
 
     if (depth_ > 1)
     {
-        URHO3D_LOGERROR("Can not get SDL surface from 3D image");
+        URHO3D_LOGERROR("Can not get GLFWimage from 3D image");
         return nullptr;
     }
 
     if (IsCompressed())
     {
-        URHO3D_LOGERROR("Can not get SDL surface from compressed image " + GetName());
+        URHO3D_LOGERROR("Can not get GLFWimage from compressed image " + GetName());
         return nullptr;
     }
 
     if (components_ < 3)
     {
-        URHO3D_LOGERROR("Can not get SDL surface from image " + GetName() + " with less than 3 components");
+        URHO3D_LOGERROR("Can not get GLFWimage from image " + GetName() + " with less than 3 components");
         return nullptr;
     }
-
     IntRect imageRect = rect;
     //    // Use full image if illegal rect
     if (imageRect.left_ < 0 || imageRect.top_ < 0 || imageRect.right_ > width_ || imageRect.bottom_ > height_ ||
@@ -1978,32 +1977,36 @@ SDL_Surface* Image::GetSDLSurface(const IntRect& rect) const
     int width = imageRect.Width();
     int height = imageRect.Height();
 
-    //    // Assume little-endian for all the supported platforms
-    unsigned rMask = 0x000000ff;
-    unsigned gMask = 0x0000ff00;
-    unsigned bMask = 0x00ff0000;
-    unsigned aMask = 0xff000000;
-
-    SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height, components_ * 8, rMask, gMask, bMask, aMask);
-    if (surface)
-    {
-        SDL_LockSurface(surface);
-
-        uint8_t* destination = reinterpret_cast<uint8_t*>(surface->pixels);
+    std::unique_ptr<GLFWimage> res(new GLFWimage {0,0,nullptr});
+    res->pixels = new unsigned char[width*height*4];
+    res->width = width;
+    res->height = height;
+    if(components_==3) {
+        uint8_t *destination = res->pixels;
         uint8_t* source = data_.get() + components_ * (imageWidth * imageRect.top_ + imageRect.left_);
         for (int i = 0; i < height; ++i)
         {
-            memcpy(destination, source, components_ * width);
-            destination += surface->pitch;
+            for(int j=0; j< width; ++j) {
+                destination[4*j] = source[3*j];
+                destination[4*j+1] = source[3*j+1];
+                destination[4*j+2] = source[3*j+2];
+                destination[4*j+3] = 255;
+            }
+            destination+=width*4;
             source += components_ * imageWidth;
         }
-
-        SDL_UnlockSurface(surface);
     }
-    else
-        URHO3D_LOGERROR("Failed to create SDL surface from image " + GetName());
-
-    return surface;
+    else {
+        uint8_t* destination = reinterpret_cast<uint8_t*>(res->pixels);
+        const uint8_t* source = data_.get() + components_ * (imageWidth * imageRect.top_ + imageRect.left_);
+        for (int i = 0; i < height; ++i)
+        {
+            memcpy(destination, source, components_ * width);
+            destination += width*4;
+            source += components_ * imageWidth;
+        }
+    }
+    return res;
 }
 /// Precalculate the mip levels. Used by asynchronous texture loading.
 void Image::PrecalculateLevels()

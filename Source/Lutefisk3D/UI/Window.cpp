@@ -129,7 +129,7 @@ void Window::OnDragBegin(const IntVector2& position, const IntVector2& screenPos
 {
     UIElement::OnDragBegin(position, screenPosition, buttons, qualifiers, cursor);
 
-    if (buttons != MOUSEB_LEFT || !CheckAlignment())
+    if (buttons != 1<<int(MouseButton::LEFT) || !CheckAlignment())
     {
         dragMode_ = DRAG_NONE;
         return;
@@ -231,7 +231,7 @@ void Window::OnDragCancel(const IntVector2& position, const IntVector2& screenPo
 {
     UIElement::OnDragCancel(position, screenPosition, dragButtons, buttons, cursor);
 
-    if (dragButtons == MOUSEB_LEFT)
+    if (dragButtons == 1<<int(MouseButton::LEFT))
     {
         dragMode_ = DRAG_NONE;
         SetPosition(dragBeginPosition_);
@@ -277,7 +277,7 @@ void Window::SetModal(bool modal)
     if (ui->SetModalElement(this, modal))
     {
         modal_ = modal;
-        modalChanged.Emit(this,modal);
+        modalChanged(this,modal);
     }
 }
 
@@ -368,12 +368,12 @@ void Window::SetCursorShape(WindowDragMode mode, Cursor* cursor) const
 
     case DRAG_RESIZE_TOPRIGHT:
     case DRAG_RESIZE_BOTTOMLEFT:
-        shape = CS_RESIZEDIAGONAL_TOPRIGHT;
+        shape = CS_CROSS;
         break;
 
     case DRAG_RESIZE_TOPLEFT:
     case DRAG_RESIZE_BOTTOMRIGHT:
-        shape = CS_RESIZEDIAGONAL_TOPLEFT;
+        shape = CS_CROSS;
         break;
 
     default:

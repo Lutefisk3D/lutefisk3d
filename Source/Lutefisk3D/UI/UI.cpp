@@ -55,8 +55,7 @@
 #include "Lutefisk3D/Input/InputEvents.h"
 #include "Lutefisk3D/Math/Matrix3x4.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
-
-#include <SDL2/SDL.h>
+#include <GLFW/glfw3.h>
 
 #define TOUCHID_MASK(id) (1 << id)
 
@@ -77,6 +76,7 @@ const int DEFAULT_FONT_TEXTURE_MAX_SIZE = 2048;
 const char* UI_CATEGORY = "UI";
 
 UI::UI(Context* context) :
+    SignalObserver(context->m_observer_allocator),
     m_context(context),
     rootElement_(new UIElement(context)),
     rootModalElement_(new UIElement(context)),
@@ -184,7 +184,7 @@ void UI::SetFocusElement(UIElement* element, bool byKey)
         UIElement* oldFocusElement = focusElement_;
         focusElement_.Reset();
         //TODO: something wonky/unclear going on here, focused element is released, and than sends an event ?
-        oldFocusElement->defocused.Emit(oldFocusElement);
+        oldFocusElement->defocused(oldFocusElement);
     }
 
     // Then set focus to the new
@@ -192,9 +192,9 @@ void UI::SetFocusElement(UIElement* element, bool byKey)
     {
         focusElement_ = element;
 
-        element->focused.Emit(element,byKey);
+        element->focused(element,byKey);
     }
-    g_uiSignals.focusChanged.Emit(element,originalElement);
+    g_uiSignals.focusChanged(element,originalElement);
 }
 
 bool UI::SetModalElement(UIElement* modalElement, bool enable)
@@ -325,7 +325,7 @@ void UI::Update(float timeStep)
                                          dragData->dragButtons, qualifiers_, cursor_);
 
                 IntVector2 relativePos = dragElement->ScreenToElement(cursorPos);
-                dragElement->dragBegin.Emit(dragElement, cursorPos.x_, cursorPos.y_, relativePos.x_, relativePos.y_,
+                dragElement->dragBegin(dragElement, cursorPos.x_, cursorPos.y_, relativePos.x_, relativePos.y_,
                                             dragData->dragButtons, dragData->numDragButtons);
             }
 
@@ -347,7 +347,7 @@ void UI::Update(float timeStep)
             UIElement* element = MAP_KEY(i);
             if (element)
             {
-                element->hoverEnd.Emit(element);
+                element->hoverEnd(element);
             }
             i = hoveredElements_.erase(i);
         }
@@ -573,8 +573,9 @@ bool UI::SaveLayout(Serializer& dest, UIElement* element)
 void UI::SetClipboardText(const QString& text)
 {
     clipBoard_ = text;
-    if (useSystemClipboard_)
-        SDL_SetClipboardText(qPrintable(text));
+    ;
+    if (useSystemClipboard_ && graphics_->GetWindow())
+        glfwSetClipboardString(graphics_->GetWindow(),qPrintable(text));
 }
 
 void UI::SetDoubleClickInterval(float interval)
@@ -706,7 +707,7 @@ IntVector2 UI::GetCursorPosition() const
 }
 UIElement* UI::GetElementAt(const IntVector2& position, bool enabledOnly, IntVector2* elementScreenPosition)
 {
-    UIElement* result = 0;
+    UIElement* result = nullptr;
 
     if (HasModalElement())
         result = GetElementAt(rootModalElement_, position, enabledOnly);
@@ -838,12 +839,9 @@ UIElement* UI::GetDragElement(unsigned index)
 
 const QString& UI::GetClipboardText() const
 {
-    if (useSystemClipboard_)
+    if (useSystemClipboard_ && graphics_->GetWindow())
     {
-        char* text = SDL_GetClipboardText();
-        clipBoard_ = QString(text);
-        if (text)
-            SDL_free(text);
+        clipBoard_ = glfwGetClipboardString(graphics_->GetWindow());
     }
 
     return clipBoard_;
@@ -959,7 +957,7 @@ void UI::Render(VertexBuffer* buffer, const std::vector<UIBatch>& batches, unsig
     ShaderVariation* diffMaskTexturePS = graphics_->GetShader(PS, "Basic", "DIFFMAP ALPHAMASK VERTEXCOLOR");
     ShaderVariation* alphaTexturePS = graphics_->GetShader(PS, "Basic", "ALPHAMAP VERTEXCOLOR");
 
-    gl::GLenum alphaFormat = Graphics::GetAlphaFormat();
+    uint32_t alphaFormat = Graphics::GetAlphaFormat();
 
     for (unsigned i = batchStart; i < batchEnd; ++i)
     {
@@ -1231,7 +1229,7 @@ void UI::ProcessHover(const IntVector2& cursorPos, int buttons, int qualifiers, 
                 if (!hashContains(hoveredElements_,element))
                 {
                     IntVector2 relativePos = element->ScreenToElement(cursorPos);
-                    element->hoverBegin.Emit(element,cursorPos.x_,cursorPos.y_,relativePos.x_,relativePos.y_);
+                    element->hoverBegin(element,cursorPos.x_,cursorPos.y_,relativePos.x_,relativePos.y_);
                     // Exit if element is destroyed by the event handling
                     if (!element)
                         return;
@@ -1246,7 +1244,7 @@ void UI::ProcessHover(const IntVector2& cursorPos, int buttons, int qualifiers, 
             bool accept = element->OnDragDropTest(dragElement);
             if (accept)
             {
-                g_uiSignals.dragDropTest.Emit(dragElement.Get(),element.Get(),accept);
+                g_uiSignals.dragDropTest(dragElement.Get(),element.Get(),accept);
             }
 
             if (cursor)
@@ -1270,7 +1268,7 @@ void UI::ProcessHover(const IntVector2& cursorPos, int buttons, int qualifiers, 
             if (!hashContains(hoveredElements_,element))
             {
                 IntVector2 relativePos = element->ScreenToElement(cursorPos);
-                element->hoverBegin.Emit(element,cursorPos.x_,cursorPos.y_,relativePos.x_,relativePos.y_);
+                element->hoverBegin(element,cursorPos.x_,cursorPos.y_,relativePos.x_,relativePos.y_);
                 // Exit if element is destroyed by the event handling
                 if (!element)
                     return;
@@ -1280,14 +1278,14 @@ void UI::ProcessHover(const IntVector2& cursorPos, int buttons, int qualifiers, 
     }
 }
 
-void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible)
+void UI::ProcessClickBegin(const IntVector2& cursorPos, MouseButton button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible)
 {
     if (cursorVisible)
     {
         WeakPtr<UIElement> element(GetElementAt(cursorPos));
 
         bool newButton = true;
-        buttons |= button;
+        buttons |= 1<<int(button);
 
         if (element)
             SetFocusElement (element);
@@ -1301,8 +1299,8 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
             // Handle click
             element->OnClickBegin(element->ScreenToElement(cursorPos), cursorPos, button, buttons, qualifiers, cursor);
             // Send also element version of the event
-            element->click.Emit(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
-            g_uiSignals.mouseClickUI.Emit(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
+            element->click(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
+            g_uiSignals.mouseClickUI(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
 
 
             // Fire double click event if element matches and is in time
@@ -1311,8 +1309,8 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
             {
                 element->OnDoubleClick(element->ScreenToElement(cursorPos), cursorPos, button, buttons, qualifiers, cursor);
                 doubleClickElement_.Reset();
-                element->doubleClick.Emit(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
-                g_uiSignals.mouseDoubleClickUI.Emit(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
+                element->doubleClick(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
+                g_uiSignals.mouseDoubleClickUI(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
             }
             else
             {
@@ -1329,7 +1327,7 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
                 dragData->dragBeginPending = true;
                 dragData->dragBeginSumPos = cursorPos;
                 dragData->dragBeginTimer.Reset();
-                dragData->dragButtons = button;
+                dragData->dragButtons = 1<<int(button);
                 dragData->numDragButtons = CountSetBits(dragData->dragButtons);
                 dragElementsCount_++;
 
@@ -1339,7 +1337,7 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
             {
                 DragData* dragData = dragElements_[element];
                 dragData->dragBeginSumPos += cursorPos;
-                dragData->dragButtons |= button;
+                dragData->dragButtons |= 1<<int(button);
                 dragData->numDragButtons = CountSetBits(dragData->dragButtons);
             }
         }
@@ -1349,13 +1347,13 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
             if (!HasModalElement())
                 SetFocusElement(nullptr);
             if(element)
-                element->click.Emit(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
-            g_uiSignals.mouseClickUI.Emit(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
+                element->click(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
+            g_uiSignals.mouseClickUI(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
 
             if (clickTimer_.GetMSec(true) < (unsigned)(doubleClickInterval_ * 1000) && lastMouseButtons_ == buttons) {
                 if(element)
-                    element->doubleClick.Emit(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
-                g_uiSignals.mouseDoubleClickUI.Emit(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
+                    element->doubleClick(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
+                g_uiSignals.mouseDoubleClickUI(element,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
             }
         }
 
@@ -1363,7 +1361,7 @@ void UI::ProcessClickBegin(const IntVector2& cursorPos, int button, int buttons,
     }
 }
 
-void UI::ProcessClickEnd(const IntVector2& cursorPos, int button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible)
+void UI::ProcessClickEnd(const IntVector2& cursorPos, MouseButton button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible)
 {
     WeakPtr<UIElement> element;
     if (cursorVisible)
@@ -1381,21 +1379,21 @@ void UI::ProcessClickEnd(const IntVector2& cursorPos, int button, int buttons, i
             continue;
         }
 
-        if (dragData->dragButtons & button)
+        if (dragData->dragButtons & 1<<int(button))
         {
             // Handle end of click
             if (element)
             {
                 element->OnClickEnd(element->ScreenToElement(cursorPos), cursorPos, button, buttons, qualifiers, cursor, dragElement);
-                element->clickEnd.Emit(element,dragElement,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
+                element->clickEnd(element,dragElement,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
             }
-            g_uiSignals.mouseClickEndUI.Emit(element,dragElement,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
+            g_uiSignals.mouseClickEndUI(element,dragElement,cursorPos.x_,cursorPos.y_,button,buttons,qualifiers);
 
             if (dragElement && dragElement->IsEnabled() && dragElement->IsVisible() && !dragData->dragBeginPending)
             {
                 dragElement->OnDragEnd(dragElement->ScreenToElement(cursorPos), cursorPos, dragData->dragButtons, buttons, cursor);
                 IntVector2 relativePos = dragElement->ScreenToElement(cursorPos);
-                dragElement->dragEnd.Emit(dragElement, cursorPos.x_, cursorPos.y_, relativePos.x_, relativePos.y_,
+                dragElement->dragEnd(dragElement, cursorPos.x_, cursorPos.y_, relativePos.x_, relativePos.y_,
                                           dragData->dragButtons, dragData->numDragButtons);
 
                 bool dragSource = dragElement && (dragElement->GetDragDropMode() & DD_SOURCE) != 0;
@@ -1411,7 +1409,7 @@ void UI::ProcessClickEnd(const IntVector2& cursorPos, int button, int buttons, i
                         // OnDragDropFinish() may have caused destruction of the elements, so check the pointers again
                         if (accept && dragElement && element)
                         {
-                            g_uiSignals.dragDropFinish.Emit(dragElement.Get(),element.Get(),accept);
+                            g_uiSignals.dragDropFinish(dragElement.Get(),element.Get(),accept);
                         }
                     }
                 }
@@ -1426,74 +1424,73 @@ void UI::ProcessClickEnd(const IntVector2& cursorPos, int button, int buttons, i
 
 void UI::ProcessMove(const IntVector2& cursorPos, const IntVector2& cursorDeltaPos, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible)
 {
-    if (cursorVisible && dragElementsCount_ > 0 && buttons)
+    if (!cursorVisible || dragElementsCount_ <= 0 || 0==buttons)
+        return;
+    bool mouseGrabbed = m_context->m_InputSystem->IsMouseGrabbed();
+    for (auto i = dragElements_.begin(); i != dragElements_.end();)
     {
-        bool mouseGrabbed = m_context->m_InputSystem->IsMouseGrabbed();
-        for (auto i = dragElements_.begin(); i != dragElements_.end();)
+        WeakPtr<UIElement> dragElement = MAP_KEY(i);
+        UI::DragData* dragData = MAP_VALUE(i);
+
+        if (!dragElement)
         {
-            WeakPtr<UIElement> dragElement = MAP_KEY(i);
-            UI::DragData* dragData = MAP_VALUE(i);
-
-            if (!dragElement)
-            {
-                i = DragElementErase(i);
-                continue;
-            }
-
-            if (!(dragData->dragButtons & buttons))
-            {
-                ++i;
-                continue;
-            }
-
-            // Calculate the position that we should send for this drag event.
-            IntVector2 sendPos = cursorPos;
-
-            if (dragElement->IsEnabled() && dragElement->IsVisible())
-            {
-                // Signal drag begin if distance threshold was exceeded
-
-                if (dragData->dragBeginPending && !mouseGrabbed)
-                {
-                    IntVector2 beginSendPos;
-                    beginSendPos.x_ = dragData->dragBeginSumPos.x_ / dragData->numDragButtons;
-                    beginSendPos.y_ = dragData->dragBeginSumPos.y_ / dragData->numDragButtons;
-
-                    IntVector2 offset = cursorPos - beginSendPos;
-                    if (Abs(offset.x_) >= dragBeginDistance_ || Abs(offset.y_) >= dragBeginDistance_)
-                    {
-                        dragData->dragBeginPending = false;
-                        dragConfirmedCount_ ++;
-                        dragElement->OnDragBegin(dragElement->ScreenToElement(beginSendPos), beginSendPos, buttons, qualifiers, cursor);
-                        IntVector2 relativePos = dragElement->ScreenToElement(beginSendPos);
-                        dragElement->dragBegin.Emit(dragElement, beginSendPos.x_, beginSendPos.y_,
-                                                    relativePos.x_, relativePos.y_,
-                                                    dragData->dragButtons, dragData->numDragButtons);
-
-                    }
-                }
-
-                if (!dragData->dragBeginPending)
-                {
-                    dragElement->OnDragMove(dragElement->ScreenToElement(sendPos), sendPos, cursorDeltaPos, buttons, qualifiers, cursor);
-                    IntVector2 relativePos = dragElement->ScreenToElement(sendPos);
-                    dragElement->dragMove.Emit(dragElement, sendPos.x_, sendPos.y_, cursorDeltaPos, relativePos.x_, relativePos.y_, dragData->dragButtons,
-                                               dragData->numDragButtons);
-                }
-            }
-            else
-            {
-                dragElement->OnDragEnd(dragElement->ScreenToElement(sendPos), sendPos, dragData->dragButtons, buttons, cursor);
-                IntVector2 relativePos = dragElement->ScreenToElement(sendPos);
-                dragElement->dragEnd.Emit(dragElement, sendPos.x_, sendPos.y_,
-                                           relativePos.x_, relativePos.y_, dragData->dragButtons,
-                                           dragData->numDragButtons);
-
-                dragElement.Reset();
-            }
-
-            ++i;
+            i = DragElementErase(i);
+            continue;
         }
+
+        if (!(dragData->dragButtons & buttons))
+        {
+            ++i;
+            continue;
+        }
+
+        // Calculate the position that we should send for this drag event.
+        IntVector2 sendPos = cursorPos;
+
+        if (dragElement->IsEnabled() && dragElement->IsVisible())
+        {
+            // Signal drag begin if distance threshold was exceeded
+
+            if (dragData->dragBeginPending && !mouseGrabbed)
+            {
+                IntVector2 beginSendPos;
+                beginSendPos.x_ = dragData->dragBeginSumPos.x_ / dragData->numDragButtons;
+                beginSendPos.y_ = dragData->dragBeginSumPos.y_ / dragData->numDragButtons;
+
+                IntVector2 offset = cursorPos - beginSendPos;
+                if (Abs(offset.x_) >= dragBeginDistance_ || Abs(offset.y_) >= dragBeginDistance_)
+                {
+                    dragData->dragBeginPending = false;
+                    dragConfirmedCount_ ++;
+                    dragElement->OnDragBegin(dragElement->ScreenToElement(beginSendPos), beginSendPos, buttons, qualifiers, cursor);
+                    IntVector2 relativePos = dragElement->ScreenToElement(beginSendPos);
+                    dragElement->dragBegin(dragElement, beginSendPos.x_, beginSendPos.y_,
+                                                relativePos.x_, relativePos.y_,
+                                                dragData->dragButtons, dragData->numDragButtons);
+
+                }
+            }
+
+            if (!dragData->dragBeginPending)
+            {
+                dragElement->OnDragMove(dragElement->ScreenToElement(sendPos), sendPos, cursorDeltaPos, buttons, qualifiers, cursor);
+                IntVector2 relativePos = dragElement->ScreenToElement(sendPos);
+                dragElement->dragMove(dragElement, sendPos.x_, sendPos.y_, cursorDeltaPos, relativePos.x_, relativePos.y_, dragData->dragButtons,
+                                           dragData->numDragButtons);
+            }
+        }
+        else
+        {
+            dragElement->OnDragEnd(dragElement->ScreenToElement(sendPos), sendPos, dragData->dragButtons, buttons, cursor);
+            IntVector2 relativePos = dragElement->ScreenToElement(sendPos);
+            dragElement->dragEnd(dragElement, sendPos.x_, sendPos.y_,
+                                       relativePos.x_, relativePos.y_, dragData->dragButtons,
+                                       dragData->numDragButtons);
+
+            dragElement.Reset();
+        }
+
+        ++i;
     }
 }
 
@@ -1505,7 +1502,7 @@ void UI::HandleScreenMode(int,int,bool,bool,bool,bool,int,int)
         ResizeRootElement();
 }
 
-void UI::HandleMouseButtonDown(int button, unsigned buttons, int quals)
+void UI::HandleMouseButtonDown(MouseButton button, unsigned buttons, int quals)
 {
     mouseButtons_ = buttons;
     qualifiers_ = quals;
@@ -1521,7 +1518,7 @@ void UI::HandleMouseButtonDown(int button, unsigned buttons, int quals)
         ProcessClickBegin(cursorPos, button, mouseButtons_, qualifiers_, cursor_, cursorVisible);
 }
 
-void UI::HandleMouseButtonUp(int Button,unsigned Buttons,int Qualifiers)
+void UI::HandleMouseButtonUp(MouseButton Button,unsigned Buttons,int Qualifiers)
 {
     mouseButtons_ = Buttons;
     qualifiers_ = Qualifiers;
@@ -1723,7 +1720,7 @@ void UI::HandleDropFile(const QString &name)
         {
             relativePos = element->ScreenToElement(screenPos);
         }
-        g_uiSignals.dropFileUI.Emit(name,element,screenPos.x_,screenPos.y_,relativePos.x_,relativePos.y_);
+        g_uiSignals.dropFileUI(name,element,screenPos.x_,screenPos.y_,relativePos.x_,relativePos.y_);
     }
 }
 
@@ -1761,7 +1758,7 @@ void UI::ProcessDragCancel()
         {
             dragElement->OnDragCancel(dragElement->ScreenToElement(cursorPos), cursorPos, dragData->dragButtons, mouseButtons_, cursor_);
             IntVector2 relativePos = dragElement->ScreenToElement(cursorPos);
-            dragElement->dragCancel.Emit(dragElement, cursorPos.x_, cursorPos.y_,
+            dragElement->dragCancel(dragElement, cursorPos.x_, cursorPos.y_,
                                        relativePos.x_, relativePos.y_, dragData->dragButtons,
                                        dragData->numDragButtons);
 

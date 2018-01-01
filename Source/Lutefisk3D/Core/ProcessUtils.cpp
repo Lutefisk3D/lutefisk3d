@@ -25,9 +25,8 @@
 #include "Lutefisk3D/Math/MathDefs.h"
 #include "Lutefisk3D/IO/FileSystem.h" // used for minidump support functions
 #include <QtCore/QThread>
-#ifndef MINI_URHO
-#include <SDL2/SDL.h>
-#endif
+#include <QtCore/QStandardPaths>
+#include <QtWidgets/QMessageBox>
 
 #include <cstdio>
 #include <fcntl.h>
@@ -102,8 +101,7 @@ void InitFPU()
 void ErrorDialog(const QString& title, const QString& message)
 {
 #ifndef MINI_URHO
-    // TODO: use qt widgets here ?
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, qPrintable(title), qPrintable(message), 0);
+    QMessageBox::critical(nullptr,title,message);
 #endif
 }
 
@@ -334,19 +332,13 @@ QString GetMiniDumpDir()
 #ifndef MINI_URHO
     if (miniDumpDir.isEmpty())
     {
-        char* pathName = SDL_GetPrefPath("urho3d", "crashdumps");
-        if (pathName)
-        {
-            QString ret(pathName);
-            SDL_free(pathName);
-            return ret;
-        }
+        return QStandardPaths::writableLocation(QStandardPaths::TempLocation);
     }
 #endif
 
     return miniDumpDir;
 }
-unsigned long long GetTotalMemory()
+uint64_t GetTotalMemory()
 {
 #if defined(__linux__)
     struct sysinfo s;

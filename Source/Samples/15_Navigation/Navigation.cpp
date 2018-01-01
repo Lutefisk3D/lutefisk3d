@@ -219,7 +219,7 @@ void Navigation::MoveCamera(float timeStep)
     // Right mouse button controls mouse cursor visibility: hide when pressed
     UI* ui = m_context->m_UISystem.get();
     Input* input = m_context->m_InputSystem.get();
-    ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MOUSEB_RIGHT));
+    ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MouseButton::RIGHT));
 
     // Do not move if the UI has a focused element (the console)
     if (ui->GetFocusElement())
@@ -254,10 +254,10 @@ void Navigation::MoveCamera(float timeStep)
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 
     // Set destination or teleport with left mouse button
-    if (input->GetMouseButtonPress(MOUSEB_LEFT))
+    if (input->GetMouseButtonPress(MouseButton::LEFT))
         SetPathPoint();
     // Add or remove objects with middle mouse button, then rebuild navigation mesh partially
-    if (input->GetMouseButtonPress(MOUSEB_MIDDLE))
+    if (input->GetMouseButtonPress(MouseButton::MIDDLE))
         AddOrRemoveObject();
 
     // Toggle debug geometry with space

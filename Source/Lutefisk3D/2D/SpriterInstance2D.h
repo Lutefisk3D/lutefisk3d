@@ -25,7 +25,7 @@
 #include "Lutefisk3D/Core/Lutefisk3D.h"
 #include "Lutefisk3D/2D/SpriterData2D.h"
 
-#include <jlsignal/Signal.h>
+#include "Lutefisk3D/Engine/jlsignal/Signal.h"
 
 #include <vector>
 namespace Urho3D

@@ -48,9 +48,9 @@ public:
     /// Perform UI element update.
     virtual void Update(float timeStep) override;
     /// React to mouse click begin.
-    virtual void OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor) override;
+    virtual void OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor) override;
     /// React to mouse doubleclick.
-    virtual void OnDoubleClick(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor) override;
+    virtual void OnDoubleClick(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor) override;
     /// React to mouse drag begin.
     virtual void OnDragBegin(const IntVector2& position, const IntVector2& screenPosition, int buttons, int qualifiers, Cursor* cursor) override;
     /// React to mouse drag motion.

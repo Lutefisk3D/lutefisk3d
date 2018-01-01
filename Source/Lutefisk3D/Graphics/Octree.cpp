@@ -438,7 +438,7 @@ void Octree::Update(const FrameInfo& frame)
     Scene* scene = GetScene();
     if (scene)
     {
-        scene->sceneDrawableUpdateFinished.Emit(scene,frame.timeStep_);
+        scene->sceneDrawableUpdateFinished(scene,frame.timeStep_);
     }
 
     // Reinsert drawables that have been moved or resized, or that have been newly added to the octree and do not sit inside

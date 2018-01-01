@@ -74,7 +74,7 @@ void Button::Update(float timeStep)
         if (repeatTimer_ <= 0.0f)
         {
             repeatTimer_ += 1.0f / repeatRate_;
-            pressed.Emit(this);
+            pressed(this);
         }
     }
 }
@@ -90,26 +90,26 @@ void Button::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& verte
     BorderImage::GetBatches(batches, vertexData, currentScissor, offset);
 }
 
-void Button::OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor)
+void Button::OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor)
 {
-    if (button == MOUSEB_LEFT)
+    if (button == MouseButton::LEFT)
     {
         SetPressed(true);
         repeatTimer_ = repeatDelay_;
         hovering_ = true;
-        pressed.Emit(this);
+        pressed(this);
     }
 }
 
-void Button::OnClickEnd(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor, UIElement* beginElement)
+void Button::OnClickEnd(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor, UIElement* beginElement)
 {
-    if (pressed_ && button == MOUSEB_LEFT)
+    if (pressed_ && button == MouseButton::LEFT)
     {
         SetPressed(false);
         // If mouse was released on top of the element, consider it hovering on this frame yet (see issue #1453)
         if (IsInside(screenPosition, true))
             hovering_ = true;
-        released.Emit(this);
+        released(this);
     }
 }
 
@@ -120,11 +120,11 @@ void Button::OnDragMove(const IntVector2& position, const IntVector2& screenPosi
 
 void Button::OnKey(int key, int buttons, int qualifiers)
 {
-    if (HasFocus() && (key == KEY_RETURN || key == KEY_RETURN2 || key == KEY_KP_ENTER || key == KEY_SPACE))
+    if (HasFocus() && (key == KEY_ENTER || key == KEY_KP_ENTER || key == KEY_SPACE))
     {
         // Simulate LMB click
-        OnClickBegin(IntVector2(), IntVector2(), MOUSEB_LEFT, 0, 0, nullptr);
-        OnClickEnd(IntVector2(), IntVector2(), MOUSEB_LEFT, 0, 0, nullptr, nullptr);
+        OnClickBegin(IntVector2(), IntVector2(), MouseButton::LEFT, 0, 0, nullptr);
+        OnClickEnd(IntVector2(), IntVector2(), MouseButton::LEFT, 0, 0, nullptr, nullptr);
     }
 }
 

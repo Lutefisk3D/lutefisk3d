@@ -49,6 +49,7 @@ static Log* logInstance = nullptr;
 static bool threadErrorDisplayed = false;
 
 Log::Log(Context *ctx) :
+    SignalObserver(ctx->m_observer_allocator),
     m_context(ctx),
 #ifdef _DEBUG
     level_(LOG_DEBUG),
@@ -169,7 +170,7 @@ void Log::Write(LogLevels level, const QString& message)
     }
 
     logInstance->inWrite_ = true;
-    g_LogSignals.logMessageSignal.Emit(level,formattedMessage);
+    g_LogSignals.logMessageSignal(level,formattedMessage);
     logInstance->inWrite_ = false;
 }
 /// Write raw output to the log.
@@ -209,7 +210,7 @@ void Log::WriteRaw(const QString& message, bool error)
     }
 
     logInstance->inWrite_ = true;
-    g_LogSignals.logMessageSignal.Emit(error ? LOG_ERROR : LOG_INFO,message);
+    g_LogSignals.logMessageSignal(error ? LOG_ERROR : LOG_INFO,message);
     logInstance->inWrite_ = false;
 }
 /// Handle end of frame will process the threaded log messages.

@@ -47,7 +47,7 @@ public:
     /// Construct.
     SoundSource(Context* context);
     /// Destruct. Remove self from the audio subsystem
-    virtual ~SoundSource();
+    ~SoundSource() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -150,22 +150,6 @@ private:
     void StopLockless();
     /// Set new playback position without locking the audio mutex. Called internally.
     void SetPlayPositionLockless(signed char* position);
-    /// Mix mono sample to mono buffer.
-    void MixMonoToMono(Sound* sound, int* dest, unsigned samples, int mixRate);
-    /// Mix mono sample to stereo buffer.
-    void MixMonoToStereo(Sound* sound, int* dest, unsigned samples, int mixRate);
-    /// Mix mono sample to mono buffer interpolated.
-    void MixMonoToMonoIP(Sound* sound, int* dest, unsigned samples, int mixRate);
-    /// Mix mono sample to stereo buffer interpolated.
-    void MixMonoToStereoIP(Sound* sound, int* dest, unsigned samples, int mixRate);
-    /// Mix stereo sample to mono buffer.
-    void MixStereoToMono(Sound* sound, int* dest, unsigned samples, int mixRate);
-    /// Mix stereo sample to stereo buffer.
-    void MixStereoToStereo(Sound* sound, int* dest, unsigned samples, int mixRate);
-    /// Mix stereo sample to mono buffer interpolated.
-    void MixStereoToMonoIP(Sound* sound, int* dest, unsigned samples, int mixRate);
-    /// Mix stereo sample to stereo buffer interpolated.
-    void MixStereoToStereoIP(Sound* sound, int* dest, unsigned samples, int mixRate);
     /// Advance playback pointer without producing audible output.
     void MixZeroVolume(Sound* sound, unsigned samples, int mixRate);
     /// Advance playback pointer to simulate audio playback in headless mode.

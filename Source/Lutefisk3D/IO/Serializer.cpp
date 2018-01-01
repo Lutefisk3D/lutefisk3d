@@ -55,7 +55,7 @@ bool Serializer::WriteByte(signed char value)
     return Write(&value, sizeof value) == sizeof value;
 }
 
-bool Serializer::WriteUInt64(unsigned long long value)
+bool Serializer::WriteUInt64(uint64_t value)
 {
     return Write(&value, sizeof value) == sizeof value;
 }

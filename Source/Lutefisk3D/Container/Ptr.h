@@ -30,7 +30,7 @@ namespace Urho3D
 {
 
 /// Shared pointer template class with intrusive reference counting.
-template <class T> class LUTEFISK3D_EXPORT SharedPtr
+template <class T> class SharedPtr
 {
 public:
     /// Construct a null shared pointer.
@@ -228,7 +228,7 @@ template <class T, class U> SharedPtr<T> DynamicCast(const SharedPtr<U>& ptr)
 }
 
 /// Weak pointer template class with intrusive reference counting. Does not keep the object pointed to alive.
-template <class T> class LUTEFISK3D_EXPORT WeakPtr
+template <class T> class WeakPtr
 {
 public:
     /// Construct a null weak pointer.
@@ -308,7 +308,17 @@ public:
 
         return *this;
     }
-
+    /// move from another weak pointer
+    WeakPtr<T>& operator = (WeakPtr<T>&& rhs)
+    {
+        if (this == &rhs)
+            return *this;
+        ptr_          = rhs.ptr_;
+        refCount_     = rhs.refCount_;
+        rhs.ptr_      = nullptr;
+        rhs.refCount_ = nullptr;
+        return *this;
+    }
     /// Assign from another weak pointer allowing implicit upcasting.
     template <class U> WeakPtr<T>& operator =(const WeakPtr<U>& rhs)
     {

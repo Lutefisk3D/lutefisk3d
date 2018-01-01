@@ -33,13 +33,12 @@ class SoundStream;
 /// %Sound resource.
 class LUTEFISK3D_EXPORT Sound : public ResourceWithMetadata
 {
-    URHO3D_OBJECT(Sound,ResourceWithMetadata);
+    URHO3D_OBJECT(Sound,ResourceWithMetadata)
 
 public:
-    /// Construct.
     Sound(Context* context);
     /// Destruct and free sound data.
-    virtual ~Sound();
+    ~Sound() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 

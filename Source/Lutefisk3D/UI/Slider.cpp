@@ -86,21 +86,21 @@ void Slider::OnHover(const IntVector2 &position, const IntVector2 &screenPositio
 
     // If not hovering on the knob, send it as page event
     if (!hovering_)
-        Page(position, (bool)(buttons & MOUSEB_LEFT));
+        Page(position, (bool)(buttons & 1<<int(MouseButton::LEFT)));
 }
 
-void Slider::OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor)
+void Slider::OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor)
 {
     selected_ = true;
     hovering_ = knob_->IsInside(screenPosition, true);
-    if (!hovering_ && button == MOUSEB_LEFT)
+    if (!hovering_ && button == MouseButton::LEFT)
         Page(position, true);
 }
 
-void Slider::OnClickEnd(const IntVector2& position, const IntVector2& screenPosition, int button, int buttons, int qualifiers, Cursor* cursor, UIElement* beginElement)
+void Slider::OnClickEnd(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor, UIElement* beginElement)
 {
     hovering_ = knob_->IsInside(screenPosition, true);
-    if (!hovering_ && button == MOUSEB_LEFT)
+    if (!hovering_ && button == MouseButton::LEFT)
         Page(position, false);
 }
 
@@ -108,7 +108,7 @@ void Slider::OnDragBegin(const IntVector2& position, const IntVector2& screenPos
 {
     UIElement::OnDragBegin(position, screenPosition, buttons, qualifiers, cursor);
 
-    if (buttons == MOUSEB_LEFT)
+    if (buttons == 1<<int(MouseButton::LEFT))
     {
         dragBeginCursor_ = position;
         dragBeginPosition_ = knob_->GetPosition();
@@ -144,7 +144,7 @@ void Slider::OnDragEnd(const IntVector2& position, const IntVector2& screenPosit
 {
     UIElement::OnDragEnd(position, screenPosition, dragButtons, buttons, cursor);
 
-    if (dragButtons == MOUSEB_LEFT)
+    if (dragButtons == 1<<int(MouseButton::LEFT))
     {
         dragSlider_ = false;
         selected_ = false;
@@ -179,7 +179,7 @@ void Slider::SetValue(float value)
     {
         value_ = value;
         UpdateSlider();
-        sliderChanged.Emit(this,value_);
+        sliderChanged(this,value_);
     }
 }
 
@@ -278,7 +278,7 @@ void Slider::Page(const IntVector2 &position, bool pressed)
     else
         pressed = false;
 
-    sliderPaged.Emit(this,offset,pressed);
+    sliderPaged(this,offset,pressed);
 }
 
 }

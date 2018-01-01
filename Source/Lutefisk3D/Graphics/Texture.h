@@ -27,10 +27,6 @@
 #include "Lutefisk3D/Math/Color.h"
 #include "Lutefisk3D/Resource/Resource.h"
 
-namespace gl {
-enum class GLenum : uint32_t;
-}
-
 namespace Urho3D
 {
 
@@ -65,7 +61,7 @@ public:
     void SetMipsToSkip(int quality, int toSkip);
 
     /// Return API-specific texture format.
-    gl::GLenum GetFormat() const { return format_; }
+    uint32_t GetFormat() const { return format_; }
     /// Return whether the texture format is compressed.
     bool IsCompressed() const;
     /// Return number of mip levels.
@@ -132,10 +128,10 @@ public:
     void UpdateParameters();
 
     /// Return texture's target. Only used on OpenGL.
-    gl::GLenum GetTarget() const { return target_; }
+    uint32_t GetTarget() const { return target_; }
 
     /// Convert format to sRGB. Not used on Direct3D9.
-    gl::GLenum GetSRGBFormat(gl::GLenum format);
+    uint32_t GetSRGBFormat(uint32_t format);
     /// Set or clear the need resolve flag. Called internally by Graphics.
     void SetResolveDirty(bool enable) { resolveDirty_ = enable; }
 
@@ -152,9 +148,9 @@ public:
     /// Return the depth-stencil view format corresponding to a texture format. Handles conversion of typeless depth texture formats. Only used on Direct3D11.
     static unsigned GetDSVFormat(unsigned format);
     /// Return the non-internal texture format corresponding to an OpenGL internal format.
-    static gl::GLenum GetExternalFormat(gl::GLenum format);
+    static uint32_t GetExternalFormat(uint32_t format);
     /// Return the data type corresponding to an OpenGL internal format.
-    static gl::GLenum GetDataType(gl::GLenum format);
+    static uint32_t GetDataType(uint32_t format);
 
 protected:
     /// Check whether texture memory budget has been exceeded. Free unused materials in that case to release the texture references.
@@ -162,8 +158,8 @@ protected:
     /// Create the GPU texture. Implemented in subclasses.
     virtual bool Create() { return true; }
 
-    gl::GLenum         target_;                       //!< OpenGL target.
-    gl::GLenum         format_;                       //!< Texture format.
+    uint32_t         target_;                       //!< OpenGL target.
+    uint32_t         format_;                       //!< Texture format.
     TextureUsage       usage_;                        //!< Texture usage type.
     unsigned           levels_;                       //!< Current mip levels.
     unsigned           requestedLevels_;              //!< Requested mip levels.

@@ -53,19 +53,8 @@ struct CharLocation
 /// Glyph and its location within the text. Used when preparing text rendering.
 struct GlyphLocation
 {
-    /// Construct.
-    GlyphLocation(float x, float y, const FontGlyph* glyph) :
-        x_(x),
-        y_(y),
-        glyph_(glyph)
-    {
-    }
-
-    /// X coordinate.
     float x_;
-    /// Y coordinate.
     float y_;
-    /// Glyph.
     const FontGlyph* glyph_;
 };
 
@@ -77,10 +66,8 @@ class LUTEFISK3D_EXPORT Text : public UIElement
     friend class Text3D;
 
 public:
-    /// Construct.
     Text(Context* context);
-    /// Destruct.
-    virtual ~Text();
+    ~Text() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -206,31 +193,24 @@ protected:
     /// Contruct batch.
     void ConstructBatch(UIBatch& pageBatch, const std::vector<GlyphLocation>& pageGlyphLocation, float dx = 0, float dy = 0, Color* color = nullptr, float depthBias = 0.0f);
 
-    /// Font.
     SharedPtr<Font> font_;
     /// Current face.
     WeakPtr<FontFace> fontFace_;
-    /// Font size.
     float fontSize_;
     /// UTF-8 encoded text.
     QString text_;
     /// Row alignment.
     HorizontalAlignment textAlignment_;
-    /// Row spacing.
     float rowSpacing_;
     /// Wordwrap mode.
     bool wordWrap_;
-    /// Char positions dirty flag.
     bool charLocationsDirty_;
-    /// Selection start.
     unsigned selectionStart_;
-    /// Selection length.
     unsigned selectionLength_;
     /// Selection background color.
     Color selectionColor_;
     /// Hover background color.
     Color hoverColor_;
-    /// Text effect.
     TextEffect textEffect_;
     /// Text effect shadow offset.
     IntVector2 shadowOffset_;
@@ -238,11 +218,9 @@ protected:
     int strokeThickness_;
     /// Text effect stroke rounding flag.
     bool roundStroke_;
-    /// Effect color.
     Color effectColor_;
     /// Text effect Z bias.
     float effectDepthBias_;
-    /// Row height.
     float rowHeight_;
     /// Text as Unicode characters.
     std::vector<QChar> unicodeText_;

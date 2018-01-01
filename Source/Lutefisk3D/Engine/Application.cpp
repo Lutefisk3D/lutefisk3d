@@ -38,6 +38,7 @@
 using namespace Urho3D;
 /// Construct. Parse default engine parameters from the command line, and create the engine in an uninitialized state.
 Application::Application(const QString &appName, Context* context) :
+    SignalObserver(context->m_observer_allocator),
     m_context(context),
     m_appName(appName),
     exitCode_(EXIT_SUCCESS)

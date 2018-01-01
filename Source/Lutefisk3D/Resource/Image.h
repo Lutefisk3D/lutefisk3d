@@ -27,7 +27,9 @@
 #include "Lutefisk3D/Math/Rect.h"
 #include "Lutefisk3D/Math/Color.h"
 struct SDL_Surface;
-
+extern "C" {
+struct GLFWimage;
+}
 namespace Urho3D
 {
 
@@ -137,6 +139,7 @@ public:
     Image* GetSubimage(const IntRect& rect) const;
 
     SDL_Surface *GetSDLSurface(const IntRect &rect = IntRect::ZERO) const;
+    std::unique_ptr<GLFWimage> GetGLFWImage(const IntRect& rect = IntRect::ZERO) const;
     void PrecalculateLevels();
     void CleanupLevels();
     void GetLevels(std::vector<Image *> &levels);

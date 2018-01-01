@@ -49,6 +49,7 @@ public:
     void SetPriority(int priority);
     /// Return whether thread exists.
     bool IsStarted() const { return handle_ != nullptr; }
+    ThreadID ThreadId() const;
     static void SetMainThread();
     static ThreadID GetCurrentThreadID();
     static bool IsMainThread();

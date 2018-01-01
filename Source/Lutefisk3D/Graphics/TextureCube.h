@@ -56,7 +56,7 @@ public:
     void Release() override;
 
     /// Set size, format, usage and multisampling parameter for rendertargets. Note that cube textures always use autoresolve when multisampled due to lacking support (on all APIs) to multisample them in a shader. Return true if successful.
-    bool SetSize(int size, gl::GLenum format, TextureUsage usage = TEXTURE_STATIC, int multiSample = 1);
+    bool SetSize(int size, uint32_t format, TextureUsage usage = TEXTURE_STATIC, int multiSample = 1);
     /// Set data either partially or fully on a face's mip level. Return true if successful.
     bool SetData(CubeMapFace face, unsigned level, int x, int y, int width, int height, const void* data);
     /// Set data of one face from a stream. Return true if successful.

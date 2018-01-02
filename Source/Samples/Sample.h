@@ -94,9 +94,6 @@ private:
     void HandleKeyUp(int key,int scancode,unsigned buttons,int qualifiers);
     /// Handle scene update event to control camera's pitch and yaw for all samples.
     void HandleSceneUpdate(Urho3D::Scene *scene,float timeStep);
-
-    /// Pause flag.
-    bool paused_;
 };
 
 #include "Sample.inl"

@@ -48,8 +48,7 @@ Sample::Sample(const QString& sampleName,Urho3D::Context* context) :
     Application(sampleName,context),
     yaw_(0.0f),
     pitch_(0.0f),
-    useMouseMode_(Urho3D::MM_ABSOLUTE),
-    paused_(false)
+    useMouseMode_(Urho3D::MM_ABSOLUTE)
 {
 }
 

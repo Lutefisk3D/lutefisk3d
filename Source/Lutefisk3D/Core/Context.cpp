@@ -312,6 +312,16 @@ Context::~Context()
     m_Renderer.reset();
     m_Graphics.reset();
 }
+
+Log * Context::LogSystem() const
+{
+    return m_LogSystem.get();
+}
+
+void Context::SetLogSystem(Log * l)
+{
+    m_LogSystem.reset(l);
+}
 /// Create an object by type hash. Return pointer to it or null if no factory found.
 SharedPtr<Object> Context::CreateObject(StringHash objectType)
 {

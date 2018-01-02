@@ -177,7 +177,7 @@ Engine::Engine(Context* context) :
 #endif
     context_->m_FileSystem.reset(new FileSystem(context_));
 #ifdef LUTEFISK3D_LOGGING
-    context_->m_LogSystem.reset(new Log(context_));
+    context_->SetLogSystem(new Log(context_));
 #endif
     context_->m_ResourceCache.reset(new ResourceCache(context_));
 #ifdef LUTEFISK3D_NETWORK
@@ -236,7 +236,7 @@ bool Engine::Initialize(const VariantMap& parameters)
 #endif
 
     // Start logging
-    Log* log = context_->m_LogSystem.get();
+    Log* log = context_->LogSystem();
     if (log)
     {
         if (HasParameter(parameters, EP_LOG_LEVEL))

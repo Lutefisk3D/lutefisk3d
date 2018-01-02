@@ -59,7 +59,6 @@ template<class T> class SharedPtr;
 template <class T, class U> SharedPtr<T> StaticCast(const SharedPtr<U>& ptr);
 }
 namespace std {
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Log>;
 extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::FileSystem>;
 extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Input>;
 extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::ResourceCache>;
@@ -85,11 +84,13 @@ class LUTEFISK3D_EXPORT Context
 {
     friend class Object;
     friend class Context_EventGuard;
+    std::unique_ptr<Log>           m_LogSystem;
 public:
     Context();
     ~Context();
+    Log * LogSystem() const;
+    void SetLogSystem(Log *l);
 
-    std::unique_ptr<Log>           m_LogSystem;
     std::unique_ptr<FileSystem>    m_FileSystem;
     std::unique_ptr<Input>         m_InputSystem;
     std::unique_ptr<ResourceCache> m_ResourceCache;
@@ -138,6 +139,7 @@ public:
     const std::vector<AttributeInfo>* GetNetworkAttributes(StringHash type) const;
     EventReceiverGroup* GetEventReceivers(Object* sender, StringHash eventType);
     EventReceiverGroup* GetEventReceivers(StringHash eventType);
+
 
 private:
 

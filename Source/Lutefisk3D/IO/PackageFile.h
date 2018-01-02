@@ -65,7 +65,7 @@ public:
     /// Return hash of the package file name.
     StringHash GetNameHash() const { return nameHash_; }
     /// Return number of files.
-    unsigned GetNumFiles() const { return entries_.size(); }
+    size_t GetNumFiles() const { return entries_.size(); }
     /// Return total size of the package file.
     unsigned GetTotalSize() const { return totalSize_; }
 

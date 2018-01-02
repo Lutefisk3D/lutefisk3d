@@ -52,16 +52,32 @@ class Profiler;
 class EventProfiler;
 class Renderer;
 class WorkQueue;
+
+template<class T> class ObjectFactoryImpl;
+template<class U,class V> class HashMap;
+template<class T> class SharedPtr;
+template <class T, class U> SharedPtr<T> StaticCast(const SharedPtr<U>& ptr);
+}
+namespace std {
+extern template class std::unique_ptr<Urho3D::Log>;
+extern template class std::unique_ptr<Urho3D::FileSystem>;
+extern template class std::unique_ptr<Urho3D::Input>;
+extern template class std::unique_ptr<Urho3D::ResourceCache>;
+extern template class std::unique_ptr<Urho3D::Graphics>;
+extern template class std::unique_ptr<Urho3D::Renderer>;
+extern template class std::unique_ptr<Urho3D::Time>;
+extern template class std::unique_ptr<Urho3D::Profiler>;
+extern template class std::unique_ptr<Urho3D::EventProfiler>;
+extern template class std::unique_ptr<Urho3D::WorkQueue>;
+extern template class std::unique_ptr<Urho3D::UI>;
+}
+namespace Urho3D
+{
 enum OSInterfaceFlags {
     GFX_SYS = 1,
     INPUT_SYS = 2,
     AUDIO_SYS = 4,
 };
-template<class T> class ObjectFactoryImpl;
-template<class U,class V> class HashMap;
-template<class T> class SharedPtr;
-template <class T, class U> SharedPtr<T> StaticCast(const SharedPtr<U>& ptr);
-
 struct AttributeInfo;
 class LUTEFISK3D_EXPORT EventReceiverGroup;
 class ContextPrivate;

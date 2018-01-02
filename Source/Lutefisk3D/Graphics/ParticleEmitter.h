@@ -64,9 +64,9 @@ public:
     static void RegisterObject(Context* context);
 
     /// Handle enabled/disabled state change.
-    virtual void OnSetEnabled() override;
+    void OnSetEnabled() override;
     /// Update before octree reinsertion. Is called from a worker thread.
-    virtual void Update(const FrameInfo& frame) override;
+    void Update(const FrameInfo& frame) override;
 
     /// Set particle effect.
     void SetEffect(ParticleEffect* effect);
@@ -90,7 +90,7 @@ public:
     /// Return particle effect.
     ParticleEffect* GetEffect() const { return effect_; }
     /// Return maximum number of particles.
-    unsigned GetNumParticles() const { return particles_.size(); }
+    size_t GetNumParticles() const { return particles_.size(); }
     /// Return whether is currently emitting.
     bool IsEmitting() const { return emitting_; }
     /// Return whether particles are to be serialized.
@@ -111,7 +111,7 @@ public:
 
 protected:
     /// Handle scene being assigned.
-    virtual void OnSceneSet(Scene* scene) override;
+    void OnSceneSet(Scene* scene) override;
 
     /// Create a new particle. Return true if there was room.
     bool EmitNewParticle();

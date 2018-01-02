@@ -113,7 +113,7 @@ struct LUTEFISK3D_EXPORT RenderPathCommand
     /// Return shader parameter.
     const Variant& GetShaderParameter(const QString& name) const;
     /// Return number of output rendertargets.
-    unsigned GetNumOutputs() const { return outputs_.size(); }
+    size_t GetNumOutputs() const { return outputs_.size(); }
     /// Return output rendertarget name.
     const QString& GetOutputName(unsigned index) const;
     /// Return output rendertarget face index.
@@ -212,9 +212,9 @@ public:
     void SetShaderParameter(const QString& name, const Variant& value);
 
     /// Return number of rendertargets.
-    unsigned GetNumRenderTargets() const { return renderTargets_.size(); }
+    size_t GetNumRenderTargets() const { return renderTargets_.size(); }
     /// Return number of commands.
-    unsigned GetNumCommands() const { return commands_.size(); }
+    size_t GetNumCommands() const { return commands_.size(); }
     /// Return command at index, or null if does not exist.
     RenderPathCommand* GetCommand(unsigned index) { return index < commands_.size() ? &commands_[index] : nullptr; }
     /// Return a shader parameter (first appearance in any command.)

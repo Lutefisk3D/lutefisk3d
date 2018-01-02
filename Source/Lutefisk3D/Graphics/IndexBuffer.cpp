@@ -72,7 +72,7 @@ void IndexBuffer::SetShadowed(bool enable)
     }
 }
 
-bool IndexBuffer::SetSize(unsigned indexCount, bool largeIndices, bool dynamic)
+bool IndexBuffer::SetSize(size_t indexCount, bool largeIndices, bool dynamic)
 {
     Unlock();
 

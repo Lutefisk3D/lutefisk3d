@@ -156,9 +156,9 @@ public:
     /// Return row height.
     float GetRowHeight() const { return rowHeight_; }
     /// Return number of rows.
-    unsigned GetNumRows() const { return rowWidths_.size(); }
+    size_t GetNumRows() const { return rowWidths_.size(); }
     /// Return number of characters.
-    unsigned GetNumChars() const { return unicodeText_.size(); }
+    size_t GetNumChars() const { return unicodeText_.size(); }
     /// Return width of row by index.
     float GetRowWidth(unsigned index) const;
     /// Return position of character by index relative to the text element origin.

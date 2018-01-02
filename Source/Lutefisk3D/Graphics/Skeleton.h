@@ -74,7 +74,7 @@ public:
     /// Return modifiable bones.
     std::vector<Bone>& GetModifiableBones() { return bones_; }
     /// Return number of bones.
-    unsigned GetNumBones() const { return bones_.size(); }
+    size_t GetNumBones() const { return bones_.size(); }
 
     Bone* GetRootBone();
     Bone* GetBone(unsigned index);

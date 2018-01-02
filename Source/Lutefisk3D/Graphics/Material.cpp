@@ -1234,8 +1234,10 @@ Technique* Material::GetTechnique(unsigned index) const
 
 Pass* Material::GetPass(unsigned index, const QString& passName) const
 {
-    Technique* tech = index < techniques_.size() ? techniques_[index].technique_ : nullptr;
-    return tech ? tech->GetPass(passName) : nullptr;
+    if (index >= techniques_.size() || nullptr == techniques_[index].technique_)
+        return nullptr;
+
+    return techniques_[index].technique_->GetPass(passName);
 }
 
 Texture* Material::GetTexture(TextureUnit unit) const
@@ -1344,7 +1346,7 @@ void Material::RefreshShaderParameterHash()
 /// Recalculate the memory used by the material.
 void Material::RefreshMemoryUse()
 {
-    unsigned memoryUse = sizeof(Material);
+    size_t memoryUse = sizeof(Material);
 
     memoryUse += techniques_.size() * sizeof(TechniqueEntry);
     memoryUse += MAX_TEXTURE_UNITS * sizeof(SharedPtr<Texture>);

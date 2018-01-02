@@ -57,7 +57,7 @@ public:
     /// Return information.
     const TileMapInfo2D& GetInfo() const { return info_; }
     /// Return number of layers.
-    unsigned GetNumLayers() const { return layers_.size(); }
+    size_t GetNumLayers() const { return layers_.size(); }
     /// Return tile map layer at index.
     TileMapLayer2D* GetLayer(unsigned index) const;
     /// Convert tile index to position.

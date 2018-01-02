@@ -399,7 +399,7 @@ View::View(Context *context)
       substituteRenderTarget_(nullptr)
 {
     // Create octree query and scene results vector for each thread
-    unsigned numThreads = context->m_WorkQueueSystem->GetNumThreads() + 1; // Worker threads + main thread
+    size_t numThreads = context->m_WorkQueueSystem->GetNumThreads() + 1; // Worker threads + main thread
     d->tempDrawables_.resize(numThreads);
     d->sceneResults_.resize(numThreads);
     frame_.camera_ = nullptr;

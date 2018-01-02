@@ -96,7 +96,7 @@ void Resource::SetName(const QString& name)
     nameHash_ = name;
 }
 /// Set memory use in bytes, possibly approximate.
-void Resource::SetMemoryUse(unsigned size)
+void Resource::SetMemoryUse(size_t size)
 {
     memoryUse_ = size;
 }

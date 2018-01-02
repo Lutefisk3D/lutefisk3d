@@ -48,7 +48,7 @@ public:
     void SetVertices(const std::vector<Vector2>& vertices);
 
     /// Return vertex count.
-    unsigned GetVertexCount() const { return vertices_.size(); }
+    size_t GetVertexCount() const { return vertices_.size(); }
     /// Return vertex.
     const Vector2& GetVertex(unsigned index) const { return (index < vertices_.size()) ? vertices_[index] : Vector2::ZERO; }
     /// Return vertices.

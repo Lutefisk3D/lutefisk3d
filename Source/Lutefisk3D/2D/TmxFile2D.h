@@ -109,7 +109,7 @@ public:
     /// Store object.
     void StoreObject(XMLElement objectElem, SharedPtr<TileMapObject2D> object, const TileMapInfo2D& info, bool isTile = false);
     /// Return number of objects.
-    unsigned GetNumObjects() const { return objects_.size(); }
+    size_t GetNumObjects() const { return objects_.size(); }
     /// Return tile map object at index.
     TileMapObject2D* GetObject(unsigned index) const;
 
@@ -180,7 +180,7 @@ public:
     /// Return tile property set by gid, if not exist return 0.
     PropertySet2D* GetTilePropertySet(int gid) const;
     /// Return number of layers.
-    unsigned GetNumLayers() const { return layers_.size(); }
+    size_t GetNumLayers() const { return layers_.size(); }
     /// Return layer at index.
     const TmxLayer2D* GetLayer(unsigned index) const;
 

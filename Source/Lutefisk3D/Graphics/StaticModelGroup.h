@@ -58,7 +58,7 @@ public:
     void RemoveAllInstanceNodes();
 
     /// Return number of instance nodes.
-    unsigned GetNumInstanceNodes() const { return instanceNodes_.size(); }
+    size_t GetNumInstanceNodes() const { return instanceNodes_.size(); }
     /// Return instance node by index.
     Node* GetInstanceNode(unsigned index) const;
 

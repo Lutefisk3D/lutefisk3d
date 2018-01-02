@@ -168,7 +168,7 @@ const QStringList& ParseArguments(const QString& cmdLine, bool skipFirstArgument
     bool inCmd = false;
     bool inQuote = false;
 
-    for (unsigned i = 0; i < cmdLine.length(); ++i)
+    for (int i = 0; i < cmdLine.length(); ++i)
     {
         if (cmdLine[i] == '\"')
             inQuote = !inQuote;

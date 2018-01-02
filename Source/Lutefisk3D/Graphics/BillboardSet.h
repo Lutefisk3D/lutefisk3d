@@ -83,7 +83,7 @@ public:
     /// Set material.
     void SetMaterial(Material* material);
     /// Set number of billboards.
-    void SetNumBillboards(unsigned num);
+    void SetNumBillboards(size_t num);
     /// Set whether billboards are relative to the scene node. Default true.
     void SetRelative(bool enable);
     /// Set whether scene node scale affects billboards' size. Default true.
@@ -104,7 +104,7 @@ public:
     /// Return material.
     Material* GetMaterial() const;
     /// Return number of billboards.
-    unsigned GetNumBillboards() const { return billboards_.size(); }
+    size_t GetNumBillboards() const { return billboards_.size(); }
     /// Return all billboards.
     std::vector<Billboard>& GetBillboards() { return billboards_; }
     /// Return billboard by index.

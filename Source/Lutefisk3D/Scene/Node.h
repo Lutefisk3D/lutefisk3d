@@ -67,23 +67,23 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load from binary data. Return true if successful.
-    virtual bool Load(Deserializer& source, bool setInstanceDefault = false) override;
+    bool Load(Deserializer& source, bool setInstanceDefault = false) override;
     /// Load from XML data. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
     /// Load from JSON data. Return true if successful.
-    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
+    bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
     /// Save as binary data. Return true if successful.
-    virtual bool Save(Serializer& dest) const override;
+    bool Save(Serializer& dest) const override;
     /// Save as XML data. Return true if successful.
-    virtual bool SaveXML(XMLElement& dest) const override;
+    bool SaveXML(XMLElement& dest) const override;
     /// Save as JSON data. Return true if successful.
-    virtual bool SaveJSON(JSONValue& dest) const override;
+    bool SaveJSON(JSONValue& dest) const override;
     /// Apply attribute changes that can not be applied immediately recursively to child nodes and components.
-    virtual void ApplyAttributes() override;
+    void ApplyAttributes() override;
     /// Return whether should save default-valued attributes into XML. Always save node transforms for readability, even if identity.
-    virtual bool SaveDefaultAttributes() const override { return true; }
+    bool SaveDefaultAttributes() const override { return true; }
     /// Mark for attribute check on the next network update.
-    virtual void MarkNetworkUpdate() override;
+    void MarkNetworkUpdate() override;
     /// Add a replication state that is tracking this node.
     virtual void AddReplicationState(NodeReplicationState* state);
 
@@ -415,7 +415,7 @@ public:
     Node* GetChild(const char* name, bool recursive = false) const;
     Node* GetChild(StringHash nameHash, bool recursive = false) const;
     /// Return number of components.
-    unsigned GetNumComponents() const { return components_.size(); }
+    size_t GetNumComponents() const { return components_.size(); }
     unsigned GetNumNetworkComponents() const;
     /// Return all components.
     const std::vector<SharedPtr<Component> >& GetComponents() const { return components_; }
@@ -499,11 +499,11 @@ public:
 
 protected:
     /// Handle attribute animation added.
-    virtual void OnAttributeAnimationAdded() override;
+    void OnAttributeAnimationAdded() override;
     /// Handle attribute animation removed.
-    virtual void OnAttributeAnimationRemoved() override;
+    void OnAttributeAnimationRemoved() override;
     /// Find target of an attribute animation from object hierarchy by name.
-    virtual Animatable* FindAttributeAnimationTarget(const QString& name, QString& outName) override;
+    Animatable* FindAttributeAnimationTarget(const QString& name, QString& outName) override;
 
 
 private:
@@ -609,7 +609,7 @@ template <class T> T* Node::GetDerivedComponent(bool recursive) const
                 return component;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 template <class T> T* Node::GetParentDerivedComponent(bool fullTraversal) const
@@ -626,7 +626,7 @@ template <class T> T* Node::GetParentDerivedComponent(bool fullTraversal) const
         else
             break;
     }
-    return 0;
+    return nullptr;
 }
 
 template <class T> void Node::GetDerivedComponents(std::vector<T*>& dest, bool recursive, bool clearVector) const

@@ -45,8 +45,23 @@
 #include <GLFW/glfw3.h>
 
 #endif
-namespace Urho3D {
-template class SharedPtr<AttributeAccessor>;
+namespace std
+{
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Log>;
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::FileSystem>;
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Input>;
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::ResourceCache>;
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Graphics>;
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Renderer>;
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Time>;
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Profiler>;
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::EventProfiler>;
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::WorkQueue>;
+template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::UI>;
+}
+namespace Urho3D
+{
+template class LUTEFISK3D_EXPORT SharedPtr<AttributeAccessor>;
 /*!
   \class Context
   \brief Urho3D execution context. Provides access to subsystems, object factories and attributes, and event receivers.
@@ -223,7 +238,7 @@ void EventReceiverGroup::EndSendEvent()
     if (inSend_ == 0 && dirty_)
     {
         /// \todo Could be optimized by erase-swap, but this keeps the receiver order
-        for (unsigned i = receivers_.size() - 1; i < receivers_.size(); --i)
+        for (size_t i = receivers_.size() - 1; i < receivers_.size(); --i)
         {
             if (!receivers_[i])
                 receivers_.erase(receivers_.begin()+i);
@@ -367,7 +382,7 @@ void Context::UpdateAttributeDefaultValue(StringHash objectType, const char* nam
 /// \return preallocated map for event data
 HashMap<StringHash, Variant> & Context::GetEventDataMap()
 {
-    unsigned nestingLevel = eventSenders_.size();
+    size_t nestingLevel = eventSenders_.size();
     while (d->eventDataMaps_.size() < nestingLevel + 1)
         d->eventDataMaps_.push_back(new VariantMap());
 

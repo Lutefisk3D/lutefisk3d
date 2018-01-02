@@ -106,7 +106,7 @@ public:
     /// Return all animation states.
     const std::vector<SharedPtr<AnimationState> >& GetAnimationStates() const { return animationStates_; }
     /// Return number of animation states.
-    unsigned GetNumAnimationStates() const { return animationStates_.size(); }
+    size_t GetNumAnimationStates() const { return animationStates_.size(); }
     /// Return animation state by animation pointer.
     AnimationState* GetAnimationState(Animation* animation) const;
     /// Return animation state by animation name.
@@ -124,7 +124,7 @@ public:
     /// Return all morph vertex buffers.
     const std::vector<SharedPtr<VertexBuffer> >& GetMorphVertexBuffers() const { return morphVertexBuffers_; }
     /// Return number of vertex morphs.
-    unsigned GetNumMorphs() const { return morphs_.size(); }
+    size_t GetNumMorphs() const { return morphs_.size(); }
     /// Return vertex morph weight by index.
     float GetMorphWeight(unsigned index) const;
     /// Return vertex morph weight by name.

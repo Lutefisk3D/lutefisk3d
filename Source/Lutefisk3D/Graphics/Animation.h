@@ -66,7 +66,7 @@ struct LUTEFISK3D_EXPORT AnimationTrack
     /// Return keyframe at index, or null if not found.
     AnimationKeyFrame* GetKeyFrame(unsigned index);
     /// Return number of keyframes.
-    unsigned GetNumKeyFrames() const { return keyFrames_.size(); }
+    size_t GetNumKeyFrames() const { return keyFrames_.size(); }
     /// Return keyframe index based on time and previous index.
     void GetKeyFrameIndex(float time, unsigned& index) const;
 
@@ -107,9 +107,9 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
+    bool BeginLoad(Deserializer& source) override;
     /// Save resource. Return true if successful.
-    virtual bool Save(Serializer& dest) const override;
+    bool Save(Serializer& dest) const override;
 
     /// Set animation name.
     void SetAnimationName(const QString& name);
@@ -144,7 +144,7 @@ public:
     /// Return all animation tracks.
     const HashMap<StringHash, AnimationTrack>& GetTracks() const { return tracks_; }
     /// Return number of animation tracks.
-    unsigned GetNumTracks() const { return tracks_.size(); }
+    size_t GetNumTracks() const { return tracks_.size(); }
     /// Return animation track by index.
     AnimationTrack *GetTrack(unsigned index);
     /// Return animation track by name.
@@ -154,7 +154,7 @@ public:
     /// Return animation trigger points.
     const std::vector<AnimationTriggerPoint>& GetTriggers() const { return triggers_; }
     /// Return number of animation trigger points.
-    unsigned GetNumTriggers() const {return triggers_.size(); }
+    size_t GetNumTriggers() const {return triggers_.size(); }
     /// Return a trigger point by index.
     AnimationTriggerPoint* GetTrigger(unsigned index);
 

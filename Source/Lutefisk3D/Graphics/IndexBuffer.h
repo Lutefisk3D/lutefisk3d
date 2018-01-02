@@ -55,7 +55,7 @@ public:
     /// Enable shadowing in CPU memory. Shadowing is forced on if the graphics subsystem does not exist.
     void SetShadowed(bool enable);
     /// Set size and vertex elements and dynamic mode. Previous data will be lost.
-    bool SetSize(unsigned indexCount, bool largeIndices, bool dynamic = false);
+    bool SetSize(size_t indexCount, bool largeIndices, bool dynamic = false);
     /// Set all data in the buffer.
     bool SetData(const void* data);
     /// Set a data range in the buffer. Optionally discard data outside the range.

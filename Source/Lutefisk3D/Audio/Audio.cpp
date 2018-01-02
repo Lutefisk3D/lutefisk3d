@@ -113,7 +113,7 @@ struct Audio::AudioPrivate
         }
         else
         {
-            assert(alcResetDeviceSOFT);
+            assert(alcResetDeviceSOFT!=nullptr);
             alcResetDeviceSOFT(device, attrvalues);
         }
         if (!alcMakeContextCurrent(context))

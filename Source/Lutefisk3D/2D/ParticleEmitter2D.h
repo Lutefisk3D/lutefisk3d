@@ -110,7 +110,7 @@ public:
     /// Return blend mode.
     BlendMode GetBlendMode() const { return blendMode_; }
     /// Return max particles.
-    unsigned GetMaxParticles() const { return particles_.size(); }
+    size_t GetMaxParticles() const { return particles_.size(); }
 
     /// Set particle model attr.
     void SetParticleEffectAttr(const ResourceRef& value);

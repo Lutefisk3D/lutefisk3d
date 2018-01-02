@@ -589,17 +589,17 @@ void Engine::SetTimeStepSmoothing(int frames)
 /// Set minimum frames per second. If FPS goes lower than this, time will appear to slow down.
 void Engine::SetMinFps(int fps)
 {
-    minFps_ = (unsigned)Max(fps, 0);
+    minFps_ = (unsigned)std::max(fps, 0);
 }
 /// Set maximum frames per second. The engine will sleep if FPS is higher than this.
 void Engine::SetMaxFps(unsigned fps)
 {
-    maxFps_ = std::max(fps, 0U);
+    maxFps_ = fps;
 }
 /// Set maximum frames per second when the application does not have input focus.
 void Engine::SetMaxInactiveFps(unsigned fps)
 {
-    maxInactiveFps_ = std::max(fps, 0U);
+    maxInactiveFps_ = fps;
 }
 
 void Engine::Exit()

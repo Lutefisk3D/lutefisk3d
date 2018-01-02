@@ -61,11 +61,11 @@ struct JoystickState
     /// Return whether is a game controller. Game controllers will use standardized axis and button mappings.
     bool IsController() const { return false; }
     /// Return number of buttons.
-    unsigned GetNumButtons() const { return buttons_.size(); }
+    size_t GetNumButtons() const { return buttons_.size(); }
     /// Return number of axes.
-    unsigned GetNumAxes() const { return axes_.size(); }
+    size_t GetNumAxes() const { return axes_.size(); }
     /// Return number of hats.
-    unsigned GetNumHats() const { return hats_.size(); }
+    size_t GetNumHats() const { return hats_.size(); }
     /// Check if a button is held down.
     bool GetButtonDown(unsigned index) const { return index < buttons_.size() ? buttons_[index] : false; }
     /// Check if a button has been pressed on this frame.
@@ -155,7 +155,7 @@ public:
     /// Return input coordinate scaling. Should return non-unity on High DPI display.
     Vector2 GetInputScale() const { return inputScale_; }
     /// Return number of connected joysticks.
-    unsigned GetNumJoysticks() const { return joysticks_.size(); }
+    size_t GetNumJoysticks() const { return joysticks_.size(); }
     /// Return joystick state by ID, or null if does not exist.
     JoystickState* GetJoystick(int id);
     /// Return joystick state by index, or null if does not exist. 0 = first connected joystick.
@@ -261,8 +261,6 @@ private:
     MouseMode mouseMode_;
     /// The last mouse mode set by SetMouseMode.
     MouseMode lastMouseMode_;
-    /// Flag to determine whether SDL mouse relative was used.
-    bool sdlMouseRelative_;
     /// Input focus flag.
     bool inputFocus_;
     /// Minimized flag.

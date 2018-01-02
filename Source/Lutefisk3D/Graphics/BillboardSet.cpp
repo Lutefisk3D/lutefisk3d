@@ -253,7 +253,7 @@ void BillboardSet::SetMaterial(Material* material)
     MarkNetworkUpdate();
 }
 
-void BillboardSet::SetNumBillboards(unsigned num)
+void BillboardSet::SetNumBillboards(size_t num)
 {
     // Prevent negative value being assigned from the editor
     if (num > M_MAX_INT)

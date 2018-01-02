@@ -160,7 +160,7 @@ public:
     /// Return index buffers.
     const std::vector<SharedPtr<IndexBuffer> >& GetIndexBuffers() const { return indexBuffers_; }
     /// Return number of geometries.
-    unsigned GetNumGeometries() const { return geometries_.size(); }
+    size_t GetNumGeometries() const { return geometries_.size(); }
     /// Return number of LOD levels in geometry.
     unsigned GetNumGeometryLodLevels(unsigned index) const;
     /// Return geometry pointers.
@@ -176,7 +176,7 @@ public:
     /// Return vertex morphs.
     const std::vector<ModelMorph>& GetMorphs() const { return morphs_; }
     /// Return number of vertex morphs.
-    unsigned GetNumMorphs() const { return morphs_.size(); }
+    size_t GetNumMorphs() const { return morphs_.size(); }
     /// Return vertex morph by index.
     const ModelMorph* GetMorph(unsigned index) const;
     /// Return vertex morph by name.

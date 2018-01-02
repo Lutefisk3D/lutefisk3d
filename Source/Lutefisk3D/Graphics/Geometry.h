@@ -75,7 +75,7 @@ public:
     const std::vector<VertexBuffer *>& GetVertexBuffers() const {
         return reinterpret_cast<const std::vector<VertexBuffer *> &>(vertexBuffers_); }
     /// Return number of vertex buffers.
-    unsigned GetNumVertexBuffers() const { return vertexBuffers_.size(); }
+    size_t GetNumVertexBuffers() const { return vertexBuffers_.size(); }
     /// Return vertex buffer by index.
     VertexBuffer* GetVertexBuffer(unsigned index) const;
     /// Return the index buffer.

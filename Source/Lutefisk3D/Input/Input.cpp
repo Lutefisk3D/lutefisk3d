@@ -90,7 +90,6 @@ Input::Input(Context* context) :
     lastMouseGrabbed_(false),
     mouseMode_(MM_ABSOLUTE),
     lastMouseMode_(MM_ABSOLUTE),
-    sdlMouseRelative_(false),
     inputFocus_(false),
     minimized_(false),
     focusedThisFrame_(false),
@@ -898,7 +897,6 @@ void Input::ResetMousePos()
         glfwGetCursorPos(graphics->GetWindow(),&mx,&my);
     }
     mouseMove_ = mousePosLastUpdate_;
-    mousePosLastUpdate_=mouseMove_;
 }
 void Input::ResetState()
 {

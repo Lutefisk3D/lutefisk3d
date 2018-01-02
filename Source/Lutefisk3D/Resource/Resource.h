@@ -84,7 +84,7 @@ public:
     virtual bool EndLoad();
     virtual bool Save(Serializer& dest) const;
     void SetName(const QString& name);
-    void SetMemoryUse(unsigned size);
+    void SetMemoryUse(size_t size);
     void ResetUseTimer();
 
     void SetAsyncLoadState(AsyncLoadState newState);

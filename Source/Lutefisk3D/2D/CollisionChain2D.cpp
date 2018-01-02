@@ -123,11 +123,11 @@ void CollisionChain2D::RecreateFixture()
     ReleaseFixture();
 
     std::vector<b2Vec2> b2Vertices;
-    unsigned count = vertices_.size();
+    size_t count = vertices_.size();
     b2Vertices.resize(count);
 
     Vector2 worldScale(cachedWorldScale_.x_, cachedWorldScale_.y_);
-    for (unsigned i = 0; i < count; ++i)
+    for (size_t i = 0; i < count; ++i)
         b2Vertices[i] = ToB2Vec2(vertices_[i] * worldScale);
 
     chainShape_.Clear();

@@ -48,8 +48,8 @@ class PODVectorN : public lls::SmallVector<T,N> {
 public:
     typedef typename lls::SmallVector<T,N>::iterator iterator;
     typedef typename lls::SmallVector<T,N>::const_iterator const_iterator;
-    PODVectorN() {}
-    PODVectorN(int sz) : lls::SmallVector<T,N>(sz) {}
+    PODVectorN() = default;
+    PODVectorN(unsigned sz) : lls::SmallVector<T,N>(sz) {}
     constexpr bool contains(const T &v) const { return find(v)!=this->end();}
     iterator find(const T &v) { return std::find(this->begin(),this->end(),v);}
     const_iterator find(const T &v) const { return std::find(this->begin(),this->end(),v);}

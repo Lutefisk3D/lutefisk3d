@@ -743,9 +743,9 @@ unsigned Renderer::GetNumShadowMaps(bool allViews) const
 unsigned Renderer::GetNumOccluders(bool allViews) const
 {
     unsigned numOccluders = 0;
-    unsigned lastView = allViews ? views_.size() : 1;
+    size_t lastView = allViews ? views_.size() : 1;
 
-    for (unsigned i = 0; i < lastView; ++i)
+    for (size_t i = 0; i < lastView; ++i)
     {
         View* view = GetActualView(views_[i]);
         if (!view)

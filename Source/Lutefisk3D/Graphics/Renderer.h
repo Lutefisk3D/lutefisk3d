@@ -218,7 +218,7 @@ public:
     void ApplyShadowMapFilter(View* view, Texture2D* shadowMap, float blurScale);
 
     /// Return number of backbuffer viewports.
-    unsigned GetNumViewports() const { return viewports_.size(); }
+    size_t GetNumViewports() const { return viewports_.size(); }
     /// Return backbuffer viewport by index.
     Viewport* GetViewport(unsigned index) const;
     /// Return nth backbuffer viewport associated to a scene. Index 0 returns the first.
@@ -276,7 +276,7 @@ public:
     /// Return whether occlusion rendering is threaded.
     bool GetThreadedOcclusion() const { return threadedOcclusion_; }
     /// Return number of views rendered.
-    unsigned GetNumViews() const { return views_.size(); }
+    size_t GetNumViews() const { return views_.size(); }
     /// Return number of primitives rendered.
     unsigned GetNumPrimitives() const { return numPrimitives_; }
     /// Return number of batches rendered.

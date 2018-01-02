@@ -177,7 +177,7 @@ public:
     void MarkForAuxView(unsigned frameNumber);
 
     /// Return number of techniques.
-    unsigned GetNumTechniques() const { return techniques_.size(); }
+    size_t GetNumTechniques() const { return techniques_.size(); }
     /// Return all techniques.
     const std::vector<TechniqueEntry>& GetTechniques() const { return techniques_; }
     /// Return technique entry by index.

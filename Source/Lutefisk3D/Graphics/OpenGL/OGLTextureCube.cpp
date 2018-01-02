@@ -254,7 +254,7 @@ bool TextureCube::SetData(CubeMapFace face, Image *image, bool useAlpha)
         }
 
         // Create the texture when face 0 is being loaded, check that rest of the faces are same size & format
-        if (!face)
+        if (FACE_POSITIVE_X==face)
         {
             // If image was previously compressed, reset number of requested levels to avoid error if level count is too high for new size
             if (IsCompressed() && requestedLevels_ > 1)
@@ -319,7 +319,7 @@ bool TextureCube::SetData(CubeMapFace face, Image *image, bool useAlpha)
         height /= (1 << mipsToSkip);
 
         // Create the texture when face 0 is being loaded, assume rest of the faces are same size & format
-        if (!face)
+        if (FACE_POSITIVE_X==face)
         {
             SetNumLevels(Max((levels - mipsToSkip), 1U));
             SetSize(width, format);

@@ -1,15 +1,19 @@
 if(UNIX)
     set(OPENAL_LIBRARY_IMP libGLEW.a)
-    set(OPENAL_LIBRARY_SHARED openAL.so)
+    set(OPENAL_LIBRARY_SHARED libopenal.so)
+    set(openal_LIBRARY_IMP ${ThirdParty_Install_Dir}/lib/${OPENAL_LIBRARY_IMP})
+    set(openal_LIBRARY_SHARED ${ThirdParty_Install_Dir}/lib/${OPENAL_LIBRARY_SHARED})
 elseif(MSVC)
     set(OPENAL_LIBRARY_IMP OpenAL32.lib)
     set(OPENAL_LIBRARY_SHARED OpenAL32.dll)
+    set(openal_LIBRARY_IMP ${ThirdParty_Install_Dir}/lib/${OPENAL_LIBRARY_IMP})
+    set(openal_LIBRARY_SHARED ${ThirdParty_Install_Dir}/bin/${OPENAL_LIBRARY_SHARED})
 elseif(MINGW)
     set(OPENAL_LIBRARY_IMP libOpenAL32.dll.a)
     set(OPENAL_LIBRARY_SHARED OpenAL32.dll)
+    set(openal_LIBRARY_IMP ${ThirdParty_Install_Dir}/lib/${OPENAL_LIBRARY_IMP})
+    set(openal_LIBRARY_SHARED ${ThirdParty_Install_Dir}/bin/${OPENAL_LIBRARY_SHARED})
 endif()
-set(openal_LIBRARY_IMP ${ThirdParty_Install_Dir}/lib/${OPENAL_LIBRARY_IMP})
-set(openal_LIBRARY_SHARED ${ThirdParty_Install_Dir}/bin/${OPENAL_LIBRARY_SHARED})
 
 ExternalProject_Add(
    openal_BUILD
@@ -25,5 +29,6 @@ ADD_LIBRARY(openal_IMP SHARED IMPORTED GLOBAL)
 add_dependencies(openal_IMP openal_BUILD)
 set_target_properties(openal_IMP PROPERTIES
     IMPORTED_IMPLIB ${openal_LIBRARY_IMP}
+    IMPORTED_LOCATION ${openal_LIBRARY_SHARED}
 )
-#set_property(TARGET openal_IMP APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS ACE_HAS_DLL=1)
+

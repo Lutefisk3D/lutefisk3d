@@ -77,13 +77,13 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load from binary data. Removes all existing child nodes and components first. Return true if successful.
-    virtual bool Load(Deserializer& source, bool setInstanceDefault = false) override;
+    virtual bool Load(Deserializer& source) override;
     /// Save to binary data. Return true if successful.
     virtual bool Save(Serializer& dest) const override;
     /// Load from XML data. Removes all existing child nodes and components first. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    virtual bool LoadXML(const XMLElement& source) override;
     /// Load from JSON data. Removes all existing child nodes and components first. Return true if successful.
-    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
+    virtual bool LoadJSON(const JSONValue& source) override;
     /// Mark for attribute check on the next network update.
     virtual void MarkNetworkUpdate() override;
     /// Add a replication state that is tracking this scene.

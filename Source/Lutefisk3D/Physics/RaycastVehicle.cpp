@@ -38,8 +38,8 @@ struct RaycastVehicleData
 {
     RaycastVehicleData()
     {
-        vehicleRayCaster_ = 0;
-        vehicle_ = 0;
+        vehicleRayCaster_ = nullptr;
+        vehicle_ = nullptr;
         added_ = false;
     }
 
@@ -49,7 +49,7 @@ struct RaycastVehicleData
         {
             delete vehicleRayCaster_;
         }
-        vehicleRayCaster_ = 0;
+        vehicleRayCaster_ = nullptr;
         if (vehicle_)
         {
             if (physWorld_ && added_)
@@ -61,7 +61,7 @@ struct RaycastVehicleData
             }
             delete vehicle_;
         }
-        vehicle_ = 0;
+        vehicle_ = nullptr;
     }
 
     btRaycastVehicle* Get()
@@ -177,9 +177,8 @@ const char* wheelElementNames[] =
 void RaycastVehicle::RegisterObject(Context* context)
 {
     context->RegisterFactory<RaycastVehicle>();
-    URHO3D_MIXED_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE("Wheel data", GetWheelDataAttr, SetWheelDataAttr,
-            VariantVector, Variant::emptyVariantVector,
-            wheelElementNames, AM_DEFAULT);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Wheel data", GetWheelDataAttr, SetWheelDataAttr, VariantVector, Variant::emptyVariantVector, AM_DEFAULT)
+        .SetMetadata(AttributeMetadata::P_VECTOR_STRUCT_ELEMENTS, wheelElementNames);
     URHO3D_ATTRIBUTE("Maximum side slip threshold", float, maxSideSlipSpeed_, 4.0f, AM_DEFAULT);
     URHO3D_ATTRIBUTE("RPM for wheel motors in air (0=calculate)", float, inAirRPM_, 0.0f, AM_DEFAULT);
 }

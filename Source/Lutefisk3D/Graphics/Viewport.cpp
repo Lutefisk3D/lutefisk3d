@@ -65,9 +65,7 @@ Viewport::Viewport(Context* context, Scene* scene, Camera* camera, const IntRect
     SetRenderPath(renderPath);
 }
 
-Viewport::~Viewport()
-{
-}
+
 
 void Viewport::SetScene(Scene* scene)
 {

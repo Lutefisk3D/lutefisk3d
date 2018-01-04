@@ -130,11 +130,11 @@ public:
     /// Apply attribute changes that can not be applied immediately.
     virtual void ApplyAttributes() override;
     /// Load from XML data. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    virtual bool LoadXML(const XMLElement& source) override;
     /// Load from XML data with style. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source, XMLFile* styleFile, bool setInstanceDefault = false);
+    virtual bool LoadXML(const XMLElement& source, XMLFile* styleFile);
     /// Create a child by loading from XML data with style. Returns the child element if successful, null if otherwise.
-    virtual UIElement *LoadChildXML(const XMLElement& childElem, XMLFile* styleFile = nullptr, bool setInstanceDefault = false);
+    virtual UIElement *LoadChildXML(const XMLElement& childElem, XMLFile* styleFile = nullptr);
     /// Save as XML data. Return true if successful.
     virtual bool SaveXML(XMLElement& dest) const override;
 

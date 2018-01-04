@@ -49,29 +49,28 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load from binary data. Return true if successful.
-    virtual bool Load(Deserializer& source, bool setInstanceDefault = false) override;
+    bool Load(Deserializer& source) override;
     /// Load from XML data. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    bool LoadXML(const XMLElement& source) override;
     /// Load from JSON data. Return true if successful.
-    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
+    bool LoadJSON(const JSONValue& source) override;
     /// Apply attribute changes that can not be applied immediately. Called after scene load or a network update.
-    virtual void ApplyAttributes() override;
+    void ApplyAttributes() override;
     /// Process octree raycast. May be called from a worker thread.
-    virtual void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
+    void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
     /// Update before octree reinsertion. Is called from a worker thread.
-    virtual void Update(const FrameInfo& frame) override;
+    void Update(const FrameInfo& frame) override;
     /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
-    virtual void UpdateBatches(const FrameInfo& frame) override;
+    void UpdateBatches(const FrameInfo& frame) override;
     /// Prepare geometry for rendering. Called from a worker thread if possible (no GPU update.)
-    virtual void UpdateGeometry(const FrameInfo& frame) override;
+    void UpdateGeometry(const FrameInfo& frame) override;
     /// Return whether a geometry update is necessary, and if it can happen in a worker thread.
-    virtual UpdateGeometryType GetUpdateGeometryType() override;
+    UpdateGeometryType GetUpdateGeometryType() override;
     /// Visualize the component as debug geometry.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
+    void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
-    /// Set model, will autocreate the bones
-    void SetModel(Model* model) override { SetModelWithBones(model); }
-    void SetModelWithBones(Model* model, bool createBones = true);
+    /// Set model.
+    void SetModel(Model* model, bool createBones = true);
     /// Add an animation.
     AnimationState* AddAnimationState(Animation* animation);
     /// Remove an animation by animation pointer.

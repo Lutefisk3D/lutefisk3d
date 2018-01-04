@@ -50,9 +50,9 @@ public:
     /// Register object factory.
     static void RegisterObject(Context* context);
 
-    bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    bool LoadXML(const XMLElement& source) override;
     bool SaveXML(XMLElement& dest) const override;
-    bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
+    bool LoadJSON(const JSONValue& source) override;
     bool SaveJSON(JSONValue& dest) const override;
 
     void SetAnimationEnabled(bool enable);

@@ -405,10 +405,6 @@ View::View(Context *context)
     frame_.camera_ = nullptr;
 }
 
-View::~View()
-{
-}
-
 bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
 {
     sourceView_ = nullptr;
@@ -461,6 +457,7 @@ bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
             hasScenePasses_     = sourceView_->hasScenePasses_;
             noStencil_          = sourceView_->noStencil_;
             lightVolumeCommand_ = sourceView_->lightVolumeCommand_;
+            forwardLightsCommand_ = sourceView_->forwardLightsCommand_;
             octree_             = sourceView_->octree_;
             return true;
         }
@@ -485,6 +482,7 @@ bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
     hasScenePasses_     = false;
     noStencil_          = false;
     lightVolumeCommand_ = nullptr;
+    forwardLightsCommand_ = nullptr;
 
     d->scenePasses_.clear();
     geometriesUpdated_ = false;
@@ -538,7 +536,7 @@ bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
             if(info.passIndex_==alphaPassIndex_)
                 alphaPassQueueIdx_ = queue_idx;
             info.batchQueueIdx_ = queue_idx;
-
+            SetQueueShaderDefines(d->batchQueueStorage_[queue_idx], command);
             d->scenePasses_.push_back(info);
         }
         // Allow a custom forward light pass
@@ -589,7 +587,10 @@ bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
             deferred_ = true;
         }
         else if (command.type_ == CMD_FORWARDLIGHTS)
+        {
+            forwardLightsCommand_ = &command;
             useLitBase_ = command.useLitBase_;
+        }
     }
 
 
@@ -808,8 +809,16 @@ void View::SetCameraShaderParameters(const Camera &camera)
     projection.m23_ += projection.m33_ * constantBias;
 
     graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * camera.GetView());
+    // If in a scene pass and the command defines shader parameters, set them now
+    if (passCommand_)
+        SetCommandShaderParameters(*passCommand_);
 }
-
+void View::SetCommandShaderParameters(const RenderPathCommand& command)
+{
+    const HashMap<StringHash, Variant>& parameters = command.shaderParameters_;
+    for (const auto & params : parameters)
+        graphics_->SetShaderParameter(params.first, params.second);
+}
 void View::SetGBufferShaderParameters(const IntVector2& texSize, const IntRect& viewRect)
 {
     float texWidth = (float)texSize.x_;
@@ -1090,6 +1099,16 @@ void View::GetLightBatches(Technique *default_tech)
             lightQueue.shadowMap_ = nullptr;
             lightQueue.litBaseBatches_.Clear(maxSortedInstances);
             lightQueue.litBatches_.Clear(maxSortedInstances);
+            if (forwardLightsCommand_)
+            {
+                SetQueueShaderDefines(lightQueue.litBaseBatches_, *forwardLightsCommand_);
+                SetQueueShaderDefines(lightQueue.litBatches_, *forwardLightsCommand_);
+            }
+            else
+            {
+                lightQueue.litBaseBatches_.hasExtraDefines_ = false;
+                lightQueue.litBatches_.hasExtraDefines_ = false;
+            }
             lightQueue.volumeBatches_.clear();
 
             // Allocate shadow map now
@@ -1517,6 +1536,7 @@ void View::ExecuteRenderPathCommands()
         // Set for safety in case of empty renderpath
         currentRenderTarget_ = substituteRenderTarget_ != nullptr ? substituteRenderTarget_ : renderTarget_;
         currentViewportTexture_ = nullptr;
+        passCommand_ = nullptr;
 
         bool viewportModified = false;
         bool isPingponging = false;
@@ -1628,8 +1648,16 @@ void View::ExecuteRenderPathCommands()
 
                     SetRenderTargets(command);
                     bool allowDepthWrite = SetTextures(command);
-                    graphics_->SetClipPlane(camera_->GetUseClipping(), camera_->GetClipPlane(), camera_->GetView(), camera_->GetProjection());
+                    graphics_->SetClipPlane(camera_->GetUseClipping(), camera_->GetClipPlane(), camera_->GetView(), camera_->GetGPUProjection());
+                    if (!command.shaderParameters_.empty())
+                    {
+                        // If pass defines shader parameters, reset parameter sources now to ensure they all will be set
+                        // (will be set after camera shader parameters)
+                        graphics_->ClearParameterSources();
+                        passCommand_ = &command;
+                    }
                     queue.Draw(this, camera_, command.markToStencil_, false, allowDepthWrite);
+                    passCommand_ = nullptr;
                 }
                 break;
             }
@@ -1662,7 +1690,12 @@ void View::ExecuteRenderPathCommands()
                         }
 
                         bool allowDepthWrite = SetTextures(command);
-                        graphics_->SetClipPlane(camera_->GetUseClipping(), camera_->GetClipPlane(), camera_->GetView(), camera_->GetProjection());
+                        graphics_->SetClipPlane(camera_->GetUseClipping(), camera_->GetClipPlane(), camera_->GetView(), camera_->GetGPUProjection());
+                        if (!command.shaderParameters_.empty())
+                        {
+                            graphics_->ClearParameterSources();
+                            passCommand_ = &command;
+                        }
 
                         // Draw base (replace blend) batches first
                         elem.litBaseBatches_.Draw(this, camera_, false, false, allowDepthWrite);
@@ -1675,6 +1708,7 @@ void View::ExecuteRenderPathCommands()
                                 renderer_->OptimizeLightByStencil(elem.light_, camera_);
                             elem.litBatches_.Draw(this, camera_, false, true, allowDepthWrite);
                         }
+                        passCommand_ = nullptr;
                     }
 
                     graphics_->SetScissorTest(false);
@@ -1699,12 +1733,18 @@ void View::ExecuteRenderPathCommands()
                         }
 
                         SetTextures(command);
+                        if (!command.shaderParameters_.empty())
+                        {
+                            graphics_->ClearParameterSources();
+                            passCommand_ = &command;
+                        }
 
                         for (Batch & btch : elem.volumeBatches_)
                         {
                             SetupLightVolumeBatch(btch);
                             btch.Draw(this, camera_, false);
                         }
+                        passCommand_ = nullptr;
                     }
 
                     graphics_->SetScissorTest(false);
@@ -1829,7 +1869,7 @@ bool View::SetTextures(RenderPathCommand& command)
         else
         {
             // If requesting a texture fails, clear the texture name to prevent redundant attempts
-            command.textureNames_[i] = QString::null;
+            command.textureNames_[i].clear();
         }
     }
 
@@ -1844,10 +1884,10 @@ void View::RenderQuad(RenderPathCommand& command)
     // If shader can not be found, clear it from the command to prevent redundant attempts
     ShaderVariation* vs = graphics_->GetShader(VS, command.vertexShaderName_, command.vertexShaderDefines_);
     if (vs == nullptr)
-        command.vertexShaderName_ = QString::null;
+        command.vertexShaderName_.clear();
     ShaderVariation* ps = graphics_->GetShader(PS, command.pixelShaderName_, command.pixelShaderDefines_);
     if (ps == nullptr)
-        command.pixelShaderName_ = QString::null;
+        command.pixelShaderName_.clear();
 
     // Set shaders & shader parameters and textures
     graphics_->SetShaders(vs, ps);
@@ -2074,8 +2114,8 @@ void View::AllocateScreenBuffers()
             height = (float)viewSize_.y_ * height;
         }
 
-        int intWidth = (int)(width + 0.5f);
-        int intHeight = (int)(height + 0.5f);
+        int intWidth = int(width + 0.5f);
+        int intHeight = int(height + 0.5f);
 
         // If the rendertarget is persistent, key it with a hash derived from the RT name and the view's pointer
         d->renderTargets_[rtInfo.name_] = renderer_->GetScreenBuffer(
@@ -2829,7 +2869,21 @@ void View::CheckMaterialForAuxView(Material* material)
     // Flag as processed so we can early-out next time we come across this material on the same frame
     material->MarkForAuxView(frame_.frameNumber_);
 }
-
+void View::SetQueueShaderDefines(BatchQueue& queue, const RenderPathCommand& command)
+{
+    QString vsDefines = command.vertexShaderDefines_.trimmed();
+    QString psDefines = command.pixelShaderDefines_.trimmed();
+    if (vsDefines.isEmpty() && psDefines.isEmpty())
+    {
+        queue.hasExtraDefines_ = false;
+        return;
+    }
+    queue.hasExtraDefines_ = true;
+    queue.vsExtraDefines_ = vsDefines;
+    queue.psExtraDefines_ = psDefines;
+    queue.vsExtraDefinesHash_ = StringHash(vsDefines);
+    queue.psExtraDefinesHash_ = StringHash(psDefines);
+}
 void View::AddBatchToQueue(BatchQueue& batchQueue, Batch batch, const Technique* tech, bool allowInstancing, bool allowShadows)
 {
 

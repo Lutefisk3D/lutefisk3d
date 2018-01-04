@@ -22,6 +22,7 @@
 
 #pragma once
 #include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Core/Attribute.h"
 #include <memory>
 #include <vector>
 #ifdef _MSC_VER
@@ -109,7 +110,7 @@ public:
     void RegisterFactory(ObjectFactory* factory, const char* category=nullptr);
     void RegisterSubsystem(StringHash typeHash, Object* subsystem);
     void RemoveSubsystem(StringHash objectType);
-    void RegisterAttribute(StringHash objectType, const AttributeInfo& attr);
+    AttributeHandle RegisterAttribute(StringHash objectType, const AttributeInfo& attr);
     void RemoveAttribute(StringHash objectType, const char* name);
     void UpdateAttributeDefaultValue(StringHash objectType, const char* name, const Variant& defaultValue);
     HashMap<StringHash, Variant>& GetEventDataMap();
@@ -118,7 +119,7 @@ public:
 
     template <class T> void RegisterFactory(const char* category=nullptr);
     template <class T> void RemoveSubsystem();
-    template <class T> void RegisterAttribute(const AttributeInfo& attr);
+    template <class T> AttributeHandle RegisterAttribute(const AttributeInfo& attr);
     template <class T> void RemoveAttribute(const char* name);
     template <class T, class U> void CopyBaseAttributes();
     template <class T> void UpdateAttributeDefaultValue(const char* name, const Variant& defaultValue);
@@ -168,11 +169,14 @@ public:
 };
 template <class T> void Context::RegisterFactory(const char* category) { RegisterFactory(new ObjectFactoryImpl<T>(this), category); }
 template <class T> void Context::RemoveSubsystem() { RemoveSubsystem(T::GetTypeStatic()); }
-template <class T> void Context::RegisterAttribute(const AttributeInfo& attr) { RegisterAttribute(T::GetTypeStatic(), attr); }
+template <class T> AttributeHandle Context::RegisterAttribute(const AttributeInfo& attr) { return RegisterAttribute(T::GetTypeStatic(), attr); }
 template <class T> void Context::RemoveAttribute(const char* name) { RemoveAttribute(T::GetTypeStatic(), name); }
 template <class T, class U> void Context::CopyBaseAttributes() { CopyBaseAttributes(T::GetTypeStatic(), U::GetTypeStatic()); }
 template <class T> T* Context::GetSubsystemT() const { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }
 template <class T> AttributeInfo* Context::GetAttribute(const char* name) { return GetAttribute(T::GetTypeStatic(), name); }
-template <class T> void Context::UpdateAttributeDefaultValue(const char* name, const Variant& defaultValue) { UpdateAttributeDefaultValue(T::GetTypeStatic(), name, defaultValue); }
+template <class T> void Context::UpdateAttributeDefaultValue(const char* name, const Variant& defaultValue)
+{
+    UpdateAttributeDefaultValue(T::GetTypeStatic(), name, defaultValue);
+}
 
 }

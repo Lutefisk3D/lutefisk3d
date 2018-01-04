@@ -63,7 +63,7 @@ const char* navmeshPartitionTypeNames[] =
 {
     "watershed",
     "monotone",
-    0
+    nullptr
 };
 const char* NAVIGATION_CATEGORY = "Navigation";
 
@@ -559,7 +559,7 @@ void NavigationMesh::RemoveTile(const IntVector2& tile)
     if (!tileRef)
         return;
 
-    navMesh_->removeTile(tileRef, 0, 0);
+    navMesh_->removeTile(tileRef, nullptr, nullptr);
 
     // Send event
     navigationTileRebuilt(GetNode(),this,tile);

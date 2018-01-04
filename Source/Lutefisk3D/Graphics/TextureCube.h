@@ -38,8 +38,8 @@ class LUTEFISK3D_EXPORT TextureCube : public Texture
 {
     URHO3D_OBJECT(TextureCube,Texture)
 public:
-    TextureCube(Context* context);
-    virtual ~TextureCube();
+    explicit TextureCube(Context* context);
+    ~TextureCube() override;
 
     /// Register object factory.
     static void RegisterObject(Context* context);

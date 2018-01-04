@@ -92,8 +92,8 @@ class LUTEFISK3D_EXPORT View : public RefCounted
     friend void ProcessLightWork(const WorkItem* item, unsigned threadIndex);
 public:
 
-    View(Context* context);
-    virtual ~View();
+    explicit View(Context* context);
+    ~View() override = default;
 
     /// Define with rendertarget and viewport. Return true if successful.
     bool Define(RenderSurface* renderTarget, Viewport* viewport);

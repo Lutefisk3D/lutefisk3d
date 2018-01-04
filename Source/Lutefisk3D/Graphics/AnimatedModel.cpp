@@ -114,32 +114,33 @@ void AnimatedModel::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Animation LOD Bias", GetAnimationLodBias, SetAnimationLodBias, float, 1.0f, AM_DEFAULT);
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Bone Animation Enabled", GetBonesEnabledAttr, SetBonesEnabledAttr, VariantVector, Variant::emptyVariantVector, AM_FILE | AM_NOEDIT);
-    URHO3D_MIXED_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE("Animation States", GetAnimationStatesAttr, SetAnimationStatesAttr,                                                            VariantVector, Variant::emptyVariantVector,                                                            animationStatesStructureElementNames, AM_FILE);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Animation States", GetAnimationStatesAttr, SetAnimationStatesAttr, VariantVector, Variant::emptyVariantVector, AM_FILE)
+        .SetMetadata(AttributeMetadata::P_VECTOR_STRUCT_ELEMENTS, animationStatesStructureElementNames);
     URHO3D_ACCESSOR_ATTRIBUTE("Morphs", GetMorphsAttr, SetMorphsAttr, std::vector<uint8_t>, Variant::emptyBuffer, AM_DEFAULT | AM_NOEDIT);
 }
 
-bool AnimatedModel::Load(Deserializer& source, bool setInstanceDefault)
+bool AnimatedModel::Load(Deserializer& source)
 {
     loading_ = true;
-    bool success = Component::Load(source, setInstanceDefault);
+    bool success = Component::Load(source);
     loading_ = false;
 
     return success;
 }
 
-bool AnimatedModel::LoadXML(const XMLElement& source, bool setInstanceDefault)
+bool AnimatedModel::LoadXML(const XMLElement& source)
 {
     loading_ = true;
-    bool success = Component::LoadXML(source, setInstanceDefault);
+    bool success = Component::LoadXML(source);
     loading_ = false;
 
     return success;
 }
 
-bool AnimatedModel::LoadJSON(const JSONValue& source, bool setInstanceDefault)
+bool AnimatedModel::LoadJSON(const JSONValue& source)
 {
     loading_ = true;
-    bool success = Component::LoadJSON(source, setInstanceDefault);
+    bool success = Component::LoadJSON(source);
     loading_ = false;
 
     return success;
@@ -322,7 +323,7 @@ void AnimatedModel::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     }
 }
 
-void AnimatedModel::SetModelWithBones(Model* model, bool createBones)
+void AnimatedModel::SetModel(Model* model, bool createBones)
 {
     if (model == model_)
         return;
@@ -785,7 +786,7 @@ void AnimatedModel::SetModelAttr(const ResourceRef& value)
 {
     ResourceCache* cache =context_->m_ResourceCache.get();
     // When loading a scene, set model without creating the bone nodes (will be assigned later during post-load)
-    SetModelWithBones(cache->GetResource<Model>(value.name_), !loading_);
+    SetModel(cache->GetResource<Model>(value.name_), !loading_);
 }
 
 void AnimatedModel::SetBonesEnabledAttr(const VariantVector& value)

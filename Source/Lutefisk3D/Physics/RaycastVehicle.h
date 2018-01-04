@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,23 +36,23 @@ class LUTEFISK3D_EXPORT RaycastVehicle : public LogicComponent
 
 public:
     /// Construct.
-    RaycastVehicle(Urho3D::Context* context);
+    explicit RaycastVehicle(Urho3D::Context* context);
     /// Destruct.
-    ~RaycastVehicle();
+    ~RaycastVehicle() override;
 
     /// Register object factory and attributes.
     static void RegisterObject(Context* context);
     
     /// Handle enabled/disabled state change.
-    virtual void OnSetEnabled() override;
+    void OnSetEnabled() override;
 
     /// Perform post-load after deserialization. Acquire the components from the scene nodes.
-    virtual void ApplyAttributes() override;
+    void ApplyAttributes() override;
 
     /// Add a wheel. All parameters are relative to RigidBody / node.
     void AddWheel(Node* wheelNode, Vector3 wheelDirection, Vector3 wheelAxle, float restLength, float wheelRadius, bool frontWheel);
     /// Reset all suspension.
-    void ResetSuspension(void);
+    void ResetSuspension();
     /// Update transform for particular wheel.
     void UpdateWheelTransform(int wheel, bool interpolated);
     /// Set steering value of particular wheel.

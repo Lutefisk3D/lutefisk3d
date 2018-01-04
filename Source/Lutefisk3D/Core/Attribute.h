@@ -67,140 +67,72 @@ public:
 struct AttributeInfo
 {
     /// Construct empty.
-    AttributeInfo() :
-        type_(VAR_NONE),
-        offset_(0),
-        enumNames_(nullptr),
-        variantStructureElementNames_(nullptr),
-        mode_(AM_DEFAULT),
-        ptr_(nullptr)
-    {
-    }
+    AttributeInfo() { }
 
-    /// Construct offset attribute.
-    AttributeInfo(VariantType type, const char* name, size_t offset, const Variant& defaultValue, unsigned mode) :
+    /// Construct attribute.
+    AttributeInfo(VariantType type, const char* name, SharedPtr<AttributeAccessor> accessor, const char** enumNames, const Variant& defaultValue, unsigned mode) :
         type_(type),
         name_(name),
-        offset_((unsigned)offset),
-        enumNames_(nullptr),
-        variantStructureElementNames_(nullptr),
-        defaultValue_(defaultValue),
-        mode_(mode),
-        ptr_(nullptr)
-    {
-    }
-
-    /// Construct offset enum attribute.
-    AttributeInfo(const char* name, size_t offset, const char** enumNames, const Variant& defaultValue, unsigned mode) :
-        type_(VAR_INT),
-        name_(name),
-        offset_((unsigned)offset),
         enumNames_(enumNames),
-        variantStructureElementNames_(0),
+        accessor_(accessor),
         defaultValue_(defaultValue),
-        mode_(mode),
-        ptr_(nullptr)
+        mode_(mode)
     {
     }
 
-    /// Construct accessor attribute.
-    AttributeInfo(VariantType type, const char* name, AttributeAccessor* accessor, const Variant& defaultValue, unsigned mode) :
-        type_(type),
-        name_(name),
-        offset_(0),
-        enumNames_(nullptr),
-        variantStructureElementNames_(0),
-        accessor_(accessor),
-        defaultValue_(defaultValue),
-        mode_(mode),
-        ptr_(nullptr)
+    /// Get attribute metadata.
+    const Variant& GetMetadata(const StringHash& key) const
     {
+        auto elem = metadata_.find(key);
+        return elem != metadata_.end() ? MAP_VALUE(elem) : Variant::EMPTY;
     }
 
-    /// Construct accessor enum attribute.
-    AttributeInfo(const char* name, AttributeAccessor* accessor, const char** enumNames, const Variant& defaultValue, unsigned mode) :
-        type_(VAR_INT),
-        name_(name),
-        offset_(0),
-        enumNames_(enumNames),
-        variantStructureElementNames_(0),
-        accessor_(accessor),
-        defaultValue_(defaultValue),
-        mode_(mode),
-        ptr_(nullptr)
+    /// Get attribute metadata of specified type.
+    template <class T> T GetMetadata(const StringHash& key) const
     {
+        return GetMetadata(key).Get<T>();
     }
-    /// Construct variant structure (structure, which packed to VariantVector) attribute.
-    AttributeInfo(VariantType type, const char* name, AttributeAccessor* accessor, const Variant& defaultValue, const char** variantStructureElementNames, unsigned mode) :
-        type_(type),
-        name_(name),
-        offset_(0),
-        enumNames_(0),
-        variantStructureElementNames_(variantStructureElementNames),
-        accessor_(accessor),
-        defaultValue_(defaultValue),
-        mode_(mode),
-        ptr_(nullptr)
+
+    /// Attribute type.
+    VariantType type_ = VAR_NONE;
+    /// Name.
+    QString name_;
+    /// Enum names.
+    const char** enumNames_ = nullptr;
+    /// Helper object for accessor mode.
+    SharedPtr<AttributeAccessor> accessor_;
+    /// Default value for network replication.
+    Variant defaultValue_;
+    /// Attribute mode: whether to use for serialization, network replication, or both.
+    unsigned mode_ = AM_DEFAULT;
+    /// Attribute metadata.
+    VariantMap metadata_;
+    /// Attribute data pointer if elsewhere than in the Serializable.
+    void* ptr_ = nullptr;
+};
+
+/// Attribute handle returned by Context::RegisterAttribute and used to chain attribute setup calls.
+struct AttributeHandle
     {
-    }
-    AttributeInfo(const AttributeInfo &other) :
-        type_(other.type_),
-        name_(other.name_),
-        offset_(other.offset_),
-        enumNames_(other.enumNames_),
-        variantStructureElementNames_(other.variantStructureElementNames_),
-        accessor_(other.accessor_),
-        defaultValue_(other.defaultValue_),
-        mode_(other.mode_),
-        ptr_(other.ptr_)
-    {}
-    AttributeInfo(AttributeInfo &&other) :
-        type_(other.type_),
-        name_(other.name_),
-        offset_(other.offset_),
-        enumNames_(other.enumNames_),
-        variantStructureElementNames_(other.variantStructureElementNames_),
-        accessor_(other.accessor_),
-        defaultValue_(other.defaultValue_),
-        mode_(other.mode_),
-        ptr_(other.ptr_)
+    friend class Context;
+private:
+    /// Construct default.
+    AttributeHandle() = default;
+    /// Construct from another handle.
+    AttributeHandle(const AttributeHandle& another) = default;
+    /// Attribute info.
+    AttributeInfo* attributeInfo_ = nullptr;
+    /// Network attribute info.
+    AttributeInfo* networkAttributeInfo_ = nullptr;
+public:
+    /// Set metadata.
+    AttributeHandle& SetMetadata(StringHash key, const Variant& value)
     {
-        other.type_ = VAR_NONE;
-        other.offset_ = 0;
-        other.enumNames_ = nullptr;
-        other.mode_ = AM_DEFAULT;
-        other.ptr_ = nullptr;
-    }
-    /// Unifying assignment operator
-    AttributeInfo &operator=(const AttributeInfo &op) {
-        AttributeInfo cp(op);
-        swap(cp);
+        if (attributeInfo_)
+            attributeInfo_->metadata_[key] = value;
+        if (networkAttributeInfo_)
+            networkAttributeInfo_->metadata_[key] = value;
         return *this;
     }
-    AttributeInfo &operator=(AttributeInfo &&op) {
-        swap(op);
-        return *this;
-    }
-    void swap(AttributeInfo &rhs) {
-        std::swap(type_,rhs.type_);
-        std::swap(name_,rhs.name_);
-        std::swap(offset_,rhs.offset_);
-        std::swap(enumNames_,rhs.enumNames_);
-        std::swap(variantStructureElementNames_,rhs.variantStructureElementNames_);
-        std::swap(accessor_,rhs.accessor_);
-        std::swap(defaultValue_,rhs.defaultValue_);
-        std::swap(mode_,rhs.mode_);
-        std::swap(ptr_,rhs.ptr_);
-    }
-
-    VariantType                  type_;                         ///< Attribute type.
-    QString                      name_;                         ///< Name.
-    unsigned                     offset_;                       ///< Byte offset from start of object.
-    const char **                enumNames_;                    ///< Enum names.
-    const char **                variantStructureElementNames_; ///< Variant structure elements names.
-    SharedPtr<AttributeAccessor> accessor_;                     ///< Helper object for accessor mode.
-    Variant                      defaultValue_;                 ///< Default value for network replication.
-    unsigned mode_; ///< Attribute mode: whether to use for serialization, network replication, or both.
-    void *   ptr_;  ///< Attribute data pointer if elsewhere than in the Serializable.
 };
 }

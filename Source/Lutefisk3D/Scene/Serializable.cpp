@@ -43,10 +43,8 @@ static unsigned RemapAttributeIndex(const std::vector<AttributeInfo>* attributes
     for (unsigned i = 0; i < attributes->size(); ++i)
     {
         const AttributeInfo& attr = attributes->at(i);
-        // Compare either the accessor or offset to avoid name string compare
-        if ((attr.accessor_.Get() != nullptr) && attr.accessor_.Get() == netAttr.accessor_.Get())
-            return i;
-        if ((attr.accessor_.Get() == nullptr) && attr.offset_ == netAttr.offset_)
+        // Compare accessor to avoid name string compare
+        if (attr.accessor_.Get() && attr.accessor_.Get() == netAttr.accessor_.Get())
             return i;
     }
 
@@ -54,6 +52,7 @@ static unsigned RemapAttributeIndex(const std::vector<AttributeInfo>* attributes
 }
 Serializable::Serializable(Context* context) :
     Object(context),
+    setInstanceDefault_(false),
     temporary_(false)
 {
 }
@@ -65,6 +64,9 @@ Serializable::~Serializable()
 
 void Serializable::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
 {
+    // TODO: may be could use an observer pattern here
+    if (setInstanceDefault_)
+        SetInstanceDefault(attr.name_, src);
     // Check for accessor function mode
     if (attr.accessor_ != nullptr)
     {
@@ -72,8 +74,9 @@ void Serializable::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
         return;
     }
 
-    // Calculate the destination address
-    void* dest = attr.ptr_ != nullptr ? attr.ptr_ : reinterpret_cast<unsigned char*>(this) + attr.offset_;
+    // Get the destination address
+    assert(attr.ptr_);
+    void* dest = attr.ptr_;
 
     switch (attr.type_)
     {
@@ -85,16 +88,15 @@ void Serializable::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
             *(reinterpret_cast<int*>(dest)) = src.GetInt();
         break;
 
+    case VAR_INT64:
+        *(reinterpret_cast<long long*>(dest)) = src.GetInt64();
+        break;
     case VAR_BOOL:
         *(reinterpret_cast<bool*>(dest)) = src.GetBool();
         break;
 
     case VAR_FLOAT:
         *(reinterpret_cast<float*>(dest)) = src.GetFloat();
-        break;
-
-    case VAR_DOUBLE:
-        *(reinterpret_cast<double*>(dest)) = src.GetDouble();
         break;
 
     case VAR_VECTOR2:
@@ -157,36 +159,44 @@ void Serializable::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
         *(reinterpret_cast<IntVector3*>(dest)) = src.GetIntVector3();
         break;
 
+    case VAR_DOUBLE:
+        *(reinterpret_cast<double*>(dest)) = src.GetDouble();
+        break;
     default:
         URHO3D_LOGERROR("Unsupported attribute type for OnSetAttribute()");
         return;
     }
 
     // If it is a network attribute then mark it for next network update
-    if ((attr.mode_ & AM_NET) != 0u)
+    if (attr.mode_ & AM_NET)
         MarkNetworkUpdate();
 }
 
 void Serializable::OnGetAttribute(const AttributeInfo& attr, Variant& dest) const
 {
     // Check for accessor function mode
-    if (attr.accessor_ != nullptr)
+    if (attr.accessor_)
     {
         attr.accessor_->Get(this, dest);
         return;
     }
 
-    // Calculate the source address
-    const void* src = attr.ptr_ != nullptr ? attr.ptr_ : reinterpret_cast<const unsigned char*>(this) + attr.offset_;
+    // Get the source address
+    assert(attr.ptr_);
+    const void* src = attr.ptr_;
 
     switch (attr.type_)
     {
     case VAR_INT:
         // If enum type, use the low 8 bits only
-        if (attr.enumNames_ != nullptr)
+        if (attr.enumNames_)
             dest = *(reinterpret_cast<const unsigned char*>(src));
         else
             dest = *(reinterpret_cast<const int*>(src));
+        break;
+
+    case VAR_INT64:
+        dest = *(reinterpret_cast<const long long*>(src));
         break;
 
     case VAR_BOOL:
@@ -278,7 +288,7 @@ const std::vector<AttributeInfo>* Serializable::GetNetworkAttributes() const
     return networkState_ != nullptr ? networkState_->attributes_ : context_->GetNetworkAttributes(GetType());
 }
 
-bool Serializable::Load(Deserializer& source, bool setInstanceDefault)
+bool Serializable::Load(Deserializer& source)
 {
     const std::vector<AttributeInfo>* attributes = GetAttributes();
     if (attributes == nullptr)
@@ -299,8 +309,6 @@ bool Serializable::Load(Deserializer& source, bool setInstanceDefault)
         Variant varValue = source.ReadVariant(attr.type_);
         OnSetAttribute(attr, varValue);
 
-        if (setInstanceDefault)
-            SetInstanceDefault(attr.name_, varValue);
     }
 
     return true;
@@ -332,7 +340,7 @@ bool Serializable::Save(Serializer& dest) const
     return true;
 }
 
-bool Serializable::LoadXML(const XMLElement& source, bool setInstanceDefault)
+bool Serializable::LoadXML(const XMLElement& source)
 {
     if (source.IsNull())
     {
@@ -386,12 +394,7 @@ bool Serializable::LoadXML(const XMLElement& source, bool setInstanceDefault)
                     varValue = attrElem.GetVariantValue(attr.type_);
 
                 if (!varValue.IsEmpty())
-                {
                     OnSetAttribute(attr, varValue);
-
-                    if (setInstanceDefault)
-                        SetInstanceDefault(attr.name_, varValue);
-                }
 
                 startIndex = (i + 1) % attributes->size();
                 break;
@@ -412,7 +415,7 @@ bool Serializable::LoadXML(const XMLElement& source, bool setInstanceDefault)
     return true;
 }
 
-bool Serializable::LoadJSON(const JSONValue& source, bool setInstanceDefault)
+bool Serializable::LoadJSON(const JSONValue& source)
 {
     if (source.IsNull())
     {
@@ -479,12 +482,7 @@ bool Serializable::LoadJSON(const JSONValue& source, bool setInstanceDefault)
                     varValue = value.GetVariantValue(attr.type_);
 
                 if (!varValue.IsEmpty())
-                {
                     OnSetAttribute(attr, varValue);
-
-                    if (setInstanceDefault)
-                        SetInstanceDefault(attr.name_, varValue);
-                }
 
                 startIndex = (i + 1) % attributes->size();
                 break;
@@ -496,7 +494,7 @@ bool Serializable::LoadJSON(const JSONValue& source, bool setInstanceDefault)
             }
         }
 
-        if (attempts == 0u)
+        if (attempts == 0)
             URHO3D_LOGWARNING("Unknown attribute " + name + " in JSON data");
 
         it++;

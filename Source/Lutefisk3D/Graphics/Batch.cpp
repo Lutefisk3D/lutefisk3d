@@ -572,6 +572,7 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
             for (auto iter= parameters.begin(), fin=parameters.end(); iter!=fin; ++iter)
                 graphics->SetShaderParameter(MAP_KEY(iter), MAP_VALUE(iter).value_);
         }
+
         int texunitidx=0;
         for (const auto &entry : material_->GetTextures())
         {

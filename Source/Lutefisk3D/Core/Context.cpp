@@ -348,19 +348,28 @@ void Context::RemoveSubsystem(StringHash objectType)
         d->subsystems_.erase(i);
 }
 /// Register object attribute.
-void Context::RegisterAttribute(StringHash objectType, const AttributeInfo& attr)
+AttributeHandle Context::RegisterAttribute(StringHash objectType, const AttributeInfo& attr)
 {
     // None or pointer types can not be supported
-    if (attr.type_ == VAR_NONE || attr.type_ == VAR_VOIDPTR || attr.type_ == VAR_PTR)
+    if (attr.type_ == VAR_NONE || attr.type_ == VAR_VOIDPTR || attr.type_ == VAR_PTR || attr.type_ == VAR_CUSTOM_HEAP || attr.type_ == VAR_CUSTOM_STACK)
     {
         URHO3D_LOGWARNING("Attempt to register unsupported attribute type " + Variant::GetTypeName(attr.type_) + " to class " +
                           GetTypeName(objectType));
-        return;
+        return AttributeHandle();
     }
-    d->attributes_[objectType].push_back(attr);
+    AttributeHandle handle;
+
+    std::vector<AttributeInfo>& objectAttributes = d->attributes_[objectType];
+    objectAttributes.push_back(attr);
+    handle.attributeInfo_ = &objectAttributes.back();
 
     if (attr.mode_ & AM_NET)
-        d->networkAttributes_[objectType].push_back(attr);
+    {
+        std::vector<AttributeInfo>& objectNetworkAttributes = d->networkAttributes_[objectType];
+        objectNetworkAttributes.push_back(attr);
+        handle.networkAttributeInfo_ = &objectNetworkAttributes.back();
+    }
+    return handle;
 }
 /// Remove object attribute.
 void Context::RemoveAttribute(StringHash objectType, const char* name)

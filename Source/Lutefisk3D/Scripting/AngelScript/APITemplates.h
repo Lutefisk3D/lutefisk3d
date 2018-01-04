@@ -437,11 +437,11 @@ static bool SerializableSaveVectorBuffer(VectorBuffer& buffer, Serializable* ptr
 template <class T> void RegisterSerializable(asIScriptEngine* engine, const char* className)
 {
     RegisterObject<T>(engine, className);
-    engine->RegisterObjectMethod(className, "bool Load(File@+, bool setInstanceDefault = false)", asFUNCTION(SerializableLoad), asCALL_CDECL_OBJLAST);
-    engine->RegisterObjectMethod(className, "bool Load(VectorBuffer&, bool setInstanceDefault = false)", asFUNCTION(SerializableLoadVectorBuffer), asCALL_CDECL_OBJLAST);
+    engine->RegisterObjectMethod(className, "bool Load(File@+)", asFUNCTION(SerializableLoad), asCALL_CDECL_OBJLAST);
+    engine->RegisterObjectMethod(className, "bool Load(VectorBuffer&)", asFUNCTION(SerializableLoadVectorBuffer), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod(className, "bool Save(File@+) const", asFUNCTION(SerializableSave), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod(className, "bool Save(VectorBuffer&) const", asFUNCTION(SerializableSaveVectorBuffer), asCALL_CDECL_OBJLAST);
-    engine->RegisterObjectMethod(className, "bool LoadXML(const XMLElement&, bool setInstanceDefault = false)", asMETHODPR(T, LoadXML, (const XMLElement&, bool), bool), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "bool LoadXML(const XMLElement&)", asMETHODPR(T, LoadXML, (const XMLElement&, bool), bool), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "bool SaveXML(XMLElement&) const", asMETHODPR(T, SaveXML, (XMLElement&) const, bool), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void MarkNetworkUpdate() const", asMETHODPR(T, MarkNetworkUpdate, (), void), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void ApplyAttributes()", asMETHODPR(T, ApplyAttributes, (), void), asCALL_THISCALL);

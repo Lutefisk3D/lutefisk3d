@@ -49,9 +49,7 @@ static constexpr const unsigned MAX_CASCADE_SPLITS = 4;
 struct LUTEFISK3D_EXPORT CascadeParameters
 {
     /// Construct undefined.
-    CascadeParameters()
-    {
-    }
+    CascadeParameters() = default;
 
     /// Construct with initial values.
     CascadeParameters(float split1, float split2, float split3, float split4, float fadeStart, float biasAutoAdjust = 1.0f) :
@@ -78,7 +76,7 @@ struct LUTEFISK3D_EXPORT CascadeParameters
     }
 
     /// Far clip values of the splits.
-    float splits_[4];
+    Vector4 splits_;
     /// The point relative to the total shadow range where shadow fade begins (0.0 - 1.0)
     float fadeStart_;
     /// Automatic depth bias adjustment strength.
@@ -98,14 +96,12 @@ public:
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);
 
-    /// Handle attribute change.
-    void OnSetAttribute(const AttributeInfo& attr, const Variant& src) override;
     /// Process octree raycast. May be called from a worker thread.
     void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
     /// Calculate distance and prepare batches for rendering. May be called from worker thread(s), possibly re-entrantly.
     void UpdateBatches(const FrameInfo& frame) override;
     /// Visualize the component as debug geometry.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
+    void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
     /// Set light type.
     void SetLightType(LightType type);
@@ -244,9 +240,15 @@ public:
 
 protected:
     /// Recalculate the world-space bounding box.
-    virtual void OnWorldBoundingBoxUpdate() override;
+    void OnWorldBoundingBoxUpdate() override;
 
 private:
+    /// Validate shadow focus.
+    void ValidateShadowFocus() { shadowFocus_.Validate(); }
+    /// Validate shadow cascade.
+    void ValidateShadowCascade() { shadowCascade_.Validate(); }
+    /// Validate shadow bias.
+    void ValidateShadowBias() { shadowBias_.Validate(); }
     /// Light type.
     LightType lightType_;
     /// Color.

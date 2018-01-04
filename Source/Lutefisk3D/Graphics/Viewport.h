@@ -42,13 +42,13 @@ class LUTEFISK3D_EXPORT Viewport : public Object
 
 public:
     /// Construct with defaults.
-    Viewport(Context* context);
+    explicit Viewport(Context* context);
     /// Construct with a full rectangle.
-    Viewport(Context* context, Scene* scene, Camera* camera, RenderPath* renderPath = 0);
+    Viewport(Context* context, Scene* scene, Camera* camera, RenderPath* renderPath = nullptr);
     /// Construct with a specified rectangle.
     Viewport(Context* context, Scene* scene, Camera* camera, const IntRect& rect, RenderPath* renderPath = nullptr);
     /// Destruct.
-    ~Viewport();
+    ~Viewport() override = default;
 
     /// Set scene.
     void SetScene(Scene* scene);

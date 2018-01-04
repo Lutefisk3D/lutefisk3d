@@ -181,7 +181,7 @@ void Scene::RegisterObject(Context* context)
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Variable Names", GetVarNamesAttr, SetVarNamesAttr, QString, QString(), AM_FILE | AM_NOEDIT);
 }
 
-bool Scene::Load(Deserializer& source, bool setInstanceDefault)
+bool Scene::Load(Deserializer& source)
 {
     URHO3D_PROFILE_CTX(context_,LoadScene);
 
@@ -199,7 +199,7 @@ bool Scene::Load(Deserializer& source, bool setInstanceDefault)
     Clear();
 
     // Load the whole scene, then perform post-load if successfully loaded
-    if (Node::Load(source, setInstanceDefault))
+    if (Node::Load(source))
     {
         FinishLoading(&source);
         return true;
@@ -232,7 +232,7 @@ bool Scene::Save(Serializer& dest) const
     return false;
 }
 
-bool Scene::LoadXML(const XMLElement& source, bool setInstanceDefault)
+bool Scene::LoadXML(const XMLElement& source)
 {
     URHO3D_PROFILE_CTX(context_,LoadSceneXML);
 
@@ -240,7 +240,7 @@ bool Scene::LoadXML(const XMLElement& source, bool setInstanceDefault)
 
     // Load the whole scene, then perform post-load if successfully loaded
     // Note: the scene filename and checksum can not be set, as we only used an XML element
-    if (Node::LoadXML(source, setInstanceDefault))
+    if (Node::LoadXML(source))
     {
         FinishLoading(nullptr);
         return true;
@@ -249,7 +249,7 @@ bool Scene::LoadXML(const XMLElement& source, bool setInstanceDefault)
     return false;
 }
 
-bool Scene::LoadJSON(const JSONValue& source, bool setInstanceDefault)
+bool Scene::LoadJSON(const JSONValue& source)
 {
     URHO3D_PROFILE(LoadSceneJSON);
 
@@ -257,7 +257,7 @@ bool Scene::LoadJSON(const JSONValue& source, bool setInstanceDefault)
 
     // Load the whole scene, then perform post-load if successfully loaded
     // Note: the scene filename and checksum can not be set, as we only used an XML element
-    if (Node::LoadJSON(source, setInstanceDefault))
+    if (Node::LoadJSON(source))
     {
         FinishLoading(nullptr);
         return true;

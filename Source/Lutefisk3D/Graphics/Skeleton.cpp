@@ -148,7 +148,7 @@ Bone* Skeleton::GetRootBone()
 }
 unsigned Skeleton::GetBoneIndex(StringHash boneNameHash) const
 {
-    const unsigned numBones = bones_.Size();
+    const unsigned numBones = bones_.size();
     for (unsigned i = 0; i < numBones; ++i)
     {
         if (bones_[i].nameHash_ == boneNameHash)
@@ -160,10 +160,10 @@ unsigned Skeleton::GetBoneIndex(StringHash boneNameHash) const
 
 unsigned Skeleton::GetBoneIndex(const Bone* bone) const
 {
-    if (bones_.Empty() || bone < &bones_.Front() || bone > &bones_.Back())
+    if (bones_.empty() || bone < &bones_.front() || bone > &bones_.back())
         return M_MAX_UNSIGNED;
 
-    return static_cast<unsigned>(bone - &bones_.Front());
+    return static_cast<unsigned>(bone - &bones_.front());
 }
 
 unsigned Skeleton::GetBoneIndex(const QString& boneName) const
@@ -182,15 +182,7 @@ Bone* Skeleton::GetBone(unsigned index)
 {
     return index < bones_.size() ? &bones_[index] : nullptr;
 }
-Bone* Skeleton::GetBone(const QString& name)
-{
-    return GetBone(StringHash(name));
-}
 
-Bone* Skeleton::GetBone(const char* name)
-{
-    return GetBone(StringHash(name));
-}
 /// Return bone by name hash.
 Bone* Skeleton::GetBone(StringHash nameHash)
 {

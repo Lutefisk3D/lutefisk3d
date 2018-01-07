@@ -80,7 +80,7 @@ public:
     /// Return index of the bone by name. Return M_MAX_UNSIGNED if not found.
     unsigned GetBoneIndex(const QString& boneName) const;
     /// Return index of the bone by name hash. Return M_MAX_UNSIGNED if not found.
-    unsigned GetBoneIndex(const StringHash& boneNameHash) const;
+    unsigned GetBoneIndex(StringHash boneNameHash) const;
     /// Return index of the bone by the bone pointer. Return M_MAX_UNSIGNED if not found.
     unsigned GetBoneIndex(const Bone* bone) const;
     /// Return parent of the given bone. Return null for root bones.
@@ -89,7 +89,8 @@ public:
     Bone* GetBone(unsigned index);
     Bone* GetBone(StringHash boneNameHash);
     /// Return bone by name.
-    Bone* GetBone(const QString& boneName);
+    Bone* GetBone(const QString& boneName) { return GetBone(StringHash(boneName)); }
+    Bone* GetBone(const char * boneName) { return GetBone(StringHash(boneName)); }
     void ResetSilent();
 
 private:

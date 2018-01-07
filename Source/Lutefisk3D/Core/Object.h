@@ -88,8 +88,8 @@ class LUTEFISK3D_EXPORT Object : public RefCounted
     friend class Context;
 
 public:
-    using ilEventHandler = std::deque<EventHandler *>::iterator;
-    using cilEventHandler = std::deque<EventHandler *>::const_iterator;
+    using ilEventHandler = PODVectorN<EventHandler *,2>::iterator;
+    using cilEventHandler = PODVectorN<EventHandler *,2>::const_iterator;
 
     /// Construct.
     Object(Context* context);
@@ -169,7 +169,7 @@ private:
     cilEventHandler FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous = 0) const;
     void RemoveEventSender(Object* sender);
     /// Event handlers. Sender is null for non-specific handlers.
-    std::deque<EventHandler *> eventHandlers_;
+    PODVectorN<EventHandler *,2> eventHandlers_;
 };
 
 template <class T> T* Object::GetSubsystem() const { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }

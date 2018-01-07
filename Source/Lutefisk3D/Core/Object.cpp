@@ -179,13 +179,13 @@ void Object::SubscribeToEvent(StringHash eventType, EventHandler* handler)
 
     handler->SetSenderAndEventType(nullptr, eventType);
     // Remove old event handler first
-    cilEventHandler oldHandler = FindSpecificEventHandler(nullptr, eventType);
+    ilEventHandler oldHandler = const_cast<ilEventHandler>(FindSpecificEventHandler(nullptr, eventType));
     if (oldHandler!=eventHandlers_.end()) {
         delete *oldHandler;
         eventHandlers_.erase(oldHandler);
     }
 
-    eventHandlers_.push_front(handler);
+    eventHandlers_.emplace_back(handler);
 
     context_->AddEventReceiver(this, eventType);
 }
@@ -201,13 +201,13 @@ void Object::SubscribeToEvent(Object* sender, StringHash eventType, EventHandler
 
     handler->SetSenderAndEventType(sender, eventType);
     // Remove old event handler first
-    cilEventHandler oldHandler = FindSpecificEventHandler(sender, eventType);
+    ilEventHandler oldHandler = const_cast<ilEventHandler>(FindSpecificEventHandler(sender, eventType));
     if (oldHandler!=eventHandlers_.end()) {
         delete *oldHandler;
         eventHandlers_.erase(oldHandler);
     }
 
-    eventHandlers_.push_front(handler);
+    eventHandlers_.push_back(handler);
 
     context_->AddEventReceiver(this, sender, eventType);
 }
@@ -225,7 +225,7 @@ void Object::UnsubscribeFromEvent(StringHash eventType)
 {
     for (;;)
     {
-        cilEventHandler handler = FindEventHandler(eventType);
+        ilEventHandler handler = const_cast<ilEventHandler>(FindEventHandler(eventType));
         if (handler!=eventHandlers_.end())
         {
             EventHandler *hndl = *handler;
@@ -246,7 +246,7 @@ void Object::UnsubscribeFromEvent(Object* sender, StringHash eventType)
     if (!sender)
         return;
 
-    cilEventHandler handler = FindSpecificEventHandler(sender, eventType);
+    ilEventHandler handler = const_cast<ilEventHandler>(FindSpecificEventHandler(sender,eventType));
     if (handler!=eventHandlers_.end())
     {
         context_->RemoveEventReceiver(this, (*handler)->GetSender(), eventType);
@@ -262,11 +262,12 @@ void Object::UnsubscribeFromEvents(Object* sender)
 
     for (;;)
     {
-        cilEventHandler handler = FindSpecificEventHandler(sender);
+        ilEventHandler handler = const_cast<ilEventHandler>(FindSpecificEventHandler(sender));
         if(handler==eventHandlers_.end())
             break;
         context_->RemoveEventReceiver(this, (*handler)->GetSender(), (*handler)->GetEventType());
         delete *handler;
+
         eventHandlers_.erase(handler);
     }
 }
@@ -436,38 +437,38 @@ const QString& Object::GetCategory() const
 /// Find the first event handler with no specific sender.
 Object::cilEventHandler Object::FindEventHandler(StringHash eventType) const
 {
-    cilEventHandler handler = eventHandlers_.cbegin();
-    while (handler!=eventHandlers_.cend())
+    cilEventHandler handler = eventHandlers_.begin();
+    while (handler!=eventHandlers_.end())
     {
         if ((*handler)->GetEventType() == eventType)
             return handler;
         ++handler;
     }
 
-    return eventHandlers_.cend();
+    return eventHandlers_.end();
 }
 /// Find the first event handler with specific sender.
 Object::cilEventHandler Object::FindSpecificEventHandler(Object* sender) const
 {
-    cilEventHandler handler = eventHandlers_.cbegin();
+    cilEventHandler handler = eventHandlers_.begin();
 
-    while (handler!=eventHandlers_.cend())
+    while (handler!=eventHandlers_.end())
     {
         if ((*handler)->GetSender() == sender)
             return handler;
         ++handler;
     }
 
-    return eventHandlers_.cend();
+    return eventHandlers_.end();
 }
 /// Find the first event handler with specific sender and event type.
 Object::cilEventHandler Object::FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous) const
 {
-    cilEventHandler handler = eventHandlers_.cbegin();
+    cilEventHandler handler = eventHandlers_.begin();
     if(previous)
         *previous = nullptr;
 
-    while (handler!=eventHandlers_.cend())
+    while (handler!=eventHandlers_.end())
     {
         if ((*handler)->GetSender() == sender && (*handler)->GetEventType() == eventType)
             return handler;

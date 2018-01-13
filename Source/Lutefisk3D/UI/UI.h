@@ -59,10 +59,8 @@ class UIComponent;
 class LUTEFISK3D_EXPORT UI : public RefCounted, public jl::SignalObserver
 {
 public:
-    /// Construct.
     UI(Context* context);
-    /// Destruct.
-    virtual ~UI();
+    ~UI() override;
 
     /// Set cursor UI element.
     void SetCursor(Cursor* cursor);

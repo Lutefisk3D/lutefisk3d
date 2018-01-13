@@ -191,7 +191,7 @@ void Localization::LoadJSON(const JSONValue& source)
 
 void Localization::LoadJSONFile(const QString& name)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     JSONFile* jsonFile = cache->GetResource<JSONFile>(name);
     if (jsonFile)
         LoadJSON(jsonFile->GetRoot());

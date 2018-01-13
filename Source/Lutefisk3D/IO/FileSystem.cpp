@@ -160,7 +160,7 @@ struct FileSystemPrivate : public jl::SignalObserver
     unsigned nextAsyncExecID_=1;
     /// Flag for executing engine console commands as OS-specific system command. set to true in constructor.
     bool executeConsoleCommands_=false;
-    FileSystemPrivate(Context *ctx) : SignalObserver(ctx->m_observer_allocator) {}
+    FileSystemPrivate(Context *ctx) : SignalObserver(ctx->observerAllocator()) {}
     ~FileSystemPrivate() {
     // If any async exec items pending, delete them
         if (!asyncExecQueue_.empty())

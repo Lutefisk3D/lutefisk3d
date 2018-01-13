@@ -49,7 +49,7 @@ static Log* logInstance = nullptr;
 static bool threadErrorDisplayed = false;
 
 Log::Log(Context *ctx) :
-    SignalObserver(ctx->m_observer_allocator),
+    SignalObserver(ctx->observerAllocator()),
     m_context(ctx),
 #ifdef _DEBUG
     level_(LOG_DEBUG),

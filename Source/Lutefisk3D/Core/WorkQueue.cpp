@@ -62,7 +62,7 @@ private:
 };
 
 WorkQueue::WorkQueue(Context* context) :
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     m_context(context),
     shutDown_(false),
     pausing_(false),

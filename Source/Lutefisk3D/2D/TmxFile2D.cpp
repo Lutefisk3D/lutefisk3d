@@ -649,7 +649,7 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
     int imageHeight;
     bool isSingleTileSet = false;
 
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     {
         XMLElement imageElem = tileSetElem.GetChild("image");
         // Tileset based on single tileset image

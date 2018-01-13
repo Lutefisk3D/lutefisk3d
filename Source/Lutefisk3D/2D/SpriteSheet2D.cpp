@@ -145,7 +145,7 @@ bool SpriteSheet2D::BeginLoadFromPListFile(Deserializer& source)
 
 bool SpriteSheet2D::EndLoadFromPListFile()
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     texture_ = cache->GetResource<Texture2D>(loadTextureName_);
     if (!texture_)
     {
@@ -222,7 +222,7 @@ bool SpriteSheet2D::BeginLoadFromXMLFile(Deserializer& source)
 
 bool SpriteSheet2D::EndLoadFromXMLFile()
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     texture_ = cache->GetResource<Texture2D>(loadTextureName_);
     if (!texture_)
     {
@@ -296,7 +296,7 @@ bool SpriteSheet2D::BeginLoadFromJSONFile(Deserializer& source)
 
 bool SpriteSheet2D::EndLoadFromJSONFile()
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     texture_ = cache->GetResource<Texture2D>(loadTextureName_);
     if (!texture_)
     {

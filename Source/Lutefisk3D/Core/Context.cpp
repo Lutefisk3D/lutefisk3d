@@ -312,6 +312,7 @@ Context::~Context()
     m_Renderer.reset();
     m_Graphics.reset();
 }
+
 /// Create an object by type hash. Return pointer to it or null if no factory found.
 SharedPtr<Object> Context::CreateObject(StringHash objectType)
 {

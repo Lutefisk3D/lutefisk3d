@@ -309,7 +309,7 @@ bool Model::BeginLoad(Deserializer& source)
         geometryCenters_.push_back(Vector3::ZERO);
     memoryUse += sizeof(Vector3) * geometries_.size();
     // Read metadata
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     QString xmlName = ReplaceExtension(GetName(), ".xml");
     SharedPtr<XMLFile> file(cache->GetTempResource<XMLFile>(xmlName, false));
     if (file)

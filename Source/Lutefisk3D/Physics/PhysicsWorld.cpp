@@ -171,7 +171,7 @@ PhysicsWorld::PhysicsWorld(Context* context) :
     private_data(new PhysicsWorldPrivate(this))
 {
     gContactAddedCallback = CustomMaterialCombinerCallback;
-    init(context->m_signal_allocator);
+    init(context->signalAllocator());
 }
 
 PhysicsWorld::~PhysicsWorld()

@@ -313,7 +313,7 @@ void StaticModel::ApplyMaterialList(const QString& fileName)
     if (useFileName.trimmed().isEmpty() && model_)
         useFileName = ReplaceExtension(model_->GetName(), ".txt");
 
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     std::unique_ptr<File> file = cache->GetFile(useFileName, false);
     if (!file)
         return;
@@ -382,13 +382,13 @@ void StaticModel::SetNumGeometries(unsigned num)
 
 void StaticModel::SetModelAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     SetModel(cache->GetResource<Model>(value.name_));
 }
 
 void StaticModel::SetMaterialsAttr(const ResourceRefList& value)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     for (unsigned i = 0; i < value.names_.size(); ++i)
         SetMaterial(i, cache->GetResource<Material>(value.names_[i]));
 }

@@ -56,13 +56,15 @@ if(NOT LUTEFISK3D_2DLESS)
     add_subdirectory(2D)
 endif()
 
-INCLUDE_DIRECTORIES(${Lutefisk3D_INCLUDE_DIRS})
 add_library(Lutefisk3D SHARED
     ${MinimalSources}
     ${Lutefisk3D_COMPONENT_SOURCES}
 )
 GENERATE_EXPORT_HEADER(Lutefisk3D)
-target_include_directories(Lutefisk3D PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>)
+target_include_directories(Lutefisk3D PRIVATE
+    $<TARGET_PROPERTY:Qt5::Core,INTERFACE_INCLUDE_DIRECTORIES>
+    ${Lutefisk3D_INCLUDE_DIRS}
+)
 target_compile_definitions(Lutefisk3D PRIVATE $<TARGET_PROPERTY:Qt5::Core,INTERFACE_COMPILE_DEFINITIONS>)
 
 qt5_use_modules(Lutefisk3D LINK_PUBLIC Core Gui Widgets)

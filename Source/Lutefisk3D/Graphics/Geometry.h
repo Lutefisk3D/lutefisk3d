@@ -32,12 +32,12 @@
 
 namespace Urho3D
 {
-class LUTEFISK3D_EXPORT Vector2;
-class LUTEFISK3D_EXPORT IndexBuffer;
-class LUTEFISK3D_EXPORT Ray;
-class LUTEFISK3D_EXPORT Graphics;
-class LUTEFISK3D_EXPORT VertexBuffer;
-class LUTEFISK3D_EXPORT Context;
+class Vector2;
+class IndexBuffer;
+class Ray;
+class Graphics;
+class VertexBuffer;
+class Context;
 using IndexBufferHandle = DataHandle<IndexBuffer,20,20>;
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 

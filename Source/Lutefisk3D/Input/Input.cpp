@@ -76,7 +76,7 @@ void JoystickState::Reset()
 }
 
 Input::Input(Context* context) :
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     m_context(context),
     mouseButtonDown_(0),
     mouseButtonPress_(0),

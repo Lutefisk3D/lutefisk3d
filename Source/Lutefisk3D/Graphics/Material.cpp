@@ -54,7 +54,7 @@ namespace Urho3D
 
 struct MaterialPrivate : public jl::SignalObserver
 {
-    MaterialPrivate(Material *p,Context *ctx) : SignalObserver(ctx->m_observer_allocator),
+    MaterialPrivate(Material *p,Context *ctx) : SignalObserver(ctx->observerAllocator()),
         parent(p) {}
 
     /// %Shader parameters animation infos.
@@ -272,7 +272,7 @@ void ShaderParameterAnimationInfo::ApplyValue(const Variant& newValue)
 
 Material::Material(Context* context, bool skip_reset) :
     Resource(context),
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     d(new MaterialPrivate(this, context)),
     auxViewFrameNumber_(0),
     shaderParameterHash_(0),
@@ -366,7 +366,7 @@ bool Material::BeginLoadXML(Deserializer& source)
     // and request them to also be loaded. Can not do anything else at this point
     if (GetAsyncLoadState() == ASYNC_LOADING)
     {
-        ResourceCache* cache =context_->m_ResourceCache.get();
+        ResourceCache* cache =context_->resourceCache();
         XMLElement rootElem = d->loadXMLFile_->GetRoot();
         XMLElement techniqueElem = rootElem.GetChild("technique");
         while (techniqueElem)
@@ -421,7 +421,7 @@ bool Material::BeginLoadJSON(Deserializer& source)
     // and request them to also be loaded. Can not do anything else at this point
     if (GetAsyncLoadState() == ASYNC_LOADING)
     {
-        ResourceCache* cache =context_->m_ResourceCache.get();
+        ResourceCache* cache =context_->resourceCache();
         const JSONValue& rootVal = d->loadJSONFile_->GetRoot();
 
         JSONArray techniqueArray = rootVal.Get("techniques").GetArray();
@@ -481,7 +481,7 @@ bool Material::Load(const XMLElement& source)
         return false;
     }
 
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     XMLElement shaderElem = source.GetChild("shader");
     if (shaderElem)
     {
@@ -624,7 +624,7 @@ bool Material::Load(const JSONValue& source)
         return false;
     }
 
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     const JSONValue& shaderVal = source.Get("shader");
     if (!shaderVal.IsNull())
     {

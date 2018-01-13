@@ -38,7 +38,7 @@
 using namespace Urho3D;
 /// Construct. Parse default engine parameters from the command line, and create the engine in an uninitialized state.
 Application::Application(const QString &appName, Context* context) :
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     m_context(context),
     m_appName(appName),
     exitCode_(EXIT_SUCCESS)
@@ -47,7 +47,7 @@ Application::Application(const QString &appName, Context* context) :
 
     // Create the Engine, but do not initialize it yet. Subsystems except Graphics & Renderer are registered at this point
     engine_ = new Engine(context);
-    SetConnectionAllocator(context->m_observer_allocator);
+    SetConnectionAllocator(context->observerAllocator());
     // Subscribe to log messages so that can show errors if ErrorExit() is called with empty message
     g_LogSignals.logMessageSignal.Connect(this, &Application::HandleLogMessage);
 

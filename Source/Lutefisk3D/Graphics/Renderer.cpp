@@ -391,7 +391,7 @@ inline std::vector<VertexElement> CreateInstancingBufferElements(unsigned numExt
 }
 
 Renderer::Renderer(Context* context) :
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     m_context(context),
     defaultZone_(new Zone(context))
 {

@@ -93,7 +93,7 @@ class LUTEFISK3D_EXPORT View : public RefCounted
 public:
 
     explicit View(Context* context);
-    ~View() override = default;
+    ~View() override;
 
     /// Define with rendertarget and viewport. Return true if successful.
     bool Define(RenderSurface* renderTarget, Viewport* viewport);

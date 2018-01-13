@@ -67,7 +67,7 @@ public:
 struct AttributeInfo
 {
     /// Construct empty.
-    AttributeInfo() { }
+    AttributeInfo() = default;
 
     /// Construct attribute.
     AttributeInfo(VariantType type, const char* name, SharedPtr<AttributeAccessor> accessor, const char** enumNames, const Variant& defaultValue, unsigned mode) :
@@ -88,7 +88,8 @@ struct AttributeInfo
     }
 
     /// Get attribute metadata of specified type.
-    template <class T> T GetMetadata(const StringHash& key) const
+    template <class T>
+    T GetMetadata(const StringHash& key) const
     {
         return GetMetadata(key).Get<T>();
     }
@@ -113,7 +114,7 @@ struct AttributeInfo
 
 /// Attribute handle returned by Context::RegisterAttribute and used to chain attribute setup calls.
 struct AttributeHandle
-    {
+{
     friend class Context;
 private:
     /// Construct default.
@@ -135,4 +136,5 @@ public:
         return *this;
     }
 };
+
 }

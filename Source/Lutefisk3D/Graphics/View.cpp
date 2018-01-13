@@ -405,7 +405,9 @@ View::View(Context *context)
     frame_.camera_ = nullptr;
 }
 
-bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
+View::~View() = default;
+
+    bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
 {
     sourceView_ = nullptr;
     renderPath_ = viewport->GetRenderPath();
@@ -3167,7 +3169,7 @@ Texture *View::FindNamedTexture(const QString &name, bool isRenderTarget, bool i
         return d->renderTargets_[nameHash];
 
     // Then the resource system
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
 
     // Check existing resources first. This does not load resources, so we can afford to guess the resource type wrong
     // without having to rely on the file extension

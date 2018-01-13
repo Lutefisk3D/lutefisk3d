@@ -548,12 +548,21 @@ void Graphics::EndFrame()
 
     URHO3D_PROFILE_CTX(m_context,Present);
 
-    g_graphicsSignals.endRendering();
+    {
+        URHO3D_PROFILE_CTX(m_context,EndRendering);
+        g_graphicsSignals.endRendering();
+    }
 
-    glfwSwapBuffers(window2_);
+    {
+        URHO3D_PROFILE_CTX(m_context,Swap);
+        glfwSwapBuffers(window2_);
+    }
 
     // Clean up too large scratch buffers
-    CleanupScratchBuffers();
+    {
+        URHO3D_PROFILE_CTX(m_context,CleanScratch);
+        CleanupScratchBuffers();
+    }
 }
 
 void Graphics::Clear(unsigned flags, const Color& color, float depth, unsigned stencil)

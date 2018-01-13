@@ -782,13 +782,13 @@ void Terrain::UpdatePatchLod(TerrainPatch* patch)
 
 void Terrain::SetMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     SetMaterial(cache->GetResource<Material>(value.name_));
 }
 
 void Terrain::SetHeightMapAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     Image* image = cache->GetResource<Image>(value.name_);
     SetHeightMapInternal(image, false);
 }

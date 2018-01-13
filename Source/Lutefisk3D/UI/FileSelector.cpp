@@ -48,7 +48,7 @@ static bool CompareEntries(const FileSelectorEntry& lhs, const FileSelectorEntry
 
 FileSelector::FileSelector(Context* context) :
     Object(context),
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     directoryMode_(false),
     ignoreEvents_(false)
 {

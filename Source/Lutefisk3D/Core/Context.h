@@ -59,19 +59,6 @@ template<class U,class V> class HashMap;
 template<class T> class SharedPtr;
 template <class T, class U> SharedPtr<T> StaticCast(const SharedPtr<U>& ptr);
 }
-namespace std {
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Log>;
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::FileSystem>;
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Input>;
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::ResourceCache>;
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Graphics>;
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Renderer>;
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Time>;
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Profiler>;
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::EventProfiler>;
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::WorkQueue>;
-extern template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::UI>;
-}
 namespace Urho3D
 {
 enum OSInterfaceFlags {
@@ -82,13 +69,53 @@ enum OSInterfaceFlags {
 struct AttributeInfo;
 class LUTEFISK3D_EXPORT EventReceiverGroup;
 class ContextPrivate;
-class LUTEFISK3D_EXPORT Context
+class Context
 {
     friend class Object;
     friend class Context_EventGuard;
+    friend class Engine; //Engine initializes m_signal_allocator/m_observer_allocator
 public:
-    Context();
-    ~Context();
+    LUTEFISK3D_EXPORT Context();
+    LUTEFISK3D_EXPORT ~Context();
+    jl::ScopedAllocator *signalAllocator() { return m_signal_allocator; }
+    jl::ScopedAllocator *observerAllocator() { return m_observer_allocator; }
+    ResourceCache* resourceCache() const { return m_ResourceCache.get(); }
+
+    template <class T> 
+    SharedPtr<T> CreateObject() { return StaticCast<T>(CreateObject(T::GetTypeStatic())); }
+    LUTEFISK3D_EXPORT SharedPtr<Object> CreateObject(StringHash objectType);
+    LUTEFISK3D_EXPORT void RegisterFactory(ObjectFactory* factory, const char* category=nullptr);
+    LUTEFISK3D_EXPORT void RegisterSubsystem(StringHash typeHash, Object* subsystem);
+    LUTEFISK3D_EXPORT void RemoveSubsystem(StringHash objectType);
+    LUTEFISK3D_EXPORT AttributeHandle RegisterAttribute(StringHash objectType, const AttributeInfo& attr);
+    LUTEFISK3D_EXPORT void RemoveAttribute(StringHash objectType, const char* name);
+    LUTEFISK3D_EXPORT void UpdateAttributeDefaultValue(StringHash objectType, const char* name, const Variant& defaultValue);
+    LUTEFISK3D_EXPORT HashMap<StringHash, Variant>& GetEventDataMap();
+
+    LUTEFISK3D_EXPORT void CopyBaseAttributes(StringHash baseType, StringHash derivedType);
+
+    template <class T> void RegisterFactory(const char* category=nullptr);
+    template <class T> void RemoveSubsystem();
+    template <class T> AttributeHandle RegisterAttribute(const AttributeInfo& attr);
+    template <class T> void RemoveAttribute(const char* name);
+    template <class T, class U> void CopyBaseAttributes();
+    template <class T> void UpdateAttributeDefaultValue(const char* name, const Variant& defaultValue);
+
+
+    LUTEFISK3D_EXPORT Object* GetSubsystem(StringHash type) const;
+
+    LUTEFISK3D_EXPORT const QString &GetObjectCategory(StringHash objType) const;
+    LUTEFISK3D_EXPORT Object* GetEventSender() const;
+    EventHandler* GetEventHandler() const { return eventHandler_; }
+    LUTEFISK3D_EXPORT const QString& GetTypeName(StringHash objectType) const;
+
+    LUTEFISK3D_EXPORT AttributeInfo* GetAttribute(StringHash objectType, const char* name);
+    template <class T> T* GetSubsystemT() const;
+    template <class T> AttributeInfo* GetAttribute(const char* name);
+    LUTEFISK3D_EXPORT const std::vector<AttributeInfo>* GetAttributes(StringHash type) const;
+    LUTEFISK3D_EXPORT const std::vector<AttributeInfo>* GetNetworkAttributes(StringHash type) const;
+    LUTEFISK3D_EXPORT EventReceiverGroup* GetEventReceivers(Object* sender, StringHash eventType);
+    LUTEFISK3D_EXPORT EventReceiverGroup* GetEventReceivers(StringHash eventType);
 
     std::unique_ptr<Log>           m_LogSystem;
     std::unique_ptr<FileSystem>    m_FileSystem;
@@ -102,44 +129,6 @@ public:
     std::unique_ptr<WorkQueue>     m_WorkQueueSystem;
     std::unique_ptr<UI>            m_UISystem;
 
-    jl::ScopedAllocator *          m_signal_allocator; // Those point to static instances, no need to free them
-    jl::ScopedAllocator *          m_observer_allocator;
-
-    template <class T> inline SharedPtr<T> CreateObject() { return StaticCast<T>(CreateObject(T::GetTypeStatic())); }
-    SharedPtr<Object> CreateObject(StringHash objectType);
-    void RegisterFactory(ObjectFactory* factory, const char* category=nullptr);
-    void RegisterSubsystem(StringHash typeHash, Object* subsystem);
-    void RemoveSubsystem(StringHash objectType);
-    AttributeHandle RegisterAttribute(StringHash objectType, const AttributeInfo& attr);
-    void RemoveAttribute(StringHash objectType, const char* name);
-    void UpdateAttributeDefaultValue(StringHash objectType, const char* name, const Variant& defaultValue);
-    HashMap<StringHash, Variant>& GetEventDataMap();
-
-    void CopyBaseAttributes(StringHash baseType, StringHash derivedType);
-
-    template <class T> void RegisterFactory(const char* category=nullptr);
-    template <class T> void RemoveSubsystem();
-    template <class T> AttributeHandle RegisterAttribute(const AttributeInfo& attr);
-    template <class T> void RemoveAttribute(const char* name);
-    template <class T, class U> void CopyBaseAttributes();
-    template <class T> void UpdateAttributeDefaultValue(const char* name, const Variant& defaultValue);
-
-
-    Object* GetSubsystem(StringHash type) const;
-
-    const QString &GetObjectCategory(StringHash objType) const;
-    Object* GetEventSender() const;
-    EventHandler* GetEventHandler() const { return eventHandler_; }
-    const QString& GetTypeName(StringHash objectType) const;
-
-    AttributeInfo* GetAttribute(StringHash objectType, const char* name);
-    template <class T> T* GetSubsystemT() const;
-    template <class T> AttributeInfo* GetAttribute(const char* name);
-    const std::vector<AttributeInfo>* GetAttributes(StringHash type) const;
-    const std::vector<AttributeInfo>* GetNetworkAttributes(StringHash type) const;
-    EventReceiverGroup* GetEventReceivers(Object* sender, StringHash eventType);
-    EventReceiverGroup* GetEventReceivers(StringHash eventType);
-
 private:
 
     void AddEventReceiver(Object* receiver, StringHash eventType);
@@ -150,6 +139,10 @@ private:
     void BeginSendEvent(Object* sender, StringHash eventType);
     void EndSendEvent();
     void SetEventHandler(EventHandler* handler) { eventHandler_ = handler; }
+    // Those two allocators point to static instances, no need to free them
+    jl::ScopedAllocator *  m_signal_allocator; 
+    jl::ScopedAllocator *  m_observer_allocator;
+
     std::unique_ptr<ContextPrivate> d;
     std::vector<Object*> eventSenders_;
     EventHandler* eventHandler_=nullptr;

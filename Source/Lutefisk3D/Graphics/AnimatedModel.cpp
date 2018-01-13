@@ -784,7 +784,7 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
 
 void AnimatedModel::SetModelAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     // When loading a scene, set model without creating the bone nodes (will be assigned later during post-load)
     SetModel(cache->GetResource<Model>(value.name_), !loading_);
 }
@@ -798,7 +798,7 @@ void AnimatedModel::SetBonesEnabledAttr(const VariantVector& value)
 
 void AnimatedModel::SetAnimationStatesAttr(const VariantVector& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     RemoveAllAnimationStates();
     unsigned index = 0;
     unsigned numStates = index < value.size() ? value[index++].GetUInt() : 0;

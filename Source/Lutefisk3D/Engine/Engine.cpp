@@ -266,7 +266,7 @@ bool Engine::Initialize(const VariantMap& parameters)
     if (!InitializeResourceCache(parameters, false))
         return false;
 
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     FileSystem* fileSystem = context_->m_FileSystem.get();
     // Initialize graphics & audio output
     if (!headless_)
@@ -351,7 +351,7 @@ bool Engine::Initialize(const VariantMap& parameters)
 /// \returns true if successful.
 bool Engine::InitializeResourceCache(const VariantMap &parameters, bool removeOld /*= true*/)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     FileSystem* fileSystem = context_->m_FileSystem.get();
 
     // Remove all resource paths and packages
@@ -624,7 +624,7 @@ void Engine::DumpResources(bool dumpFileName)
     if (!Thread::IsMainThread())
         return;
 
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     const HashMap<StringHash, ResourceGroup>& resourceGroups = cache->GetAllResources();
     if (dumpFileName)
     {

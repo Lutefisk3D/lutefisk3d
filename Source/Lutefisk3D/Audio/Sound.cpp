@@ -339,7 +339,7 @@ unsigned Sound::GetSampleSize() const
 
 void Sound::LoadParameters()
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     QString xmlName = ReplaceExtension(GetName(), ".xml");
 
     SharedPtr<XMLFile> file(cache->GetTempResource<XMLFile>(xmlName, false));

@@ -37,10 +37,9 @@ class LUTEFISK3D_EXPORT TerrainPatch : public Drawable
     URHO3D_OBJECT(TerrainPatch,Drawable);
 
 public:
-    /// Construct.
     explicit TerrainPatch(Context* context);
-    /// Destruct.
-    ~TerrainPatch() override = default;
+    ~TerrainPatch() override;
+
     /// Register object factory.
     static void RegisterObject(Context* context);
 

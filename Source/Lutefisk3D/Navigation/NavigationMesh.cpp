@@ -1537,7 +1537,7 @@ void NavigationMesh::SetPartitionType(NavmeshPartitionType ptype)
 }
 void RegisterNavigationLibrary(Context* context)
 {
-    g_navigationSignals.init(context->m_signal_allocator);
+    g_navigationSignals.init(context->signalAllocator());
 
     Navigable::RegisterObject(context);
     NavigationMesh::RegisterObject(context);

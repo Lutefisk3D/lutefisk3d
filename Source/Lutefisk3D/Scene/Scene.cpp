@@ -1330,7 +1330,7 @@ void Scene::FinishSaving(Serializer* dest) const
 
 void Scene::PreloadResources(File* file, bool isSceneFile)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
 
     // Read node ID (not needed)
     /*unsigned nodeID = */file->ReadUInt();
@@ -1402,7 +1402,7 @@ void Scene::PreloadResources(File* file, bool isSceneFile)
 
 void Scene::PreloadResourcesXML(const XMLElement& element)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
 
     // Node or Scene attributes do not include any resources; therefore skip to the components
     XMLElement compElem = element.GetChild("component");
@@ -1480,7 +1480,7 @@ void Scene::PreloadResourcesXML(const XMLElement& element)
 void Scene::PreloadResourcesJSON(const JSONValue& value)
 {
     // If not threaded, can not background load resources, so rather load synchronously later when needed
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
 
     // Node or Scene attributes do not include any resources; therefore skip to the components
     JSONArray componentArray = value.Get("components").GetArray();

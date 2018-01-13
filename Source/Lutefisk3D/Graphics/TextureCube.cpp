@@ -82,7 +82,7 @@ void TextureCube::RegisterObject(Context* context)
 
 bool TextureCube::BeginLoad(Deserializer& source)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
 
     // In headless mode, do not actually load the texture, just return success
     if (!graphics_)

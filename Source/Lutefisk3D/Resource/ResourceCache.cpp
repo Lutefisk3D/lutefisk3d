@@ -64,7 +64,7 @@ static const char* checkDirs[] =
 static const SharedPtr<Resource> noResource;
 
 ResourceCache::ResourceCache(Context* context) :
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     m_context(context),
     autoReloadResources_(false),
     returnFailedResources_(false),

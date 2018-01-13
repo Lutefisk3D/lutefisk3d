@@ -58,7 +58,7 @@ void Texture2DArray::OnDeviceReset()
     if (!object_ || dataPending_)
     {
         // If has a resource file, reload through the resource cache. Otherwise just recreate.
-        ResourceCache* cache = context_->m_ResourceCache.get();
+        ResourceCache* cache = context_->resourceCache();
         if (cache->Exists(GetName()))
             dataLost_ = !cache->ReloadResource(this);
 

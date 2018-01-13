@@ -475,7 +475,7 @@ void CustomGeometry::SetGeometryDataAttr(const std::vector<unsigned char>& value
 
 void CustomGeometry::SetMaterialsAttr(const ResourceRefList& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     for (unsigned i = 0; i < value.names_.size(); ++i)
         SetMaterial(i, cache->GetResource<Material>(value.names_[i]));
 }

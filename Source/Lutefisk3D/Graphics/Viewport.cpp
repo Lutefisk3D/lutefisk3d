@@ -65,9 +65,10 @@ Viewport::Viewport(Context* context, Scene* scene, Camera* camera, const IntRect
     SetRenderPath(renderPath);
 }
 
+Viewport::~Viewport() = default;
 
 
-void Viewport::SetScene(Scene* scene)
+    void Viewport::SetScene(Scene* scene)
 {
     scene_ = scene;
 }

@@ -37,10 +37,9 @@ class LUTEFISK3D_EXPORT BorderImage : public UIElement
     URHO3D_OBJECT(BorderImage,UIElement)
 
 public:
-    /// Construct.
     BorderImage(Context* context);
-    /// Destruct.
-    virtual ~BorderImage();
+    ~BorderImage() override;
+
     /// Register object factory.
     static void RegisterObject(Context* context);
 

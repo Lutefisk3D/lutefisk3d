@@ -76,7 +76,7 @@ const int DEFAULT_FONT_TEXTURE_MAX_SIZE = 2048;
 const char* UI_CATEGORY = "UI";
 
 UI::UI(Context* context) :
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     m_context(context),
     rootElement_(new UIElement(context)),
     rootModalElement_(new UIElement(context)),

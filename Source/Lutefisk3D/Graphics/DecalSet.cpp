@@ -513,7 +513,7 @@ Material* DecalSet::GetMaterial() const
 
 void DecalSet::SetMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     SetMaterial(cache->GetResource<Material>(value.name_));
 }
 

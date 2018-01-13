@@ -39,7 +39,7 @@ extern const char* wrapModeNames[];
 
 Animatable::Animatable(Context* context) :
     Serializable(context),
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     animationEnabled_(true)
 {
 }

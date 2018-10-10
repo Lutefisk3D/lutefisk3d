@@ -58,14 +58,12 @@ DropDownList::DropDownList(Context* context) :
     text->SetInternal(true);
     text->SetVisible(false);
 
-    SubscribeToEvent(listView_, E_ITEMCLICKED, URHO3D_HANDLER(DropDownList, HandleItemClicked));
-    SubscribeToEvent(listView_, E_UNHANDLEDKEY, URHO3D_HANDLER(DropDownList, HandleListViewKey));
-    SubscribeToEvent(listView_, E_SELECTIONCHANGED, URHO3D_HANDLER(DropDownList, HandleSelectionChanged));
+    listView_->itemClicked.Connect(this,&DropDownList::HandleItemClicked);
+    listView_->unhandledKey.Connect(this,&DropDownList::HandleListViewKey);
+    listView_->selectionChanged.Connect(this,&DropDownList::HandleSelectionChanged);
 }
 
-DropDownList::~DropDownList()
-{
-}
+DropDownList::~DropDownList() = default;
 
 void DropDownList::RegisterObject(Context* context)
 {
@@ -137,12 +135,7 @@ void DropDownList::OnShowPopup()
 void DropDownList::OnHidePopup()
 {
     // When the popup is hidden, propagate the selection
-    using namespace ItemSelected;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_ELEMENT] = this;
-    eventData[P_SELECTION] = GetSelection();
-    SendEvent(E_ITEMSELECTED, eventData);
+    itemSelected(this,GetSelection());
 }
 
 void DropDownList::OnSetEditable()
@@ -316,7 +309,7 @@ bool DropDownList::FilterPopupImplicitAttributes(XMLElement& dest) const
     return true;
 }
 
-void DropDownList::HandleItemClicked(StringHash eventType, VariantMap& eventData)
+void DropDownList::HandleItemClicked(UIElement *,UIElement*,int,int, unsigned, unsigned)
 {
     // Resize the selection placeholder to match the selected item
     UIElement* selectedItem = GetSelectedItem();
@@ -329,17 +322,14 @@ void DropDownList::HandleItemClicked(StringHash eventType, VariantMap& eventData
     ShowPopup(false);
 }
 
-void DropDownList::HandleListViewKey(StringHash eventType, VariantMap& eventData)
+void DropDownList::HandleListViewKey(UIElement *el,int key,unsigned mouseb,unsigned quals)
 {
-    using namespace UnhandledKey;
-
     // If enter pressed in the list view, close and propagate selection
-    int key = eventData[P_KEY].GetInt();
     if (key == KEY_ENTER || key == KEY_KP_ENTER)
-        HandleItemClicked(eventType, eventData);
+        HandleItemClicked(el,nullptr,0,0,mouseb,quals);
 }
 
-void DropDownList::HandleSelectionChanged(StringHash eventType, VariantMap& eventData)
+void DropDownList::HandleSelectionChanged(UIElement *)
 {
     // Display the place holder text when there is no selection, however, the place holder text is only visible when the place holder itself is set to visible
     placeholder_->GetChild(0)->SetVisible(GetSelection() == M_MAX_UNSIGNED);

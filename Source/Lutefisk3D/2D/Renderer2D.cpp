@@ -59,8 +59,8 @@ ViewBatchInfo2D::ViewBatchInfo2D() :
 
 Renderer2D::Renderer2D(Context* context) :
     Drawable(context, DRAWABLE_GEOMETRY),
-    material_(new Material(context)),
     indexBuffer_(new IndexBuffer(context_)),
+    material_(new Material(context)),
     viewMask_(DEFAULT_VIEWMASK)
 {
     material_->SetName("Urho2D");

@@ -33,9 +33,7 @@ SoundStream::SoundStream() :
 {
 }
 
-SoundStream::~SoundStream()
-{
-}
+SoundStream::~SoundStream() = default;
 
 void SoundStream::SetFormat(unsigned frequency, bool sixteenBit, bool stereo)
 {

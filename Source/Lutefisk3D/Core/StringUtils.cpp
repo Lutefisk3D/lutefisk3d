@@ -141,7 +141,26 @@ IntVector2 ToIntVector2(const char* source)
 
     return ret;
 }
+IntVector3 ToIntVector3(const QString& source)
+{
+    return ToIntVector3(qPrintable(source));
+}
 
+IntVector3 ToIntVector3(const char* source)
+{
+    IntVector3 ret(IntVector3::ZERO);
+
+    unsigned elements = CountElements(source, ' ');
+    if (elements < 3)
+        return ret;
+
+    auto* ptr = (char*)source;
+    ret.x_ = (int)strtol(ptr, &ptr, 10);
+    ret.y_ = (int)strtol(ptr, &ptr, 10);
+    ret.z_ = (int)strtol(ptr, &ptr, 10);
+
+    return ret;
+}
 Rect ToRect(const QString& source)
 {
     return ToRect(qPrintable(source));
@@ -543,7 +562,7 @@ unsigned GetStringListIndex(const char* value, const QString* strings, unsigned 
     return defaultIndex;
 }
 
-unsigned GetStringListIndex(const QString & value, const char** strings, unsigned defaultIndex, bool caseSensitive)
+unsigned GetStringListIndex(const QString & value, const char* const* strings, unsigned defaultIndex, bool caseSensitive)
 {
     unsigned i = 0;
 

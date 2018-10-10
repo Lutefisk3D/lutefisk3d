@@ -82,8 +82,8 @@ bool IndexBuffer::SetData(const void* data)
         return false;
     }
 
-    if (shadowData_ && data != shadowData_.Get())
-        memcpy(shadowData_.Get(), data, indexCount_ * indexSize_);
+    if (shadowData_ && data != shadowData_.get())
+        memcpy(shadowData_.get(), data, indexCount_ * indexSize_);
 
     if (object_)
     {
@@ -129,8 +129,8 @@ bool IndexBuffer::SetDataRange(const void* data, unsigned start, unsigned count,
     if (!count)
         return true;
 
-    if (shadowData_ && shadowData_.Get() + start * indexSize_ != data)
-        memcpy(shadowData_.Get() + start * indexSize_, data, count * indexSize_);
+    if (shadowData_ && shadowData_.get() + start * indexSize_ != data)
+        memcpy(shadowData_.get() + start * indexSize_, data, count * indexSize_);
 
     if (object_)
     {
@@ -182,7 +182,7 @@ void* IndexBuffer::Lock(unsigned start, unsigned count, bool discard)
     if (shadowData_)
     {
         lockState_ = LOCK_SHADOW;
-        return shadowData_.Get() + start * indexSize_;
+        return shadowData_.get() + start * indexSize_;
     }
     else if (graphics_)
     {
@@ -199,7 +199,7 @@ void IndexBuffer::Unlock()
     switch (lockState_)
     {
     case LOCK_SHADOW:
-        SetDataRange(shadowData_.Get() + lockStart_ * indexSize_, lockStart_, lockCount_, discardLock_);
+        SetDataRange(shadowData_.get() + lockStart_ * indexSize_, lockStart_, lockCount_, discardLock_);
         lockState_ = LOCK_NONE;
         break;
 
@@ -251,7 +251,7 @@ bool IndexBuffer::Create()
 bool IndexBuffer::UpdateToGPU()
 {
     if (object_ && shadowData_)
-        return SetData(shadowData_.Get());
+        return SetData(shadowData_.get());
     else
         return false;
 }

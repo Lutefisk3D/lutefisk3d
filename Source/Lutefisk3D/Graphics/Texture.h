@@ -36,8 +36,9 @@ class XMLElement;
 class XMLFile;
 
 /// Base class for texture resources.
-class LUTEFISK3D_EXPORT Texture : public ResourceWithMetadata, public GPUObject, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Texture : public ResourceWithMetadata, public GPUObject
 {
+    URHO3D_OBJECT(Texture, ResourceWithMetadata);
 public:
     Texture(Context* context);
     virtual ~Texture();

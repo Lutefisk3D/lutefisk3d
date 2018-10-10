@@ -70,6 +70,8 @@ public:
     bool Delete(const QString& fileName);
     /// Register a path as allowed to access. If no paths are registered, all are allowed. Registering allowed paths is considered securing the Urho3D execution environment: running programs and opening files externally through the system will fail afterward.
     void RegisterPath(const QString& pathName);
+    /// Set a file's last modified time as seconds since 1.1.1970. Return true on success.
+    bool SetLastModifiedTime(const QString& fileName, unsigned newTime);
 
     /// Return the absolute current working directory.
     QString GetCurrentDir() const;
@@ -93,6 +95,18 @@ public:
     QString GetUserDocumentsDir() const;
     /// Return the application preferences directory.
     QString GetAppPreferencesDir(const QString& org, const QString& app) const;
+    /// Check if a file or directory exists at the specified path
+    bool Exists(const QString& pathName) const { return FileExists(pathName) || DirExists(pathName); }
+    /// Copy files from one directory to another.
+    bool CopyDir(const QString& directoryIn, const QString& directoryOut);
+    /// Create subdirectories. New subdirectories will be made only in a subpath specified by `subdirectory`.
+    bool CreateDirs(const QString& root, const QString& subdirectory);
+    /// Create specified subdirectory and any parent directory if it does not exist.
+    bool CreateDirsRecursive(const QString& directoryIn);
+    /// Remove files in a directory, or remove entire directory recursively.
+    bool RemoveDir(const QString& directoryIn, bool recursive);
+    /// Return path of temporary directory. Path always ends with a forward slash.
+    QString GetTemporaryDir() const;
 
 private:
     /// Handle a console command event.
@@ -111,7 +125,7 @@ LUTEFISK3D_EXPORT QString GetFileName(const QString& fullPath);
 /// Return the extension from a full path, converted to lowercase by default.
 LUTEFISK3D_EXPORT QString GetExtension(const QString& fullPath, bool lowercaseExtension = true);
 /// Return the filename and extension from a full path. The case of the extension is preserved by default, so that the file can be opened in case-sensitive operating systems.
-LUTEFISK3D_EXPORT QString GetFileNameAndExtension(const QString& fullPath, bool lowercaseExtension = false);
+LUTEFISK3D_EXPORT QString GetFileNameAndExtension(const QString& fileName, bool lowercaseExtension = false);
 /// Replace the extension of a file name with another.
 LUTEFISK3D_EXPORT QString ReplaceExtension(const QString& fullPath, const QString& newExtension);
 /// Add a slash at the end of the path if missing and convert to internal format (use slashes.)
@@ -119,12 +133,21 @@ LUTEFISK3D_EXPORT QString AddTrailingSlash(const QString& pathName);
 /// Remove the slash from the end of a path if exists and convert to internal format (use slashes.)
 LUTEFISK3D_EXPORT QString RemoveTrailingSlash(const QString& pathName);
 /// Return the parent path, or the path itself if not available.
-LUTEFISK3D_EXPORT QString GetParentPath(const QString& pathName);
+LUTEFISK3D_EXPORT QString GetParentPath(const QString& path);
 /// Convert a path to internal format (use slashes.)
 LUTEFISK3D_EXPORT QString GetInternalPath(const QString& pathName);
 /// Convert a path to the format required by the operating system.
 LUTEFISK3D_EXPORT QString GetNativePath(const QString& pathName);
 /// Return whether a path is absolute.
 LUTEFISK3D_EXPORT bool IsAbsolutePath(const QString& pathName);
+///
+LUTEFISK3D_EXPORT bool IsAbsoluteParentPath(const QString& absParentPath, const QString& fullPath);
+///
+LUTEFISK3D_EXPORT QString GetSanitizedPath(const QString& path);
+/// Given two absolute directory paths, get the relative path from one to the other
+/// Returns false if either path isn't absolute, or if they are unrelated
+LUTEFISK3D_EXPORT bool GetRelativePath(const QString& fromPath, const QString& toPath, QString& output);
+/// Convert relative path to full path.
+LUTEFISK3D_EXPORT QString GetAbsolutePath(const QString& path);
 
 }

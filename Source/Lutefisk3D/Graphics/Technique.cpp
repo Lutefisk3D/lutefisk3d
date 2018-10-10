@@ -21,6 +21,7 @@
 //
 
 #include "Technique.h"
+#include "Material.h"
 
 #include "Lutefisk3D/Core/Context.h"
 #include "Graphics.h"
@@ -37,9 +38,6 @@
 
 namespace Urho3D
 {
-template class SharedPtr<Technique>;
-extern const char* cullModeNames[];
-
 const char* blendModeNames[MAX_BLENDMODES+1] =
 {
     "replace",

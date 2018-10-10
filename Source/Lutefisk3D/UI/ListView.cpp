@@ -186,6 +186,8 @@ ListView::ListView(Context* context) :
     UpdateUIClickSubscription();
 }
 
+ListView::~ListView() = default;
+
 void ListView::RegisterObject(Context* context)
 {
     context->RegisterFactory<ListView>(UI_CATEGORY);
@@ -201,7 +203,7 @@ void ListView::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Select On Click End", GetSelectOnClickEnd, SetSelectOnClickEnd, bool, false, AM_FILE);
 }
 
-void ListView::OnKey(int key, int buttons, int qualifiers)
+void ListView::OnKey(Key key, MouseButtonFlags buttons, QualifierFlags qualifiers)
 {
     // If no selection, can not move with keys
     unsigned numItems = GetNumItems();
@@ -298,15 +300,7 @@ void ListView::OnKey(int key, int buttons, int qualifiers)
         ChangeSelection(delta, additive);
         return;
     }
-
-    using namespace UnhandledKey;
-
-    VariantMap& eventData = GetEventDataMap();
-    eventData[P_ELEMENT] = this;
-    eventData[P_KEY] = key;
-    eventData[P_BUTTONS] = buttons;
-    eventData[P_QUALIFIERS] = qualifiers;
-    SendEvent(E_UNHANDLEDKEY, eventData);
+    L_EMIT unhandledKey(this,key,buttons,qualifiers);
 }
 
 void ListView::OnResize(const IntVector2& newSize, const IntVector2& delta)
@@ -318,6 +312,26 @@ void ListView::OnResize(const IntVector2& newSize, const IntVector2& delta)
         overlayContainer_->SetSize(scrollPanel_->GetSize());
 }
 
+void ListView::UpdateInternalLayout()
+{
+    if (overlayContainer_)
+        overlayContainer_->UpdateLayout();
+    contentElement_->UpdateLayout();
+}
+
+void ListView::DisableInternalLayoutUpdate()
+{
+    if (overlayContainer_)
+        overlayContainer_->DisableLayoutUpdate();
+    contentElement_->DisableLayoutUpdate();
+}
+
+void ListView::EnableInternalLayoutUpdate()
+{
+    if (overlayContainer_)
+        overlayContainer_->EnableLayoutUpdate();
+    contentElement_->EnableLayoutUpdate();
+}
 void ListView::AddItem(UIElement* item)
 {
     InsertItem(M_MAX_UNSIGNED, item);
@@ -332,7 +346,7 @@ void ListView::InsertItem(unsigned index, UIElement* item, UIElement* parentItem
     item->SetEnabled(true);
     item->SetSelected(false);
 
-    unsigned numItems = contentElement_->GetNumChildren();
+    const unsigned numItems = contentElement_->GetNumChildren();
     if (hierarchyMode_)
     {
         int baseIndent = baseIndent_;
@@ -340,9 +354,13 @@ void ListView::InsertItem(unsigned index, UIElement* item, UIElement* parentItem
         {
             baseIndent = parentItem->GetIndent();
             SetItemHierarchyParent(parentItem, true);
+            // Hide item if parent is collapsed
+            const unsigned parentIndex = FindItem(parentItem);
+            if (!IsExpanded(parentIndex))
+                item->SetVisible(false);
 
             // Adjust the index to ensure it is within the children index limit of the parent item
-            unsigned indexLimit = FindItem(parentItem);
+            unsigned indexLimit = parentIndex;
             if (index <= indexLimit)
                 index = indexLimit + 1;
             else
@@ -373,10 +391,10 @@ void ListView::InsertItem(unsigned index, UIElement* item, UIElement* parentItem
     // If necessary, shift the following selections
     if (!selections_.empty())
     {
-        for (unsigned i = 0; i < selections_.size(); ++i)
+        for (unsigned int & selection : selections_)
         {
-            if (selections_[i] >= index)
-                ++selections_[i];
+            if (selection >= index)
+                ++selection;
         }
 
         UpdateSelectionEffect();
@@ -450,10 +468,10 @@ void ListView::RemoveItem(UIElement* item, unsigned index)
             // If necessary, shift the following selections
             if (!selections_.empty())
             {
-                for (unsigned j = 0; j < selections_.size(); ++j)
+                for (unsigned int & selection : selections_)
                 {
-                    if (selections_[j] > i)
-                        selections_[j] -= removed;
+                    if (selection > i)
+                        selection -= removed;
                 }
 
                 UpdateSelectionEffect();
@@ -505,13 +523,7 @@ void ListView::SetSelections(const std::vector<unsigned>& indices)
         {
             i = selections_.erase(i);
 
-            using namespace ItemSelected;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_ELEMENT] = this;
-            eventData[P_SELECTION] = index;
-            SendEvent(E_ITEMDESELECTED, eventData);
-
+            itemDeselected(this,index);
             if (self.Expired())
                 return;
         }
@@ -535,14 +547,7 @@ void ListView::SetSelections(const std::vector<unsigned>& indices)
                     selections_.push_back(index);
                     added = true;
                 }
-
-                using namespace ItemSelected;
-
-                VariantMap& eventData = GetEventDataMap();
-                eventData[P_ELEMENT] = this;
-                eventData[P_SELECTION] = index;
-                SendEvent(E_ITEMSELECTED, eventData);
-
+                L_EMIT itemSelected(this,index);
                 if (self.Expired())
                     return;
             }
@@ -557,7 +562,7 @@ void ListView::SetSelections(const std::vector<unsigned>& indices)
         std::sort(selections_.begin(), selections_.end());
 
     UpdateSelectionEffect();
-    SendEvent(E_SELECTIONCHANGED);
+    L_EMIT selectionChanged(this);
 }
 
 void ListView::AddSelection(unsigned index)
@@ -575,14 +580,7 @@ void ListView::AddSelection(unsigned index)
         if (!contains(selections_,index))
         {
             selections_.push_back(index);
-
-            using namespace ItemSelected;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_ELEMENT] = this;
-            eventData[P_SELECTION] = index;
-            SendEvent(E_ITEMSELECTED, eventData);
-
+            L_EMIT itemSelected(this,index);
             if (self.Expired())
                 return;
 
@@ -591,7 +589,7 @@ void ListView::AddSelection(unsigned index)
 
         EnsureItemVisibility(index);
         UpdateSelectionEffect();
-        SendEvent(E_SELECTIONCHANGED);
+        L_EMIT selectionChanged(this);
     }
 }
 
@@ -603,17 +601,12 @@ void ListView::RemoveSelection(unsigned index)
     if (sel_iter!=selections_.end())
     {
         selections_.erase(sel_iter);
-        using namespace ItemSelected;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_ELEMENT] = this;
-        eventData[P_SELECTION] = index;
-        SendEvent(E_ITEMDESELECTED, eventData);
+        L_EMIT itemDeselected(this,index);
     }
 
     EnsureItemVisibility(index);
     UpdateSelectionEffect();
-    SendEvent(E_SELECTIONCHANGED);
+    L_EMIT selectionChanged(this);
 }
 
 void ListView::ToggleSelection(unsigned index)
@@ -1009,7 +1002,7 @@ void ListView::HandleUIMouseClick(UIElement* element,MouseButton button, unsigne
         return;
     }
 
-    if (button == MouseButton::LEFT)
+    if (button == MOUSEB_LEFT)
     {
         // Single selection
         if (!multiselect_ || !qualifiers)
@@ -1064,31 +1057,16 @@ void ListView::HandleUIMouseClick(UIElement* element,MouseButton button, unsigne
     }
 
     // Propagate the click as an event. Also include right-clicks
-    VariantMap& clickEventData = GetEventDataMap();
-    clickEventData[ItemClicked::P_ELEMENT] = this;
-    clickEventData[ItemClicked::P_ITEM] = element;
-    clickEventData[ItemClicked::P_SELECTION] = i;
-    clickEventData[ItemClicked::P_BUTTON] = int(button);
-    clickEventData[ItemClicked::P_BUTTONS] = buttons;
-    clickEventData[ItemClicked::P_QUALIFIERS] = qualifiers;
-    SendEvent(E_ITEMCLICKED, clickEventData);
+    itemClicked(this,element,i,int(button),buttons,qualifiers);
 }
 
-void ListView::HandleUIMouseDoubleClick(UIElement *element, int, int, MouseButton button, unsigned buttons, int qualifiers)
+void ListView::HandleUIMouseDoubleClick(UIElement *element, IntVector2, IntVector2, MouseButton button, unsigned buttons, int qualifiers)
 {
     // Check if the clicked element belongs to the list
     unsigned i = FindItem(element);
     if (i >= GetNumItems())
         return;
-
-    VariantMap& clickEventData = GetEventDataMap();
-    clickEventData[ItemDoubleClicked::P_ELEMENT] = this;
-    clickEventData[ItemDoubleClicked::P_ITEM] = element;
-    clickEventData[ItemDoubleClicked::P_SELECTION] = i;
-    clickEventData[ItemDoubleClicked::P_BUTTON] = int(button);
-    clickEventData[ItemDoubleClicked::P_BUTTONS] = buttons;
-    clickEventData[ItemDoubleClicked::P_QUALIFIERS] = qualifiers;
-    SendEvent(E_ITEMDOUBLECLICKED, clickEventData);
+    itemDoubleClicked(this,element,i,button,int(buttons),qualifiers);
 }
 
 

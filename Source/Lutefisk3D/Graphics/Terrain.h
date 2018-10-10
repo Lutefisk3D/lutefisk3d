@@ -40,18 +40,16 @@ class LUTEFISK3D_EXPORT Terrain : public Component
 
 public:
     /// Construct.
-    Terrain(Context* context);
+    explicit Terrain(Context* context);
     /// Destruct.
-    ~Terrain();
+    ~Terrain() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
-    /// Handle attribute write access.
-    virtual void OnSetAttribute(const AttributeInfo& attr, const Variant& src) override;
     /// Apply attribute changes that can not be applied immediately. Called after scene load or a network update.
-    virtual void ApplyAttributes() override;
+    void ApplyAttributes() override;
     /// Handle enabled/disabled state change.
-    virtual void OnSetEnabled() override;
+    void OnSetEnabled() override;
 
     /// Set patch quads per side. Must be a power of two.
     void SetPatchSize(int size);
@@ -218,6 +216,10 @@ private:
     void HandleNeighborTerrainCreated(StringHash eventType, VariantMap& eventData);
     /// Update edge patch neighbors when neighbor terrain(s) change or are recreated.
     void UpdateEdgePatchNeighbors();
+    /// Mark neighbors dirty.
+    void MarkNeighborsDirty() { neighborsDirty_ = true; }
+    /// Mark terrain dirty.
+    void MarkTerrainDirty() { recreateTerrain_ = true; }
 
     /// Shared index buffer.
     SharedPtr<IndexBuffer> indexBuffer_;

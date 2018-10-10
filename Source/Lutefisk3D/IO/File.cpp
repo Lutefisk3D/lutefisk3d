@@ -30,6 +30,7 @@
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Container/Str.h"
+#include "Lutefisk3D/Container/ArrayPtr.h"
 
 #include <QFile>
 #include <QDebug>
@@ -344,7 +345,7 @@ unsigned File::GetChecksum()
     if (!handle_ || mode_ == FILE_WRITE)
         return 0;
 
-    URHO3D_PROFILE_CTX(context_,CalculateFileChecksum);
+    URHO3D_PROFILE(CalculateFileChecksum);
 
     unsigned oldPos = position_;
     checksum_ = 0;
@@ -394,5 +395,32 @@ bool File::IsOpen() const
 {
     return handle_ != nullptr;
 }
+void File::ReadText(QString& text)
+{
+    text.clear();
 
+    if (!size_)
+        return;
+
+    QByteArray tgt;
+    tgt.resize(size_);
+    Read((void*)tgt.data(), size_);
+    text = tgt;
+}
+
+bool File::Copy(File* srcFile)
+{
+    if (!srcFile || !srcFile->IsOpen() || srcFile->GetMode() != FILE_READ)
+        return false;
+
+    if (!IsOpen() || GetMode() != FILE_WRITE)
+        return false;
+
+    unsigned fileSize = srcFile->GetSize();
+    SharedArrayPtr<uint8_t> buffer(new uint8_t[fileSize]);
+
+    unsigned bytesRead = srcFile->Read(buffer.get(), fileSize);
+    unsigned bytesWritten = Write(buffer.get(), fileSize);
+    return bytesRead == fileSize && bytesWritten == fileSize;
+}
 }

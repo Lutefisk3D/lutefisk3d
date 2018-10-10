@@ -41,6 +41,7 @@ StaticSprite2D::StaticSprite2D(Context* context) :
     blendMode_(BLEND_ALPHA),
     flipX_(false),
     flipY_(false),
+    swapXY_(false),
     color_(Color::WHITE),
     useHotSpot_(false),
     useDrawRect_(false),
@@ -53,13 +54,11 @@ StaticSprite2D::StaticSprite2D(Context* context) :
     sourceBatch_[0].owner_ = this;
 }
 
-StaticSprite2D::~StaticSprite2D()
-{
-}
+StaticSprite2D::~StaticSprite2D() = default;
 
 void StaticSprite2D::RegisterObject(Context* context)
 {
-    //context->RegisterFactory<StaticSprite2D>(URHO2D_CATEGORY);
+    context->RegisterFactory<StaticSprite2D>(URHO2D_CATEGORY);
 
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable2D);
@@ -95,7 +94,9 @@ void StaticSprite2D::SetDrawRect(const Rect& rect)
     drawRect_ = rect;
 
     if(useDrawRect_)
+    {
         sourceBatchesDirty_ = true;
+}
 }
 
 void StaticSprite2D::SetTextureRect(const Rect& rect)
@@ -119,13 +120,14 @@ void StaticSprite2D::SetBlendMode(BlendMode blendMode)
     MarkNetworkUpdate();
 }
 
-void StaticSprite2D::SetFlip(bool flipX, bool flipY)
+void StaticSprite2D::SetFlip(bool flipX, bool flipY, bool swapXY)
 {
-    if (flipX == flipX_ && flipY == flipY_)
+    if (flipX == flipX_ && flipY == flipY_ && swapXY == swapXY_)
         return;
 
     flipX_ = flipX;
     flipY_ = flipY;
+    swapXY_ = swapXY;
     sourceBatchesDirty_ = true;
 
     MarkNetworkUpdate();
@@ -133,12 +135,17 @@ void StaticSprite2D::SetFlip(bool flipX, bool flipY)
 
 void StaticSprite2D::SetFlipX(bool flipX)
 {
-    SetFlip(flipX, flipY_);
+    SetFlip(flipX, flipY_, swapXY_);
 }
 
 void StaticSprite2D::SetFlipY(bool flipY)
 {
-    SetFlip(flipX_, flipY);
+    SetFlip(flipX_, flipY, swapXY_);
+}
+
+void StaticSprite2D::SetSwapXY(bool swapXY)
+{
+    SetFlip(flipX_, flipY_, swapXY);
 }
 
 void StaticSprite2D::SetColor(const Color& color)
@@ -243,7 +250,7 @@ ResourceRef StaticSprite2D::GetSpriteAttr() const
 
 void StaticSprite2D::SetCustomMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     SetCustomMaterial(cache->GetResource<Material>(value.name_));
 }
 
@@ -318,9 +325,9 @@ void StaticSprite2D::UpdateSourceBatches()
     vertex3.position_ = worldTransform * Vector3(drawRect_.max_.x_, drawRect_.min_.y_, 0.0f);
 
     vertex0.uv_ = textureRect_.min_;
-    vertex1.uv_ = Vector2(textureRect_.min_.x_, textureRect_.max_.y_);
+    (swapXY_ ? vertex3.uv_ : vertex1.uv_) = Vector2(textureRect_.min_.x_, textureRect_.max_.y_);
     vertex2.uv_ = textureRect_.max_;
-    vertex3.uv_ = Vector2(textureRect_.max_.x_, textureRect_.min_.y_);
+    (swapXY_ ? vertex1.uv_ : vertex3.uv_) = Vector2(textureRect_.max_.x_, textureRect_.min_.y_);
 
     vertex0.color_ = vertex1.color_ = vertex2.color_  = vertex3.color_ = color_.ToUInt();
 
@@ -362,47 +369,6 @@ void StaticSprite2D::UpdateDrawRect()
                 return;
         }
     }
-}
-namespace {
-struct Sprite2DFactory : public ObjectFactory
-{
-    StaticSprite2D_Manager *m_manager;
-public:
-    Sprite2DFactory(Context *ctx,StaticSprite2D_Manager *manager) : ObjectFactory(ctx,StaticSprite2D::GetTypeInfoStatic()),
-        m_manager(manager)
-    {
-    }
-    SharedPtr<Object> CreateObject() override
-    {
-        assert(m_manager);
-        return m_manager->allocateData();
-    }
-};
-}
-StaticSprite2D_Manager::StaticSprite2D_Manager(Context *ctx) : m_context(ctx)
-{
-
-}
-
-void StaticSprite2D_Manager::initialize()
-{
-    //context->RegisterFactory<StaticSprite2D>(URHO2D_CATEGORY);
-    //TODO: initialize memory allocation scheme here.
-    m_context->RegisterFactory(new Sprite2DFactory(m_context,this),URHO2D_CATEGORY);
-}
-
-SharedPtr<StaticSprite2D> StaticSprite2D_Manager::allocateData()
-{
-    return SharedPtr<StaticSprite2D>(new StaticSprite2D(m_context));
-}
-
-void initializeSprite2D_Manager(Context *ctx)
-{
-    static StaticSprite2D_Manager sprmngr(ctx);
-    if(sprmngr.m_context!=nullptr)
-        assert(ctx==sprmngr.m_context);
-    sprmngr.initialize();
-    StaticSprite2D::RegisterObject(ctx);
 }
 
 }

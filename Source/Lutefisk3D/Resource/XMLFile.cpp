@@ -69,15 +69,15 @@ XMLFile::XMLFile(Context* context) :
 {
 }
 
-XMLFile::~XMLFile()
-{
-}
+XMLFile::~XMLFile() = default;
 
+/// Register object factory.
 void XMLFile::RegisterObject(Context* context)
 {
     context->RegisterFactory<XMLFile>();
 }
 
+/// Load resource from stream. May be called from a worker thread. Return true if successful.
 bool XMLFile::BeginLoad(Deserializer& source)
 {
     unsigned dataSize = source.GetSize();
@@ -103,7 +103,7 @@ bool XMLFile::BeginLoad(Deserializer& source)
     if (!inherit.isEmpty())
     {
         // The existence of this attribute indicates this is an RFC 5261 patch file
-        ResourceCache* cache = context_->m_ResourceCache.get();
+        ResourceCache* cache = context_->resourceCache();
         // If being async loaded, GetResource() is not safe, so use GetTempResource() instead
         XMLFile* inheritedXMLFile = GetAsyncLoadState() == ASYNC_DONE ? cache->GetResource<XMLFile>(inherit) :
             cache->GetTempResource<XMLFile>(inherit);
@@ -133,11 +133,13 @@ bool XMLFile::BeginLoad(Deserializer& source)
     return true;
 }
 
+/// Save resource with default indentation (one tab). Return true if successful.
 bool XMLFile::Save(Serializer& dest) const
 {
     return Save(dest, "\t");
 }
 
+/// Save resource with user-defined indentation. Return true if successful.
 bool XMLFile::Save(Serializer& dest, const QString& indentation) const
 {
     XMLWriter writer(dest);
@@ -145,13 +147,14 @@ bool XMLFile::Save(Serializer& dest, const QString& indentation) const
     return writer.success_;
 }
 
+/// Clear the document and create a root element.
 XMLElement XMLFile::CreateRoot(const QString& name)
 {
     document_->reset();
     pugi::xml_node root = document_->append_child(qPrintable(name));
     return XMLElement(this, root.internal_object());
 }
-
+/// Get the root element if it has matching name, otherwise create it and clear the document.
 XMLElement XMLFile::GetOrCreateRoot(const QString& name)
 {
     XMLElement root = GetRoot(name);
@@ -162,6 +165,7 @@ XMLElement XMLFile::GetOrCreateRoot(const QString& name)
         URHO3D_LOGWARNING("XMLFile already has root " + root.GetName() + ", deleting it and creating root " + name);
     return CreateRoot(name);
 }
+/// Deserialize from a string. Return true if successful.
 bool XMLFile::FromString(const QString& source)
 {
     if (source.isEmpty())
@@ -170,7 +174,7 @@ bool XMLFile::FromString(const QString& source)
     MemoryBuffer buffer(qPrintable(source), source.length());
     return Load(buffer);
 }
-
+/// Return the root element, with optionally specified name. Return null element if not found.
 XMLElement XMLFile::GetRoot(const QString& name)
 {
     pugi::xml_node root = document_->first_child();
@@ -182,7 +186,7 @@ XMLElement XMLFile::GetRoot(const QString& name)
     else
         return XMLElement(this, root.internal_object());
 }
-
+/// Serialize the XML content to a string.
 QString XMLFile::ToString(const QString& indentation) const
 {
     VectorBuffer dest;
@@ -191,11 +195,13 @@ QString XMLFile::ToString(const QString& indentation) const
     return QString::fromLatin1((const char*)dest.GetData(), dest.GetSize());
 }
 
+/// Patch the XMLFile with another XMLFile. Based on RFC 5261.
 void XMLFile::Patch(XMLFile* patchFile)
 {
     Patch(patchFile->GetRoot());
 }
 
+/// Patch the XMLFile with another XMLElement. Based on RFC 5261.
 void XMLFile::Patch(XMLElement patchElement)
 {
     pugi::xml_node root = pugi::xml_node(patchElement.GetNode());
@@ -228,6 +234,7 @@ void XMLFile::Patch(XMLElement patchElement)
     }
 }
 
+/// Add an node in the Patch.
 void XMLFile::PatchAdd(const pugi::xml_node& patch, pugi::xpath_node& original) const
 {
     // If not a node, log an error
@@ -245,6 +252,7 @@ void XMLFile::PatchAdd(const pugi::xml_node& patch, pugi::xpath_node& original) 
         AddAttribute(patch, original);
 }
 
+/// Replace a node or attribute in the Patch.
 void XMLFile::PatchReplace(const pugi::xml_node& patch, pugi::xpath_node& original) const
 {
     // If no attribute but node then its a node, otherwise its an attribute or null
@@ -261,6 +269,7 @@ void XMLFile::PatchReplace(const pugi::xml_node& patch, pugi::xpath_node& origin
     }
 }
 
+/// Remove a node or attribute in the Patch.
 void XMLFile::PatchRemove(const pugi::xpath_node& original) const
 {
     // If no attribute but node then its a node, otherwise its an attribute or null
@@ -275,7 +284,7 @@ void XMLFile::PatchRemove(const pugi::xpath_node& original) const
         parent.remove_attribute(original.attribute());
     }
 }
-
+/// Add a node in the Patch.
 void XMLFile::AddNode(const pugi::xml_node& patch, const pugi::xpath_node& original) const
 {
     // If pos is null, append or prepend add as a child, otherwise add before or after, the default is to append as a child
@@ -346,6 +355,7 @@ void XMLFile::AddNode(const pugi::xml_node& patch, const pugi::xpath_node& origi
     }
 }
 
+/// Add an attribute in the Patch.
 void XMLFile::AddAttribute(const pugi::xml_node& patch,const pugi::xpath_node& original) const
 {
     pugi::xml_attribute attribute = patch.attribute("type");
@@ -362,7 +372,7 @@ void XMLFile::AddAttribute(const pugi::xml_node& patch,const pugi::xpath_node& o
     pugi::xml_attribute newAttribute = original.node().append_attribute(qPrintable(name));
     newAttribute.set_value(patch.child_value());
 }
-
+/// Combine two text nodes.
 bool XMLFile::CombineText(const pugi::xml_node& patch, const pugi::xml_node& original, bool prepend) const
 {
     if (!patch || !original)

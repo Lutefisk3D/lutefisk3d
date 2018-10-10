@@ -44,11 +44,11 @@ public:
     /// Return attribute descriptions, or null if none defined.
     virtual const std::vector<AttributeInfo>* GetAttributes() const  override { return &xmlAttributeInfos_; }
     /// Load from binary data. Return true if successful.
-    virtual bool Load(Deserializer& source, bool setInstanceDefault = false)  override;
+    virtual bool Load(Deserializer& source)  override;
     /// Load from XML data. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    virtual bool LoadXML(const XMLElement& source) override;
     /// Load from JSON data. Return true if successful.
-    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
+    virtual bool LoadJSON(const JSONValue& source) override;
     /// Save as binary data. Return true if successful.
     virtual bool Save(Serializer& dest) const override;
     /// Save as XML data. Return true if successful.

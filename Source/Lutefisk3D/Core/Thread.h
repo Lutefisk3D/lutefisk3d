@@ -24,9 +24,9 @@
 #include "Lutefisk3D/Core/Lutefisk3D.h"
 #ifndef _WIN32
 #include <pthread.h>
-typedef pthread_t ThreadID;
+using ThreadID = pthread_t;
 #else
-typedef unsigned ThreadID;
+using ThreadID = unsigned;
 #endif
 
 namespace Urho3D

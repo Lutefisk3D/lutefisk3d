@@ -84,9 +84,9 @@ void CrowdNavigation::Start()
 
 void CrowdNavigation::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
 
     // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
     // Also create a DebugRenderer component so that we can draw debug geometry
@@ -182,9 +182,9 @@ void CrowdNavigation::CreateScene()
 
     // Create the camera. Set far clip to match the fog. Note: now we actually create the camera node outside the scene, because
     // we want it to be unaffected by scene load / save
-    cameraNode_ = new Node(m_context);
+    cameraNode_ = new Node(GetContext());
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetFarClip(300.0f);
+    camera->setFarClipDistance(300.0f);
 
     // Set an initial position for the camera scene node above the plane and looking down
     cameraNode_->SetPosition(Vector3(0.0f, 50.0f, 0.0f));
@@ -194,18 +194,18 @@ void CrowdNavigation::CreateScene()
 
 void CrowdNavigation::CreateUI()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Create a Cursor UI element because we want to be able to hide and show it at will. When hidden, the mouse cursor will
     // control the camera, and when visible, it will point the raycast target
     XMLFile* style = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
-    SharedPtr<Cursor> cursor(new Cursor(m_context));
+    SharedPtr<Cursor> cursor(new Cursor(GetContext()));
     cursor->SetStyleAuto(style);
     ui->SetCursor(cursor);
 
     // Set starting position of the cursor at the rendering window center
-    Graphics* graphics = m_context->m_Graphics.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
     cursor->SetPosition(graphics->GetWidth() / 2, graphics->GetHeight() / 2);
 
     // Construct new Text object, set string to display and font to use
@@ -230,10 +230,10 @@ void CrowdNavigation::CreateUI()
 
 void CrowdNavigation::SetupViewport()
 {
-    Renderer* renderer = m_context->m_Renderer.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
@@ -257,7 +257,7 @@ void CrowdNavigation::SubscribeToEvents()
 
 void CrowdNavigation::SpawnJack(const Vector3& pos, Node* jackGroup)
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     SharedPtr<Node> jackNode(jackGroup->CreateChild("Jack"));
     jackNode->SetPosition(pos);
     AnimatedModel* modelObject = jackNode->CreateComponent<AnimatedModel>();
@@ -275,7 +275,7 @@ void CrowdNavigation::SpawnJack(const Vector3& pos, Node* jackGroup)
 
 void CrowdNavigation::CreateMushroom(const Vector3& pos)
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
     Node* mushroomNode = scene_->CreateChild("Mushroom");
     mushroomNode->SetPosition(pos);
@@ -315,7 +315,7 @@ void CrowdNavigation::CreateBoxOffMeshConnections(DynamicNavigationMesh* navMesh
 
 void CrowdNavigation::CreateMovingBarrels(DynamicNavigationMesh* navMesh)
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     Node* barrel = scene_->CreateChild("Barrel");
     StaticModel* model = barrel->CreateComponent<StaticModel>();
     model->SetModel(cache->GetResource<Model>("Models/Cylinder.mdl"));
@@ -380,13 +380,13 @@ bool CrowdNavigation::Raycast(float maxDistance, Vector3& hitPos, Drawable*& hit
 {
     hitDrawable = 0;
 
-    UI* ui = m_context->m_UISystem.get();
+    UI* ui = GetContext()->m_UISystem.get();
     IntVector2 pos = ui->GetCursorPosition();
     // Check the cursor is visible and there is no UI element in front of the cursor
     if (!ui->GetCursor()->IsVisible() || ui->GetElementAt(pos, true))
         return false;
 
-    Graphics* graphics = m_context->m_Graphics.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
     Camera* camera = cameraNode_->GetComponent<Camera>();
     Ray cameraRay = camera->GetScreenRay((float)pos.x_ / graphics->GetWidth(), (float)pos.y_ / graphics->GetHeight());
     // Pick only geometry objects, not eg. zones or lights, only get the first (closest) hit
@@ -407,8 +407,8 @@ bool CrowdNavigation::Raycast(float maxDistance, Vector3& hitPos, Drawable*& hit
 void CrowdNavigation::MoveCamera(float timeStep)
 {
     // Right mouse button controls mouse cursor visibility: hide when pressed
-    UI* ui = m_context->m_UISystem.get();
-    Input* input = m_context->m_InputSystem.get();
+    UI* ui = GetContext()->m_UISystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
     ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MOUSEB_RIGHT));
 
     // Do not move if the UI has a focused element (the console)
@@ -453,12 +453,12 @@ void CrowdNavigation::MoveCamera(float timeStep)
     // Check for loading/saving the scene from/to the file Data/Scenes/CrowdNavigation.xml relative to the executable directory
     if (input->GetKeyPress(KEY_F5))
     {
-        File saveFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/CrowdNavigation.xml", FILE_WRITE);
+        File saveFile(GetContext(), GetContext()->m_FileSystem->GetProgramDir() + "Data/Scenes/CrowdNavigation.xml", FILE_WRITE);
         scene_->SaveXML(saveFile);
     }
     else if (input->GetKeyPress(KEY_F7))
     {
-        File loadFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/CrowdNavigation.xml", FILE_READ);
+        File loadFile(GetContext(), GetContext()->m_FileSystem->GetProgramDir() + "Data/Scenes/CrowdNavigation.xml", FILE_READ);
         scene_->LoadXML(loadFile);
     }
     // Toggle debug geometry with space
@@ -475,11 +475,6 @@ void CrowdNavigation::MoveCamera(float timeStep)
 
 void CrowdNavigation::HandleUpdate(float timeStep)
 {
-    using namespace Update;
-
-    // Take the frame time step, which is stored as a float
-    float timeStep = eventData[P_TIMESTEP].GetFloat();
-
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 }

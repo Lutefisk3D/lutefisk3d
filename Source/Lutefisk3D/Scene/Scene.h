@@ -37,9 +37,7 @@ class File;
 class PackageFile;
 class Resource;
 class XMLElement;
-extern template class SharedPtr<XMLFile>;
-extern template class SharedPtr<JSONFile>;
-extern template class SharedPtr<PackageFile>;
+
 static const unsigned FIRST_REPLICATED_ID = 0x1;
 static const unsigned LAST_REPLICATED_ID = 0xffffff;
 static const unsigned FIRST_LOCAL_ID = 0x01000000;
@@ -77,13 +75,13 @@ public:
     static void RegisterObject(Context* context);
 
     /// Load from binary data. Removes all existing child nodes and components first. Return true if successful.
-    virtual bool Load(Deserializer& source, bool setInstanceDefault = false) override;
+    virtual bool Load(Deserializer& source) override;
     /// Save to binary data. Return true if successful.
     virtual bool Save(Serializer& dest) const override;
     /// Load from XML data. Removes all existing child nodes and components first. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    virtual bool LoadXML(const XMLElement& source) override;
     /// Load from JSON data. Removes all existing child nodes and components first. Return true if successful.
-    virtual bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
+    virtual bool LoadJSON(const JSONValue& source) override;
     /// Mark for attribute check on the next network update.
     virtual void MarkNetworkUpdate() override;
     /// Add a replication state that is tracking this scene.
@@ -187,6 +185,8 @@ public:
     unsigned GetFreeNodeID(CreateMode mode);
     /// Get free component ID, either non-local or local.
     unsigned GetFreeComponentID(CreateMode mode);
+    /// Return whether the specified id is a replicated id.
+    static bool IsReplicatedID(unsigned id) { return id < FIRST_LOCAL_ID; }
     /// Cache node by tag if tag not zero, no checking if already added. Used internaly in Node::AddTag.
     void NodeTagAdded(Node* node, const QString &tag);
     /// Cache node by tag if tag not zero.

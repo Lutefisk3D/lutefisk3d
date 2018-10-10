@@ -33,9 +33,6 @@ class Sprite2D;
 class Texture2D;
 class XMLFile;
 class JSONFile;
-extern template class SharedPtr<Texture2D>;
-extern template class SharedPtr<XMLFile>;
-extern template class SharedPtr<JSONFile>;
 /// Sprite sheet.
 class LUTEFISK3D_EXPORT SpriteSheet2D : public Resource
 {
@@ -45,14 +42,14 @@ public:
     /// Construct.
     SpriteSheet2D(Context* context);
     /// Destruct.
-    virtual ~SpriteSheet2D();
+    ~SpriteSheet2D() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
+    bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
-    virtual bool EndLoad() override;
+    bool EndLoad() override;
     /// Set texture.
     void SetTexture(Texture2D * texture);
     /// Define sprite.
@@ -86,11 +83,11 @@ private:
     /// Sprite mapping.
     HashMap<QString, SharedPtr<Sprite2D> > spriteMapping_;
     /// PList file used while loading.
-    SharedPtr<PListFile> loadPListFile_;
+    std::unique_ptr<PListFile> loadPListFile_;
     /// XML file used while loading.
-    SharedPtr<XMLFile> loadXMLFile_;
+    std::unique_ptr<XMLFile> loadXMLFile_;
     /// JSON file used while loading.
-    SharedPtr<JSONFile> loadJSONFile_;
+    std::unique_ptr<JSONFile> loadJSONFile_;
     /// Texture name used while loading.
     QString loadTextureName_;
 };

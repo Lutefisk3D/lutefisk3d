@@ -111,8 +111,7 @@ Terrain::Terrain(Context* context) :
     indexBuffer_->SetShadowed(true);
 }
 
-Terrain::~Terrain() {
-}
+Terrain::~Terrain() = default;
 
 void Terrain::RegisterObject(Context* context)
 {
@@ -121,14 +120,14 @@ void Terrain::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Height Map", GetHeightMapAttr, SetHeightMapAttr, ResourceRef, {Image::GetTypeStatic()}, AM_DEFAULT);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Material", GetMaterialAttr, SetMaterialAttr, ResourceRef, {Material::GetTypeStatic()}, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("North Neighbor NodeID", unsigned, northID_, 0, AM_DEFAULT | AM_NODEID);
-    URHO3D_ATTRIBUTE("South Neighbor NodeID", unsigned, southID_, 0, AM_DEFAULT | AM_NODEID);
-    URHO3D_ATTRIBUTE("West Neighbor NodeID", unsigned, westID_, 0, AM_DEFAULT | AM_NODEID);
-    URHO3D_ATTRIBUTE("East Neighbor NodeID", unsigned, eastID_, 0, AM_DEFAULT | AM_NODEID);
-    URHO3D_ATTRIBUTE("Vertex Spacing", Vector3, spacing_, DEFAULT_SPACING, AM_DEFAULT);
+    URHO3D_ATTRIBUTE_EX("North Neighbor NodeID", unsigned, northID_, MarkNeighborsDirty, 0, AM_DEFAULT | AM_NODEID);
+    URHO3D_ATTRIBUTE_EX("South Neighbor NodeID", unsigned, southID_, MarkNeighborsDirty, 0, AM_DEFAULT | AM_NODEID);
+    URHO3D_ATTRIBUTE_EX("West Neighbor NodeID", unsigned, westID_, MarkNeighborsDirty, 0, AM_DEFAULT | AM_NODEID);
+    URHO3D_ATTRIBUTE_EX("East Neighbor NodeID", unsigned, eastID_, MarkNeighborsDirty, 0, AM_DEFAULT | AM_NODEID);
+    URHO3D_ATTRIBUTE_EX("Vertex Spacing", Vector3, spacing_, MarkTerrainDirty, DEFAULT_SPACING, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Patch Size", GetPatchSize, SetPatchSizeAttr, int, DEFAULT_PATCH_SIZE, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Max LOD Levels", GetMaxLodLevels, SetMaxLodLevelsAttr, unsigned, MAX_LOD_LEVELS, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("Smooth Height Map", bool, smoothing_, false, AM_DEFAULT);
+    URHO3D_ATTRIBUTE_EX("Smooth Height Map", bool, smoothing_, MarkTerrainDirty, false, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Is Occluder", IsOccluder, SetOccluder, bool,  false, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Can Be Occluded", IsOccludee, SetOccludee, bool, true, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Cast Shadows", GetCastShadows, SetCastShadows, bool, false, AM_DEFAULT);
@@ -141,20 +140,6 @@ void Terrain::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Shadow Mask", GetShadowMask, SetShadowMask, unsigned, DEFAULT_SHADOWMASK, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Zone Mask", GetZoneMask, SetZoneMask, unsigned, DEFAULT_ZONEMASK, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Occlusion LOD level", GetOcclusionLodLevel, SetOcclusionLodLevelAttr, unsigned, M_MAX_UNSIGNED, AM_DEFAULT);
-}
-
-void Terrain::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
-{
-    Serializable::OnSetAttribute(attr, src);
-
-    // Change of any non-accessor attribute requires recreation of the terrain, or setting the neighbor terrains
-    if (!attr.accessor_)
-    {
-        if (attr.mode_ & AM_NODEID)
-            neighborsDirty_ = true;
-        else
-        recreateTerrain_ = true;
-}
 }
 
 void Terrain::ApplyAttributes()
@@ -672,8 +657,8 @@ void Terrain::CreatePatchGeometry(TerrainPatch* patch)
     SharedArrayPtr<unsigned char> occlusionCpuVertexData(new unsigned char[row * row * sizeof(Vector3)]);
 
     float* vertexData = (float*)vertexBuffer->Lock(0, vertexBuffer->GetVertexCount());
-    float* positionData = (float*)cpuVertexData.Get();
-    float* occlusionData = (float*)occlusionCpuVertexData.Get();
+    float* positionData = (float*)cpuVertexData.get();
+    float* occlusionData = (float*)occlusionCpuVertexData.get();
     BoundingBox box;
 
     unsigned occlusionLevel = occlusionLodLevel_;
@@ -797,13 +782,13 @@ void Terrain::UpdatePatchLod(TerrainPatch* patch)
 
 void Terrain::SetMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     SetMaterial(cache->GetResource<Material>(value.name_));
 }
 
 void Terrain::SetHeightMapAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     Image* image = cache->GetResource<Image>(value.name_);
     SetHeightMapInternal(image, false);
 }

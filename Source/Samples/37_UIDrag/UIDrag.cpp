@@ -43,7 +43,7 @@ void UIDrag::Start()
     // Set mouse visible
     QString platform = GetPlatform();
     if (platform != "Android" && platform != "iOS")
-        m_context->m_InputSystem.get()->SetMouseVisible(true);
+        GetContext()->m_InputSystem.get()->SetMouseVisible(true);
 
     // Create the UI content
     CreateGUI();
@@ -55,8 +55,8 @@ void UIDrag::Start()
 
 void UIDrag::CreateGUI()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     UIElement* root = ui->GetRoot();
     // Load the style sheet from xml
@@ -64,7 +64,7 @@ void UIDrag::CreateGUI()
 
     for (int i=0; i < 10; i++)
     {
-        Button* b = new Button(m_context);
+        Button* b = new Button(GetContext());
         root->AddChild(b);
         // Reference a style from the style sheet loaded earlier:
         b->SetStyle("Button");
@@ -79,7 +79,7 @@ void UIDrag::CreateGUI()
         b->dragEnd.Connect(this,&UIDrag::HandleDragEnd);
 
         {
-            Text* t = new Text(m_context);
+            Text* t = new Text(GetContext());
             b->AddChild(t);
             t->SetStyle("Text");
             t->SetHorizontalAlignment(HA_CENTER);
@@ -88,7 +88,7 @@ void UIDrag::CreateGUI()
         }
 
         {
-            Text* t = new Text(m_context);
+            Text* t = new Text(GetContext());
             b->AddChild(t);
             t->SetStyle("Text");
             t->SetName("Event Touch");
@@ -97,7 +97,7 @@ void UIDrag::CreateGUI()
         }
 
         {
-            Text* t = new Text(m_context);
+            Text* t = new Text(GetContext());
             b->AddChild(t);
             t->SetStyle("Text");
             t->SetName("Num Touch");
@@ -108,7 +108,7 @@ void UIDrag::CreateGUI()
 
     for (int i = 0; i < 10; i++)
     {
-        Text* t = new Text(m_context);
+        Text* t = new Text(GetContext());
         root->AddChild(t);
         t->SetStyle("Text");
         t->SetName("Touch "+ QString::number(i));
@@ -118,8 +118,8 @@ void UIDrag::CreateGUI()
 
 void UIDrag::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -184,10 +184,10 @@ void UIDrag::HandleDragEnd(UIElement *elem,int,int,int,int,int,int)
 
 void UIDrag::HandleUpdate(float timeStep)
 {
-    UI* ui = m_context->m_UISystem.get();
+    UI* ui = GetContext()->m_UISystem.get();
     UIElement* root = ui->GetRoot();
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     if (input->GetKeyPress(KEY_SPACE))
     {

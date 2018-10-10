@@ -346,7 +346,7 @@ void ParticleEmitter::ApplyEffect()
 
 void ParticleEmitter::SetEffectAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     SetEffect(cache->GetResource<ParticleEffect>(value.name_));
 }
 

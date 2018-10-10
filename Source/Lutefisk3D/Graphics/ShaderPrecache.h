@@ -41,7 +41,7 @@ public:
     /// Construct and begin collecting shader combinations. Load existing combinations from XML if the file exists.
     ShaderPrecache(Context* context, const QString& fileName);
     /// Destruct. Write the collected shaders to XML.
-    ~ShaderPrecache();
+    ~ShaderPrecache() override;
 
     /// Collect a shader combination. Called by Graphics when shaders have been set.
     void StoreShaders(ShaderVariation* vs, ShaderVariation* ps);

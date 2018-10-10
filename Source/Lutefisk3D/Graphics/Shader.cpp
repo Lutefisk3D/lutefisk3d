@@ -71,7 +71,7 @@ Shader::Shader(Context* context) :
 
 Shader::~Shader()
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     if(cache)
         cache->ResetDependencies(this);
 }
@@ -157,7 +157,7 @@ ShaderVariation* Shader::GetVariation(ShaderType type, const char* defines)
 
 bool Shader::ProcessSource(QString& code, Deserializer& source)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
 
     // If the source if a non-packaged file, store the timestamp
     File* file = dynamic_cast<File*>(&source);

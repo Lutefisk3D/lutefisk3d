@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 #pragma once
 #include "Lutefisk3D/Core/Lutefisk3D.h"
 #include <new>
+#include <utility>
 
 namespace Urho3D
 {
@@ -67,7 +68,7 @@ class Allocator
 {
 public:
     /// Construct.
-    Allocator(unsigned initialCapacity = 0) :
+    explicit Allocator(unsigned initialCapacity = 0) :
         allocator_(nullptr)
     {
         if (initialCapacity)
@@ -80,13 +81,18 @@ public:
         AllocatorUninitialize(allocator_);
     }
 
+    /// Prevent copy construction.
+    Allocator(const Allocator<T>& rhs) = delete;
+    /// Prevent assignment.
+    Allocator<T>& operator =(const Allocator<T>& rhs) = delete;
     /// Reserve and default-construct an object.
-    T* Reserve()
+    template<typename... Args>
+    T* Reserve(Args&&... args)
     {
         if (!allocator_)
             allocator_ = AllocatorInitialize(sizeof(T));
         T* newObject = static_cast<T*>(AllocatorReserve(allocator_));
-        new(newObject) T();
+        new(newObject) T(std::forward<Args>(args)...);
 
         return newObject;
     }
@@ -110,11 +116,6 @@ public:
     }
 
 private:
-    /// Prevent copy construction.
-    Allocator(const Allocator<T>& rhs);
-    /// Prevent assignment.
-    Allocator<T>& operator = (const Allocator<T>& rhs);
-
     /// Allocator block.
     AllocatorBlock* allocator_;
 };

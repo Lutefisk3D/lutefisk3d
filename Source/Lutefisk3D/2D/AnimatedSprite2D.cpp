@@ -151,7 +151,7 @@ AnimationSet2D* AnimatedSprite2D::GetAnimationSet() const
 
 void AnimatedSprite2D::SetAnimationSetAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     SetAnimationSet(cache->GetResource<AnimationSet2D>(value.name_));
 }
 

@@ -74,9 +74,9 @@ void MultipleViewports::Start()
 
 void MultipleViewports::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
 
     // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
     // Also create a DebugRenderer component so that we can draw debug geometry
@@ -142,14 +142,14 @@ void MultipleViewports::CreateScene()
     // Create the cameras. Limit far clip distance to match the fog
     cameraNode_ = scene_->CreateChild("Camera");
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetFarClip(300.0f);
+    camera->setFarClipDistance(300.0f);
 
     // Parent the rear camera node to the front camera node and turn it 180 degrees to face backward
     // Here, we use the angle-axis constructor for Quaternion instead of the usual Euler angles
     rearCameraNode_ = cameraNode_->CreateChild("RearCamera");
     rearCameraNode_->Rotate(Quaternion(180.0f, Vector3::UP));
     Camera* rearCamera = rearCameraNode_->CreateComponent<Camera>();
-    rearCamera->SetFarClip(300.0f);
+    rearCamera->setFarClipDistance(300.0f);
     // Because the rear viewport is rather small, disable occlusion culling from it. Use the camera's
     // "view override flags" for this. We could also disable eg. shadows or force low material quality
     // if we wanted
@@ -161,8 +161,8 @@ void MultipleViewports::CreateScene()
 
 void MultipleViewports::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -183,20 +183,20 @@ void MultipleViewports::CreateInstructions()
 
 void MultipleViewports::SetupViewports()
 {
-    Graphics* graphics = m_context->m_Graphics.get();
-    Renderer* renderer = m_context->m_Renderer.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     renderer->SetNumViewports(2);
 
     // Set up the front camera viewport
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 
     // Clone the default render path so that we do not interfere with the other viewport, then add
     // bloom and FXAA post process effects to the front viewport. Render path commands can be tagged
     // for example with the effect name to allow easy toggling on and off. We start with the effects
     // disabled.
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     SharedPtr<RenderPath> effectRenderPath = viewport->GetRenderPath()->Clone();
     effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/Bloom.xml"));
     effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/FXAA2.xml"));
@@ -208,7 +208,7 @@ void MultipleViewports::SetupViewports()
 
     // Set up the rear camera viewport on top of the front view ("rear view mirror")
     // The viewport index must be greater in that case, otherwise the view would be left behind
-    SharedPtr<Viewport> rearViewport(new Viewport(m_context, scene_, rearCameraNode_->GetComponent<Camera>(),
+    SharedPtr<Viewport> rearViewport(new Viewport(GetContext(), scene_, rearCameraNode_->GetComponent<Camera>(),
         IntRect(graphics->GetWidth() * 2 / 3, 32, graphics->GetWidth() - 32, graphics->GetHeight() / 3)));
     renderer->SetViewport(1, rearViewport);
 }
@@ -226,10 +226,10 @@ void MultipleViewports::SubscribeToEvents()
 void MultipleViewports::MoveCamera(float timeStep)
 {
      // Do not move if the UI has a focused element (the console)
-    if (m_context->m_UISystem.get()->GetFocusElement())
+    if (GetContext()->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -256,7 +256,7 @@ void MultipleViewports::MoveCamera(float timeStep)
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 
     // Toggle post processing effects on the front viewport. Note that the rear viewport is unaffected
-    RenderPath* effectRenderPath = m_context->m_Renderer.get()->GetViewport(0)->GetRenderPath();
+    RenderPath* effectRenderPath = GetContext()->m_Renderer.get()->GetViewport(0)->GetRenderPath();
     if (input->GetKeyPress('B'))
         effectRenderPath->ToggleEnabled("Bloom");
     if (input->GetKeyPress('F'))
@@ -280,5 +280,5 @@ void MultipleViewports::HandlePostRenderUpdate(float ts)
     // If draw debug mode is enabled, draw viewport debug geometry, which will show eg. drawable bounding boxes and skeleton
     // bones. Disable depth test so that we can see the effect of occlusion
     if (drawDebug_)
-        m_context->m_Renderer.get()->DrawDebugGeometry(false);
+        GetContext()->m_Renderer.get()->DrawDebugGeometry(false);
 }

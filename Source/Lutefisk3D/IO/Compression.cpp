@@ -40,16 +40,16 @@ unsigned CompressData(void* dest, const void* src, unsigned srcSize)
 {
     if (!dest || !src || !srcSize)
         return 0;
-    else
-        return (unsigned)LZ4_compress_HC((const char*)src, (char*)dest, srcSize, LZ4_compressBound(srcSize), 0);
+    
+    return (unsigned)LZ4_compress_HC((const char*)src, (char*)dest, srcSize, LZ4_compressBound(srcSize), 0);
 }
 
 unsigned DecompressData(void* dest, const void* src, unsigned destSize)
 {
     if (!dest || !src || !destSize)
         return 0;
-    else
-        return (unsigned)LZ4_decompress_fast((const char*)src, (char*)dest, destSize);
+    
+    return (unsigned)LZ4_decompress_fast((const char*)src, (char*)dest, destSize);
 }
 
 bool CompressStream(Serializer& dest, Deserializer& src)
@@ -64,8 +64,8 @@ bool CompressStream(Serializer& dest, Deserializer& src)
     }
 
     unsigned maxDestSize = (unsigned)LZ4_compressBound(srcSize);
-    std::unique_ptr<uint8_t> srcBuffer(new uint8_t[srcSize]);
-    std::unique_ptr<uint8_t> destBuffer(new uint8_t[maxDestSize]);
+    std::unique_ptr<uint8_t[]> srcBuffer(new uint8_t[srcSize]);
+    std::unique_ptr<uint8_t[]> destBuffer(new uint8_t[maxDestSize]);
 
     if (src.Read(srcBuffer.get(), srcSize) != srcSize)
         return false;
@@ -92,8 +92,8 @@ bool DecompressStream(Serializer& dest, Deserializer& src)
     if (srcSize > src.GetSize())
         return false; // Illegal source (packed data) size reported, possibly not valid data
 
-    std::unique_ptr<uint8_t> srcBuffer(new uint8_t[srcSize]);
-    std::unique_ptr<uint8_t> destBuffer(new uint8_t[destSize]);
+    std::unique_ptr<uint8_t[]> srcBuffer(new uint8_t[srcSize]);
+    std::unique_ptr<uint8_t[]> destBuffer(new uint8_t[destSize]);
 
     if (src.Read(srcBuffer.get(), srcSize) != srcSize)
         return false;

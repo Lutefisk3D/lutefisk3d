@@ -75,7 +75,7 @@ void SoundEffects::Start()
     Sample::Start();
 
     // Enable OS cursor
-    m_context->m_InputSystem.get()->SetMouseVisible(true);
+    GetContext()->m_InputSystem.get()->SetMouseVisible(true);
 
     // Create the user interface
     CreateUI();
@@ -84,10 +84,10 @@ void SoundEffects::Start()
 void SoundEffects::CreateUI()
 {
     // Create a scene which will not be actually rendered, but is used to hold SoundSource components while they play sounds
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
 
-    UIElement* root = m_context->m_UISystem.get()->GetRoot();
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UIElement* root = GetContext()->m_UISystem.get()->GetRoot();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     XMLFile* uiStyle = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
     // Set style to the UI root so that elements will inherit it
     root->SetDefaultStyle(uiStyle);
@@ -108,7 +108,7 @@ void SoundEffects::CreateUI()
     button = CreateButton(160, 80, 120, 40, "Stop Music");
     button->released.Connect(this,&SoundEffects::HandleStopMusic);
 
-    Audio* audio = m_context->GetSubsystemT<Audio>();
+    Audio* audio = GetContext()->m_AudioSystem.get();
 
     // Create sliders for controlling sound and music master volume
     Slider* slider = CreateSlider(20, 140, 200, 20, "Sound Volume");
@@ -122,8 +122,8 @@ void SoundEffects::CreateUI()
 
 Button* SoundEffects::CreateButton(int x, int y, int xSize, int ySize, const QString & text)
 {
-    UIElement* root = m_context->m_UISystem.get()->GetRoot();
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UIElement* root = GetContext()->m_UISystem.get()->GetRoot();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     Font* font = cache->GetResource<Font>("Fonts/Anonymous Pro.ttf");
 
     // Create the button and center the text onto it
@@ -142,8 +142,8 @@ Button* SoundEffects::CreateButton(int x, int y, int xSize, int ySize, const QSt
 
 Slider* SoundEffects::CreateSlider(int x, int y, int xSize, int ySize, const QString & text)
 {
-    UIElement* root = m_context->m_UISystem.get()->GetRoot();
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    UIElement* root = GetContext()->m_UISystem.get()->GetRoot();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     Font* font = cache->GetResource<Font>("Fonts/Anonymous Pro.ttf");
 
     // Create text and slider below it
@@ -168,7 +168,7 @@ void SoundEffects::HandlePlaySound(UIElement *btn)
     const QString& soundResourceName = button->GetVar(VAR_SOUNDRESOURCE).GetString();
 
     // Get the sound resource
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     Sound* sound = cache->GetResource<Sound>(soundResourceName);
 
     if (sound)
@@ -194,7 +194,7 @@ void SoundEffects::HandlePlayMusic(UIElement *el)
     if (scene_->GetChild("Music"))
         return;
 
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     Sound* music = cache->GetResource<Sound>("Music/Ninja Gods.ogg");
     // Set the song to loop
     music->SetLooped(true);
@@ -215,12 +215,12 @@ void SoundEffects::HandleStopMusic(UIElement *el)
 
 void SoundEffects::HandleSoundVolume(UIElement *,float newVolume)
 {
-    m_context->GetSubsystemT<Audio>()->SetMasterGain(SOUND_EFFECT, newVolume);
+    GetContext()->m_AudioSystem->SetMasterGain(SOUND_EFFECT, newVolume);
 }
 
 void SoundEffects::HandleMusicVolume(UIElement *, float newVolume)
 {
-    m_context->GetSubsystemT<Audio>()->SetMasterGain(SOUND_MUSIC, newVolume);
+    GetContext()->m_AudioSystem->SetMasterGain(SOUND_MUSIC, newVolume);
 }
 
 void SoundEffects::HandleSoundFinished(Node* soundNode, SoundSource *src, SharedPtr<Sound>)

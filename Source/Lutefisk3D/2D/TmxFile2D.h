@@ -33,7 +33,6 @@ class Texture2D;
 class TmxFile2D;
 class XMLElement;
 class XMLFile;
-extern template class SharedPtr<XMLFile>;
 
 /// Tmx layer.
 class TmxLayer2D : public RefCounted
@@ -191,7 +190,7 @@ private:
     bool LoadTileSet(const XMLElement& element);
 
     /// XML file used during loading.
-    SharedPtr<XMLFile> loadXMLFile_;
+    std::unique_ptr<XMLFile> loadXMLFile_;
     /// TSX name to XML file mapping.
     HashMap<QString, SharedPtr<XMLFile> > tsxXMLFiles_;
     /// Tile map information.

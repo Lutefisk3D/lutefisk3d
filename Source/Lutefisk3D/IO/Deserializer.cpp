@@ -59,9 +59,9 @@ unsigned Deserializer::GetChecksum()
     return 0;
 }
 
-long long Deserializer::ReadInt64()
+int64_t Deserializer::ReadInt64()
 {
-    long long ret;
+    int64_t ret;
     Read(&ret, sizeof ret);
     return ret;
 }

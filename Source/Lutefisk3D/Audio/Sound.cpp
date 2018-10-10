@@ -71,9 +71,7 @@ Sound::Sound(Context* context) :
 {
 }
 
-Sound::~Sound()
-{
-}
+Sound::~Sound() = default;
 
 void Sound::RegisterObject(Context* context)
 {
@@ -103,11 +101,11 @@ bool Sound::LoadOggVorbis(Deserializer& source)
 {
     unsigned dataSize = source.GetSize();
     SharedArrayPtr<signed char> data(new signed char[dataSize]);
-    source.Read(data.Get(), dataSize);
+    source.Read(data.get(), dataSize);
 
     // Check for validity of data
     int error;
-    stb_vorbis* vorbis = stb_vorbis_open_memory((unsigned char*)data.Get(), dataSize, &error, nullptr);
+    stb_vorbis* vorbis = stb_vorbis_open_memory((unsigned char*)data.get(), dataSize, &error, nullptr);
     if (!vorbis)
     {
         URHO3D_LOGERROR("Could not read Ogg Vorbis data from " + source.GetName());
@@ -140,7 +138,7 @@ bool Sound::LoadWav(Deserializer& source)
     header.totalLength_ = source.ReadUInt();
     source.Read(&header.waveText_, 4);
 
-    if (memcmp("RIFF", header.riffText_, 4) || memcmp("WAVE", header.waveText_, 4))
+    if (memcmp("RIFF", header.riffText_, 4) != 0 || memcmp("WAVE", header.waveText_, 4) != 0)
     {
         URHO3D_LOGERROR("Could not read WAV data from " + source.GetName());
         return false;
@@ -200,7 +198,7 @@ bool Sound::LoadWav(Deserializer& source)
     unsigned length = header.dataLength_;
     SetSize(length);
     SetFormat(header.frequency_, header.bits_ == 16, header.channels_ == 2);
-    source.Read(data_.Get(), length);
+    source.Read(data_.get(), length);
 
     // Convert 8-bit audio to signed
     if (!sixteenBit_)
@@ -216,7 +214,7 @@ bool Sound::LoadRaw(Deserializer& source)
 {
     unsigned dataSize = source.GetSize();
     SetSize(dataSize);
-    return source.Read(data_.Get(), dataSize) == dataSize;
+    return source.Read(data_.get(), dataSize) == dataSize;
 }
 
 void Sound::SetSize(unsigned dataSize)
@@ -238,7 +236,7 @@ void Sound::SetData(const void* data, unsigned dataSize)
         return;
 
     SetSize(dataSize);
-    memcpy(data_.Get(), data, dataSize);
+    memcpy(data_.get(), data, dataSize);
 }
 
 void Sound::SetFormat(unsigned frequency, bool sixteenBit, bool stereo)
@@ -257,7 +255,7 @@ void Sound::SetLooped(bool enable)
     {
         if (!compressed_)
         {
-            end_ = data_.Get() + dataSize_;
+            end_ = data_.get() + dataSize_;
             looped_ = false;
 
             FixInterpolation();
@@ -281,8 +279,8 @@ void Sound::SetLoop(unsigned repeatOffset, unsigned endOffset)
         repeatOffset &= -sampleSize;
         endOffset &= -sampleSize;
 
-        repeat_ = data_.Get() + repeatOffset;
-        end_ = data_.Get() + endOffset;
+        repeat_ = data_.get() + repeatOffset;
+        end_ = data_.get() + endOffset;
         looped_ = true;
 
         FixInterpolation();
@@ -339,7 +337,7 @@ unsigned Sound::GetSampleSize() const
 
 void Sound::LoadParameters()
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     QString xmlName = ReplaceExtension(GetName(), ".xml");
 
     SharedPtr<XMLFile> file(cache->GetTempResource<XMLFile>(xmlName, false));

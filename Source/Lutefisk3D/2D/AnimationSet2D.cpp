@@ -157,7 +157,7 @@ bool AnimationSet2D::BeginLoadSpriter(Deserializer& source)
 
     // Check has sprite sheet
     QString parentPath = GetParentPath(GetName());
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
 
     spriteSheetFilePath_ = parentPath + GetFileName(GetName()) + ".xml";
     hasSpriteSheet_ = cache->Exists(spriteSheetFilePath_);
@@ -204,7 +204,7 @@ bool AnimationSet2D::EndLoadSpriter()
     if (!spriterData_)
         return false;
 
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     if (hasSpriteSheet_)
     {
         spriteSheet_ = cache->GetResource<SpriteSheet2D>(spriteSheetFilePath_);

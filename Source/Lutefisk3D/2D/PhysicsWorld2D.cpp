@@ -364,7 +364,7 @@ public:
         endContactInfos_.clear();
     }
 };
-};
+} //end of anonymous namespace
 extern const char* SUBSYSTEM_CATEGORY;
 static const Vector2 DEFAULT_GRAVITY(0.0f, -9.81f);
 static const int DEFAULT_VELOCITY_ITERATIONS = 8;

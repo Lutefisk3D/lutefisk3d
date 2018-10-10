@@ -49,19 +49,7 @@ public:
     }
 
     /// Copy-construct from another quaternion.
-    Quaternion(const Quaternion& quat)
-#if defined(LUTEFISK3D_SSE) && (!defined(_MSC_VER) || _MSC_VER >= 1700) /* Visual Studio 2012 and newer. VS2010 has a bug with these, see https://github.com/urho3d/Urho3D/issues/1044 */
-    {
-        _mm_storeu_ps(&w_, _mm_loadu_ps(&quat.w_));
-    }
-#else
-       :w_(quat.w_),
-        x_(quat.x_),
-        y_(quat.y_),
-        z_(quat.z_)
-    {
-    }
-#endif
+    Quaternion(const Quaternion& quat) = default;
 
     /// Construct from values.
     Quaternion(float w, float x, float y, float z)
@@ -134,18 +122,7 @@ public:
 #endif
 
     /// Assign from another quaternion.
-    Quaternion& operator = (const Quaternion& rhs)
-    {
-#if defined(LUTEFISK3D_SSE) && (!defined(_MSC_VER) || _MSC_VER >= 1700) /* Visual Studio 2012 and newer. VS2010 has a bug with these, see https://github.com/urho3d/Urho3D/issues/1044 */
-        _mm_storeu_ps(&w_, _mm_loadu_ps(&rhs.w_));
-#else
-        w_ = rhs.w_;
-        x_ = rhs.x_;
-        y_ = rhs.y_;
-        z_ = rhs.z_;
-#endif
-        return *this;
-    }
+    Quaternion& operator = (const Quaternion& rhs) = default;
 
     /// Add-assign a quaternion.
     Quaternion& operator += (const Quaternion& rhs)
@@ -400,7 +377,7 @@ public:
         return Urho3D::Equals(w_, rhs.w_) && Urho3D::Equals(x_, rhs.x_) && Urho3D::Equals(y_, rhs.y_) && Urho3D::Equals(z_, rhs.z_);
     }
     /// Return whether is NaN.
-    bool IsNaN() const { return Urho3D::IsNaN(w_) || Urho3D::IsNaN(x_) || Urho3D::IsNaN(y_) || Urho3D::IsNaN(z_); }
+    bool IsNaN() const { return std::isnan(w_) || std::isnan(x_) || std::isnan(y_) || std::isnan(z_); }
     /// Return conjugate.
     Quaternion Conjugate() const
     {

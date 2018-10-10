@@ -46,6 +46,11 @@
 #include <cstring>
 #include <sys/stat.h>
 
+#ifndef _WIN32
+#include <utime.h>
+#else
+#include <sys/utime.h>
+#endif
 namespace Urho3D
 {
 
@@ -111,7 +116,7 @@ public:
     }
 
     /// The function to run in the thread.
-    virtual void ThreadFunction() override
+    void ThreadFunction() override
     {
         exitCode_ = DoSystemCommand(commandLine_, false);
         completed_ = true;
@@ -150,8 +155,10 @@ private:
 };
 
 }
-struct FileSystemPrivate : public jl::SignalObserver
+struct FileSystemPrivate : public Object
 {
+    URHO3D_OBJECT(FileSystemPrivate, Object)
+public:
     /// Allowed directories.
     HashSet<QString> allowedPaths_;
     /// Async execution queue.
@@ -160,7 +167,7 @@ struct FileSystemPrivate : public jl::SignalObserver
     unsigned nextAsyncExecID_=1;
     /// Flag for executing engine console commands as OS-specific system command. set to true in constructor.
     bool executeConsoleCommands_=false;
-    FileSystemPrivate(Context *ctx) : SignalObserver(ctx->m_observer_allocator) {}
+    FileSystemPrivate(Context *ctx) : Object(ctx) {}
     ~FileSystemPrivate() {
     // If any async exec items pending, delete them
         if (!asyncExecQueue_.empty())
@@ -242,9 +249,7 @@ FileSystem::FileSystem(Context* context) : m_context(context), d(new FileSystemP
     d->SetExecuteConsoleCommands(true);
 }
 
-FileSystem::~FileSystem()
-{
-}
+FileSystem::~FileSystem() = default;
 
 bool FileSystem::SetCurrentDir(const QString& pathName)
 {
@@ -333,13 +338,16 @@ bool FileSystem::SystemOpen(const QString& fileName, const QString& mode)
 {
     if (d->allowedPaths_.isEmpty())
     {
-        if (!FileExists(fileName) && !DirExists(fileName))
+        // allow opening of http and file urls
+        if (!fileName.startsWith("http://") && !fileName.startsWith("https://") && !fileName.startsWith("file://"))
         {
-            URHO3D_LOGERROR("File or directory " + fileName + " not found");
-            return false;
+            if (!FileExists(fileName) && !DirExists(fileName))
+            {
+                URHO3D_LOGERROR("File or directory " + fileName + " not found");
+                return false;
+            }
         }
-
-        bool success = QDesktopServices::openUrl(QUrl("file:///"+fileName, QUrl::TolerantMode));
+        bool success = QDesktopServices::openUrl(QUrl::fromLocalFile(fileName));
         if (!success)
             URHO3D_LOGERROR("Failed to open " + fileName + " externally");
         return success;
@@ -372,7 +380,7 @@ bool FileSystem::Copy(const QString& srcFileName, const QString& destFileName)
         return false;
 
     unsigned fileSize = srcFile->GetSize();
-    std::unique_ptr<uint8_t> buffer(new unsigned char[fileSize]);
+    std::unique_ptr<uint8_t[]> buffer(new unsigned char[fileSize]);
 
     unsigned bytesRead = srcFile->Read(buffer.get(), fileSize);
     unsigned bytesWritten = destFile->Write(buffer.get(), fileSize);
@@ -484,7 +492,7 @@ void FileSystem::ScanDir(QStringList& result, const QString& pathName, const QSt
 
     if (CheckAccess(pathName))
     {
-        QDir::Filters filters;
+        QDir::Filters filters = QDir::NoDot | QDir::NoDotDot;
         if(flags & SCAN_HIDDEN)
             filters |= QDir::Hidden;
         if(flags & SCAN_FILES)
@@ -493,18 +501,23 @@ void FileSystem::ScanDir(QStringList& result, const QString& pathName, const QSt
             filters |= QDir::Dirs;
 
         QString initialPath = AddTrailingSlash(pathName);
-        QDirIterator diriter(initialPath,QStringList {filter},filters,recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags);
+        QString normalizedFilter = filter.isEmpty() ? "*":filter;
+        QDirIterator diriter(initialPath, QStringList{normalizedFilter}, filters,
+                                   recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags);
+
         while(diriter.hasNext())
-            result.push_back(diriter.next());
+        {
+            result.push_back(QDir(initialPath).relativeFilePath(diriter.next()));
+        }
     }
 }
 
 QString FileSystem::GetProgramDir() const
 {
     if(QCoreApplication::instance()) // an QApplication has been allocated, use it
-        return QCoreApplication::applicationDirPath();
+        return QCoreApplication::applicationDirPath()+"/";
 
-    return GetCurrentDir();
+    return GetCurrentDir()+"/";
 }
 
 QString FileSystem::GetUserDocumentsDir() const
@@ -530,7 +543,28 @@ void FileSystem::HandleConsoleCommand(const QString &cmd, const QString &id)
     if (id == "FileSystem")
         SystemCommand(cmd, true);
 }
-
+bool FileSystem::SetLastModifiedTime(const QString& fileName, unsigned newTime)
+{
+    if (fileName.isEmpty() || !CheckAccess(fileName))
+        return false;
+#ifdef _WIN32
+    struct _stat oldTime;
+    struct _utimbuf newTimes;
+    if (_stat(qPrintable(fileName), &oldTime) != 0)
+        return false;
+    newTimes.actime = oldTime.st_atime;
+    newTimes.modtime = newTime;
+    return _utime(qPrintable(fileName), &newTimes) == 0;
+#else
+    struct stat oldTime{};
+    struct utimbuf newTimes{};
+    if (stat(qPrintable(fileName), &oldTime) != 0)
+        return false;
+    newTimes.actime = oldTime.st_atime;
+    newTimes.modtime = newTime;
+    return utime(qPrintable(fileName), &newTimes) == 0;
+#endif
+}
 void SplitPath(const QString& fullPath, QString& pathName, QString& fileName, QString& extension, bool lowercaseExtension)
 {
     QString fullPathCopy = GetInternalPath(fullPath);
@@ -641,5 +675,127 @@ bool IsAbsolutePath(const QString& pathName)
 
     return QDir::isAbsolutePath(pathName);
 }
+bool FileSystem::CreateDirs(const QString& root, const QString& subdirectory)
+{
+    QString folder = AddTrailingSlash(GetInternalPath(root));
+    QString sub = GetInternalPath(subdirectory);
+    QStringList subs = sub.split('/');
 
+    for (const QString &part : subs)
+    {
+        folder += part + "/";
+
+        if (DirExists(folder))
+            continue;
+
+        CreateDir(folder);
+
+        if (!DirExists(folder))
+            return false;
+    }
+
+    return true;
+
+}
+
+bool FileSystem::CreateDirsRecursive(const QString& directoryIn)
+{
+    QString directory = AddTrailingSlash(GetInternalPath(directoryIn));
+
+    if (DirExists(directory))
+        return true;
+
+    if (FileExists(directory))
+        return false;
+
+    QString parentPath = directory;
+
+    QStringList paths;
+
+    paths.push_back(directory);
+
+    while (true)
+    {
+        parentPath = GetParentPath(parentPath);
+
+        if (parentPath.isEmpty())
+            break;
+
+        paths.push_back(parentPath);
+    }
+
+    if (!paths.size())
+        return false;
+
+    for (auto i = (int) (paths.size() - 1); i >= 0; i--)
+    {
+        const QString& pathName = paths[i];
+
+        if (FileExists(pathName))
+            return false;
+
+        if (DirExists(pathName))
+            continue;
+
+        if (!CreateDir(pathName))
+            return false;
+
+        // double check
+        if (!DirExists(pathName))
+            return false;
+
+    }
+
+    return true;
+
+}
+bool FileSystem::RemoveDir(const QString& directoryIn, bool recursive)
+{
+    QString directory = AddTrailingSlash(directoryIn);
+
+    if (!DirExists(directory))
+        return false;
+
+    QStringList results;
+
+    // ensure empty if not recursive
+    if (!recursive)
+    {
+        ScanDir(results, directory, "*", SCAN_DIRS | SCAN_FILES | SCAN_HIDDEN, true );
+        results.removeAll(".");
+        results.removeAll("..");
+
+        if (results.size())
+            return false;
+        return QFile::remove(directory);
+    }
+    QDir to_remove(directoryIn);
+    return to_remove.removeRecursively();
+}
+bool FileSystem::CopyDir(const QString& directoryIn, const QString& directoryOut)
+{
+    if (FileExists(directoryOut))
+        return false;
+
+    QStringList results;
+    ScanDir(results, directoryIn, "*", SCAN_FILES, true );
+
+    for (unsigned i = 0; i < results.size(); i++)
+    {
+        QString srcFile = directoryIn + "/" + results[i];
+        QString dstFile = directoryOut + "/" + results[i];
+
+        QString dstPath = GetPath(dstFile);
+
+        if (!CreateDirsRecursive(dstPath))
+            return false;
+
+        //LOGINFOF("SRC: %s DST: %s", srcFile.CString(), dstFile.CString());
+        if (!Copy(srcFile, dstFile))
+            return false;
+    }
+
+    return true;
+
+}
 }

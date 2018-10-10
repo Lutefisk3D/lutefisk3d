@@ -29,8 +29,6 @@ namespace Urho3D
 {
 
 class ShaderVariation;
-extern template class SharedPtr<ShaderVariation>;
-extern template class HashMap<StringHash, SharedPtr<ShaderVariation> >;
 /// %Shader resource consisting of several shader variations.
 class LUTEFISK3D_EXPORT Shader : public Resource
 {
@@ -38,16 +36,16 @@ class LUTEFISK3D_EXPORT Shader : public Resource
 
 public:
     /// Construct.
-    Shader(Context* context);
+    explicit Shader(Context* context);
     /// Destruct.
     ~Shader() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
+    bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
-    virtual bool EndLoad() override;
+    bool EndLoad() override;
 
     /// Return a variation with defines. Separate multiple defines with spaces.
     ShaderVariation* GetVariation(ShaderType type, const QString& defines);
@@ -60,7 +58,7 @@ public:
 
 private:
     /// Process source code and include files. Return true if successful.
-    bool ProcessSource(QString& code, Deserializer& file);
+    bool ProcessSource(QString& code, Deserializer& source);
     /// Sort the defines and strip extra spaces to prevent creation of unnecessary duplicate shader variations.
     QString NormalizeDefines(const QString& defines) const;
     /// Recalculate the memory used by the shader.

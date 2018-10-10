@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Container/FlagSet.h"
 #include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 
 #include <QtCore/QStringList>
@@ -51,15 +52,15 @@ struct FileSelectorEntry
 };
 
 /// %File selector dialog.
-class LUTEFISK3D_EXPORT FileSelector : public Object, public jl::SignalObserver
+class LUTEFISK3D_EXPORT FileSelector : public Object
 {
     URHO3D_OBJECT(FileSelector,Object)
 
 public:
     /// Construct.
-    FileSelector(Context* context);
+    explicit FileSelector(Context* context);
     /// Destruct.
-    virtual ~FileSelector();
+    ~FileSelector() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -124,15 +125,15 @@ private:
     void HandleFileAccepted(bool byButton);
     void HandleModalChanged(UIElement *e, bool modal);
     /// Handle filter changed.
-    void HandleFilterChanged(StringHash eventType, VariantMap& eventData);
+    void HandleFilterChanged(UIElement *el, int sel);
     /// Handle path edited.
     void HandlePathChanged(UIElement *, const QString &, float);
     /// Handle file selected from the list.
-    void HandleFileSelected(StringHash eventType, VariantMap& eventData);
+    void HandleFileSelected(UIElement *el, int sel);
     /// Handle file doubleclicked from the list (enter directory / OK the file selection.)
-    void HandleFileDoubleClicked(StringHash eventType, VariantMap& eventData);
+    void HandleFileDoubleClicked(UIElement *, UIElement *, int, int, unsigned, unsigned);
     /// Handle file list key pressed.
-    void HandleFileListKey(StringHash eventType, VariantMap& eventData);
+    void HandleFileListKey(UIElement *, int, unsigned, unsigned);
     /// Handle OK button pressed.
     void HandleOKPressed(UIElement *);
     /// Handle cancel button pressed.

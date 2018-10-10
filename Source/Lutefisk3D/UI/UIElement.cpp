@@ -137,7 +137,7 @@ UIElement::UIElement(Context* context) :
     pivot_(std::numeric_limits<float>::max(), std::numeric_limits<float>::max()),
     pivotSet_(false)
 {
-    initSignals(context->m_signal_allocator);
+    initSignals(context->signalAllocator());
     SetEnabled(false);
 }
 
@@ -174,10 +174,10 @@ void UIElement::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Priority", GetPriority, SetPriority, int, 0, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Opacity", GetOpacity, SetOpacity, float, 1.0f, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Color", GetColorAttr, SetColor, Color, Color::WHITE, AM_FILE);
-    URHO3D_ATTRIBUTE("Top Left Color", Color, color_[0], Color::WHITE, AM_FILE);
-    URHO3D_ATTRIBUTE("Top Right Color", Color, color_[1], Color::WHITE, AM_FILE);
-    URHO3D_ATTRIBUTE("Bottom Left Color", Color, color_[2], Color::WHITE, AM_FILE);
-    URHO3D_ATTRIBUTE("Bottom Right Color", Color, color_[3], Color::WHITE, AM_FILE);
+    URHO3D_ATTRIBUTE("Top Left Color", Color, colors_[0], Color::WHITE, AM_FILE);
+    URHO3D_ATTRIBUTE("Top Right Color", Color, colors_[1], Color::WHITE, AM_FILE);
+    URHO3D_ATTRIBUTE("Bottom Left Color", Color, colors_[2], Color::WHITE, AM_FILE);
+    URHO3D_ATTRIBUTE("Bottom Right Color", Color, colors_[3], Color::WHITE, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, false, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Is Editable", IsEditable, SetEditable, bool, true, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Is Selected", IsSelected, SetSelected, bool, false, AM_FILE);
@@ -187,7 +187,7 @@ void UIElement::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Clip Children", GetClipChildren, SetClipChildren, bool, false, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Use Derived Opacity", GetUseDerivedOpacity, SetUseDerivedOpacity, bool, true, AM_FILE);
     URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Focus Mode", GetFocusMode, SetFocusMode, FocusMode, focusModes, FM_NOTFOCUSABLE, AM_FILE);
-    URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Drag And Drop Mode", GetDragDropMode, SetDragDropMode, unsigned, dragDropModes, DD_DISABLED, AM_FILE);
+    URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Drag And Drop Mode", GetDragDropMode, SetDragDropMode, DragAndDropModeFlags, dragDropModes, DD_DISABLED, AM_FILE);
     URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Layout Mode", GetLayoutMode, SetLayoutMode, LayoutMode, layoutModes, LM_FREE, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Layout Spacing", GetLayoutSpacing, SetLayoutSpacing, int, 0, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Layout Border", GetLayoutBorder, SetLayoutBorder, IntRect, IntRect::ZERO, AM_FILE);
@@ -205,17 +205,17 @@ void UIElement::ApplyAttributes()
 
     for (unsigned i = 1; i < MAX_UIELEMENT_CORNERS; ++i)
     {
-        if (color_[i] != color_[0])
+        if (colors_[i] != colors_[0])
             colorGradient_ = true;
     }
 }
 
-bool UIElement::LoadXML(const XMLElement& source, bool setInstanceDefault)
+bool UIElement::LoadXML(const XMLElement& source)
 {
-    return LoadXML(source, nullptr, setInstanceDefault);
+    return LoadXML(source, nullptr);
 }
 
-bool UIElement::LoadXML(const XMLElement& source, XMLFile* styleFile, bool setInstanceDefault)
+bool UIElement::LoadXML(const XMLElement& source, XMLFile* styleFile)
 {
     // Get style override if defined
     QString styleName = source.GetAttribute("style");
@@ -248,7 +248,7 @@ bool UIElement::LoadXML(const XMLElement& source, XMLFile* styleFile, bool setIn
     DisableLayoutUpdate();
 
     // Then load rest of the attributes from the source
-    if (!Animatable::LoadXML(source, setInstanceDefault))
+    if (!Animatable::LoadXML(source))
         return false;
 
     unsigned nextInternalChild = 0;
@@ -286,7 +286,7 @@ bool UIElement::LoadXML(const XMLElement& source, XMLFile* styleFile, bool setIn
         {
             if (!styleFile)
                 styleFile = GetDefaultStyle();
-            if (!child->LoadXML(childElem, styleFile, setInstanceDefault))
+            if (!child->LoadXML(childElem, styleFile))
                 return false;
         }
 
@@ -301,7 +301,7 @@ bool UIElement::LoadXML(const XMLElement& source, XMLFile* styleFile, bool setIn
     return true;
 }
 
-UIElement* UIElement::LoadChildXML(const XMLElement& childElem, XMLFile* styleFile, bool setInstanceDefault)
+UIElement* UIElement::LoadChildXML(const XMLElement& childElem, XMLFile* styleFile)
 {
     bool internalElem = childElem.GetBool("internal");
     if (internalElem)
@@ -320,7 +320,7 @@ UIElement* UIElement::LoadChildXML(const XMLElement& childElem, XMLFile* styleFi
     {
         if (!styleFile)
             styleFile = GetDefaultStyle();
-        if (!child->LoadXML(childElem, styleFile, setInstanceDefault))
+        if (!child->LoadXML(childElem, styleFile))
         {
             RemoveChild(child, index);
             return nullptr;
@@ -850,20 +850,20 @@ void UIElement::SetClipBorder(const IntRect& rect)
 void UIElement::SetColor(const Color& color)
 {
     for (unsigned i = 0; i < MAX_UIELEMENT_CORNERS; ++i)
-        color_[i] = color;
+        colors_[i] = color;
     colorGradient_ = false;
     derivedColorDirty_ = true;
 }
 
 void UIElement::SetColor(Corner corner, const Color& color)
 {
-    color_[corner] = color;
+    colors_[corner] = color;
     colorGradient_ = false;
     derivedColorDirty_ = true;
 
     for (unsigned i = 0; i < MAX_UIELEMENT_CORNERS; ++i)
     {
-        if (i != corner && color_[i] != color_[corner])
+        if (i != corner && colors_[i] != colors_[corner])
             colorGradient_ = true;
     }
 }
@@ -986,35 +986,32 @@ void UIElement::SetVisible(bool enable)
 {
     UI* ui = context_->m_UISystem.get();
     // Can be null at exit time; no-op in that case
-    if (!ui)
+    if (!ui || enable == visible_)
         return;
 
-    if (enable != visible_)
+    visible_ = enable;
+
+    // Parent's layout may change as a result of visibility change
+    if (parent_)
+        parent_->UpdateLayout();
+
+    using namespace VisibleChanged;
+
+    VariantMap& eventData = GetEventDataMap();
+    eventData[P_ELEMENT] = this;
+    eventData[P_VISIBLE] = visible_;
+    SendEvent(E_VISIBLECHANGED, eventData);
+
+    // If the focus element becomes effectively hidden, clear focus
+    if (!enable)
     {
-        visible_ = enable;
-
-        // Parent's layout may change as a result of visibility change
-        if (parent_)
-            parent_->UpdateLayout();
-
-        using namespace VisibleChanged;
-
-        VariantMap& eventData = GetEventDataMap();
-        eventData[P_ELEMENT] = this;
-        eventData[P_VISIBLE] = visible_;
-        SendEvent(E_VISIBLECHANGED, eventData);
-
-        // If the focus element becomes effectively hidden, clear focus
-        if (!enable)
-        {
-            UIElement* focusElement = ui->GetFocusElement();
-            if (focusElement && !focusElement->IsVisibleEffective())
-                focusElement->SetFocus(false);
-        }
+        UIElement* focusElement = ui->GetFocusElement();
+        if (focusElement && !focusElement->IsVisibleEffective())
+            focusElement->SetFocus(false);
     }
 }
 
-void UIElement::SetDragDropMode(unsigned mode)
+void UIElement::SetDragDropMode(DragAndDropModeFlags mode)
 {
     dragDropMode_ = mode;
 }
@@ -1053,7 +1050,7 @@ bool UIElement::SetStyle(const XMLElement& element)
     appliedStyle_ = element.GetAttribute("type");
 
     // Consider style attribute values as instance-level attribute default values
-    return LoadXML(element, true);
+    return LoadXML(element);
 }
 
 bool UIElement::SetStyleAuto(XMLFile* file)
@@ -1684,7 +1681,7 @@ const Color& UIElement::GetDerivedColor() const
 {
     if (derivedColorDirty_)
     {
-        derivedColor_ = color_[C_TOPLEFT];
+        derivedColor_ = colors_[C_TOPLEFT];
         derivedColor_.a_ *= GetDerivedOpacity();
         derivedColorDirty_ = false;
     }
@@ -2229,5 +2226,9 @@ void UIElement::VerifyChildAlignment()
         (*i)->SetVerticalAlignment((*i)->GetVerticalAlignment());
     }
 }
-
+void UIElement::SetRenderTexture(Texture2D* texture)
+{
+    if (auto* ui = context_->m_UISystem.get())
+        ui->SetElementRenderTexture(this, texture);
+}
 }

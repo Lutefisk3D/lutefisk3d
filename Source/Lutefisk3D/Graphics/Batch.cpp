@@ -151,14 +151,14 @@ void CalculateSpotMatrix(Matrix4& dest, Light* light)
 void Batch::CalculateSortKey()
 {
     unsigned shaderID = (unsigned)(
-        ((*((unsigned*)&vertexShader_) / sizeof(ShaderVariation)) + (*((unsigned*)&pixelShader_) / sizeof(ShaderVariation))) &
+        ((uintptr_t(vertexShader_) / sizeof(ShaderVariation)) + (uintptr_t(pixelShader_) / sizeof(ShaderVariation))) &
         0x7fff);
     if (!isBase_)
         shaderID |= 0x8000;
 
-    unsigned lightQueueID = (unsigned)((*((unsigned*)&lightQueue_) / sizeof(LightBatchQueue)) & 0xffff);
-    unsigned materialID = (unsigned)((*((unsigned*)&material_) / sizeof(Material)) & 0xffff);
-    unsigned geometryID = (unsigned)((*((unsigned*)&geometry_) / sizeof(Geometry)) & 0xffff);
+    unsigned lightQueueID = (unsigned)((uintptr_t(lightQueue_) / sizeof(LightBatchQueue)) & 0xffff);
+    unsigned materialID = (unsigned)((uintptr_t(material_) / sizeof(Material)) & 0xffff);
+    unsigned geometryID = (unsigned)((uintptr_t(geometry_) / sizeof(Geometry)) & 0xffff);
 
     sortKey_ = (uint64_t(shaderID) << 48) | (uint64_t(lightQueueID) << 32) |
                (uint64_t(materialID) << 16) | geometryID;
@@ -206,7 +206,7 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
             graphics->SetDepthBias(depthBias.constantBias_, depthBias.slopeScaledBias_);
         }
         // Use the "least filled" fill mode combined from camera & material
-        graphics->SetFillMode((FillMode)(Max(camera->GetFillMode(), material_->GetFillMode())));
+        graphics->SetFillMode(FillMode(Max(camera->GetFillMode(), material_->GetFillMode())));
         graphics->SetDepthTest(pass_->GetDepthTestMode());
         graphics->SetDepthWrite(pass_->GetDepthWrite() && allowDepthWrite);
     }
@@ -572,6 +572,7 @@ void Batch::Prepare(View* view, const Camera* camera, bool setModelTransform, bo
             for (auto iter= parameters.begin(), fin=parameters.end(); iter!=fin; ++iter)
                 graphics->SetShaderParameter(MAP_KEY(iter), MAP_VALUE(iter).value_);
         }
+
         int texunitidx=0;
         for (const auto &entry : material_->GetTextures())
         {
@@ -839,7 +840,7 @@ void BatchQueue::Draw(View* view, Camera* camera, bool markToStencil, bool using
             graphics->SetStencilTest(true, CMP_ALWAYS, OP_REF, OP_KEEP, OP_KEEP, batch->lightMask_);
         if (!usingLightOptimization)
         {
-            // If drawing an alpha batch, we can optimize fillrate by scissor test
+            // If drawing an alpha batch, we can optimize fill rate by scissor test
             if (!batch->isBase_ && batch->lightQueue_!=nullptr)
                 renderer->OptimizeLightByScissor(batch->lightQueue_->light_, camera);
             else

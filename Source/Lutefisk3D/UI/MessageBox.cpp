@@ -37,7 +37,6 @@ namespace Urho3D
 
 MessageBox::MessageBox(Context* context, const QString& messageString, const QString& titleString, XMLFile* layoutFile, XMLFile* styleFile) :
     Object(context),
-    SignalObserver(context->m_observer_allocator),
     window_(nullptr),
     titleText_(nullptr),
     messageText_(nullptr),

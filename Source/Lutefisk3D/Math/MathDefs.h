@@ -77,17 +77,6 @@ template<typename T>
 inline T Abs(T value) { return value >= T(0) ? value : -value; }
 /// Return the sign of a float (-1, 0 or 1.)
 inline int Sign(float value) { return (0 < value) - (value < 0); }
-/// Check whether a floating point value is NaN.
-/// Use a workaround for GCC, see https://github.com/urho3d/Urho3D/issues/655
-#ifndef __GNUC__
-inline bool IsNaN(float value) { return value != value; }
-#else
-inline bool IsNaN(float value)
-{
-    unsigned u = *(unsigned*)(&value);
-    return (u & 0x7fffffff) > 0x7f800000;
-}
-#endif
 
 /// Clamp a float to a range.
 template<typename T>
@@ -161,6 +150,13 @@ inline unsigned NextPowerOfTwo(unsigned value)
     return ++value;
 }
 
+/// Round up or down to the closest power of two.
+inline unsigned ClosestPowerOfTwo(unsigned value)
+{
+    unsigned next = NextPowerOfTwo(value);
+    unsigned prev = next >> (unsigned)1;
+    return (value - prev) > (next - value) ? next : prev;
+}
 /// Return log base two or the MSB position of the given value.
 inline unsigned LogBaseTwo(unsigned value)
 {
@@ -195,48 +191,48 @@ inline int Random(int min, int max) { float range = (float)(max - min); return (
 /// Return a random normal distributed number with the given mean value and variance.
 inline float RandomNormal(float meanValue, float variance) { return RandStandardNormal() * sqrtf(variance) + meanValue; }
 
-/// Convert float to half float. From https://gist.github.com/martinkallman/5049614
-inline unsigned short FloatToHalf(float value)
-{
-    unsigned inu = *((unsigned*)&value);
-    unsigned t1 = inu & 0x7fffffff;         // Non-sign bits
-    unsigned t2 = inu & 0x80000000;         // Sign bit
-    unsigned t3 = inu & 0x7f800000;         // Exponent
+///// Convert float to half float. From https://gist.github.com/martinkallman/5049614
+//inline unsigned short FloatToHalf(float value)
+//{
+//    unsigned inu = *((unsigned*)&value);
+//    unsigned t1 = inu & 0x7fffffff;         // Non-sign bits
+//    unsigned t2 = inu & 0x80000000;         // Sign bit
+//    unsigned t3 = inu & 0x7f800000;         // Exponent
 
-    t1 >>= 13;                              // Align mantissa on MSB
-    t2 >>= 16;                              // Shift sign bit into position
+//    t1 >>= 13;                              // Align mantissa on MSB
+//    t2 >>= 16;                              // Shift sign bit into position
 
-    t1 -= 0x1c000;                          // Adjust bias
+//    t1 -= 0x1c000;                          // Adjust bias
 
-    t1 = (t3 < 0x38800000) ? 0 : t1;        // Flush-to-zero
-    t1 = (t3 > 0x47000000) ? 0x7bff : t1;   // Clamp-to-max
-    t1 = (t3 == 0 ? 0 : t1);                // Denormals-as-zero
+//    t1 = (t3 < 0x38800000) ? 0 : t1;        // Flush-to-zero
+//    t1 = (t3 > 0x47000000) ? 0x7bff : t1;   // Clamp-to-max
+//    t1 = (t3 == 0 ? 0 : t1);                // Denormals-as-zero
 
-    t1 |= t2;                               // Re-insert sign bit
+//    t1 |= t2;                               // Re-insert sign bit
 
-    return (unsigned short)t1;
-}
+//    return (unsigned short)t1;
+//}
 
-/// Convert half float to float. From https://gist.github.com/martinkallman/5049614
-inline float HalfToFloat(unsigned short value)
-{
-    unsigned t1 = value & 0x7fff;           // Non-sign bits
-    unsigned t2 = value & 0x8000;           // Sign bit
-    unsigned t3 = value & 0x7c00;           // Exponent
+///// Convert half float to float. From https://gist.github.com/martinkallman/5049614
+//inline float HalfToFloat(unsigned short value)
+//{
+//    unsigned t1 = value & 0x7fff;           // Non-sign bits
+//    unsigned t2 = value & 0x8000;           // Sign bit
+//    unsigned t3 = value & 0x7c00;           // Exponent
 
-    t1 <<= 13;                              // Align mantissa on MSB
-    t2 <<= 16;                              // Shift sign bit into position
+//    t1 <<= 13;                              // Align mantissa on MSB
+//    t2 <<= 16;                              // Shift sign bit into position
 
-    t1 += 0x38000000;                       // Adjust bias
+//    t1 += 0x38000000;                       // Adjust bias
 
-    t1 = (t3 == 0 ? 0 : t1);                // Denormals-as-zero
+//    t1 = (t3 == 0 ? 0 : t1);                // Denormals-as-zero
 
-    t1 |= t2;                               // Re-insert sign bit
+//    t1 |= t2;                               // Re-insert sign bit
 
-    float out;
-    *((unsigned*)&out) = t1;
-    return out;
-}
+//    float out;
+//    *((unsigned*)&out) = t1;
+//    return out;
+//}
 
 /// Calculate both sine and cosine, with angle in degrees.
 LUTEFISK3D_EXPORT void SinCos(float angle, float& sin, float& cos);

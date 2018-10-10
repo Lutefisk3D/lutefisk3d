@@ -219,7 +219,7 @@ bool ParticleEffect2D::EndLoad()
     // Apply the sprite now
     if (!loadSpriteName_.isEmpty())
     {
-        ResourceCache* cache = context_->m_ResourceCache.get();
+        ResourceCache* cache = context_->resourceCache();
         sprite_ = cache->GetResource<Sprite2D>(loadSpriteName_);
         if (!sprite_)
             URHO3D_LOGERROR("Could not load sprite " + loadSpriteName_ + " for particle effect");

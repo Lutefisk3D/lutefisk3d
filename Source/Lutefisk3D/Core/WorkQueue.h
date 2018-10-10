@@ -39,9 +39,10 @@ struct WorkQueueSignals {
     jl::Signal<WorkItem *> workItemCompleted; //WorkItem ptr
 };
 
+class WorkerThread;
 
 /// Work queue item.
-struct LUTEFISK3D_EXPORT WorkItem : public RefCounted
+struct WorkItem : public RefCounted
 {
     friend class WorkQueue;
 
@@ -63,43 +64,28 @@ public:
 
 private:
     bool pooled_=false;
-};
-struct comparePriority {
-    bool operator()(const WorkItem *a,const WorkItem *b) const {
-        return a->priority_ < b->priority_;
-    }
-    bool operator()(const SharedPtr<WorkItem> &a,const SharedPtr<WorkItem> &b) const {
-        return a->priority_ < b->priority_;
-    }
-    bool operator()(const WorkItem *a,unsigned int b) const {
-        return a->priority_ < b;
-    }
-    bool operator()(unsigned int b,const WorkItem *a) const {
-        return b < a->priority_;
-    }
-};
-struct comparePrioritySharedPtr {
-    bool operator()(const SharedPtr<WorkItem> &a,const SharedPtr<WorkItem> &b) const {
-        return a->priority_ < b->priority_;
-    }
+    /// Work function. Called without any parameters.
+    std::function<void()> workLambda_;
 };
 /// Work queue subsystem for multithreading.
-class WorkQueue : public RefCounted,public jl::SignalObserver,public WorkQueueSignals
+class LUTEFISK3D_EXPORT WorkQueue : public RefCounted,public jl::SignalObserver,public WorkQueueSignals
 {
     friend class WorkerThread;
 
 public:
-    WorkQueue(Context* context);
-    ~WorkQueue();
+    explicit WorkQueue(Context* context);
+    ~WorkQueue() override;
 
     /// Create worker threads. Can only be called once.
     void CreateThreads(unsigned numThreads);
     /// Get pointer to an usable WorkItem from the item pool. Allocate one if no more free items.
     SharedPtr<WorkItem> GetFreeItem();
     /// Add a work item and resume worker threads.
-    void AddWorkItem(SharedPtr<WorkItem> item);
+    void AddWorkItem(const SharedPtr<WorkItem> &item);
+    /// Add a work item and resume worker threads.
+    WorkItem* AddWorkItem(std::function<void()> workFunction, unsigned priority = 0);
     /// Remove a work item before it has started executing. Return true if successfully removed.
-    bool RemoveWorkItem(SharedPtr<WorkItem> item);
+    bool RemoveWorkItem(SharedPtr<WorkItem> &item);
     /// Remove a number of work items before they have started executing. Return the number of items successfully removed.
     unsigned RemoveWorkItems(const std::vector<SharedPtr<WorkItem> >& items);
     /// Pause worker threads.
@@ -142,10 +128,9 @@ private:
     /// Work item pool for reuse to cut down on allocation. The bool is a flag for item pooling and whether it is available or not.
     std::deque<SharedPtr<WorkItem> > poolItems_;
     /// Work item collection. Accessed only by the main thread.
-    std::multiset<SharedPtr<WorkItem>,comparePrioritySharedPtr> workItems_;
+    std::deque<SharedPtr<WorkItem>> workItems_;
     /// Work item prioritized queue for worker threads. Pointers are guaranteed to be valid (point to workItems.)
-    std::multiset<WorkItem*,comparePriority> queue_;
-    typedef std::multiset<WorkItem*,comparePriority>::iterator iQueue;
+    std::deque<WorkItem*> queue_;
     /// Worker queue mutex.
     Mutex queueMutex_;
     /// Shutting down flag.
@@ -163,6 +148,4 @@ private:
     /// Maximum milliseconds per frame to spend on low-priority work, when there are no worker threads.
     int maxNonThreadedWorkMs_;
 };
-typedef std::multiset<WorkItem*,comparePriority> msWorkitem;
-typedef msWorkitem::iterator imsWorkitem;
 }

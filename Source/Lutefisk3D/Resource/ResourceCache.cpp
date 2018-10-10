@@ -64,7 +64,7 @@ static const char* checkDirs[] =
 static const SharedPtr<Resource> noResource;
 
 ResourceCache::ResourceCache(Context* context) :
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     m_context(context),
     autoReloadResources_(false),
     returnFailedResources_(false),
@@ -386,6 +386,7 @@ bool ResourceCache::ReloadResource(Resource* resource)
         resource->ResetUseTimer();
         UpdateResourceGroup(resource->GetType());
         resource->reloadFinished();
+        g_resourceSignals.reloadFinished(resource);
         return true;
     }
 
@@ -975,6 +976,11 @@ QString ResourceCache::PrintMemoryUsage() const
 
     return output;
 }
+
+const QString &ResourceCache::GetResourceDir(unsigned index) const
+{
+    return index < resourceDirs_.size() ? resourceDirs_[index] : s_dummy;
+}
 /// Find a resource.
 const SharedPtr<Resource>& ResourceCache::FindResource(StringHash type, StringHash nameHash)
 {
@@ -1080,6 +1086,12 @@ void ResourceCache::HandleBeginFrame(unsigned FrameNumber,float timeStep)
         QString fileName;
         while (watcher->GetNextChange(fileName))
         {
+            auto it = std::find(ignoreResourceAutoReload_.begin(),ignoreResourceAutoReload_.end(),fileName);
+            if (it != ignoreResourceAutoReload_.end())
+            {
+                ignoreResourceAutoReload_.erase(it);
+                continue;
+            }
             ReloadResourceWithDependencies(fileName);
 
             // Finally send a general file changed event even if the file was not a tracked resource
@@ -1089,7 +1101,7 @@ void ResourceCache::HandleBeginFrame(unsigned FrameNumber,float timeStep)
 
     // Check for background loaded resources that can be finished
     {
-        URHO3D_PROFILE_CTX(m_context,FinishBackgroundResources);
+        URHO3D_PROFILE(FinishBackgroundResources);
         backgroundLoader_->FinishResources(finishBackgroundResourcesMs_);
     }
 }
@@ -1133,6 +1145,145 @@ void RegisterResourceLibrary(Context* context)
     JSONFile::RegisterObject(context);
     PListFile::RegisterObject(context);
     XMLFile::RegisterObject(context);
+}
+
+void ResourceCache::Scan(QStringList & result, const QString& pathName, const QString& filter, unsigned flags, bool recursive) const
+{
+    QStringList interimResult;
+
+    for (const auto & package : packages_)
+    {
+        package->Scan(interimResult, pathName, filter, recursive);
+        result.append(interimResult);
+    }
+
+    FileSystem* fileSystem = m_context->m_FileSystem.get();
+    for (size_t i = 0; i < resourceDirs_.size(); ++i)
+    {
+        fileSystem->ScanDir(interimResult, resourceDirs_[i] + pathName, filter, flags, recursive);
+        std::move(std::begin(interimResult), std::end(interimResult), std::back_inserter(result));
+        interimResult.clear();
+    }
+}
+
+QString ResourceCache::PrintResources(const QString& typeName) const
+{
+
+    StringHash typeNameHash(typeName);
+
+    QString output = "Resource Type         Refs   WeakRefs  Name\n\n";
+
+    for (const auto & resourceGroup : resourceGroups_)
+    {
+        for (const auto & resIt : resourceGroup.second.resources_)
+        {
+            Resource* resource = resIt.second;
+
+            // filter
+            if (typeName.length() && resource->GetType() != typeNameHash)
+                continue;
+
+            output += QString::asprintf("%s     %i     %i     %s\n", qPrintable(resource->GetTypeName()),
+                                        resource->Refs(), resource->WeakRefs(), qPrintable(resource->GetName()));
+        }
+
+    }
+
+    return output;
+}
+
+bool ResourceCache::RenameResource(QString source, QString destination)
+{
+    if (!packages_.empty())
+    {
+        URHO3D_LOGERROR("Renaming resources not supported while packages are in use.");
+        return false;
+    }
+
+    if (!IsAbsolutePath(source) || !IsAbsolutePath(destination))
+    {
+        URHO3D_LOGERROR("Renaming resources requires absolute paths.");
+        return false;
+    }
+
+    auto* fileSystem = m_context->m_FileSystem.get();
+
+    if (!fileSystem->FileExists(source) && !fileSystem->DirExists(source))
+    {
+        URHO3D_LOGERROR("Source path does not exist.");
+        return false;
+    }
+
+    if (fileSystem->FileExists(destination) || fileSystem->DirExists(destination))
+    {
+        URHO3D_LOGERROR("Destination path already exists.");
+        return false;
+    }
+
+    // Ensure parent path exists
+    if (!fileSystem->CreateDirsRecursive(GetPath(destination)))
+        return false;
+
+    if (!fileSystem->Rename(source, destination))
+    {
+        URHO3D_LOGERRORF("Renaming '%s' to '%s' failed.", qPrintable(source), qPrintable(destination));
+        return false;
+    }
+
+    QString resourceName;
+    QString destinationName;
+    for (const auto& dir : resourceDirs_)
+    {
+        if (source.startsWith(dir))
+            resourceName = source.mid(dir.length());
+        if (destination.startsWith(dir))
+            destinationName = destination.mid(dir.length());
+    }
+
+    if (resourceName.isEmpty())
+    {
+        URHO3D_LOGERRORF("'%s' does not exist in resource path.", qPrintable(source));
+        return false;
+    }
+
+    // Update loaded resource information
+    for (auto& groupPair : resourceGroups_)
+    {
+        bool movedAny = false;
+        auto resourcesCopy = groupPair.second.resources_;
+        for (auto& resourcePair : resourcesCopy)
+        {
+            SharedPtr<Resource> resource = resourcePair.second;
+            if (resource->GetName().startsWith(resourceName))
+            {
+                if (autoReloadResources_)
+                {
+                    ignoreResourceAutoReload_.emplace_back(destinationName);
+                    ignoreResourceAutoReload_.emplace_back(resourceName);
+                }
+
+                groupPair.second.resources_.erase(resource->GetNameHash());
+                resource->SetName(destinationName);
+                groupPair.second.resources_[resource->GetNameHash()] = resource;
+                movedAny = true;
+                g_resourceSignals.resourceRenamed(resourceName,destinationName);
+            }
+        }
+        if (movedAny)
+            UpdateResourceGroup(groupPair.first);
+    }
+
+    return true;
+}
+
+void ResourceCache::IgnoreResourceReload(const QString& name)
+{
+    ignoreResourceAutoReload_.emplace_back(name);
+}
+
+void ResourceCache::IgnoreResourceReload(const Resource* resource)
+{
+    IgnoreResourceReload(resource->GetName());
 }
 
 }

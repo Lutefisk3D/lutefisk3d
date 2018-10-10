@@ -31,17 +31,15 @@
 namespace Urho3D
 {
 class FileSystem;
-#define LUTEFISK3D_FILEWATCHER
+
 /// Watches a directory and its subdirectories for files being modified.
 class LUTEFISK3D_EXPORT FileWatcher : public Object, public Thread
 {
     URHO3D_OBJECT(FileWatcher, Object)
 
 public:
-    /// Construct.
     FileWatcher(Context* context);
-    /// Destruct.
-    virtual ~FileWatcher();
+    ~FileWatcher() override;
 
     /// Directory watching loop.
     void ThreadFunction() override;

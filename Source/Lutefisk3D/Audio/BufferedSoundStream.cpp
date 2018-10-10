@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,7 @@ BufferedSoundStream::BufferedSoundStream() :
 {
 }
 
-BufferedSoundStream::~BufferedSoundStream()
-{
-}
+BufferedSoundStream::~BufferedSoundStream() = default;
 
 unsigned BufferedSoundStream::GetData(signed char* dest, unsigned numBytes)
 {
@@ -51,7 +49,7 @@ unsigned BufferedSoundStream::GetData(signed char* dest, unsigned numBytes)
         if (copySize > numBytes)
             copySize = numBytes;
 
-        memcpy(dest, front->first.Get() + position_, copySize);
+        memcpy(dest, front->first.get() + position_, copySize);
         position_ += copySize;
         if (position_ >= front->second)
         {
@@ -74,12 +72,12 @@ void BufferedSoundStream::AddData(void* data, unsigned numBytes)
         MutexLock lock(bufferMutex_);
 
         SharedArrayPtr<signed char> newBuffer(new signed char[numBytes]);
-        memcpy(newBuffer.Get(), data, numBytes);
+        memcpy(newBuffer.get(), data, numBytes);
         buffers_.emplace_back(newBuffer, numBytes);
     }
 }
 
-void BufferedSoundStream::AddData(SharedArrayPtr<signed char> data, unsigned numBytes)
+void BufferedSoundStream::AddData(const SharedArrayPtr<signed char>& data, unsigned numBytes)
 {
     if (data && numBytes)
     {
@@ -89,7 +87,7 @@ void BufferedSoundStream::AddData(SharedArrayPtr<signed char> data, unsigned num
     }
 }
 
-void BufferedSoundStream::AddData(SharedArrayPtr<signed short> data, unsigned numBytes)
+void BufferedSoundStream::AddData(const SharedArrayPtr<signed short>& data, unsigned numBytes)
 {
     if (data && numBytes)
     {

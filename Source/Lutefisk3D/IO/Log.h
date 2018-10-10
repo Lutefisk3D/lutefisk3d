@@ -85,8 +85,11 @@ extern unsigned logLevelNameToIndex(const QString &name);
 #ifdef LUTEFISK3D_LOGGING
 #define URHO3D_LOGDEBUG(message) Urho3D::Log::Write(Urho3D::LOG_DEBUG, message)
 #define URHO3D_LOGINFO(message) Urho3D::Log::Write(Urho3D::LOG_INFO, message)
+#define URHO3D_LOGINFOF(message,...) URHO3D_LOGINFO(QString::asprintf(message,__VA_ARGS__))
 #define URHO3D_LOGWARNING(message) Urho3D::Log::Write(Urho3D::LOG_WARNING, message)
+#define URHO3D_LOGWARNINGF(message,...) URHO3D_LOGWARNING(QString::asprintf(message,__VA_ARGS__))
 #define URHO3D_LOGERROR(message) Urho3D::Log::Write(Urho3D::LOG_ERROR, message)
+#define URHO3D_LOGERRORF(message,...) URHO3D_LOGERROR(QString::asprintf(message,__VA_ARGS__))
 #define URHO3D_LOGRAW(message) Urho3D::Log::WriteRaw(message)
 #else
 #define URHO3D_LOGDEBUG(message) ((void)0)

@@ -64,6 +64,14 @@ public:
     XMLElement CreateChild(const QString& name);
     /// Create a child element.
     XMLElement CreateChild(const char* name);
+    /// Return the first child element with name or create if does not exist.
+    XMLElement GetOrCreateChild(const QString& name);
+    /// Return the first child element with name or create if does not exist.
+    XMLElement GetOrCreateChild(const char* name);
+    /// Append element. If asCopy is set to true then original element is copied and appended, otherwise specified element is appended.
+    bool AppendChild(XMLElement element, bool asCopy = false);
+    /// Remove element from its parent.
+    bool Remove();
     /// Remove a child element. Return true if successful.
     bool RemoveChild(const XMLElement& element);
     /// Remove a child element by name. Return true if successful.
@@ -118,10 +126,16 @@ public:
     bool SetUInt(const QString& name, unsigned value);
     /// Set an integer attribute.
     bool SetInt(const QString& name, int value);
+    /// Set an unsigned long long integer attribute.
+    bool SetUInt64(const QString& name, unsigned long long value);
+    /// Set a long long integer attribute.
+    bool SetInt64(const QString& name, long long value);
     /// Set an IntRect attribute.
     bool SetIntRect(const QString& name, const IntRect& value);
     /// Set an IntVector2 attribute.
     bool SetIntVector2(const QString& name, const IntVector2& value);
+    /// Set an IntVector3 attribute.
+    bool SetIntVector3(const QString& name, const IntVector3& value);
     /// Set a Rect attribute.
     bool SetRect(const QString& name, const Rect& value);
     /// Set a quaternion attribute.
@@ -162,7 +176,7 @@ public:
     /// Return whether refers to an element or an XPath node.
     bool NotNull() const;
     /// Return true if refers to an element or an XPath node.
-    operator bool () const;
+    explicit operator bool() const;
     /// Return element name (or attribute name if it is an attribute only XPath query result).
     QString GetName() const;
     /// Return whether has a child element.

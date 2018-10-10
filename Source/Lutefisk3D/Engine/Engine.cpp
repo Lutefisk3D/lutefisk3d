@@ -24,12 +24,10 @@
 #include "EngineEvents.h"
 
 #include "Lutefisk3D/Audio/Audio.h"
-#include "Lutefisk3D/UI/Console.h"
 #include "Lutefisk3D/Container/Allocator.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/Core/CoreEvents.h"
-#include "Lutefisk3D/UI/DebugHud.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/IOEvents.h"
 #include "Lutefisk3D/IO/FileSystem.h"
@@ -37,6 +35,11 @@
 #include "Lutefisk3D/Graphics/GraphicsEvents.h"
 #include "Lutefisk3D/Graphics/Renderer.h"
 #include "Lutefisk3D/Core/StringUtils.h"
+#ifdef LUTEFISK3D_SYSTEMUI
+#include "Lutefisk3D/SystemUI/SystemUI.h"
+#include "Lutefisk3D/SystemUI/Console.h"
+#include "Lutefisk3D/SystemUI/DebugHud.h"
+#endif
 #ifdef LUTEFISK3D_PROFILING
 #include "Lutefisk3D/Core/EventProfiler.h"
 #endif
@@ -46,6 +49,9 @@
 #endif
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/PackageFile.h"
+#ifdef LUTEFISK3D_IK
+#include "Lutefisk3D/IK/IK.h"
+#endif
 #ifdef LUTEFISK3D_NAVIGATION
 #include "Lutefisk3D/Navigation/NavigationMesh.h"
 #endif
@@ -59,11 +65,13 @@
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Graphics/Renderer.h"
 #include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Resource/Image.h"
 #include "Lutefisk3D/Scene/Scene.h"
 #include "Lutefisk3D/Scene/SceneEvents.h"
 #ifdef LUTEFISK3D_UI
 #include "Lutefisk3D/UI/UI.h"
 #endif
+#include "Lutefisk3D/UI/UIEvents.h"
 #ifdef LUTEFISK3D_2D
 #include "Lutefisk3D/2D/Urho2D.h"
 #endif
@@ -116,8 +124,8 @@ struct ObserverAllocator : public AllocatorWrapper<jl::SignalObserver::eAllocati
 };
 
 enum { eMaxConnections = 32000 };
-SignalAllocator oSignalConnectionAllocator;
-ObserverAllocator oObserverConnectionAllocator;
+SignalAllocator *oSignalConnectionAllocator;
+ObserverAllocator *oObserverConnectionAllocator;
 /// Get an engine startup parameter, with default value if missing.
 const Urho3D::Variant& GetParameter(const Urho3D::VariantMap& parameters, const QString& parameter, const Urho3D::Variant& defaultValue = Urho3D::Variant::EMPTY)
 {
@@ -134,7 +142,6 @@ extern const char* logLevelPrefixes[];
 
 Engine::Engine(Context* context) :
     Object(context),
-    SignalObserver(nullptr),
     timeStep_(0.0f),
     timeStepSmoothing_(2),
     minFps_(10),
@@ -150,27 +157,33 @@ Engine::Engine(Context* context) :
     headless_(false),
     audioPaused_(false)
 {
-
+    context->m_Engine = this;
+    if(!oSignalConnectionAllocator)
+    {
+        oSignalConnectionAllocator = new SignalAllocator;
+        oObserverConnectionAllocator = new ObserverAllocator;
+    }
     // Initialize the signal system with allocators
-    context->m_signal_allocator = &oSignalConnectionAllocator;
-    context->m_observer_allocator = &oObserverConnectionAllocator;
-    jl::SignalBase::SetCommonConnectionAllocator( &oSignalConnectionAllocator );
-    SetConnectionAllocator(&oObserverConnectionAllocator);
-    g_coreSignals.init(&oSignalConnectionAllocator);
-    g_consoleSignals.init(&oSignalConnectionAllocator);
-    g_graphicsSignals.init(&oSignalConnectionAllocator);
-    g_resourceSignals.init(&oSignalConnectionAllocator);
-    g_sceneSignals.init(&oSignalConnectionAllocator);
-    g_uiSignals.init(&oSignalConnectionAllocator);
-    g_inputSignals.init(&oSignalConnectionAllocator);
-    g_ioSignals.init(&oSignalConnectionAllocator);
-    g_LogSignals.init(&oSignalConnectionAllocator);
+    context->m_signal_allocator = oSignalConnectionAllocator;
+    context->m_observer_allocator = oObserverConnectionAllocator;
+    jl::SignalBase::SetCommonConnectionAllocator( oSignalConnectionAllocator );
+    SetConnectionAllocator(oObserverConnectionAllocator);
+    g_coreSignals.init(oSignalConnectionAllocator);
+    g_consoleSignals.init(oSignalConnectionAllocator);
+    g_engineSignals.init(oSignalConnectionAllocator);
+    g_graphicsSignals.init(oSignalConnectionAllocator);
+    g_resourceSignals.init(oSignalConnectionAllocator);
+    g_sceneSignals.init(oSignalConnectionAllocator);
+    g_uiSignals.init(oSignalConnectionAllocator);
+    g_inputSignals.init(oSignalConnectionAllocator);
+    g_ioSignals.init(oSignalConnectionAllocator);
+    g_LogSignals.init(oSignalConnectionAllocator);
 
     // Register self as a subsystem
-    context_->RegisterSubsystem(StringHash("Engine"),this);
+    context_->RegisterSubsystem(this);
 
     // Create subsystems which do not depend on engine initialization or startup parameters
-    context_->m_TimeSystem.reset(new Time(context_));
+    context_->m_TimeSystem.reset(new Time());
     context_->m_WorkQueueSystem.reset(new WorkQueue(context_));
 #ifdef LUTEFISK3D_PROFILING
     context_->m_ProfilerSystem.reset(new Profiler(context_));
@@ -181,18 +194,21 @@ Engine::Engine(Context* context) :
 #endif
     context_->m_ResourceCache.reset(new ResourceCache(context_));
 #ifdef LUTEFISK3D_NETWORK
-    context_->RegisterSubsystem(StringHash("Network"),new Network(context_));
+    context_->m_Network.reset(new Network(context_));
 #endif
 #ifdef LUTEFISK3D_INPUT
     context_->m_InputSystem.reset(new Input(context_));
 #endif
-    context_->RegisterSubsystem(StringHash("Audio"),new Audio(context_));
+    context_->m_AudioSystem = std::make_unique<Audio>(context_);
 #ifdef LUTEFISK3D_UI
     context_->m_UISystem.reset(new UI(context_));
 #endif
-
     // Register object factories for libraries which are not automatically registered along with subsystem creation
     RegisterSceneLibrary(context_);
+
+#ifdef LUTEFISK3D_IK
+    RegisterIKLibrary(context_);
+#endif
 
 #ifdef LUTEFISK3D_PHYSICS
     RegisterPhysicsLibrary(context_);
@@ -207,13 +223,15 @@ Engine::Engine(Context* context) :
 #endif
 }
 
+Engine::~Engine() = default;
+
 /// Initialize engine using parameters given and show the application window. Return true if successful.
 bool Engine::Initialize(const VariantMap& parameters)
 {
     if (initialized_)
         return true;
 
-    URHO3D_PROFILE_CTX(context_,InitEngine);
+    URHO3D_PROFILE(InitEngine);
 
     // Set headless mode
     headless_ = GetParameter(parameters, EP_HEADLESS, false).GetBool();
@@ -266,7 +284,7 @@ bool Engine::Initialize(const VariantMap& parameters)
     if (!InitializeResourceCache(parameters, false))
         return false;
 
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     FileSystem* fileSystem = context_->m_FileSystem.get();
     // Initialize graphics & audio output
     if (!headless_)
@@ -274,8 +292,8 @@ bool Engine::Initialize(const VariantMap& parameters)
         Graphics* graphics = context_->m_Graphics.get();
         Renderer* renderer = context_->m_Renderer.get();
 
-        if (HasParameter(parameters, EP_EMBEDDED_WINDOW))
-            graphics->SetEmbeddedWindow();
+        if (HasParameter(parameters, EP_EXTERNAL_WINDOW))
+            graphics->SetEmbeddedWindow(GetParameter(parameters, EP_EXTERNAL_WINDOW).GetVoidPtr());
         graphics->SetWindowTitle(GetParameter(parameters, EP_WINDOW_TITLE, "Urho3D").GetString());
         graphics->SetWindowIcon(cache->GetResource<Image>(GetParameter(parameters, EP_WINDOW_ICON, QString()).GetString()));
         graphics->SetFlushGPU(GetParameter(parameters, EP_FLUSH_GPU, false).GetBool());
@@ -315,7 +333,7 @@ bool Engine::Initialize(const VariantMap& parameters)
 
         if (GetParameter(parameters, EP_SOUND, true).GetBool())
         {
-            GetSubsystem<Audio>()->SetMode(
+            context_->m_AudioSystem->SetMode(
                 GetParameter(parameters, EP_SOUND_BUFFER, 100).GetInt(),
                 GetParameter(parameters, EP_SOUND_MIX_RATE, 0).GetInt());
         }
@@ -334,24 +352,24 @@ bool Engine::Initialize(const VariantMap& parameters)
         timeOut_ = GetParameter(parameters, EP_TIME_OUT, 0).GetInt() * 1000000LL;
 #endif
 
-#ifdef LUTEFISK3D_PROFILING
-    if (GetParameter(parameters, EP_EVENT_PROFILER, true).GetBool())
+    if (!headless_)
     {
-        context_->m_EventProfilerSystem.reset(new EventProfiler(context_));
-        EventProfiler::SetActive(true);
-    }
+#ifdef LUTEFISK3D_SYSTEMUI
+        context_->m_SystemUI.reset(new SystemUI(context_));
 #endif
+    }
     frameTimer_.Reset();
 
     URHO3D_LOGINFO("Initialized engine");
     initialized_ = true;
+    g_engineSignals.initialized();
     return true;
 }
 /// Reinitialize resource cache subsystem using parameters given. Implicitly called by Initialize.
 /// \returns true if successful.
 bool Engine::InitializeResourceCache(const VariantMap &parameters, bool removeOld /*= true*/)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     FileSystem* fileSystem = context_->m_FileSystem.get();
 
     // Remove all resource paths and packages
@@ -398,7 +416,7 @@ bool Engine::InitializeResourceCache(const VariantMap &parameters, bool removeOl
                     break;
                 }
             }
-            if (j == resourcePrefixPaths.size())
+            if (j == resourcePrefixPaths.size() && !headless_)
             {
                 URHO3D_LOGERROR(QString("Failed to add resource path '%1', "
                                         "check the documentation on how to set the 'resource prefix path'").arg(resourcePath));
@@ -510,15 +528,7 @@ void Engine::RunFrame()
     Input* input = context_->m_InputSystem.get();
     isMinimized = input->IsMinimized();
 #endif
-    Audio* audio = GetSubsystem<Audio>();
-
-#ifdef LUTEFISK3D_PROFILING
-    if (EventProfiler::IsActive())
-    {
-        if (context_->m_EventProfilerSystem)
-            context_->m_EventProfilerSystem->BeginFrame();
-    }
-#endif
+    Audio* audio = context_->m_AudioSystem.get();
 
     time->BeginFrame(timeStep_);
 
@@ -555,15 +565,19 @@ Console* Engine::CreateConsole()
     if (headless_ || !initialized_)
         return nullptr;
 
+#ifdef LUTEFISK3D_SYSTEMUI
     // Return existing console if possible
     Console* console = GetSubsystem<Console>();
     if (!console)
     {
         console = new Console(context_);
-        context_->RegisterSubsystem(StringHash("Console"),console);
+        context_->RegisterSubsystem(console);
     }
 
     return console;
+#else
+    return nullptr;
+#endif
 }
 /// Create the debug hud.
 DebugHud* Engine::CreateDebugHud()
@@ -571,15 +585,19 @@ DebugHud* Engine::CreateDebugHud()
     if (headless_ || !initialized_)
         return nullptr;
 
+#ifdef LUTEFISK3D_SYSTEMUI
     // Return existing debug HUD if possible
     DebugHud* debugHud = GetSubsystem<DebugHud>();
     if (!debugHud)
     {
         debugHud = new DebugHud(context_);
-        context_->RegisterSubsystem(StringHash("DebugHud"),debugHud);
+        context_->RegisterSubsystem(debugHud);
     }
 
     return debugHud;
+#else
+    return nullptr;
+#endif
 }
 /// Set how many frames to average for timestep smoothing. Default is 2. 1 disables smoothing.
 void Engine::SetTimeStepSmoothing(int frames)
@@ -607,24 +625,13 @@ void Engine::Exit()
     DoExit();
 }
 
-void Engine::DumpProfiler()
-{
-#ifdef LUTEFISK3D_LOGGING
-    if (!Thread::IsMainThread())
-        return;
-
-    if (context_->m_ProfilerSystem)
-        URHO3D_LOGRAW(context_->m_ProfilerSystem->PrintData(true, true) + "\n");
-#endif
-}
-
 void Engine::DumpResources(bool dumpFileName)
 {
 #ifdef LUTEFISK3D_LOGGING
     if (!Thread::IsMainThread())
         return;
 
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     const HashMap<StringHash, ResourceGroup>& resourceGroups = cache->GetAllResources();
     if (dumpFileName)
     {
@@ -686,10 +693,10 @@ void Engine::DumpMemory()
 /// Send frame update events.
 void Engine::Update()
 {
-    URHO3D_PROFILE_CTX(context_,Update);
+    URHO3D_PROFILE(Update);
     if (!Thread::IsMainThread())
     {
-        URHO3D_LOGERROR("Sending events is only supported from the main thread");
+        URHO3D_LOGERROR("Engine::Update must be called from the main thread");
         return;
     }
     g_coreSignals.update(timeStep_);
@@ -709,7 +716,7 @@ void Engine::Render()
     if (headless_)
         return;
 
-    URHO3D_PROFILE_CTX(context_,Render);
+    URHO3D_PROFILE(Render);
 
     // If device is lost, BeginFrame will fail and we skip rendering
     Graphics* graphics = context_->m_Graphics.get();
@@ -740,7 +747,7 @@ void Engine::ApplyFrameLimit()
     // Perform waiting loop if maximum FPS set
     if (maxFps)
     {
-        URHO3D_PROFILE_CTX(context_,ApplyFrameLimit);
+        URHO3D_PROFILE(ApplyFrameLimit);
 
         long long targetMax = 1000000LL / maxFps;
 
@@ -964,6 +971,8 @@ void Engine::DoExit()
 {
     if (context_->m_Graphics)
         context_->m_Graphics->Close();
+
+
     exiting_ = true;
 }
 

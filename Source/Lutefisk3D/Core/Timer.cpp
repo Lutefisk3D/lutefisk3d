@@ -43,8 +43,7 @@ namespace Urho3D
 bool HiresTimer::supported(false);
 long long HiresTimer::frequency(1000);
 
-Time::Time(Context* context) :
-    m_context(context),
+Time::Time() :
     frameNumber_(0),
     timeStep_(0.0f),
     timerPeriod_(0)
@@ -61,7 +60,7 @@ Time::Time(Context* context) :
     HiresTimer::supported = true;
 #endif
 }
-
+/// Destruct. Reset the low-resolution timer period if set.
 Time::~Time()
 {
     SetTimerPeriod(0);
@@ -73,7 +72,7 @@ static unsigned Tick()
     return (unsigned)timeGetTime();
 #else
     struct timeval time;
-    gettimeofday(&time, NULL);
+    gettimeofday(&time, nullptr);
     return (unsigned)(time.tv_sec * 1000 + time.tv_usec / 1000);
 #endif
 }
@@ -91,7 +90,7 @@ static long long HiresTick()
         return timeGetTime();
 #else
     struct timeval time;
-    gettimeofday(&time, NULL);
+    gettimeofday(&time, nullptr);
     return time.tv_sec * 1000000LL + time.tv_usec;
 #endif
 }
@@ -103,27 +102,15 @@ void Time::BeginFrame(float timeStep)
 
     timeStep_ = timeStep;
 
-    Profiler* profiler = m_context->m_ProfilerSystem.get();
-    if (profiler)
-        profiler->BeginFrame();
-
-    {
-        URHO3D_PROFILE_CTX(m_context,BeginFrame);
-        // Frame begin event
-        g_coreSignals.beginFrame(frameNumber_,timeStep_);
-    }
+    URHO3D_PROFILE_NONSCOPED(BeginFrame);
+    // Frame begin event
+    g_coreSignals.beginFrame(frameNumber_,timeStep_);
 }
 
 void Time::EndFrame()
 {
-    {
-        URHO3D_PROFILE_CTX(m_context,EndFrame);
-        g_coreSignals.endFrame();
-    }
-
-    Profiler* profiler = m_context->m_ProfilerSystem.get();
-    if (profiler)
-        profiler->EndFrame();
+    URHO3D_PROFILE_END();
+    g_coreSignals.endFrame();
 }
 
 void Time::SetTimerPeriod(unsigned mSec)
@@ -172,6 +159,11 @@ void Time::Sleep(unsigned mSec)
     time.tv_nsec = (mSec % 1000) * 1000000;
     nanosleep(&time, nullptr);
 #endif
+}
+
+float Time::GetFramesPerSecond() const
+{
+    return 1.0f / timeStep_;
 }
 
 Timer::Timer()

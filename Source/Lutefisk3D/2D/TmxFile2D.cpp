@@ -401,11 +401,11 @@ bool TmxFile2D::BeginLoad(Deserializer& source)
     if (GetName().isEmpty())
         SetName(source.GetName());
 
-    loadXMLFile_ = new XMLFile(context_);
+    loadXMLFile_ = std::make_unique<XMLFile>(context_);
     if (!loadXMLFile_->Load(source))
     {
         URHO3D_LOGERROR("Load XML failed " + source.GetName());
-        loadXMLFile_.Reset();
+        loadXMLFile_.reset();
         return false;
     }
 
@@ -413,7 +413,7 @@ bool TmxFile2D::BeginLoad(Deserializer& source)
     if (!rootElem)
     {
         URHO3D_LOGERROR("Invalid tmx file " + source.GetName());
-        loadXMLFile_.Reset();
+        loadXMLFile_.reset();
         return false;
     }
 
@@ -521,13 +521,13 @@ bool TmxFile2D::EndLoad()
 
         if (!ret)
         {
-            loadXMLFile_.Reset();
+            loadXMLFile_.reset();
             tsxXMLFiles_.clear();
             return false;
         }
     }
 
-    loadXMLFile_.Reset();
+    loadXMLFile_.reset();
     tsxXMLFiles_.clear();
     return true;
 }
@@ -649,7 +649,7 @@ bool TmxFile2D::LoadTileSet(const XMLElement& element)
     int imageHeight;
     bool isSingleTileSet = false;
 
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     {
         XMLElement imageElem = tileSetElem.GetChild("image");
         // Tileset based on single tileset image

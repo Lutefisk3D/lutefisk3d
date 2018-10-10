@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,9 @@ class LUTEFISK3D_EXPORT SoundStream : public RefCounted
 {
 public:
     SoundStream();
-    ~SoundStream();
+    ~SoundStream() override;
 
-    /// Seek to sample number
+    /// Seek to sample number. Return true on success. Need not be implemented by all streams.
     virtual bool Seek(unsigned int /*sample_number*/) { return false; }
 
     /// Produce sound data into destination. Return number of bytes produced. Called by SoundSource from the mixing thread.

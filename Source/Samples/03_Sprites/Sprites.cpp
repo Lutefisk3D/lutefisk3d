@@ -58,9 +58,9 @@ void Sprites::Start()
 
 void Sprites::CreateSprites()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    Graphics* graphics = m_context->m_Graphics.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Get rendering window size as floats
     float width = (float)graphics->GetWidth();
@@ -72,7 +72,7 @@ void Sprites::CreateSprites()
     for (unsigned i = 0; i < NUM_SPRITES; ++i)
     {
         // Create a new sprite, set it to use the texture
-        SharedPtr<Sprite> sprite(new Sprite(m_context));
+        SharedPtr<Sprite> sprite(new Sprite(GetContext()));
         sprite->SetTexture(decalTex);
 
         // The UI root element is as big as the rendering window, set random position within it
@@ -103,7 +103,7 @@ void Sprites::CreateSprites()
 
 void Sprites::MoveSprites(float timeStep)
 {
-    Graphics* graphics = m_context->m_Graphics.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
     float width = (float)graphics->GetWidth();
     float height = (float)graphics->GetHeight();
 

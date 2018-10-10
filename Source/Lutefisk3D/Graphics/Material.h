@@ -28,6 +28,7 @@
 #include "Lutefisk3D/Scene/ValueAnimationInfo.h"
 #include "Lutefisk3D/Math/Vector4.h"
 #include "Lutefisk3D/Core/Variant.h"
+#include "Lutefisk3D/Graphics/Technique.h"
 #include <array>
 namespace Urho3D
 {
@@ -42,27 +43,56 @@ class TextureCube;
 class ValueAnimationInfo;
 class JSONFile;
 class XMLFile;
-extern template class SharedPtr<XMLFile>;
-extern template class SharedPtr<JSONFile>;
-extern template class SharedPtr<Technique>;
 
-extern const char* cullModeNames[];
+static const constexpr char* textureUnitNames[] =
+{
+    "diffuse",
+    "normal",
+    "specular",
+    "emissive",
+    "environment",
+    "volume",
+    "custom1",
+    "custom2",
+    "lightramp",
+    "lightshape",
+    "shadowmap",
+    "faceselect",
+    "indirection",
+    "depth",
+    "light",
+    "zone",
+    nullptr
+};
+
+static const constexpr char* cullModeNames[] =
+{
+    "none",
+    "ccw",
+    "cw",
+    nullptr
+};
 static const constexpr uint8_t DEFAULT_RENDER_ORDER = 128;
-
+static const constexpr char* fillModeNames[] =
+{
+    "solid",
+    "wireframe",
+    "point",
+    nullptr
+};
 /// %Material's shader parameter definition.
 struct MaterialShaderParameter
 {
     QString name_; //!< Name.
     Variant value_; //!< Value.
 };
-//extern template class HashMap<StringHash, MaterialShaderParameter>;
 /// %Material's technique list entry.
-struct TechniqueEntry
+struct LUTEFISK3D_EXPORT TechniqueEntry
 {
     /// Construct with defaults.
-    TechniqueEntry();
+    TechniqueEntry() noexcept;
     /// Construct with parameters.
-    TechniqueEntry(Technique* tech, unsigned qualityLevel, float lodDistance);
+    TechniqueEntry(Technique* tech, eQuality qualityLevel, float lodDistance);
     ~TechniqueEntry();
 
     /// Technique.
@@ -71,13 +101,13 @@ struct TechniqueEntry
     /// it.
     SharedPtr<Technique> original_;
     /// Quality level.
-    int qualityLevel_ = 0;
+    eQuality qualityLevel_ = QUALITY_LOW;
     /// LOD distance.
     float lodDistance_ = 0.0f;
 };
 
 /// Material's shader parameter animation instance.
-class ShaderParameterAnimationInfo : public ValueAnimationInfo
+class LUTEFISK3D_EXPORT ShaderParameterAnimationInfo : public ValueAnimationInfo
 {
 public:
     /// Construct.
@@ -98,7 +128,7 @@ private:
 };
 struct MaterialPrivate;
 /// Describes how to render 3D geometries.
-class LUTEFISK3D_EXPORT Material : public Resource, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Material : public Resource
 {
     URHO3D_OBJECT(Material,Resource)
 
@@ -128,7 +158,7 @@ public:
     /// Set number of techniques.
     void SetNumTechniques(unsigned num);
     /// Set technique.
-    void SetTechnique(unsigned index, Technique* tech, unsigned qualityLevel = 0, float lodDistance = 0.0f);
+    void SetTechnique(unsigned index, Technique* tech, eQuality qualityLevel = QUALITY_LOW, float lodDistance = 0.0f);
     /// Set additional vertex shader defines. Separate multiple defines with spaces. Setting defines at the material level causes technique(s) to be cloned as necessary.
     void SetVertexShaderDefines(const QString& defines);
     /// Set additional pixel shader defines. Separate multiple defines with spaces. Setting defines at the material level causes technique(s) to be cloned as necessary.
@@ -189,7 +219,7 @@ public:
     /// Return texture by unit.
     Texture* GetTexture(TextureUnit unit) const;
     /// Return all textures.
-    const std::array<Texture *,MAX_TEXTURE_UNITS> & GetTextures() const { return textures_; }
+    const std::array<Urho3D::SharedPtr<Texture>,MAX_TEXTURE_UNITS> & GetTextures() const { return textures_; }
     /// Return additional vertex shader defines.
     const QString& GetVertexShaderDefines() const { return vertexShaderDefines_; }
     /// Return additional pixel shader defines.
@@ -247,7 +277,7 @@ private:
     /// Techniques.
     std::vector<TechniqueEntry> techniques_;
     /// Textures.
-    std::array<Texture *,MAX_TEXTURE_UNITS> textures_;
+    std::array<Urho3D::SharedPtr<Texture>,MAX_TEXTURE_UNITS> textures_;
     /// %Shader parameters.
     HashMap<StringHash, MaterialShaderParameter> shaderParameters_;
     /// Vertex shader defines.

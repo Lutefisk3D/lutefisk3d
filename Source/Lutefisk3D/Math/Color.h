@@ -24,8 +24,6 @@
 
 #include "Lutefisk3D/Math/Vector4.h"
 
-// Defined by Windows headers
-#undef TRANSPARENT
 class QString;
 
 namespace Urho3D
@@ -35,7 +33,7 @@ class LUTEFISK3D_EXPORT Color
 {
 public:
     /// Construct with default values (opaque white.)
-    Color() :
+    Color() noexcept :
         r_(1.0f),
         g_(1.0f),
         b_(1.0f),
@@ -44,16 +42,10 @@ public:
     }
 
     /// Copy-construct from another color.
-    Color(const Color& color) :
-        r_(color.r_),
-        g_(color.g_),
-        b_(color.b_),
-        a_(color.a_)
-    {
-    }
+    Color(const Color& color) noexcept = default;
 
     /// Construct from another color and modify the alpha.
-    Color(const Color& color, float a) :
+    Color(const Color& color, float a) noexcept :
         r_(color.r_),
         g_(color.g_),
         b_(color.b_),
@@ -62,7 +54,7 @@ public:
     }
 
     /// Construct from RGB values and set alpha fully opaque.
-    Color(float r, float g, float b) :
+    Color(float r, float g, float b) noexcept :
         r_(r),
         g_(g),
         b_(b),
@@ -71,7 +63,7 @@ public:
     }
 
     /// Construct from RGBA values.
-    Color(float r, float g, float b, float a) :
+    Color(float r, float g, float b, float a) noexcept :
         r_(r),
         g_(g),
         b_(b),
@@ -89,14 +81,7 @@ public:
     }
 
     /// Assign from another color.
-    Color& operator =(const Color& rhs)
-    {
-        r_ = rhs.r_;
-        g_ = rhs.g_;
-        b_ = rhs.b_;
-        a_ = rhs.a_;
-        return *this;
-    }
+    Color& operator =(const Color& rhs) noexcept = default;
     /// Test for equality with another color without epsilon.
     bool operator == (const Color& rhs) const { return r_ == rhs.r_ && g_ == rhs.g_ && b_ == rhs.b_ && a_ == rhs.a_; }
     /// Test for inequality with another color without epsilon.
@@ -129,6 +114,8 @@ public:
     Vector3 ToHSL() const;
     /// Return HSV color-space representation as a Vector3; the RGB values are clipped before conversion but not changed in the process.
     Vector3 ToHSV() const;
+    /// Set RGBA values from packed 32-bit integer, with R component in the lowest 8 bits (format 0xAABBGGRR).
+    void FromUInt(unsigned color);
     /// Set RGBA values from specified HSL values and alpha.
     void FromHSL(float h, float s, float l, float a = 1.0f);
     /// Set RGBA values from specified HSV values and alpha.
@@ -182,6 +169,11 @@ public:
     /// Return as string.
     QString ToString() const;
 
+    /// Return color packed to a 32-bit integer, with B component in the lowest 8 bits. Components are clamped to [0, 1] range.
+    unsigned ToUIntArgb() const;
+
+    /// Return hash value for HashSet & HashMap.
+    unsigned ToHash() const { return ToUInt(); }
     /// Red value.
     float r_;
     /// Green value.
@@ -209,8 +201,8 @@ public:
     static const Color MAGENTA;
     /// Opaque yellow color.
     static const Color YELLOW;
-    /// Transparent color (black with no alpha).
-    static const Color TRANSPARENT;
+    /// Transparent black color (black with no alpha).
+    static const Color TRANSPARENT_BLACK;
 
 protected:
     /// Return hue value given greatest and least RGB component, value-wise.

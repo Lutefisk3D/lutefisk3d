@@ -77,14 +77,12 @@ Vector2 TileMapInfo2D::TileIndexToPosition(int x, int y) const
     case O_STAGGERED:
         if (y % 2 == 0)
             return Vector2(x * tileWidth_, (height_ - 1 - y) * 0.5f * tileHeight_);
-        else
-            return Vector2((x + 0.5f) * tileWidth_, (height_ - 1 - y)  * 0.5f * tileHeight_);
+        return Vector2((x + 0.5f) * tileWidth_, (height_ - 1 - y)  * 0.5f * tileHeight_);
 
     case O_HEXAGONAL:
         if (y % 2 == 0)
             return Vector2(x * tileWidth_, (height_ - 1 - y) * 0.75f * tileHeight_);
-        else
-            return Vector2((x + 0.5f) * tileWidth_, (height_ - 1 - y)  * 0.75f * tileHeight_);
+        return Vector2((x + 0.5f) * tileWidth_, (height_ - 1 - y)  * 0.75f * tileHeight_);
 
     case O_ORTHOGONAL:
     default:
@@ -100,11 +98,11 @@ bool TileMapInfo2D::PositionToTileIndex(int& x, int& y, const Vector2& position)
     {
     case O_ISOMETRIC:
         {
-        float ox = position.x_ / tileWidth_ - height_ * 0.5f;
-        float oy = position.y_ / tileHeight_;
+            float ox = position.x_ / tileWidth_ - height_ * 0.5f;
+            float oy = position.y_ / tileHeight_;
 
-        x = (int)(width_ - oy + ox);
-        y = (int)(height_ - oy - ox);
+            x = (int)(width_ - oy + ox);
+            y = (int)(height_ - oy - ox);
         }
         break;
 

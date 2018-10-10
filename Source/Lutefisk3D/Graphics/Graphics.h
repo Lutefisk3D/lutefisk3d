@@ -37,7 +37,6 @@ namespace std {
 extern template
 class unique_ptr<uint8_t[]>;
 }
-struct SDL_Window;
 typedef struct GLFWwindow GLFWwindow;
 namespace Urho3D
 {
@@ -84,7 +83,7 @@ public:
     virtual ~Graphics();
 
     /// Inform graphics that our SDL_Window is wrapped in a toolkit's own window.
-    void SetEmbeddedWindow() { assert(!window2_); ourWindowIsEmbedded_=true; }
+    void SetEmbeddedWindow(void *true_window) { assert(!window2_); ourWindowIsEmbedded_=true; }
     bool WeAreEmbedded() const { return ourWindowIsEmbedded_; }
     /// Set window title.
     void SetWindowTitle(const QString& windowTitle);
@@ -304,6 +303,12 @@ public:
     IntVector2 GetDesktopResolution(int monitor) const;
     /// Return the number of currently connected monitors.
     int GetMonitorCount() const;
+    /// Returns the index of the display containing the center of the window on success or a negative error code on failure.
+    int GetCurrentMonitor() const;
+    /// Returns true if window is maximized or runs in full screen mode.
+    bool GetMaximized() const;
+    /// Return display dpi information: (hdpi, vdpi, ddpi). On failure returns zero vector.
+    Vector3 GetDisplayDPI(int monitor=0) const;
     /// Return hardware format for a compressed image format, or 0 if unsupported.
     uint32_t GetFormat(CompressedFormat format) const;
     ShaderVariation* GetShader(ShaderType type, const QString& name, const QString& defines = QString()) const;
@@ -456,7 +461,16 @@ public:
     static const Vector2& GetPixelUVOffset() { return pixelUVOffset; }
     /// Return maximum number of supported bones for skinning.
     static unsigned GetMaxBones();
-
+    /// Returns the index of the display containing the center of the window on success or a negative error code on failure.
+    int GetCurrentMonitor();
+    /// Returns number of monitors currently connected.
+    int GetNumMonitors();
+    /// Returns true if window is maximized or runs in full screen mode.
+    bool GetMaximized();
+    /// Returns resolution of monitor. monitorId should be less or equal to result of GetNumMonitors().
+    IntVector2 GetMonitorResolution(int monitorId) const;
+    /// Raises window if it was minimized.
+    void RaiseWindow();
 private:
     /// Create the application window.
     bool OpenWindow(int width, int height, bool resizable, bool borderless);

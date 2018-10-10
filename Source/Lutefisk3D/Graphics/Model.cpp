@@ -269,7 +269,7 @@ bool Model::BeginLoad(Deserializer& source)
             VertexBufferMorph newBuffer;
             unsigned bufferIndex = source.ReadUInt();
 
-            newBuffer.elementMask_ = source.ReadUInt();
+            newBuffer.elementMask_ = (VertexMaskFlags)source.ReadUInt();
             newBuffer.vertexCount_ = source.ReadUInt();
 
             // Base size: size of each vertex index
@@ -282,10 +282,9 @@ bool Model::BeginLoad(Deserializer& source)
             if (newBuffer.elementMask_ & MASK_TANGENT)
                 vertexSize += sizeof(Vector3);
             newBuffer.dataSize_ = newBuffer.vertexCount_ * vertexSize;
-            delete [] newBuffer.morphData_;
             newBuffer.morphData_ = new unsigned char[newBuffer.dataSize_];
 
-            source.Read(&newBuffer.morphData_[0], newBuffer.vertexCount_ * vertexSize);
+            source.Read(newBuffer.morphData_.get(), newBuffer.vertexCount_ * vertexSize);
 
             newMorph.buffers_[bufferIndex] = std::move(newBuffer);
             memoryUse += sizeof(VertexBufferMorph) + newBuffer.vertexCount_ * vertexSize;
@@ -309,7 +308,7 @@ bool Model::BeginLoad(Deserializer& source)
         geometryCenters_.push_back(Vector3::ZERO);
     memoryUse += sizeof(Vector3) * geometries_.size();
     // Read metadata
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     QString xmlName = ReplaceExtension(GetName(), ".xml");
     SharedPtr<XMLFile> file(cache->GetTempResource<XMLFile>(xmlName, false));
     if (file)
@@ -448,7 +447,7 @@ bool Model::Save(Serializer& dest) const
             if (morph.elementMask_ & MASK_TANGENT)
                 vertexSize += sizeof(Vector3);
 
-            dest.Write(morph.morphData_, vertexSize * morph.vertexCount_);
+            dest.Write(morph.morphData_.get(), vertexSize * morph.vertexCount_);
         }
     }
 
@@ -719,7 +718,7 @@ SharedPtr<Model> Model::Clone(const QString& cloneName) const
             if (vbMorph.dataSize_)
             {
                 uint8_t *cloneData(new unsigned char[vbMorph.dataSize_]);
-                memcpy(cloneData, vbMorph.morphData_, vbMorph.dataSize_);
+                memcpy(cloneData, vbMorph.morphData_.get(), vbMorph.dataSize_);
                 vbMorph.morphData_ = cloneData;
             }
         }

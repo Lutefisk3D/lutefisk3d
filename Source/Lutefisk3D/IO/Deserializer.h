@@ -79,7 +79,7 @@ public:
     unsigned GetSize() const { return size_; }
 
     /// Read a 64-bit integer.
-    long long ReadInt64();
+    int64_t ReadInt64();
     /// Read a 32-bit integer.
     int ReadInt();
     /// Read a 16-bit integer.

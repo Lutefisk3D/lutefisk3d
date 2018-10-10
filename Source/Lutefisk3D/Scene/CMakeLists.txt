@@ -3,12 +3,14 @@ set(INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/AnimationDefs.h
     ${CMAKE_CURRENT_SOURCE_DIR}/AttributeAnimationInfo.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Component.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/CameraViewport.h
     ${CMAKE_CURRENT_SOURCE_DIR}/LogicComponent.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Node.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ObjectAnimation.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ReplicationState.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Scene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/SceneEvents.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/SceneMetadata.h
     ${CMAKE_CURRENT_SOURCE_DIR}/SceneResolver.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Serializable.h
     ${CMAKE_CURRENT_SOURCE_DIR}/SmoothedTransform.h
@@ -21,10 +23,12 @@ set(SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/Animatable.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/AttributeAnimationInfo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Component.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/CameraViewport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Node.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/LogicComponent.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ObjectAnimation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Scene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SceneMetadata.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/SceneResolver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Serializable.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/SmoothedTransform.cpp

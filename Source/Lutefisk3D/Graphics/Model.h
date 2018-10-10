@@ -38,20 +38,17 @@ namespace Urho3D
 
 class Geometry;
 class IndexBuffer;
-class LUTEFISK3D_EXPORT Graphics;
+class Graphics;
 class VertexBuffer;
 using VertexBufferHandle = DataHandle<VertexBuffer,20,20>;
 using IndexBufferHandle = DataHandle<IndexBuffer,20,20>;
 /// Vertex buffer morph data.
 struct VertexBufferMorph
 {
-    ~VertexBufferMorph() {
-        delete []  morphData_;
-    }
     /// Morphed vertices. Stored packed as <index, data> pairs.
-    uint8_t * morphData_ = nullptr;
+    SharedArrayPtr<uint8_t> morphData_;
     /// Vertex elements.
-    unsigned elementMask_;
+    VertexMaskFlags elementMask_;
     /// Number of vertices.
     unsigned vertexCount_;
     /// Morphed vertices data size as bytes.

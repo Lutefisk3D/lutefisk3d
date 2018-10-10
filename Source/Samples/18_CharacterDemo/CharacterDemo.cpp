@@ -85,9 +85,9 @@ void CharacterDemo::Start()
 
 void CharacterDemo::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
 
     // Create scene subsystem components
     scene_->CreateComponent<Octree>();
@@ -95,10 +95,10 @@ void CharacterDemo::CreateScene()
 
     // Create camera and define viewport. We will be doing load / save, so it's convenient to create the camera outside the scene,
     // so that it won't be destroyed and recreated, and we don't have to redefine the viewport on load
-    cameraNode_ = new Node(m_context);
+    cameraNode_ = new Node(GetContext());
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetFarClip(300.0f);
-    m_context->m_Renderer.get()->SetViewport(0, new Viewport(m_context, scene_, camera));
+    camera->setFarClipDistance(300.0f);
+    GetContext()->m_Renderer.get()->SetViewport(0, new Viewport(GetContext(), scene_, camera));
 
     // Create static scene content. First create a zone for ambient lighting and fog control
     Node* zoneNode = scene_->CreateChild("Zone");
@@ -179,7 +179,7 @@ void CharacterDemo::CreateScene()
 
 void CharacterDemo::CreateCharacter()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
     Node* objectNode = scene_->CreateChild("Jack");
     objectNode->SetPosition(Vector3(0.0f, 1.0f, 0.0f));
@@ -218,8 +218,8 @@ void CharacterDemo::CreateCharacter()
 
 void CharacterDemo::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -254,28 +254,21 @@ void CharacterDemo::SubscribeToEvents()
 void CharacterDemo::HandleUpdate(float timeStep)
 {
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     if (character_)
     {
         // Clear previous controls
         character_->controls_.Set(CTRL_FORWARD | CTRL_BACK | CTRL_LEFT | CTRL_RIGHT | CTRL_JUMP, false);
 
-        // Update controls using touch utility class
-        if (touch_)
-            touch_->UpdateTouches(character_->controls_);
-
         // Update controls using keys
-        UI* ui = m_context->m_UISystem.get();
+        UI* ui = GetContext()->m_UISystem.get();
         if (!ui->GetFocusElement())
         {
-            if (!touch_ || !touch_->useGyroscope_)
-            {
-                character_->controls_.Set(CTRL_FORWARD, input->GetKeyDown(KEY_W));
-                character_->controls_.Set(CTRL_BACK, input->GetKeyDown(KEY_S));
-                character_->controls_.Set(CTRL_LEFT, input->GetKeyDown(KEY_A));
-                character_->controls_.Set(CTRL_RIGHT, input->GetKeyDown(KEY_D));
-            }
+            character_->controls_.Set(CTRL_FORWARD, input->GetKeyDown(KEY_W));
+            character_->controls_.Set(CTRL_BACK, input->GetKeyDown(KEY_S));
+            character_->controls_.Set(CTRL_LEFT, input->GetKeyDown(KEY_A));
+            character_->controls_.Set(CTRL_RIGHT, input->GetKeyDown(KEY_D));
             character_->controls_.Set(CTRL_JUMP, input->GetKeyDown(KEY_SPACE));
 
             // Add character yaw & pitch from the mouse motion
@@ -288,19 +281,15 @@ void CharacterDemo::HandleUpdate(float timeStep)
             if (input->GetKeyPress('F'))
                 firstPerson_ = !firstPerson_;
 
-            // Turn on/off gyroscope on mobile platform
-            if (touch_ && input->GetKeyPress('G'))
-                touch_->useGyroscope_ = !touch_->useGyroscope_;
-
             // Check for loading / saving the scene
             if (input->GetKeyPress(KEY_F5))
             {
-                File saveFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/CharacterDemo.xml", FILE_WRITE);
+                File saveFile(GetContext(), GetContext()->m_FileSystem->GetProgramDir() + "Data/Scenes/CharacterDemo.xml", FILE_WRITE);
                 scene_->SaveXML(saveFile);
             }
             if (input->GetKeyPress(KEY_F7))
             {
-                File loadFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/CharacterDemo.xml", FILE_READ);
+                File loadFile(GetContext(), GetContext()->m_FileSystem->GetProgramDir() + "Data/Scenes/CharacterDemo.xml", FILE_READ);
                 scene_->LoadXML(loadFile);
                 // After loading we have to reacquire the weak pointer to the Character component, as it has been recreated
                 // Simply find the character's scene node by name as there's only one of them
@@ -348,7 +337,7 @@ void CharacterDemo::HandlePostUpdate(float ts)
 
         // Collide camera ray with static physics objects (layer bitmask 2) to ensure we see the character properly
         Vector3 rayDir = dir * Vector3::BACK;
-        float rayDistance = touch_ ? touch_->cameraDistance_ : CAMERA_INITIAL_DIST;
+        float rayDistance = CAMERA_INITIAL_DIST;
         PhysicsRaycastResult result;
         scene_->GetComponent<PhysicsWorld>()->RaycastSingle(result, Ray{aimPoint, rayDir}, rayDistance, 2);
         if (result.body_)

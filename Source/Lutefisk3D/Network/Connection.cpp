@@ -21,22 +21,25 @@
 //
 
 #include "Connection.h"
-#include "../Scene/Component.h"
-#include "../IO/File.h"
-#include "../IO/FileSystem.h"
-#include "../IO/Log.h"
-#include "../IO/MemoryBuffer.h"
+
 #include "Network.h"
 #include "NetworkEvents.h"
 #include "NetworkPriority.h"
-#include "../IO/PackageFile.h"
-#include "../Core/Profiler.h"
-#include "../Core/StringUtils.h"
 #include "Protocol.h"
-#include "../Resource/ResourceCache.h"
-#include "../Scene/Scene.h"
-#include "../Scene/SceneEvents.h"
-#include "../Scene/SmoothedTransform.h"
+
+#include "Lutefisk3D/Scene/Component.h"
+#include "Lutefisk3D/IO/File.h"
+#include "Lutefisk3D/IO/FileSystem.h"
+#include "Lutefisk3D/IO/Log.h"
+#include "Lutefisk3D/IO/MemoryBuffer.h"
+#include "Lutefisk3D/IO/PackageFile.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/Core/Profiler.h"
+#include "Lutefisk3D/Core/StringUtils.h"
+#include "Lutefisk3D/Resource/ResourceCache.h"
+#include "Lutefisk3D/Scene/Scene.h"
+#include "Lutefisk3D/Scene/SceneEvents.h"
+#include "Lutefisk3D/Scene/SmoothedTransform.h"
 
 #include <kNet.h>
 
@@ -58,7 +61,7 @@ PackageUpload::PackageUpload() :
 {
 }
 
-Connection::Connection(Context* context, bool isClient, kNet::SharedPtr<kNet::MessageConnection> connection) :
+Connection::Connection(Context* context, bool isClient, const kNet::SharedPtr<kNet::MessageConnection>& connection) :
     Object(context),
     timeStamp_(0),
     connection_(connection),
@@ -144,7 +147,7 @@ void Connection::SendRemoteEvent(Node* node, StringHash eventType, bool inOrder,
         URHO3D_LOGERROR("Sender node is not in the connection's scene, can not send remote node event");
         return;
     }
-    if (node->GetID() >= FIRST_LOCAL_ID)
+    if (!node->IsReplicated())
     {
         URHO3D_LOGERROR("Sender node has a local ID, can not send remote node event");
         return;
@@ -164,11 +167,13 @@ void Connection::SetScene(Scene* newScene)
     {
         // Remove replication states and owner references from the previous scene
         scene_->CleanupConnection(this);
+        scene_->asyncLoadFinished.Disconnect(this);
     }
-
     scene_ = newScene;
     sceneLoaded_ = false;
-    UnsubscribeFromEvent(E_ASYNCLOADFINISHED);
+
+    if(scene_)
+        scene_->asyncLoadFinished.Disconnect(this);
 
     if (!scene_)
         return;
@@ -196,7 +201,7 @@ void Connection::SetScene(Scene* newScene)
     {
         // Make sure there is no existing async loading
         scene_->StopAsyncLoading();
-        SubscribeToEvent(scene_, E_ASYNCLOADFINISHED, URHO3D_HANDLER(Connection, HandleAsyncLoadFinished));
+        scene_->asyncLoadFinished.Connect(this,&Connection::HandleAsyncLoadFinished);
     }
 }
 
@@ -468,8 +473,8 @@ void Connection::ProcessLoadScene(int msgID, MemoryBuffer& msg)
 
     // In case we have joined other scenes in this session, remove first all downloaded package files from the resource system
     // to prevent resource conflicts
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    const QString& packageCacheDir = GetSubsystem<Network>()->GetPackageCacheDir();
+    ResourceCache* cache = context_->m_ResourceCache.get();
+    const QString& packageCacheDir = context_->m_Network->GetPackageCacheDir();
 
     std::vector<SharedPtr<PackageFile> > packages = cache->GetPackageFiles();
     for (unsigned i = 0; i < packages.size(); ++i)
@@ -627,7 +632,7 @@ void Connection::ProcessSceneUpdate(int msgID, MemoryBuffer& msg)
             Node* node = scene_->GetNode(nodeID);
             if (node)
                 node->Remove();
-            nodeLatestData_.remove(nodeID);
+            nodeLatestData_.erase(nodeID);
         }
         break;
 
@@ -704,7 +709,7 @@ void Connection::ProcessSceneUpdate(int msgID, MemoryBuffer& msg)
             Component* component = scene_->GetComponent(componentID);
             if (component)
                 component->Remove();
-            componentLatestData_.remove(componentID);
+            componentLatestData_.erase(componentID);
         }
         break;
     default: break;
@@ -742,7 +747,7 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
                     StringHash nameHash(name);
 
                     // Do not restart upload if already exists
-                    if (uploads_.contains(nameHash))
+                    if (hashContains(uploads_,nameHash))
                     {
                         URHO3D_LOGWARNING("Received a request for package " + name + " already in transfer");
                         return;
@@ -801,7 +806,7 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
             // If file has not yet been opened, try to open now. Prepend the checksum to the filename to allow multiple versions
             if (!download.file_)
             {
-                download.file_ = new File(context_, GetSubsystem<Network>()->GetPackageCacheDir() + ToStringHex(download.checksum_) + "_" + download.name_, FILE_WRITE);
+                download.file_ = new File(context_, context_->m_Network->GetPackageCacheDir() + ToStringHex(download.checksum_) + "_" + download.name_, FILE_WRITE);
                 if (!download.file_->IsOpen())
                 {
                     OnPackageDownloadFailed(download.name_);
@@ -826,7 +831,8 @@ void Connection::ProcessPackageDownload(int msgID, MemoryBuffer& msg)
 
                 // Instantiate the package and add to the resource system, as we will need it to load the scene
                 download.file_->Close();
-                GetSubsystem<ResourceCache>()->AddPackageFile(download.file_->GetName(), true);
+
+                context_->m_ResourceCache->AddPackageFile(download.file_->GetName(), true);
 
                 // Then start the next download if there are more
                 downloads_.erase(i);
@@ -1084,7 +1090,7 @@ void Connection::ConfigureNetworkSimulator(int latencyMs, float packetLoss)
         simulator.packetLossRate = packetLoss;
     }
 }
-void Connection::HandleAsyncLoadFinished(StringHash eventType, VariantMap& eventData)
+void Connection::HandleAsyncLoadFinished(Scene *)
 {
     sceneLoaded_ = true;
 
@@ -1114,7 +1120,7 @@ void Connection::ProcessNode(unsigned nodeID)
             // would be enough. However, this may be better due to the client not possibly having updated parenting
             // information at the time of receiving this message
             SendMessage(MSG_REMOVENODE, true, true, msg_);
-            sceneState_.nodeStates_.remove(nodeID);
+            sceneState_.nodeStates_.erase(nodeID);
         }
         else
             ProcessExistingNode(node, MAP_VALUE(i));
@@ -1369,8 +1375,8 @@ void Connection::ProcessExistingNode(Node* node, NodeReplicationState& nodeState
 
 bool Connection::RequestNeededPackages(unsigned numPackages, MemoryBuffer& msg)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    const QString& packageCacheDir = GetSubsystem<Network>()->GetPackageCacheDir();
+    ResourceCache* cache = context_->m_ResourceCache.get();
+    const QString& packageCacheDir = context_->m_Network->GetPackageCacheDir();
 
     std::vector<SharedPtr<PackageFile> > packages = cache->GetPackageFiles();
     QStringList downloadedPackages;
@@ -1407,7 +1413,7 @@ bool Connection::RequestNeededPackages(unsigned numPackages, MemoryBuffer& msg)
                 return false;
             }
 
-            GetSubsystem<FileSystem>()->ScanDir(downloadedPackages, packageCacheDir, "*.*", SCAN_FILES, false);
+            context_->m_FileSystem->ScanDir(downloadedPackages, packageCacheDir, "*.*", SCAN_FILES, false);
             packagesScanned = true;
         }
 
@@ -1440,7 +1446,7 @@ bool Connection::RequestNeededPackages(unsigned numPackages, MemoryBuffer& msg)
 void Connection::RequestPackage(const QString& name, unsigned fileSize, unsigned checksum)
 {
     StringHash nameHash(name);
-    if (downloads_.contains(nameHash))
+    if (hashContains(downloads_,nameHash))
         return; // Download already exists
 
     PackageDownload& download = downloads_[nameHash];
@@ -1509,13 +1515,13 @@ void Connection::OnPackagesReady()
     {
         // Otherwise start the async loading process
         QString extension = GetExtension(sceneFileName_);
-        SharedPtr<File> file = GetSubsystem<ResourceCache>()->GetFile(sceneFileName_);
+        auto file = context_->m_ResourceCache->GetFile(sceneFileName_);
         bool success;
 
         if (extension == ".xml")
-            success = scene_->LoadAsyncXML(file);
+            success = scene_->LoadAsyncXML(file.get());
         else
-            success = scene_->LoadAsync(file);
+            success = scene_->LoadAsync(file.get());
 
         if (!success)
             OnSceneLoadFailed();

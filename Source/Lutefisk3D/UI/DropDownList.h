@@ -91,12 +91,17 @@ public:
 
     /// Set selection attribute.
     void SetSelectionAttr(unsigned index);
+    ///////////////////////////////////////////////////////////////
+    // SIGNALS
+    ///////////////////////////////////////////////////////////////
+    /// Listview item selected
+    jl::Signal<UIElement *,int> itemSelected;
 
 protected:
     /// Filter implicit attributes in serialization process.
-    virtual bool FilterImplicitAttributes(XMLElement& dest) const override;
+    bool FilterImplicitAttributes(XMLElement& dest) const override;
     /// Filter implicit attributes in serialization process.
-    virtual bool FilterPopupImplicitAttributes(XMLElement& dest) const override;
+    bool FilterPopupImplicitAttributes(XMLElement& dest) const override;
 
     /// Listview element.
     SharedPtr<ListView> listView_;
@@ -107,11 +112,11 @@ protected:
 
 private:
     /// Handle listview item click event.
-    void HandleItemClicked(StringHash eventType, VariantMap& eventData);
+    void HandleItemClicked(UIElement *, UIElement *, int, int, unsigned, unsigned);
     /// Handle a key press from the listview.
-    void HandleListViewKey(StringHash eventType, VariantMap& eventData);
+    void HandleListViewKey(UIElement *el, int key,unsigned mb, unsigned quals);
     /// Handle the listview selection change. Set placeholder text hidden/visible as necessary.
-    void HandleSelectionChanged(StringHash eventType, VariantMap& eventData);
+    void HandleSelectionChanged(UIElement *);
 
     /// Selected item index attribute.
     unsigned selectionAttr_;

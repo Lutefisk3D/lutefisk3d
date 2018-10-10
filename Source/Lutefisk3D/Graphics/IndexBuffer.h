@@ -78,7 +78,7 @@ public:
     /// Return used vertex range from index range.
     bool GetUsedVertexRange(unsigned start, unsigned count, unsigned& minVertex, unsigned& vertexCount);
     /// Return CPU memory shadow data.
-    unsigned char* GetShadowData() const { return shadowData_.Get(); }
+    unsigned char* GetShadowData() const { return shadowData_.get(); }
     /// Return shared array pointer to the CPU memory shadow data.
     SharedArrayPtr<unsigned char> GetShadowDataShared() const { return shadowData_; }
 

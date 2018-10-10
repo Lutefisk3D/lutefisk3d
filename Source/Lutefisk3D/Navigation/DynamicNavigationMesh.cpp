@@ -548,7 +548,7 @@ std::vector<unsigned char> DynamicNavigationMesh::GetTileData(const IntVector2& 
 
 bool DynamicNavigationMesh::IsObstacleInTile(Obstacle* obstacle, const IntVector2& tile) const
 {
-    const BoundingBox tileBoundingBox = GetTileBoudningBox(tile);
+    const BoundingBox tileBoundingBox = GetTileBoundingBox(tile);
     const Vector3 obstaclePosition = obstacle->GetNode()->GetWorldPosition();
     return tileBoundingBox.DistanceToPoint(obstaclePosition) < obstacle->GetRadius();
 }
@@ -816,7 +816,7 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
 
     tileCache_->removeTile(navMesh_->getTileRefAt(x, z, 0), 0, 0);
 
-    const BoundingBox tileBoundingBox = GetTileBoudningBox(IntVector2(x, z));
+    const BoundingBox tileBoundingBox = GetTileBoundingBox(IntVector2(x, z));
 
     DynamicNavBuildData build(allocator_.get());
 
@@ -868,7 +868,7 @@ int DynamicNavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geomet
     }
 
     size_t numTriangles = build.indices_.size() / 3;
-    std::unique_ptr<uint8_t> triAreas(new unsigned char[numTriangles]);
+    std::unique_ptr<uint8_t[]> triAreas(new unsigned char[numTriangles]);
     memset(triAreas.get(), 0, numTriangles);
 
     rcMarkWalkableTriangles(build.ctx_, cfg.walkableSlopeAngle, &build.vertices_[0].x_, build.vertices_.size(),

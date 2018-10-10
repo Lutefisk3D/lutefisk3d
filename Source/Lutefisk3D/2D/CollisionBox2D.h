@@ -30,13 +30,11 @@ namespace Urho3D
 /// 2D box collision component.
 class LUTEFISK3D_EXPORT CollisionBox2D : public CollisionShape2D
 {
-    URHO3D_OBJECT(CollisionBox2D,CollisionShape2D);
+    URHO3D_OBJECT(CollisionBox2D,CollisionShape2D)
 
 public:
-    /// Construct.
     CollisionBox2D(Context* scontext);
-    /// Destruct.
-    virtual ~CollisionBox2D();
+    ~CollisionBox2D() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 

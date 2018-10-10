@@ -46,5 +46,4 @@ set(SOURCE
 )
 
 install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Math )
-
-set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} PARENT_SCOPE)
+target_sources(Lutefisk3D PRIVATE ${SOURCE} ${INCLUDES})

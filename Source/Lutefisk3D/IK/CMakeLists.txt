@@ -1,0 +1,20 @@
+set(INCLUDES
+    ${CMAKE_CURRENT_SOURCE_DIR}/IKConstraint.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/IKConverters.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/IKEffector.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/IKEvents.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/IK.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/IKSolver.h
+)
+set(SOURCE
+    ${CMAKE_CURRENT_SOURCE_DIR}/IKConstraint.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/IKConverters.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/IK.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/IKEffector.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/IKSolver.cpp
+)
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/IK )
+
+target_sources(Lutefisk3D PRIVATE ${SOURCE} ${INCLUDES})
+set(Lutefisk3D_LINK_LIBRARIES ${Lutefisk3D_LINK_LIBRARIES} ik PARENT_SCOPE)
+#target_link_libraries(Lutefisk3D PRIVATE EnTT)

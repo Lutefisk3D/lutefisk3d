@@ -39,8 +39,7 @@ class FileWatcher;
 class PackageFile;
 class Resource;
 class File;
-extern template class SharedPtr<Resource>;
-extern template class SharedPtr<File>;
+
 /// Sets to priority so that a package or file is pushed to the end of the vector.
 static const unsigned PRIORITY_LAST = 0xffffffff;
 
@@ -164,6 +163,22 @@ public:
     /// Returns a formatted string containing the memory actively used.
     QString PrintMemoryUsage() const;
     Context *GetContext() const { return m_context; }
+    /// Get the number of resource directories
+    unsigned GetNumResourceDirs() const { return resourceDirs_.size(); }
+    /// Get resource directory at a given index
+    const QString& GetResourceDir(unsigned index) const;
+
+    /// Scan for specified files.
+    void Scan(QStringList &result, const QString& pathName, const QString& filter, unsigned flags, bool recursive) const;
+    /// Returns a formatted string containing the currently loaded resources with optional type name filter.
+    QString PrintResources(const QString& typeName = QString()) const;
+    /// Renames resource without deleting it from cache. `source` and `destination` may be resource names or absolute
+    /// paths to files in resource directories. If destination is a resource name then source file is renamed within same data directory.
+    bool RenameResource(QString source, QString destination);
+    /// When resource auto-reloading is enabled ignore reloading resource once.
+    void IgnoreResourceReload(const QString& name);
+    /// When resource auto-reloading is enabled ignore reloading resource once.
+    void IgnoreResourceReload(const Resource* resource);
 private:
     const SharedPtr<Resource>& FindResource(StringHash type, StringHash nameHash);
     const SharedPtr<Resource>& FindResource(StringHash nameHash);
@@ -197,6 +212,8 @@ private:
     mutable bool isRouting_; ///< Resource routing flag to prevent endless recursion.
     /// How many milliseconds maximum per frame to spend on finishing background loaded resources.
     int finishBackgroundResourcesMs_;
+    /// List of resources that will not be auto-reloaded if reloading event triggers.
+    std::vector<QString> ignoreResourceAutoReload_;
 };
 
 template <class T> T* ResourceCache::GetExistingResource(const QString& name)

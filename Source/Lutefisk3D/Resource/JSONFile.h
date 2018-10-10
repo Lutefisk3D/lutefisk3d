@@ -38,7 +38,7 @@ public:
     /// Construct.
     JSONFile(Context* context);
     /// Destruct.
-    virtual ~JSONFile();
+    virtual ~JSONFile() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -56,6 +56,8 @@ public:
     /// Return root value.
     const JSONValue& GetRoot() const { return root_; }
 
+    /// Return true if parsing json string into JSONValue succeeds.
+    static bool ParseJSON(const QString& json, JSONValue& value, bool reportError = true);
 private:
     /// JSON root value.
     JSONValue root_;

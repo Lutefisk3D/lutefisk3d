@@ -34,59 +34,39 @@ namespace pugi
 
 namespace Urho3D
 {
-
 /// XML document resource.
 class LUTEFISK3D_EXPORT XMLFile : public Resource
 {
     URHO3D_OBJECT(XMLFile,Resource)
 
 public:
-    /// Construct.
-    XMLFile(Context* context);
-    /// Destruct.
-    virtual ~XMLFile();
-    /// Register object factory.
+    explicit XMLFile(Context* context);
+    ~XMLFile() override;
     static void RegisterObject(Context* context);
 
-    /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
-    /// Save resource with default indentation (one tab). Return true if successful.
-    virtual bool Save(Serializer& dest) const override;
-    /// Save resource with user-defined indentation. Return true if successful.
+    bool BeginLoad(Deserializer& source) override;
+    bool Save(Serializer& dest) const override;
     bool Save(Serializer& dest, const QString& indentation) const;
 
-    /// Deserialize from a string. Return true if successful.
     bool FromString(const QString& source);
-    /// Clear the document and create a root element.
     XMLElement CreateRoot(const QString& name);
-    /// Get the root element if it has matching name, otherwise create it and clear the document.
     XMLElement GetOrCreateRoot(const QString& name);
 
-    /// Return the root element, with optionally specified name. Return null element if not found.
     XMLElement GetRoot(const QString& name = QString());
     /// Return the pugixml document.
     pugi::xml_document* GetDocument() const { return document_.get(); }
-    /// Serialize the XML content to a string.
     QString  ToString(const QString &indentation = "\t") const;
 
-    /// Patch the XMLFile with another XMLFile. Based on RFC 5261.
     void Patch(XMLFile* patchFile);
-    /// Patch the XMLFile with another XMLElement. Based on RFC 5261.
     void Patch(XMLElement patchElement);
 
 private:
-    /// Add an node in the Patch.
     void PatchAdd(const pugi::xml_node& patch, pugi::xpath_node& original) const;
-    /// Replace a node or attribute in the Patch.
     void PatchReplace(const pugi::xml_node& patch, pugi::xpath_node& original) const;
-    /// Remove a node or attribute in the Patch.
     void PatchRemove(const pugi::xpath_node& original) const;
 
-    /// Add a node in the Patch.
     void AddNode(const pugi::xml_node& patch, const pugi::xpath_node& original) const;
-    /// Add an attribute in the Patch.
     void AddAttribute(const pugi::xml_node& patch, const pugi::xpath_node& original) const;
-    /// Combine two text nodes.
     bool CombineText(const pugi::xml_node& patch, const pugi::xml_node& original, bool prepend) const;
 
     /// Pugixml document.

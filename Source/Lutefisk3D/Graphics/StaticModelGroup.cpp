@@ -62,7 +62,9 @@ void StaticModelGroup::RegisterObject(Context* context)
     context->RegisterFactory<StaticModelGroup>(GEOMETRY_CATEGORY);
 
     URHO3D_COPY_BASE_ATTRIBUTES(StaticModel);
-    URHO3D_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE("Instance Nodes", GetNodeIDsAttr, SetNodeIDsAttr,                                                       VariantVector, Variant::emptyVariantVector, instanceNodesStructureElementNames,                                                       AM_DEFAULT | AM_NODEIDVECTOR);
+    URHO3D_ACCESSOR_ATTRIBUTE("Instance Nodes", GetNodeIDsAttr, SetNodeIDsAttr,
+        VariantVector, Variant::emptyVariantVector, AM_DEFAULT | AM_NODEIDVECTOR)
+        .SetMetadata(AttributeMetadata::P_VECTOR_STRUCT_ELEMENTS, instanceNodesStructureElementNames);
 }
 
 void StaticModelGroup::ApplyAttributes()
@@ -107,6 +109,7 @@ void StaticModelGroup::ProcessRayQuery(const RayOctreeQuery& query, std::vector<
 {
     // If no bones or no bone-level testing, use the Drawable test
     RayQueryLevel level = query.level_;
+    // BUG: level will never be less then RAY_AABB
     if (level < RAY_AABB)
     {
         Drawable::ProcessRayQuery(query, results);
@@ -135,34 +138,32 @@ void StaticModelGroup::ProcessRayQuery(const RayOctreeQuery& query, std::vector<
             {
                 distance = M_INFINITY;
 
-                for (unsigned j = 0; j < batches_.size(); ++j)
-                {
-                    Geometry* geometry = batches_[j].geometry_;
-                    if (geometry)
+                for (auto &batch : batches_) {
+                    Geometry* geometry = batch.geometry_;
+                    if (!geometry)
+                        continue;
+                    Vector3 geometryNormal;
+                    float   geometryDistance = geometry->GetHitDistance(localRay, &geometryNormal);
+                    if (geometryDistance < query.maxDistance_ && geometryDistance < distance)
                     {
-                        Vector3 geometryNormal;
-                        float geometryDistance = geometry->GetHitDistance(localRay, &geometryNormal);
-                        if (geometryDistance < query.maxDistance_ && geometryDistance < distance)
-                        {
-                            distance = geometryDistance;
-                            normal = (worldTransforms_[i] * Vector4(geometryNormal, 0.0f)).Normalized();
-                        }
+                        distance = geometryDistance;
+                        normal   = (worldTransforms_[i] * Vector4(geometryNormal, 0.0f)).Normalized();
                     }
                 }
             }
         }
 
-        if (distance < query.maxDistance_)
-        {
-            RayQueryResult result;
-            result.position_ = query.ray_.origin_ + distance * query.ray_.direction_;
-            result.normal_ = normal;
-            result.distance_ = distance;
-            result.drawable_ = this;
-            result.node_ = node_;
-            result.subObject_ = i;
-            results.push_back(result);
-        }
+        if (distance >= query.maxDistance_)
+            continue;
+
+        RayQueryResult result;
+        result.position_  = query.ray_.origin_ + distance * query.ray_.direction_;
+        result.normal_    = normal;
+        result.distance_  = distance;
+        result.drawable_  = this;
+        result.node_      = node_;
+        result.subObject_ = i;
+        results.push_back(result);
     }
 }
 

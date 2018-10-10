@@ -21,17 +21,18 @@
 //
 
 #pragma once
+#include "Lutefisk3D/Container/Allocator.h"
 #include "Lutefisk3D/Core/Lutefisk3D.h"
 #include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Container/HashMap.h"
 #include "Lutefisk3D/Container/Ptr.h"
 #include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 
 #include <QtCore/QString>
 #include <cassert>
 #include <deque>
 #include <functional>
-
 namespace Urho3D
 {
 class Variant;
@@ -40,7 +41,7 @@ using VariantMap = HashMap<StringHash, Variant>;
 class Context;
 class EventHandler;
 class Object;
-//extern template class SharedPtr<Object>;
+
 /// Type info.
 class LUTEFISK3D_EXPORT TypeInfo
 {
@@ -83,18 +84,18 @@ private:
 
 
 /// Base class for objects with type identification, subsystem access and event sending/receiving capability.
-class LUTEFISK3D_EXPORT Object : public RefCounted
+class LUTEFISK3D_EXPORT Object : public jl::SignalObserver,public RefCounted
 {
     friend class Context;
 
 public:
-    using ilEventHandler = std::deque<EventHandler *>::iterator;
-    using cilEventHandler = std::deque<EventHandler *>::const_iterator;
+    using ilEventHandler = PODVectorN<EventHandler *,2>::iterator;
+    using cilEventHandler = PODVectorN<EventHandler *,2>::const_iterator;
 
     /// Construct.
-    Object(Context* context);
+    explicit Object(Context* context);
     /// Destruct. Clean up self from event sender & receiver structures.
-    virtual ~Object();
+     ~Object() override;
 
     virtual StringHash GetType() const = 0; //!< Return type hash.
     virtual const QString& GetTypeName() const = 0; //!< Return type name.
@@ -114,6 +115,10 @@ public:
     bool IsInstanceOf(const TypeInfo* typeInfo) const;
     /// Check current instance is type of specified class.
     template<typename T> bool IsInstanceOf() const { return IsInstanceOf(T::GetTypeInfoStatic()); }
+    /// Cast the object to specified most derived class.
+    template<typename T> T* Cast() { return IsInstanceOf<T>() ? static_cast<T*>(this) : nullptr; }
+    /// Cast the object to specified most derived class.
+    template<typename T> const T* Cast() const { return IsInstanceOf<T>() ? static_cast<const T*>(this) : nullptr; }
     /// Subscribe to an event that can be sent by any sender.
     void SubscribeToEvent(StringHash eventType, EventHandler* handler);
     /// Subscribe to an event that can be sent by any sender.
@@ -159,6 +164,28 @@ public:
     /// Return object category. Categories are (optionally) registered along with the object factory. Return an empty string if the object category is not registered.
     const QString& GetCategory() const;
 
+    /// Return engine subsystem.
+    class Engine* GetEngine() const;
+    /// Return time subsystem.
+    class Time* GetTime() const;
+    /// Return work queue subsystem.
+    class WorkQueue* GetWorkQueue() const;
+    /// Return file system subsystem.
+    class FileSystem* GetFileSystem() const;
+    /// Return resource cache subsystem.
+    class ResourceCache *GetCache() const;
+    /// Return input subsystem.
+    class Input *GetInput() const;
+    /// Return audio subsystem.
+    class Audio *GetAudio() const;
+    /// Return UI subsystem.
+    class UI *GetUI() const;
+#if LUTEFISK3D_SYSTEMUI
+    /// Return system ui subsystem.
+    class SystemUI* GetSystemUI() const;
+#endif
+    /// Return graphics subsystem.
+    class Graphics* GetContextGraphics() const;
 protected:
     /// Execution context.
     Context* context_;
@@ -169,7 +196,7 @@ private:
     cilEventHandler FindSpecificEventHandler(Object* sender, StringHash eventType, EventHandler** previous = 0) const;
     void RemoveEventSender(Object* sender);
     /// Event handlers. Sender is null for non-specific handlers.
-    std::deque<EventHandler *> eventHandlers_;
+    PODVectorN<EventHandler *,2> eventHandlers_;
 };
 
 template <class T> T* Object::GetSubsystem() const { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }
@@ -180,8 +207,8 @@ class LUTEFISK3D_EXPORT ObjectFactory : public RefCounted
 {
 public:
     /// Construct.
-    ObjectFactory(Context* context,const TypeInfo* ti=nullptr) :
-        context_(context),typeInfo_(ti)
+    explicit ObjectFactory(Context* context) :
+        context_(context)
     {
         assert(context_);
     }
@@ -208,12 +235,31 @@ template <class T> class ObjectFactoryImpl : public ObjectFactory
 {
 public:
     /// Construct.
-    ObjectFactoryImpl(Context* context) :
-        ObjectFactory(context,T::GetTypeInfoStatic())
+    explicit ObjectFactoryImpl(Context* context) :
+        ObjectFactory(context)
     {
+        typeInfo_ = T::GetTypeInfoStatic();
+        allocator_ = AllocatorInitialize(sizeof(T));
+    }
+    ~ObjectFactoryImpl() override
+    {
+        AllocatorUninitialize(allocator_);
+        allocator_ = nullptr;
     }
     /// Create an object of the specific type.
-    virtual SharedPtr<Object> CreateObject() override { return SharedPtr<Object>(new T(context_)); }
+    SharedPtr<Object> CreateObject() override
+    {
+        auto* newObject = static_cast<T*>(AllocatorReserve(allocator_));
+        new(newObject) T(context_);
+        newObject->SetDeleter([this, newObject](RefCounted* refCounted) {
+            newObject->~T();
+            AllocatorFree(allocator_, newObject);
+        });
+        return SharedPtr<Object>(newObject);
+    }
+
+private:
+    AllocatorBlock* allocator_;
 };
 
 /// Internal helper class for invoking event handler functions.
@@ -221,7 +267,7 @@ class LUTEFISK3D_EXPORT EventHandler
 {
 public:
     /// Construct with specified receiver and userdata.
-    EventHandler(Object* receiver, void* userData = nullptr) :
+    explicit EventHandler(Object* receiver, void* userData = nullptr) :
         receiver_(receiver),
         sender_(nullptr),
         userData_(userData)
@@ -229,7 +275,7 @@ public:
     }
 
     /// Destruct.
-    virtual ~EventHandler() {}
+    virtual ~EventHandler() = default;
 
     /// Set sender and event type.
     void SetSenderAndEventType(Object* sender, StringHash eventType)
@@ -265,13 +311,14 @@ protected:
 template <class T> class EventHandlerImpl : public EventHandler
 {
 public:
-    typedef void (T::*HandlerFunctionPtr)(StringHash, VariantMap&);
+    using HandlerFunctionPtr = void (T::*)(StringHash, VariantMap&);
 
-    /// Construct with receiver and function pointers and optional userdata.
+    /// Construct with receiver and function pointers and userdata.
     EventHandlerImpl(T* receiver, HandlerFunctionPtr function, void* userData = nullptr) :
         EventHandler(receiver, userData),
         function_(function)
     {
+        assert(receiver_);
         assert(function_);
     }
 

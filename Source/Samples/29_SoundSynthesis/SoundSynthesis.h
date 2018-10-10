@@ -29,7 +29,7 @@ namespace Urho3D
 
 class Node;
 class BufferedSoundStream;
-
+class Text;
 }
 
 /// Sound synthesis example.
@@ -39,12 +39,12 @@ class SoundSynthesis : public Sample
 {
 public:
     /// Construct.
-    SoundSynthesis(Context* context);
+    explicit SoundSynthesis(Context* context);
 
     /// Setup before engine initialization. Modifies the engine parameters.
-    virtual void Setup() override;
+    void Setup() override;
     /// Setup after engine initialization and before running the main loop.
-    virtual void Start() override;
+    void Start() override;
 
 private:
     /// Construct the sound stream and start playback.

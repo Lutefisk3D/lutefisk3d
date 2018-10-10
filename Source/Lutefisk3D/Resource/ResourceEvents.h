@@ -40,9 +40,15 @@ struct LUTEFISK3D_EXPORT ResourceSignals {
     /// Unknown resource type.
     jl::Signal<StringHash> unknownResourceType; //StringHash resourceType
     /// Resource background loading finished.
-    jl::Signal<const QString &,bool,Resource *> resourceBackgroundLoaded; //const QString &ResourceName, bool Success,Resource *
+    jl::Signal<const QString &,bool,Resource *> resourceBackgroundLoaded; //ResourceName, Success,
     /// Tracked file changed in the resource directories.
-    jl::Signal<const QString &,const QString &> fileChanged; //const QString &fileName, const QString &ResourceName
+    jl::Signal<const QString &,const QString &> fileChanged; //fileName, ResourceName
+    /// Resource renamed
+    jl::Signal<const QString &,const QString &> resourceRenamed; // from, to
+
+    /// Resource reloading finished successfully.
+    jl::Signal<Resource*> reloadFinished;
+
     void init(jl::ScopedAllocator *allocator)
     {
         changeLanguage.SetAllocator(allocator);
@@ -51,6 +57,8 @@ struct LUTEFISK3D_EXPORT ResourceSignals {
         unknownResourceType.SetAllocator(allocator);
         resourceBackgroundLoaded.SetAllocator(allocator);
         fileChanged.SetAllocator(allocator);
+        resourceRenamed.SetAllocator(allocator);
+        reloadFinished.SetAllocator(allocator);
     }
 };
 struct SingleResourceSignals {
@@ -61,5 +69,5 @@ struct SingleResourceSignals {
     /// Resource reloading failed.
     jl::Signal<> reloadFailed;
 };
-extern ResourceSignals g_resourceSignals;
+extern LUTEFISK3D_EXPORT ResourceSignals g_resourceSignals;
 }

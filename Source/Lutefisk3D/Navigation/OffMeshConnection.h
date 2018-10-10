@@ -33,18 +33,16 @@ class LUTEFISK3D_EXPORT OffMeshConnection : public Component
 
 public:
     /// Construct.
-    OffMeshConnection(Context* context);
+    explicit OffMeshConnection(Context* context);
     /// Destruct.
-    virtual ~OffMeshConnection();
+    ~OffMeshConnection() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
-    /// Handle attribute write access.
-    virtual void OnSetAttribute(const AttributeInfo& attr, const Variant& src) override;
     /// Apply attribute changes that can not be applied immediately. Called after scene load or a network update.
-    virtual void ApplyAttributes() override;
+    void ApplyAttributes() override;
     /// Visualize the component as debug geometry.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
+    void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
     /// Set endpoint node.
     void SetEndPoint(Node* node);
@@ -69,6 +67,8 @@ public:
     unsigned GetAreaID() const { return areaId_; }
 
 private:
+    /// Mark end point dirty.
+    void MarkEndPointDirty() { endPointDirty_ = true; }
     /// Endpoint node.
     WeakPtr<Node> endPoint_;
     /// Endpoint node ID.

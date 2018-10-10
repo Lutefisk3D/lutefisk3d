@@ -49,12 +49,12 @@
 
 namespace Urho3D
 {
-//template class LUTEFISK3D_EXPORT HashMap<StringHash, MaterialShaderParameter>;
-//template class LUTEFISK3D_EXPORT SharedPtr<Material>;
+template class HashMap<StringHash, MaterialShaderParameter>;
+template class SharedPtr<Material>;
 
 struct MaterialPrivate : public jl::SignalObserver
 {
-    MaterialPrivate(Material *p,Context *ctx) : SignalObserver(ctx->m_observer_allocator),
+    MaterialPrivate(Material *p,Context *ctx) : SignalObserver(ctx->observerAllocator()),
         parent(p) {}
 
     /// %Shader parameters animation infos.
@@ -128,42 +128,6 @@ public:
 };
 extern const char* wrapModeNames[];
 
-static const char* textureUnitNames[] =
-{
-    "diffuse",
-    "normal",
-    "specular",
-    "emissive",
-    "environment",
-    "volume",
-    "custom1",
-    "custom2",
-    "lightramp",
-    "lightshape",
-    "shadowmap",
-    "faceselect",
-    "indirection",
-    "depth",
-    "light",
-    "zone",
-    nullptr
-};
-
-const char* cullModeNames[] =
-{
-    "none",
-    "ccw",
-    "cw",
-    nullptr
-};
-
-static const char* fillModeNames[] =
-{
-    "solid",
-    "wireframe",
-    "point",
-    nullptr
-};
 TextureUnit ParseTextureUnitName(QString name)
 {
     name = name.toLower().trimmed();
@@ -235,13 +199,11 @@ bool CompareTechniqueEntries(const TechniqueEntry& lhs, const TechniqueEntry& rh
     return lhs.qualityLevel_ > rhs.qualityLevel_;
 }
 
-TechniqueEntry::TechniqueEntry() :
-    qualityLevel_(0),
-    lodDistance_(0.0f)
+TechniqueEntry::TechniqueEntry() noexcept
 {
 }
 
-TechniqueEntry::TechniqueEntry(Technique* tech, unsigned qualityLevel, float lodDistance) :
+TechniqueEntry::TechniqueEntry(Technique* tech, eQuality qualityLevel, float lodDistance) :
     technique_(tech),
     original_(tech),
     qualityLevel_(qualityLevel),
@@ -272,7 +234,6 @@ void ShaderParameterAnimationInfo::ApplyValue(const Variant& newValue)
 
 Material::Material(Context* context, bool skip_reset) :
     Resource(context),
-    SignalObserver(context->m_observer_allocator),
     d(new MaterialPrivate(this, context)),
     auxViewFrameNumber_(0),
     shaderParameterHash_(0),
@@ -366,7 +327,7 @@ bool Material::BeginLoadXML(Deserializer& source)
     // and request them to also be loaded. Can not do anything else at this point
     if (GetAsyncLoadState() == ASYNC_LOADING)
     {
-        ResourceCache* cache =context_->m_ResourceCache.get();
+        ResourceCache* cache =context_->resourceCache();
         XMLElement rootElem = d->loadXMLFile_->GetRoot();
         XMLElement techniqueElem = rootElem.GetChild("technique");
         while (techniqueElem)
@@ -421,7 +382,7 @@ bool Material::BeginLoadJSON(Deserializer& source)
     // and request them to also be loaded. Can not do anything else at this point
     if (GetAsyncLoadState() == ASYNC_LOADING)
     {
-        ResourceCache* cache =context_->m_ResourceCache.get();
+        ResourceCache* cache =context_->resourceCache();
         const JSONValue& rootVal = d->loadJSONFile_->GetRoot();
 
         JSONArray techniqueArray = rootVal.Get("techniques").GetArray();
@@ -481,7 +442,7 @@ bool Material::Load(const XMLElement& source)
         return false;
     }
 
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     XMLElement shaderElem = source.GetChild("shader");
     if (shaderElem)
     {
@@ -500,7 +461,7 @@ bool Material::Load(const XMLElement& source)
             TechniqueEntry newTechnique;
             newTechnique.technique_ = newTechnique.original_ = tech;
             if (techniqueElem.HasAttribute("quality"))
-                newTechnique.qualityLevel_ = techniqueElem.GetInt("quality");
+                newTechnique.qualityLevel_ = (eQuality)techniqueElem.GetInt("quality");
             if (techniqueElem.HasAttribute("loddistance"))
                 newTechnique.lodDistance_ = techniqueElem.GetFloat("loddistance");
             techniques_.push_back(newTechnique);
@@ -624,7 +585,7 @@ bool Material::Load(const JSONValue& source)
         return false;
     }
 
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     const JSONValue& shaderVal = source.Get("shader");
     if (!shaderVal.IsNull())
     {
@@ -647,7 +608,7 @@ bool Material::Load(const JSONValue& source)
             newTechnique.technique_ = newTechnique.original_ = tech;
             JSONValue qualityVal = techVal.Get("quality");
             if (!qualityVal.IsNull())
-                newTechnique.qualityLevel_ = qualityVal.GetInt();
+                newTechnique.qualityLevel_ = (eQuality)qualityVal.GetInt();
             JSONValue lodDistanceVal = techVal.Get("loddistance");
             if (!lodDistanceVal.IsNull())
                 newTechnique.lodDistance_ = lodDistanceVal.GetFloat();
@@ -978,7 +939,7 @@ void Material::SetNumTechniques(unsigned num)
     RefreshMemoryUse();
 }
 
-void Material::SetTechnique(unsigned index, Technique* tech, unsigned qualityLevel, float lodDistance)
+void Material::SetTechnique(unsigned index, Technique* tech, eQuality qualityLevel, float lodDistance)
 {
     if (index >= techniques_.size())
         return;

@@ -56,7 +56,7 @@ const unsigned short CHAT_SERVER_PORT = 2345;
 URHO3D_DEFINE_APPLICATION_MAIN(Chat)
 
 Chat::Chat(Context* context) :
-    Sample(context)
+    Sample("Char",context)
 {
 }
 
@@ -66,7 +66,7 @@ void Chat::Start()
     Sample::Start();
 
     // Enable OS cursor
-    GetSubsystem<Input>()->SetMouseVisible(true);
+    m_context->m_InputSystem->SetMouseVisible(true);
 
     // Create the user interface
     CreateUI();
@@ -79,9 +79,9 @@ void Chat::CreateUI()
 {
     SetLogoVisible(false); // We need the full rendering window
 
-    Graphics* graphics = GetSubsystem<Graphics>();
-    UIElement* root = GetSubsystem<UI>()->GetRoot();
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    Graphics* graphics = m_context->m_Graphics.get();
+    UIElement* root = m_context->m_UISystem->GetRoot();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
     XMLFile* uiStyle = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
     // Set style to the UI root so that elements will inherit it
     root->SetDefaultStyle(uiStyle);
@@ -111,20 +111,19 @@ void Chat::CreateUI()
         chatHistory_.resize((graphics->GetHeight() - 20) / rowHeight);
 
     // No viewports or scene is defined. However, the default zone's fog color controls the fill color
-    GetSubsystem<Renderer>()->GetDefaultZone()->SetFogColor(Color(0.0f, 0.0f, 0.1f));
+    m_context->m_Renderer->GetDefaultZone()->SetFogColor(Color(0.0f, 0.0f, 0.1f));
 }
 
 void Chat::SubscribeToEvents()
 {
     // Subscribe to UI element events
-    SubscribeToEvent(textEdit_, E_TEXTFINISHED, URHO3D_HANDLER(Chat, HandleSend));
-    SubscribeToEvent(sendButton_, E_RELEASED, URHO3D_HANDLER(Chat, HandleSend));
-    SubscribeToEvent(connectButton_, E_RELEASED, URHO3D_HANDLER(Chat, HandleConnect));
-    SubscribeToEvent(disconnectButton_, E_RELEASED, URHO3D_HANDLER(Chat, HandleDisconnect));
-    SubscribeToEvent(startServerButton_, E_RELEASED, URHO3D_HANDLER(Chat, HandleStartServer));
-
+    textEdit_->textFinished.Connect(this,&Chat::HandleSend);
+    sendButton_->released.Connect(this,&Chat::HandleSend);
+    connectButton_->released.Connect(this,&Chat::HandleConnect);
+    disconnectButton_->released.Connect(this,&Chat::HandleDisconnect);
+    startServerButton_->released.Connect(this,&Chat::HandleStartServer);
     // Subscribe to log messages so that we can pipe them to the chat window
-    SubscribeToEvent(E_LOGMESSAGE, URHO3D_HANDLER(Chat, HandleLogMessage));
+    g_LogSignals.logMessageSignal.Connect(this,&Chat::ShowChatText);
 
     // Subscribe to network events
     SubscribeToEvent(E_NETWORKMESSAGE, URHO3D_HANDLER(Chat, HandleNetworkMessage));
@@ -135,7 +134,7 @@ void Chat::SubscribeToEvents()
 
 Button* Chat::CreateButton(const QString& text, int width)
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
+    ResourceCache* cache = m_context->m_ResourceCache.get();
     Font* font = cache->GetResource<Font>("Fonts/Anonymous Pro.ttf");
 
     Button* button = buttonContainer_->CreateChild<Button>();
@@ -165,7 +164,7 @@ void Chat::ShowChatText(const QString& row)
 
 void Chat::UpdateButtons()
 {
-    Network* network = GetSubsystem<Network>();
+    Network* network = m_context->m_Network.get();
     Connection* serverConnection = network->GetServerConnection();
     bool serverRunning = network->IsServerRunning();
 
@@ -183,7 +182,7 @@ void Chat::HandleLogMessage(StringHash eventType, VariantMap& eventData)
     ShowChatText(eventData[P_MESSAGE].GetString());
 }
 
-void Chat::HandleSend(StringHash eventType, VariantMap& eventData)
+void Chat::HandleSend(UIElement *,const QString &,float)
 {
     QString text = textEdit_->GetText();
     if (text.isEmpty())
@@ -204,7 +203,7 @@ void Chat::HandleSend(StringHash eventType, VariantMap& eventData)
     }
 }
 
-void Chat::HandleConnect(StringHash eventType, VariantMap& eventData)
+void Chat::HandleConnect(UIElement *)
 {
     Network* network = GetSubsystem<Network>();
     QString address = textEdit_->GetText().trimmed();
@@ -221,7 +220,7 @@ void Chat::HandleConnect(StringHash eventType, VariantMap& eventData)
     UpdateButtons();
 }
 
-void Chat::HandleDisconnect(StringHash eventType, VariantMap& eventData)
+void Chat::HandleDisconnect(UIElement *)
 {
     Network* network = GetSubsystem<Network>();
     Connection* serverConnection = network->GetServerConnection();
@@ -235,7 +234,7 @@ void Chat::HandleDisconnect(StringHash eventType, VariantMap& eventData)
     UpdateButtons();
 }
 
-void Chat::HandleStartServer(StringHash eventType, VariantMap& eventData)
+void Chat::HandleStartServer(UIElement *)
 {
     Network* network = GetSubsystem<Network>();
     network->StartServer(CHAT_SERVER_PORT);

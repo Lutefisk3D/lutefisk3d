@@ -23,8 +23,10 @@
 #pragma once
 
 #include "Lutefisk3D/Input/InputEvents.h"
+#include "Lutefisk3D/Input/InputConstants.h"
 #include "Lutefisk3D/Core/Mutex.h"
 #include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Core/Timer.h"
 #include "Lutefisk3D/Math/Vector2.h"
 #include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
 #include <QtCore/QSet>
@@ -95,9 +97,8 @@ struct JoystickState
 class LUTEFISK3D_EXPORT Input : public jl::SignalObserver
 {
 public:
-    /// Construct.
-    Input(Context* context);
-    virtual ~Input();
+    explicit Input(Context* context);
+    ~Input() override;
 
     /// Poll for window messages. Called by HandleBeginFrame().
     void Update();
@@ -133,15 +134,17 @@ public:
     /// Check if a key has been pressed on this frame by scancode.
     bool GetScancodePress(int scancode) const;
     /// Check if a mouse button is held down.
-    bool GetMouseButtonDown(MouseButton button) const;
+    bool GetMouseButtonDown(MouseButtonFlags button) const;
     /// Check if a mouse button has been pressed on this frame.
-    bool GetMouseButtonPress(MouseButton button) const;
+    bool GetMouseButtonPress(MouseButtonFlags button) const;
+    /// Check if a mouse button was pressed and released without moving within a short duration of time.
+    bool GetMouseButtonClick(MouseButtonFlags button) const;
     /// Check if a qualifier key is held down.
-    bool GetQualifierDown(int qualifier) const;
+    bool GetQualifierDown(Qualifier qualifier) const;
     /// Check if a qualifier key has been pressed on this frame.
-    bool GetQualifierPress(int qualifier) const;
+    bool GetQualifierPress(Qualifier qualifier) const;
     /// Return the currently held down qualifiers.
-    int GetQualifiers() const;
+    QualifierFlags GetQualifiers() const;
     /// Return mouse position within window. Should only be used with a visible mouse cursor. Uses the backbuffer (Graphics width/height) coordinates.
     IntVector2 GetMousePosition() const;
     /// Return mouse movement since last frame.
@@ -189,6 +192,10 @@ public:
     void SetKey(int key, int scancode, bool newState);
     /// Handle mouse wheel change.
     void SetMouseWheel(int delta);
+    /// Return whether user should ignore input events.
+    bool ShouldIgnoreInput() const { return shouldIgnoreInput_; }
+    /// Set a flag indicating that user should ignore input.
+    void SetShouldIgnoreInput(bool ignore) { shouldIgnoreInput_ = ignore; }
 private:
     /// Initialize when screen mode initially set.
     void Initialize();
@@ -233,9 +240,15 @@ private:
     /// Opened joysticks.
     HashMap<int, JoystickState> joysticks_;
     /// Mouse buttons' down state.
-    unsigned mouseButtonDown_;
+    MouseButtonFlags mouseButtonDown_;
     /// Mouse buttons' pressed state.
-    unsigned mouseButtonPress_;
+    MouseButtonFlags mouseButtonPress_;
+    /// Mouse buttons' clicked state.
+    MouseButtonFlags mouseButtonClick_;
+    /// Position when last mouse button was pressed.
+    IntVector2 mousePressPosition_;
+    /// Time since last mouse press.
+    Timer mousePressTimer_;
     /// Last mouse position for calculating movement.
     IntVector2 lastMousePosition_;
     /// Last mouse position before being set to not visible.
@@ -273,5 +286,7 @@ private:
     bool mouseMoveScaled_;
     /// Initialized flag.
     bool initialized_;
+    /// Whether user should suspend input handling.
+    bool shouldIgnoreInput_ = false;
 };
 }

@@ -698,7 +698,7 @@ void AnimationController::SetNetAnimationsAttr(const std::vector<unsigned char>&
 
 void AnimationController::SetNodeAnimationStatesAttr(const VariantVector& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     nodeAnimationStates_.clear();
     unsigned index = 0;
     unsigned numStates = index < value.size() ? value[index++].GetUInt() : 0;

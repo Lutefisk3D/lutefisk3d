@@ -63,7 +63,7 @@ namespace Urho3D
     } \
 
 #define INC_POS_STEREO_LOOPED() \
-    pos += (intAdd << 1); \
+    pos += ((unsigned)intAdd << 1u); \
     fractPos += fractAdd; \
     if (fractPos > 65535) \
     { \
@@ -74,7 +74,7 @@ namespace Urho3D
         pos -= (end - repeat); \
 
 #define INC_POS_STEREO_ONESHOT() \
-    pos += (intAdd << 1); \
+    pos += ((unsigned)intAdd << 1u); \
     fractPos += fractAdd; \
     if (fractPos > 65535) \
     { \
@@ -114,7 +114,7 @@ SoundSource::SoundSource(Context* context) :
     timePosition_(0.0f),
     unusedStreamSize_(0)
 {
-    audio_ = GetSubsystem<Audio>();
+    audio_ = context->m_AudioSystem.get();
 
     if (audio_)
         audio_->AddSoundSource(this);
@@ -146,22 +146,22 @@ void SoundSource::RegisterObject(Context* context)
 
 void SoundSource::Seek(float seekTime)
 {
-    // ignore buffered sound stream
+    // Ignore buffered sound stream
     if (!audio_ || !sound_ || (soundStream_ && !sound_->IsCompressed()))
         return;
 
-    // set to valid range
+    // Set to valid range
     seekTime = Clamp(seekTime, 0.0f, sound_->GetLength());
 
     if (!soundStream_)
     {
-        // raw or wav format
+        // Raw or wav format
         SetPositionAttr((int)(seekTime * (sound_->GetSampleSize() * sound_->GetFrequency())));
     }
     else
     {
-        // ogg format
-        if (soundStream_->Seek(unsigned(seekTime * soundStream_->GetFrequency())))
+        // Ogg format
+        if (soundStream_->Seek((unsigned)(seekTime * soundStream_->GetFrequency())))
         {
             timePosition_ = seekTime;
         }
@@ -421,7 +421,7 @@ void SoundSource::UpdateMasterGain()
 
 void SoundSource::SetSoundAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     Sound* newSound = cache->GetResource<Sound>(value.name_);
     if (IsPlaying())
         Play(newSound);
@@ -501,7 +501,7 @@ void SoundSource::PlayLockless(Sound* sound)
     sound_.Reset();
 }
 
-void SoundSource::PlayLockless(SharedPtr<SoundStream> stream)
+void SoundSource::PlayLockless(const SharedPtr<SoundStream>& stream)
 {
     // Reset the time position in any case
     timePosition_ = 0.0f;

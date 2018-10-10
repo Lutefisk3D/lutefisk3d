@@ -1,6 +1,6 @@
 #pragma once
 /**
- * \file SRDelegate.hpp
+ * \file FastFunc.h
  *
  * This is a C++11 implementation by janezz55(code.google) for the original "The Impossibly Fast C++ Delegates" authored by Sergey Ryazanov.
  *

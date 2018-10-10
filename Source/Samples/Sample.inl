@@ -22,9 +22,9 @@
 
 #include <Lutefisk3D/Engine/Application.h>
 #include <Lutefisk3D/Graphics/Camera.h>
-#include <Lutefisk3D/UI/Console.h>
+#include <Lutefisk3D/SystemUI/Console.h>
 #include <Lutefisk3D/UI/Cursor.h>
-#include <Lutefisk3D/UI/DebugHud.h>
+#include <Lutefisk3D/SystemUI/DebugHud.h>
 #include <Lutefisk3D/Engine/Engine.h>
 #include <Lutefisk3D/Engine/EngineDefs.h>
 #include <Lutefisk3D/IO/FileSystem.h>
@@ -38,6 +38,7 @@
 #include <Lutefisk3D/UI/Sprite.h>
 #include <Lutefisk3D/Graphics/Texture2D.h>
 #include <Lutefisk3D/Core/Timer.h>
+#include <Lutefisk3D/Core/Profiler.h>
 #include <Lutefisk3D/UI/UI.h>
 #include <Lutefisk3D/Resource/XMLFile.h>
 #include <Lutefisk3D/IO/Log.h>
@@ -54,9 +55,16 @@ Sample::Sample(const QString& sampleName,Urho3D::Context* context) :
 
 void Sample::Setup()
 {
+#ifdef LUTEFISK3D_PROFILING
+    if(GetContext()->m_ProfilerSystem)
+    {
+        GetContext()->m_ProfilerSystem->StartListen();
+        GetContext()->m_ProfilerSystem->SetEnabled(true);
+    }
+#endif
     // Modify engine startup parameters
     engineParameters_[EP_WINDOW_TITLE] = m_appName;
-    engineParameters_[EP_LOG_NAME]     = m_context->m_FileSystem->GetAppPreferencesDir("urho3d", "logs") + m_appName + ".log";
+    engineParameters_[EP_LOG_NAME]     = GetContext()->m_FileSystem->GetAppPreferencesDir("urho3d", "logs") + m_appName + ".log";
     engineParameters_[EP_FULL_SCREEN]  = false;
     engineParameters_[EP_HEADLESS]     = false;
     engineParameters_[EP_SOUND]        = false;
@@ -96,13 +104,13 @@ void Sample::InitMouseMode(MouseMode mode)
 {
     useMouseMode_ = mode;
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     assert(GetPlatform() != "Web");
     if (useMouseMode_ == MM_FREE)
         input->SetMouseVisible(true);
 
-    Console* console = m_context->GetSubsystemT<Console>();
+    Console* console = GetContext()->GetSubsystemT<Console>();
     if (useMouseMode_ != MM_ABSOLUTE)
     {
         input->SetMouseMode(useMouseMode_);
@@ -120,13 +128,13 @@ void Sample::SetLogoVisible(bool enable)
 void Sample::CreateLogo()
 {
     // Get logo texture
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     Texture2D* logoTexture = cache->GetResource<Texture2D>("Textures/FishBoneLogo.png");
     if (!logoTexture)
         return;
 
     // Create logo sprite and add to the UI layout
-    UI* ui = m_context->m_UISystem.get();
+    UI* ui = GetContext()->m_UISystem.get();
     logoSprite_ = ui->GetRoot()->CreateChild<Sprite>();
 
     // Set logo sprite texture
@@ -156,8 +164,8 @@ void Sample::CreateLogo()
 
 void Sample::SetWindowTitleAndIcon()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    Graphics* graphics = m_context->m_Graphics.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
     Image* icon = cache->GetResource<Image>("Textures/UrhoIcon.png");
     graphics->SetWindowIcon(icon);
     graphics->SetWindowTitle("Urho3D Sample");
@@ -165,18 +173,12 @@ void Sample::SetWindowTitleAndIcon()
 
 void Sample::CreateConsoleAndDebugHud()
 {
-    // Get default style
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    XMLFile* xmlFile = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
 
     // Create console
-    Console* console = engine_->CreateConsole();
-    console->SetDefaultStyle(xmlFile);
-    console->GetBackground()->SetOpacity(0.8f);
+    (void)engine_->CreateConsole();
 
     // Create debug HUD.
-    DebugHud* debugHud = engine_->CreateDebugHud();
-    debugHud->SetDefaultStyle(xmlFile);
+    (void)engine_->CreateDebugHud();
 }
 
 
@@ -185,16 +187,18 @@ void Sample::HandleKeyUp(int key,int scancode,unsigned buttons,int qualifiers)
     // Close console (if open) or exit when ESC is pressed
     if (key == KEY_ESCAPE)
     {
-        Console* console = m_context->GetSubsystemT<Console>();
+#if LUTEFISK3D_SYSTEMUI
+        Console* console = GetContext()->GetSubsystemT<Console>();
         if (console->IsVisible())
             console->SetVisible(false);
         else
+#endif
         {
             if (GetPlatform() == "Web")
             {
-                m_context->m_InputSystem->SetMouseVisible(true);
+                GetContext()->m_InputSystem->SetMouseVisible(true);
                 if (useMouseMode_ != MM_ABSOLUTE)
-                    m_context->m_InputSystem->SetMouseMode(MM_FREE);
+                    GetContext()->m_InputSystem->SetMouseMode(MM_FREE);
             }
             else
                 engine_->Exit();
@@ -206,16 +210,16 @@ void Sample::HandleKeyDown(int key,int scancode,unsigned buttons,int qualifiers,
 {
     // Toggle console with F1
     if (key == KEY_F1)
-        m_context->GetSubsystemT<Console>()->Toggle();
+        GetContext()->GetSubsystemT<Console>()->Toggle();
 
     // Toggle debug HUD with F2
     else if (key == KEY_F2)
-        m_context->GetSubsystemT<DebugHud>()->ToggleAll();
+        GetContext()->GetSubsystemT<DebugHud>()->ToggleAll();
 
     // Common rendering quality controls, only when UI has no focused element
-    else if (!m_context->m_UISystem->GetFocusElement())
+    else if (!GetContext()->m_UISystem->GetFocusElement())
     {
-        Renderer* renderer = m_context->m_Renderer.get();
+        Renderer* renderer = GetContext()->m_Renderer.get();
 
         // Preferences / Pause
         if (key == '1') // Texture quality
@@ -278,17 +282,17 @@ void Sample::HandleKeyDown(int key,int scancode,unsigned buttons,int qualifiers,
         // Take screenshot
         else if (key == '9')
         {
-            Graphics* graphics = m_context->m_Graphics.get();
-            Image screenshot(m_context);
+            Graphics* graphics = GetContext()->m_Graphics.get();
+            Image screenshot(GetContext());
             graphics->TakeScreenShot(screenshot);
             // Here we save in the Data folder with date and time appended
-            screenshot.SavePNG(m_context->m_FileSystem->GetProgramDir() + "Data/Screenshot_" +
+            screenshot.SavePNG(GetContext()->m_FileSystem->GetProgramDir() + "Data/Screenshot_" +
                                Time::GetTimeStamp().replace(':', '_').replace('.', '_').replace(' ', '_') + ".png");
         }
     }
 }
 
-void Sample::HandleSceneUpdate(Scene *scene,float timeStep)
+void Sample::HandleSceneUpdate(Urho3D::Scene *scene,float timeStep)
 {
 }
 

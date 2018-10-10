@@ -59,7 +59,7 @@ public:
     /// Result vector reference.
     std::vector<Drawable*>& result_;
     /// Drawable flags to include.
-    unsigned char drawableFlags_;
+    DrawableFlags drawableFlags_;
     /// Drawable layers to include.
     unsigned viewMask_;
 
@@ -219,7 +219,7 @@ class LUTEFISK3D_EXPORT RayOctreeQuery
 public:
     /// Construct with ray and query parameters.
     RayOctreeQuery(std::vector<RayQueryResult>& result, const Ray& ray, RayQueryLevel level = RAY_TRIANGLE,
-        float maxDistance = M_INFINITY, unsigned char drawableFlags = DRAWABLE_ANY, unsigned viewMask = DEFAULT_VIEWMASK) :
+        float maxDistance = M_INFINITY, DrawableFlags drawableFlags = DRAWABLE_ANY, unsigned viewMask = DEFAULT_VIEWMASK) :
         result_(result),
         ray_(ray),
         drawableFlags_(drawableFlags),
@@ -234,7 +234,7 @@ public:
     /// Ray.
     Ray ray_;
     /// Drawable flags to include.
-    unsigned char drawableFlags_;
+    DrawableFlags drawableFlags_;
     /// Drawable layers to include.
     unsigned viewMask_;
     /// Maximum ray distance.

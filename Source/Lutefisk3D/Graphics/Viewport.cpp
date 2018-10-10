@@ -65,11 +65,10 @@ Viewport::Viewport(Context* context, Scene* scene, Camera* camera, const IntRect
     SetRenderPath(renderPath);
 }
 
-Viewport::~Viewport()
-{
-}
+Viewport::~Viewport() = default;
 
-void Viewport::SetScene(Scene* scene)
+
+    void Viewport::SetScene(Scene* scene)
 {
     scene_ = scene;
 }
@@ -106,11 +105,15 @@ void Viewport::SetRenderPath(RenderPath* renderPath)
     }
 }
 
-void Viewport::SetRenderPath(XMLFile* file)
+bool Viewport::SetRenderPath(XMLFile* file)
 {
     SharedPtr<RenderPath> newRenderPath(new RenderPath());
     if (newRenderPath->Load(file))
+    {
         renderPath_ = newRenderPath;
+        return true;
+    }
+    return false;
 }
 
 Scene* Viewport::GetScene() const
@@ -166,7 +169,7 @@ IntVector2 Viewport::WorldToScreenPoint(const Vector3& worldPos) const
     if (!camera_)
         return IntVector2::ZERO;
 
-    Vector2 screenPoint = camera_->WorldToScreenPoint(worldPos);
+    Vector2 screenPoint = Urho3D::WorldToScreenPoint(*camera_,worldPos);
 
     int x;
     int y;
@@ -207,7 +210,7 @@ Vector3 Viewport::ScreenToWorldPoint(int x, int y, float depth) const
         screenY = float(y - rect_.top_) / (float)rect_.Height();
     }
 
-    return camera_->ScreenToWorldPoint(Vector3(screenX, screenY, depth));
+    return Urho3D::ScreenToWorldPoint(*camera_,Vector3(screenX, screenY, depth));
 }
 
 void Viewport::AllocateView()

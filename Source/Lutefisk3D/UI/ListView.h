@@ -45,16 +45,23 @@ class LUTEFISK3D_EXPORT ListView : public ScrollView
 
 public:
     /// Construct.
-    ListView(Context* context);
+    explicit ListView(Context* context);
     /// Destruct.
-    virtual ~ListView() = default;
+    ~ListView() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// React to a key press.
-    virtual void OnKey(int key, int buttons, int qualifiers) override;
+    void OnKey(Key key, MouseButtonFlags buttons, QualifierFlags qualifiers) override;
     /// React to resize.
-    virtual void OnResize(const IntVector2& newSize, const IntVector2& delta) override;
+    void OnResize(const IntVector2& newSize, const IntVector2& delta) override;
+
+    /// Manually update layout on internal elements.
+    void UpdateInternalLayout();
+    /// Disable automatic layout update for internal elements.
+    void DisableInternalLayoutUpdate();
+    /// Enable automatic layout update for internal elements.
+    void EnableInternalLayoutUpdate();
 
     /// Add item to the end of the list.
     void AddItem(UIElement* item);
@@ -62,7 +69,7 @@ public:
     /// If index is greater than the total items then the new item is inserted at the end of the list.
     /// In hierarchy mode, if index is greater than the index of last children of the specified parent item then the new item is inserted next to the last children.
     /// And if the index is lesser than the index of the parent item itself then the new item is inserted before the first child item.
-    void InsertItem(unsigned index, UIElement* item, UIElement* parentItem = 0);
+    void InsertItem(unsigned index, UIElement* item, UIElement* parentItem = nullptr);
     /// Remove specific item, starting search at the specified index if provided. In hierarchy mode will also remove any children.
     void RemoveItem(UIElement* item, unsigned index = 0);
     /// Remove item at index. In hierarchy mode will also remove any children.
@@ -141,9 +148,27 @@ public:
     /// Ensure full visibility of the item.
     void EnsureItemVisibility(UIElement* item);
 
+    ///////////////////////////////////////////////////////////////
+    // SIGNALS
+    ///////////////////////////////////////////////////////////////
+    /// element,key, mouse buttons, qualifiers
+    jl::Signal<UIElement *,int, unsigned, unsigned> unhandledKey;
+    /// Listview item clicked. If this is a left-click, also ItemSelected event will be sent.
+    /// If this is a right-click, only this event is sent.
+    /// list,element,index,button, buttons,qualfiers
+    jl::Signal<UIElement *,UIElement*,int,int, unsigned, unsigned> itemClicked;
+    /// Listview item double clicked.
+    jl::Signal<UIElement *,UIElement*,int,int, unsigned, unsigned> itemDoubleClicked;
+    /// Listview selection changed
+    jl::Signal<UIElement *> selectionChanged;
+    /// Listview item selected
+    jl::Signal<UIElement *,int> itemSelected;
+    /// Listview item selected
+    jl::Signal<UIElement *,int> itemDeselected;
+
 protected:
     /// Filter implicit attributes in serialization process.
-    virtual bool FilterImplicitAttributes(XMLElement& dest) const override;
+    bool FilterImplicitAttributes(XMLElement& dest) const override;
     /// Update selection effect when selection or focus changes.
     void UpdateSelectionEffect();
 
@@ -168,7 +193,7 @@ private:
     /// Handle global UI mouseclick to check for selection change.
     void HandleUIMouseClick(UIElement *element, MouseButton button, unsigned buttons, int qualifiers);
     /// Handle global UI mouse doubleclick.
-    void HandleUIMouseDoubleClick(UIElement *element, int, int, MouseButton button, unsigned buttons, int qualifiers);
+    void HandleUIMouseDoubleClick(UIElement *element, IntVector2, IntVector2, MouseButton button, unsigned buttons, int qualifiers);
     /// Handle global focus change to check whether an invisible item was focused.
     void HandleItemFocusChanged(UIElement *element, UIElement *);
     /// Handle focus changed.

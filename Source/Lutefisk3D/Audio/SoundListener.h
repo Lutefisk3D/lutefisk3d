@@ -22,31 +22,20 @@
 
 #pragma once
 
-#include "Lutefisk3D/Scene/Serializable.h"
+#include "Lutefisk3D/Scene/Component.h"
 
 namespace Urho3D
 {
-class Scene;
-class Node;
 
 /// %Sound listener component
-class LUTEFISK3D_EXPORT SoundListener : public Serializable //Component
+class LUTEFISK3D_EXPORT SoundListener : public Component
 {
-    URHO3D_OBJECT(SoundListener,Serializable)
+    URHO3D_OBJECT(SoundListener,Component)
 
 public:
-    SoundListener(Context* context);
+    explicit SoundListener(Context* context);
     ~SoundListener() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
-    bool IsEnabled() const { return enabled_; }
-    void SetEnabled(bool v) { enabled_=v; }
-    /// Return whether is effectively enabled (node is also enabled.)
-    bool IsEnabledEffective() const;
-    Scene *GetScene() const;
-    Node *GetNode() {return attachedNode; }
-    Node *attachedNode;
-    bool enabled_;
-
 };
 }

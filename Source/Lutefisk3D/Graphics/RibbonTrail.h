@@ -53,8 +53,8 @@ class LUTEFISK3D_EXPORT RibbonTrail : public Drawable
     URHO3D_OBJECT(RibbonTrail, Drawable)
 
 public:
-    RibbonTrail(Context* context);
-    virtual ~RibbonTrail();
+    explicit RibbonTrail(Context* context);
+    ~RibbonTrail() override;
 
     static void RegisterObject(Context* context);
     void ProcessRayQuery(const RayOctreeQuery &query, std::vector<RayQueryResult> &results) override;

@@ -114,10 +114,10 @@ void TileMap2D::SetTmxFile(TmxFile2D* tmxFile)
 
     layers_.clear();
 
+    tmxFile_ = tmxFile;
     if (!tmxFile)
         return;
 
-    tmxFile_ = tmxFile;
     info_ = tmxFile_->GetInfo();
 
     if (!rootNode_)
@@ -165,7 +165,7 @@ bool TileMap2D::PositionToTileIndex(int& x, int& y, const Vector2& position) con
 
 void TileMap2D::SetTmxFileAttr(const ResourceRef& value)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     SetTmxFile(cache->GetResource<TmxFile2D>(value.name_));
 }
 

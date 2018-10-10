@@ -350,7 +350,7 @@ void Octree::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 {
     if (debug)
     {
-        URHO3D_PROFILE_CTX(context_,OctreeDrawDebug);
+        URHO3D_PROFILE(OctreeDrawDebug);
 
         Octant::DrawDebugGeometry(debug, depthTest);
     }
@@ -358,7 +358,7 @@ void Octree::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 
 void Octree::SetSize(const BoundingBox& box, unsigned numLevels)
 {
-    URHO3D_PROFILE_CTX(context_,ResizeOctree);
+    URHO3D_PROFILE(ResizeOctree);
 
     // If drawables exist, they are temporarily moved to the root
     for (unsigned i = 0; i < NUM_OCTANTS; ++i)
@@ -380,7 +380,7 @@ void Octree::Update(const FrameInfo& frame)
     // Let drawables update themselves before reinsertion. This can be used for animation
     if (!drawableUpdates_.empty())
     {
-        URHO3D_PROFILE_CTX(context_,UpdateDrawables);
+        URHO3D_PROFILE(UpdateDrawables);
 
         // Perform updates in worker threads. Notify the scene that a threaded update is going on and components
         // (for example physics objects) should not perform non-threadsafe work when marked dirty
@@ -420,7 +420,7 @@ void Octree::Update(const FrameInfo& frame)
         // If any drawables were inserted during threaded update, update them now from the main thread
         if (!threadedDrawableUpdates_.empty())
         {
-            URHO3D_PROFILE_CTX(context_,UpdateDrawablesQueuedDuringUpdate);
+            URHO3D_PROFILE(UpdateDrawablesQueuedDuringUpdate);
 
             for (Drawable* drawable : threadedDrawableUpdates_)
             {
@@ -445,7 +445,7 @@ void Octree::Update(const FrameInfo& frame)
     // the proper octant yet
     if (!drawableUpdates_.empty())
     {
-        URHO3D_PROFILE_CTX(context_,ReinsertToOctree);
+        URHO3D_PROFILE(ReinsertToOctree);
 
         for (Drawable* drawable : drawableUpdates_)
         {
@@ -504,7 +504,7 @@ void Octree::GetDrawables(OctreeQuery& query) const
 
 void Octree::Raycast(RayOctreeQuery& query) const
 {
-    URHO3D_PROFILE_CTX(context_,Raycast);
+    URHO3D_PROFILE(Raycast);
 
     query.result_.clear();
 
@@ -515,7 +515,7 @@ void Octree::Raycast(RayOctreeQuery& query) const
 
 void Octree::RaycastSingle(RayOctreeQuery& query) const
 {
-    URHO3D_PROFILE_CTX(context_,Raycast);
+    URHO3D_PROFILE(Raycast);
 
     query.result_.clear();
     rayQueryDrawables_.clear();

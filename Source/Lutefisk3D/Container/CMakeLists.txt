@@ -2,6 +2,7 @@ set(INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/Allocator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ArrayPtr.h
     ${CMAKE_CURRENT_SOURCE_DIR}/DataHandle.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlagSet.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HandleManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Hash.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HashMap.h
@@ -14,12 +15,10 @@ set(INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/sherwood_map.hpp
 )
 set(SOURCE
-    ${CMAKE_CURRENT_SOURCE_DIR}/Allocator.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/Allocator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/RefCounted.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Str.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sherwood_map.cpp
 )
-
-set(Lutefisk3D_COMPONENT_SOURCES ${Lutefisk3D_COMPONENT_SOURCES} ${SOURCE} ${INCLUDES} PARENT_SCOPE)
-
-install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Container )
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Math )
+target_sources(Lutefisk3D PRIVATE ${SOURCE} ${INCLUDES})

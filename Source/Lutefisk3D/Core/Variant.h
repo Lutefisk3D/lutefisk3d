@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,10 +30,13 @@
 #include "Lutefisk3D/Math/StringHash.h"
 #include "Lutefisk3D/Container/Str.h"
 
+#include <QString>
+#include <QStringList>
+#include <stdint.h>
 namespace Urho3D
 {
 /// Variant's supported types.
-enum LUTEFISK3D_EXPORT VariantType : uint8_t
+enum VariantType : uint8_t
 {
     VAR_NONE = 0,
     VAR_INT,
@@ -62,241 +65,380 @@ enum LUTEFISK3D_EXPORT VariantType : uint8_t
     VAR_RECT,
     VAR_INTVECTOR3,
     VAR_INT64,
+    // Add new types here
+    VAR_CUSTOM_HEAP,
+    VAR_CUSTOM_STACK,
     MAX_VAR_TYPES
 };
 
-/// Union for the possible variant values. Also stores non-POD objects such as String and math objects
-/// (excluding Matrix) which must not exceed 40 bytes in size (or 80 bytes in a 64-bit build.)
-/// Objects exceeding the limit are allocated on the heap and pointed to by _ptr.
-struct VariantValue
+/// Typed resource reference.
+struct LUTEFISK3D_EXPORT ResourceRef
 {
-    union
-    {
-        int int_;
-        bool bool_;
-        float float_;
-        double double_;
-        void* ptr_;
-    };
+    StringHash type_; //!< Object type.
+    QString    name_; //!< Object name.
 
-    union
-    {
-        int int2_;
-        float float2_;
-        void* ptr2_;
-    };
-
-    union
-    {
-        int int3_;
-        float float3_;
-        void* ptr3_;
-    };
-
-    union
-    {
-        int int4_;
-        float float4_;
-        void* ptr4_;
-    };
-    union
-    {
-        void* ptr5_[6];
-    };
-#ifdef _GLIBCXX_DEBUG
-    union
-    {
-        void* ptr7_[8];
-    };
-#endif
+    /// Test for equality with another reference.
+    bool operator == (const ResourceRef& rhs) const { return type_ == rhs.type_ && name_ == rhs.name_; }
+    /// Test for inequality with another reference.
+    bool operator != (const ResourceRef& rhs) const { return type_ != rhs.type_ || name_ != rhs.name_; }
 };
+/// %List of typed resource references.
+struct LUTEFISK3D_EXPORT ResourceRefList
+{
+    StringHash type_; //!< Object type.
+    std::vector<QString> names_; //!< List of object names.
+    /// Test for equality with another reference list.
+    bool operator == (const ResourceRefList& rhs) const { return type_ == rhs.type_ && names_ == rhs.names_; }
+    /// Test for inequality with another reference list.
+    bool operator != (const ResourceRefList& rhs) const { return type_ != rhs.type_ || names_ != rhs.names_; }
+};
+
+class Variant;
+/// Vector of variants.
+using VariantVector = std::vector<Variant>;
+/// Map of variants.
+using VariantMap = HashMap<StringHash, Variant> ;
+
+/// Custom variant value. This type is not abstract to store it in the VariantValue by value.
+class CustomVariantValue
+{
+    // GetValuePtr expects that CustomVariantValue is always convertible to CustomVariantValueImpl<T>.
+    template <class T> friend class CustomVariantValueImpl;
+
+private:
+    /// Construct from type info.
+    explicit CustomVariantValue(const std::type_info& typeInfo) : typeInfo_(typeInfo) {}
+
+public:
+    /// Construct empty.
+    CustomVariantValue() : typeInfo_(typeid(void)) { }      // NOLINT(modernize-redundant-void-arg)
+    /// Destruct.
+    virtual ~CustomVariantValue() = default;
+
+    /// Get the type info.
+    const std::type_info& GetTypeInfo() const { return typeInfo_; }
+    /// Return whether the specified type is stored.
+    template <class T> bool IsType() const { return GetTypeInfo() == typeid(T); }
+    /// Return pointer to value of the specified type. Return null pointer if type does not match.
+    template <class T> T* GetValuePtr();
+    /// Return const pointer to value of the specified type. Return null pointer if type does not match.
+    template <class T> const T* GetValuePtr() const;
+
+    /// Assign value.
+    virtual bool Assign(const CustomVariantValue& rhs) { return false; }
+    /// Clone.
+    virtual CustomVariantValue* Clone() const { return nullptr; }
+    /// Placement clone.
+    virtual void Clone(void* dest) const { }
+    /// Get size.
+    virtual unsigned GetSize() const { return sizeof(CustomVariantValue); }
+
+    /// Compare to another custom value.
+    virtual bool Compare(const CustomVariantValue& rhs) const { (void)rhs; return false; }
+    /// Compare to zero.
+    virtual bool IsZero() const { return false; }
+    /// Convert custom value to string.
+    virtual QString ToString() const { return QString(); }
+
+private:
+    /// Type info.
+    const std::type_info& typeInfo_;
+};
+/// Custom variant value type traits. Specialize the template to implement custom type behavior.
+template <class T> struct CustomVariantValueTraits
+{
+    /// Compare types.
+    static bool Compare(const T& lhs, const T& rhs) { (void)lhs;  (void)rhs; return false; }
+    /// Check whether the value is zero.
+    static bool IsZero(const T& value) { (void)value; return false; }
+    /// Convert type to string.
+    static QString ToString(const T& value) { (void)value; return QString(); }
+};
+/// Custom variant value implementation.
+template <class T> class CustomVariantValueImpl final : public CustomVariantValue
+{
+public:
+    /// This class name.
+    using ClassName = CustomVariantValueImpl<T>;
+    /// Type traits.
+    using Traits = CustomVariantValueTraits<T>;
+    /// Construct from value.
+    explicit CustomVariantValueImpl(const T& value) : CustomVariantValue(typeid(T)), value_(value) {}
+    /// Set value.
+    void SetValue(const T& value) { value_ = value; }
+    /// Get value.
+    T& GetValue() { return value_; }
+    /// Get const value.
+    const T& GetValue() const { return value_; }
+
+    /// Assign value.
+    bool Assign(const CustomVariantValue& rhs) override
+    {
+        if (const T* rhsValue = rhs.GetValuePtr<T>())
+        {
+            SetValue(*rhsValue);
+            return true;
+        }
+        return false;
+    }
+    /// Clone.
+    CustomVariantValue* Clone() const override { return new ClassName(value_); }
+    /// Placement clone.
+    void Clone(void* dest) const override { new (dest) ClassName(value_); }
+    /// Get size.
+    unsigned GetSize() const override { return sizeof(ClassName); }
+
+    /// Compare to another custom value.
+    bool Compare(const CustomVariantValue& rhs) const override
+    {
+        const T* rhsValue = rhs.GetValuePtr<T>();
+        return rhsValue && Traits::Compare(value_, *rhsValue);
+    }
+    /// Compare to zero.
+    bool IsZero() const override { return Traits::IsZero(value_);}
+    /// Convert custom value to string.
+    QString ToString() const override { return Traits::ToString(value_); }
+
+private:
+    /// Value.
+    T value_;
+};
+/// Make custom variant value.
+template <typename T> CustomVariantValueImpl<T> MakeCustomValue(const T& value) { return CustomVariantValueImpl<T>(value); }
+
+/// Size of variant value. 16 bytes on 32-bit platform, 32 bytes on 64-bit platform.
+static const unsigned VARIANT_VALUE_SIZE = sizeof(void*) * 4;
+using GenericBuffer = std::vector<uint8_t>;
+/// Union for the possible variant values. Objects exceeding the VARIANT_VALUE_SIZE are allocated on the heap.
+union VariantValue
+{
+    unsigned char storage_[VARIANT_VALUE_SIZE];
+    int int_;
+    bool bool_;
+    float float_;
+    double double_;
+    int64_t int64_;
+    void* voidPtr_;
+    WeakPtr<RefCounted> weakPtr_;
+    Vector2 vector2_;
+    Vector3 vector3_;
+    Vector4 vector4_;
+    Rect rect_;
+    IntVector2 intVector2_;
+    IntVector3 intVector3_;
+    IntRect intRect_;
+    Matrix3* matrix3_;
+    Matrix3x4* matrix3x4_;
+    Matrix4* matrix4_;
+    Quaternion quaternion_;
+    Color color_;
+    QString string_;
+    QStringList stringVector_;
+    VariantVector *variantVector_;
+    VariantMap *variantMap_;
+    std::vector<uint8_t> buffer_;
+    ResourceRef resourceRef_;
+    ResourceRefList resourceRefList_;
+    CustomVariantValue* customValueHeap_;
+    CustomVariantValue customValueStack_;
+    /// Construct uninitialized.
+    VariantValue() { }      // NOLINT(modernize-use-equals-default)
+    /// Non-copyable.
+    VariantValue(const VariantValue& value) = delete;
+    /// Destruct.
+    ~VariantValue() { }     // NOLINT(modernize-use-equals-default)
+};
+
 static_assert(sizeof(VariantValue)>=sizeof(QStringList),"Variant value to small");
 struct ResourceRef;
 struct ResourceRefList;
 
 class Variant;
 
-/// Vector of variants.
-using VariantVector = std::vector<Variant>;
-static_assert(sizeof(VariantValue)>=sizeof(VariantVector),"Variant value must be large enough to hold VariantVector");
-
-
-/// Map of variants.
-using VariantMap = HashMap<StringHash, Variant> ;
-
 /// Variable that supports a fixed set of types.
 class LUTEFISK3D_EXPORT Variant
 {
 public:
     /// Construct empty.
-    Variant()
-    {
-    }
+    Variant() = default;
 
     /// Construct from integer.
-    Variant(int value)
+    Variant(int value)                  // NOLINT(google-explicit-constructor)
+    {
+        *this = value;
+    }
+
+    /// Construct from 64 bit integer.
+    Variant(int64_t value)            // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from unsigned integer.
-    Variant(uint32_t value)
+    Variant(uint32_t value)             // NOLINT(google-explicit-constructor)
     {
         *this = (int)value;
     }
-    /// Construct from size_t type //ERROR: truncates on 64 bit on OSes
-    Variant(long long value)
+    /// Construct from unsigned integer.
+    Variant(uint64_t value)   // NOLINT(google-explicit-constructor)
     {
-        *this = (long long)value;
+        *this = (int64_t)value;
     }
     /// Construct from a string hash (convert to integer).
-    Variant(const StringHash& value)
+    Variant(const StringHash& value)    // NOLINT(google-explicit-constructor)
     {
         *this = (int)value.Value();
     }
 
     /// Construct from a bool.
-    Variant(bool value)
+    Variant(bool value)                 // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a float.
-    Variant(float value)
+    Variant(float value)                // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a double.
-    Variant(double value)
+    Variant(double value)               // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a Vector2.
-    Variant(const Vector2& value)
+    Variant(const Vector2& value)       // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a Vector3.
-    Variant(const Vector3& value)
+    Variant(const Vector3& value)       // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a Vector4.
-    Variant(const Vector4& value)
+    Variant(const Vector4& value)       // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a quaternion.
-    Variant(const Quaternion& value)
+    Variant(const Quaternion& value)    // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a color.
-    Variant(const Color& value)
+    Variant(const Color& value)         // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a string.
-    Variant(const QString& value)
+    Variant(const QString& value)        // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a C string.
-    Variant(const char* value)
+    Variant(const char* value)          // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a buffer.
-    Variant(const std::vector<unsigned char>& value)
+    Variant(const std::vector<uint8_t>& value)// NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a pointer.
-    Variant(void* value)
+    Variant(void* value)                // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a resource reference.
-    Variant(const ResourceRef& value)
+    Variant(const ResourceRef& value)   // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a resource reference list.
-    Variant(const ResourceRefList& value)
+    Variant(const ResourceRefList& value)   // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a variant vector.
-    Variant(const VariantVector& value)
+    Variant(const VariantVector& value) // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a variant map.
-    Variant(const VariantMap& value)
+    Variant(const VariantMap& value)    // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a string vector.
-    Variant(const QStringList& value)
+    Variant(const QStringList& value)  // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
     /// Construct from a rect.
-    Variant(const Rect& value)
+    Variant(const Rect& value)          // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
     /// Construct from an integer rect.
-    Variant(const IntRect& value)
+    Variant(const IntRect& value)       // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from an IntVector2.
-    Variant(const IntVector2& value)
+    Variant(const IntVector2& value)    // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
     /// Construct from an IntVector3.
-    Variant(const IntVector3& value)
+    Variant(const IntVector3& value)    // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
     /// Construct from a RefCounted pointer. The object will be stored internally in a WeakPtr so that its expiration can be detected safely.
-    Variant(RefCounted* value)
+    Variant(RefCounted* value)          // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a Matrix3.
-    Variant(const Matrix3& value)
+    Variant(const Matrix3& value)       // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a Matrix3x4.
-    Variant(const Matrix3x4& value)
+    Variant(const Matrix3x4& value)     // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
 
     /// Construct from a Matrix4.
-    Variant(const Matrix4& value)
+    Variant(const Matrix4& value)       // NOLINT(google-explicit-constructor)
+    {
+        *this = value;
+    }
+
+    /// Construct from custom value.
+    template <class T>
+    Variant(const CustomVariantValueImpl<T>& value)     // NOLINT(google-explicit-constructor)
     {
         *this = value;
     }
@@ -347,17 +489,17 @@ public:
     Variant& operator = (const Variant& rhs);
 
     /// Assign from an integer.
-    Variant& operator = (int rhs)
+    Variant& operator = (int32_t rhs)
     {
         SetType(VAR_INT);
         value_.int_ = rhs;
         return *this;
     }
     /// Assign from 64 bit integer.
-    Variant& operator =(long long rhs)
+    Variant& operator =(int64_t rhs)
     {
         SetType(VAR_INT64);
-        *reinterpret_cast<long long*>(&value_) = rhs;
+        value_.int64_ = rhs;
         return *this;
     }
 
@@ -365,11 +507,11 @@ public:
     Variant& operator =(uint64_t rhs)
     {
         SetType(VAR_INT64);
-        *reinterpret_cast<long long*>(&value_) = (long long)rhs;
+        value_.int64_ = static_cast<long long>(rhs);
         return *this;
     }
     /// Assign from an unsigned integer.
-    Variant& operator = (unsigned rhs)
+    Variant& operator = (uint32_t rhs)
     {
         SetType(VAR_INT);
         value_.int_ = (int)rhs;
@@ -404,7 +546,7 @@ public:
     Variant& operator = (double rhs)
     {
         SetType(VAR_DOUBLE);
-        *(reinterpret_cast<double*>(&value_)) = rhs;
+        value_.double_ = rhs;
         return *this;
     }
 
@@ -412,7 +554,7 @@ public:
     Variant& operator = (const Vector2& rhs)
     {
         SetType(VAR_VECTOR2);
-        *(reinterpret_cast<Vector2*>(&value_)) = rhs;
+        value_.vector2_ = rhs;
         return *this;
     }
 
@@ -420,7 +562,7 @@ public:
     Variant& operator = (const Vector3& rhs)
     {
         SetType(VAR_VECTOR3);
-        *(reinterpret_cast<Vector3*>(&value_)) = rhs;
+        value_.vector3_ = rhs;
         return *this;
     }
 
@@ -428,7 +570,7 @@ public:
     Variant& operator = (const Vector4& rhs)
     {
         SetType(VAR_VECTOR4);
-        *(reinterpret_cast<Vector4*>(&value_)) = rhs;
+        value_.vector4_ = rhs;
         return *this;
     }
 
@@ -436,7 +578,7 @@ public:
     Variant& operator = (const Quaternion& rhs)
     {
         SetType(VAR_QUATERNION);
-        *(reinterpret_cast<Quaternion*>(&value_)) = rhs;
+        value_.quaternion_ = rhs;
         return *this;
     }
 
@@ -444,31 +586,30 @@ public:
     Variant& operator = (const Color& rhs)
     {
         SetType(VAR_COLOR);
-        *(reinterpret_cast<Color*>(&value_)) = rhs;
+        value_.color_ = rhs;
         return *this;
     }
 
     /// Assign from a string.
-    Variant& operator = (const QString& rhs)
+    Variant& operator =(const QString& rhs)
     {
         SetType(VAR_STRING);
-        *(reinterpret_cast<QString*>(&value_)) = rhs;
+        value_.string_ = rhs;
         return *this;
     }
-
     /// Assign from a C string.
     Variant& operator = (const char* rhs)
     {
         SetType(VAR_STRING);
-        *(reinterpret_cast<QString*>(&value_)) = QString(rhs);
+        value_.string_ = rhs;
         return *this;
     }
 
     /// Assign from a buffer.
-    Variant& operator = (const std::vector<unsigned char>& rhs)
+    Variant& operator = (const std::vector<uint8_t>& rhs)
     {
         SetType(VAR_BUFFER);
-        *(reinterpret_cast<std::vector<unsigned char>*>(&value_)) = rhs;
+        value_.buffer_ = rhs;
         return *this;
     }
 
@@ -476,36 +617,44 @@ public:
     Variant& operator = (void* rhs)
     {
         SetType(VAR_VOIDPTR);
-        value_.ptr_ = rhs;
+        value_.voidPtr_ = rhs;
         return *this;
     }
 
     /// Assign from a resource reference.
-    Variant& operator= (const ResourceRef& rhs);
+    Variant& operator =(const ResourceRef& rhs)
+    {
+        SetType(VAR_RESOURCEREF);
+        value_.resourceRef_ = rhs;
+        return *this;
+    }
 
     /// Assign from a resource reference list.
-    Variant& operator = (const ResourceRefList& rhs);
-
+    Variant& operator =(const ResourceRefList& rhs)
+    {
+        SetType(VAR_RESOURCEREFLIST);
+        value_.resourceRefList_ = rhs;
+        return *this;
+    }
     /// Assign from a variant vector.
     Variant& operator = (const VariantVector& rhs)
     {
         SetType(VAR_VARIANTVECTOR);
-        *(reinterpret_cast<VariantVector*>(&value_)) = rhs;
+        value_.variantVector_ = new VariantVector(rhs);
         return *this;
     }
-
-    // Assign from a string vector.
-    Variant& operator =(const QStringList & rhs)
+    /// Assign from a string vector.
+    Variant& operator =(const QStringList& rhs)
     {
         SetType(VAR_STRINGVECTOR);
-        *(reinterpret_cast<QStringList*>(&value_)) = rhs;
+        value_.stringVector_ = rhs;
         return *this;
     }
     /// Assign from a variant map.
     Variant& operator = (const VariantMap& rhs)
     {
         SetType(VAR_VARIANTMAP);
-        *(reinterpret_cast<VariantMap*>(&value_)) = rhs;
+        *value_.variantMap_ = rhs;
         return *this;
     }
 
@@ -513,7 +662,7 @@ public:
     Variant& operator =(const Rect& rhs)
     {
         SetType(VAR_RECT);
-        *(reinterpret_cast<Rect*>(&value_)) = rhs;
+        value_.rect_ = rhs;
         return *this;
     }
 
@@ -521,7 +670,7 @@ public:
     Variant& operator = (const IntRect& rhs)
     {
         SetType(VAR_INTRECT);
-        *(reinterpret_cast<IntRect*>(&value_)) = rhs;
+        value_.intRect_ = rhs;
         return *this;
     }
 
@@ -529,21 +678,21 @@ public:
     Variant& operator = (const IntVector2& rhs)
     {
         SetType(VAR_INTVECTOR2);
-        *(reinterpret_cast<IntVector2*>(&value_)) = rhs;
+        value_.intVector2_ = rhs;
         return *this;
     }
     /// Assign from an IntVector3.
     Variant& operator =(const IntVector3& rhs)
     {
         SetType(VAR_INTVECTOR3);
-        *(reinterpret_cast<IntVector3*>(&value_)) = rhs;
+        value_.intVector3_ = rhs;
         return *this;
     }
     /// Assign from a RefCounted pointer. The object will be stored internally in a WeakPtr so that its expiration can be detected safely.
     Variant& operator = (RefCounted* rhs)
     {
         SetType(VAR_PTR);
-        *(reinterpret_cast<WeakPtr<RefCounted>*>(&value_)) = rhs;
+        value_.weakPtr_ = rhs;
         return *this;
     }
 
@@ -551,7 +700,7 @@ public:
     Variant& operator = (const Matrix3& rhs)
     {
         SetType(VAR_MATRIX3);
-        *(reinterpret_cast<Matrix3*>(value_.ptr_)) = rhs;
+        *value_.matrix3_ = rhs;
         return *this;
     }
 
@@ -559,7 +708,7 @@ public:
     Variant& operator = (const Matrix3x4& rhs)
     {
         SetType(VAR_MATRIX3X4);
-        *(reinterpret_cast<Matrix3x4*>(value_.ptr_)) = rhs;
+        *value_.matrix3x4_ = rhs;
         return *this;
     }
 
@@ -567,7 +716,15 @@ public:
     Variant& operator = (const Matrix4& rhs)
     {
         SetType(VAR_MATRIX4);
-        *(reinterpret_cast<Matrix4*>(value_.ptr_)) = rhs;
+        *value_.matrix4_ = rhs;
+        return *this;
+    }
+
+    /// Assign from custom value.
+    template <class T>
+    Variant& operator =(const CustomVariantValueImpl<T>& value)
+    {
+        SetCustomVariantValue(value);
         return *this;
     }
 
@@ -575,30 +732,51 @@ public:
     bool operator == (const Variant& rhs) const;
     /// Test for equality with an integer. To return true, both the type and value must match.
     bool operator == (int rhs) const { return type_ == VAR_INT ? value_.int_ == rhs : false; }
-    /// Test for equality with an unsigned integer. To return true, both the type and value must match.
-    bool operator == (unsigned rhs) const { return type_ == VAR_INT ? value_.int_ == (int)rhs : false; }
-    /// Test for equality with a bool. To return true, both the type and value must match.
-    bool operator ==(long long rhs) const { return type_ == VAR_INT64 ? *reinterpret_cast<const long long*>(&value_.int_) == rhs : false; }
+    /// Test for equality with an unsigned 64 bit integer. To return true, both the type and value must match.
+    bool operator ==(unsigned rhs) const { return type_ == VAR_INT ? value_.int_ == static_cast<int>(rhs) : false; }
+
+    /// Test for equality with an 64 bit integer. To return true, both the type and value must match.
+    bool operator ==(long long rhs) const { return type_ == VAR_INT64 ? value_.int64_ == rhs : false; }
 
     /// Test for equality with an unsigned integer. To return true, both the type and value must match.
-    bool operator ==(uint64_t rhs) const { return type_ == VAR_INT64 ? *reinterpret_cast<const uint64_t*>(&value_.int_) == (int)rhs : false; }
+    bool operator ==(uint64_t rhs) const { return type_ == VAR_INT64 ? value_.int64_ == static_cast<long long>(rhs) : false; }
+
+    /// Test for equality with a bool. To return true, both the type and value must match.
     bool operator == (bool rhs) const { return type_ == VAR_BOOL ? value_.bool_ == rhs : false; }
     /// Test for equality with a float. To return true, both the type and value must match.
     bool operator == (float rhs) const { return type_ == VAR_FLOAT ? value_.float_ == rhs : false; }
     /// Test for equality with a double. To return true, both the type and value must match.
-    bool operator ==(double rhs) const { return type_ == VAR_DOUBLE ? *(reinterpret_cast<const double*>(&value_)) == rhs : false; }
+    bool operator ==(double rhs) const { return type_ == VAR_DOUBLE ? value_.double_ == rhs : false; }
     /// Test for equality with a Vector2. To return true, both the type and value must match.
-    bool operator == (const Vector2& rhs) const { return type_ == VAR_VECTOR2 ? *(reinterpret_cast<const Vector2*>(&value_)) == rhs : false; }
+    bool operator ==(const Vector2& rhs) const
+    {
+        return type_ == VAR_VECTOR2 ? value_.vector2_ == rhs : false;
+    }
     /// Test for equality with a Vector3. To return true, both the type and value must match.
-    bool operator == (const Vector3& rhs) const { return type_ == VAR_VECTOR3 ? *(reinterpret_cast<const Vector3*>(&value_)) == rhs : false; }
+    bool operator ==(const Vector3& rhs) const
+    {
+        return type_ == VAR_VECTOR3 ? value_.vector3_ == rhs : false;
+    }
     /// Test for equality with a Vector4. To return true, both the type and value must match.
-    bool operator == (const Vector4& rhs) const { return type_ == VAR_VECTOR4 ? *(reinterpret_cast<const Vector4*>(&value_)) == rhs : false; }
+    bool operator ==(const Vector4& rhs) const
+    {
+        return type_ == VAR_VECTOR4 ? value_.vector4_ == rhs : false;
+    }
     /// Test for equality with a quaternion. To return true, both the type and value must match.
-    bool operator == (const Quaternion& rhs) const { return type_ == VAR_QUATERNION ? *(reinterpret_cast<const Quaternion*>(&value_)) == rhs : false; }
+    bool operator ==(const Quaternion& rhs) const
+    {
+        return type_ == VAR_QUATERNION ? value_.quaternion_ == rhs : false;
+    }
     /// Test for equality with a color. To return true, both the type and value must match.
-    bool operator == (const Color& rhs) const { return type_ == VAR_COLOR ? *(reinterpret_cast<const Color*>(&value_)) == rhs : false; }
+    bool operator ==(const Color& rhs) const
+    {
+        return type_ == VAR_COLOR ? value_.color_ == rhs : false;
+    }
     /// Test for equality with a string. To return true, both the type and value must match.
-    bool operator == (const QString& rhs) const { return type_ == VAR_STRING ? *(reinterpret_cast<const QString*>(&value_)) == rhs : false; }
+    bool operator ==(const QString& rhs) const
+    {
+        return type_ == VAR_STRING ? value_.string_ == rhs : false;
+    }
     /// Test for equality with a buffer. To return true, both the type and value must match.
     bool operator == (const std::vector<unsigned char>& rhs) const;
 
@@ -606,34 +784,58 @@ public:
     bool operator == (void* rhs) const
     {
         if (type_ == VAR_VOIDPTR)
-            return value_.ptr_ == rhs;
+            return value_.voidPtr_ == rhs;
         else if (type_ == VAR_PTR)
-            return *(reinterpret_cast<const WeakPtr<RefCounted>*>(&value_)) == rhs;
+            return value_.weakPtr_ == rhs;
         else
             return false;
     }
-
     /// Test for equality with a resource reference. To return true, both the type and value must match.
-    bool operator == (const ResourceRef& rhs) const;
-    /// Test for equality with a resource reference list. To return true, both the type and value must match.
-    bool operator == (const ResourceRefList& rhs) const;
-    /// Test for equality with a variant vector. To return true, both the type and value must match.
-    bool operator == (const VariantVector& rhs) const { return type_ == VAR_VARIANTVECTOR ? *(reinterpret_cast<const VariantVector*>(&value_)) == rhs : false; }
-   /// Test for equality with a string vector. To return true, both the type and value must match.
-    bool operator ==(const QStringList &rhs) const
+    bool operator ==(const ResourceRef& rhs) const
     {
-        return type_ == VAR_STRINGVECTOR ? *(reinterpret_cast<const QStringList*>(&value_)) == rhs : false;
+        return type_ == VAR_RESOURCEREF ? value_.resourceRef_ == rhs : false;
+    }
+
+    /// Test for equality with a resource reference list. To return true, both the type and value must match.
+    bool operator ==(const ResourceRefList& rhs) const
+    {
+        return type_ == VAR_RESOURCEREFLIST ? value_.resourceRefList_ == rhs : false;
+    }
+    /// Test for equality with a variant vector. To return true, both the type and value must match.
+    bool operator ==(const VariantVector& rhs) const
+    {
+        return type_ == VAR_VARIANTVECTOR ? *value_.variantVector_ == rhs : false;
+    }
+    /// Test for equality with a string vector. To return true, both the type and value must match.
+    bool operator ==(const QStringList& rhs) const
+    {
+        return type_ == VAR_STRINGVECTOR ? value_.stringVector_ == rhs : false;
     }
     /// Test for equality with a variant map. To return true, both the type and value must match.
-    bool operator == (const VariantMap& rhs) const { return type_ == VAR_VARIANTMAP ? *(reinterpret_cast<const VariantMap*>(&value_)) == rhs : false; }
+    bool operator ==(const VariantMap& rhs) const
+    {
+        return type_ == VAR_VARIANTMAP ? *value_.variantMap_ == rhs : false;
+    }
     /// Test for equality with a rect. To return true, both the type and value must match.
-    bool operator ==(const Rect& rhs) const    {        return type_ == VAR_RECT ? *(reinterpret_cast<const Rect*>(&value_)) == rhs : false;    }
+    bool operator ==(const Rect& rhs) const
+    {
+        return type_ == VAR_RECT ? value_.rect_ == rhs : false;
+    }
     /// Test for equality with an integer rect. To return true, both the type and value must match.
-    bool operator == (const IntRect& rhs) const { return type_ == VAR_INTRECT ? *(reinterpret_cast<const IntRect*>(&value_)) == rhs : false; }
+    bool operator ==(const IntRect& rhs) const
+    {
+        return type_ == VAR_INTRECT ? value_.intRect_ == rhs : false;
+    }
     /// Test for equality with an IntVector2. To return true, both the type and value must match.
-    bool operator == (const IntVector2& rhs) const { return type_ == VAR_INTVECTOR2 ? *(reinterpret_cast<const IntVector2*>(&value_)) == rhs : false; }
+    bool operator ==(const IntVector2& rhs) const
+    {
+        return type_ == VAR_INTVECTOR2 ? value_.intVector2_ == rhs : false;
+    }
     /// Test for equality with an IntVector3. To return true, both the type and value must match.
-    bool operator ==(const IntVector3& rhs) const    {        return type_ == VAR_INTVECTOR3 ? *(reinterpret_cast<const IntVector3*>(&value_)) == rhs : false;    }
+    bool operator ==(const IntVector3& rhs) const
+    {
+        return type_ == VAR_INTVECTOR3 ? value_.intVector3_ == rhs : false;
+    }
     /// Test for equality with a StringHash. To return true, both the type and value must match.
     bool operator == (const StringHash& rhs) const { return type_ == VAR_INT ? (unsigned)value_.int_ == rhs.Value() : false; }
 
@@ -641,19 +843,28 @@ public:
     bool operator == (RefCounted* rhs) const
     {
         if (type_ == VAR_PTR)
-            return *(reinterpret_cast<const WeakPtr<RefCounted>*>(&value_)) == rhs;
+            return value_.weakPtr_ == rhs;
         else if (type_ == VAR_VOIDPTR)
-            return value_.ptr_ == rhs;
+            return value_.voidPtr_ == rhs;
         else
             return false;
     }
 
     /// Test for equality with a Matrix3. To return true, both the type and value must match.
-    bool operator == (const Matrix3& rhs) const { return type_ == VAR_MATRIX3 ? *(reinterpret_cast<const Matrix3*>(value_.ptr_)) == rhs : false; }
+    bool operator ==(const Matrix3& rhs) const
+    {
+        return type_ == VAR_MATRIX3 ? *value_.matrix3_ == rhs : false;
+    }
     /// Test for equality with a Matrix3x4. To return true, both the type and value must match.
-    bool operator == (const Matrix3x4& rhs) const { return type_ == VAR_MATRIX3X4 ? *(reinterpret_cast<const Matrix3x4*>(value_.ptr_)) == rhs : false; }
+    bool operator ==(const Matrix3x4& rhs) const
+    {
+        return type_ == VAR_MATRIX3X4 ? *value_.matrix3x4_ == rhs : false;
+    }
     /// Test for equality with a Matrix4. To return true, both the type and value must match.
-    bool operator == (const Matrix4& rhs) const { return type_ == VAR_MATRIX4 ? *(reinterpret_cast<const Matrix4*>(value_.ptr_)) == rhs : false; }
+    bool operator ==(const Matrix4& rhs) const
+    {
+        return type_ == VAR_MATRIX4 ? *value_.matrix4_ == rhs : false;
+    }
 
     /// Test for inequality with another variant.
     bool operator != (const Variant& rhs) const { return !(*this == rhs); }
@@ -724,6 +935,10 @@ public:
     void FromString(VariantType type, const char* value);
     /// Set buffer type from a memory area.
     void SetBuffer(const void* data, unsigned size);
+    /// Set custom value.
+    void SetCustomVariantValue(const CustomVariantValue& value);
+    /// Set custom value.
+    template <class T> void SetCustom(const T& value) { SetCustomVariantValue(MakeCustomValue<T>(value)); }
 
     /// Return int or zero on type mismatch. Floats and doubles are converted.
     int GetInt() const
@@ -731,23 +946,23 @@ public:
         if (type_ == VAR_INT)
             return value_.int_;
         else if (type_ == VAR_FLOAT)
-            return (int)value_.float_;
+            return static_cast<int>(value_.float_);
         else if (type_ == VAR_DOUBLE)
-            return (int)*reinterpret_cast<const double*>(&value_);
+            return static_cast<int>(value_.double_);
         else
             return 0;
     }
     /// Return 64 bit int or zero on type mismatch. Floats and doubles are converted.
-    long long GetInt64() const
+    int64_t GetInt64() const
     {
         if (type_ == VAR_INT64)
-            return *(reinterpret_cast<const long long*>(&value_));
+            return value_.int64_;
         else if (type_ == VAR_INT)
             return value_.int_;
         else if (type_ == VAR_FLOAT)
-            return (long long)value_.float_;
+            return static_cast<int64_t>(value_.float_);
         else if (type_ == VAR_DOUBLE)
-            return (long long)*reinterpret_cast<const double*>(&value_);
+            return static_cast<int64_t>(value_.double_);
         else
             return 0;
     }
@@ -756,26 +971,26 @@ public:
     uint64_t GetUInt64() const
     {
         if (type_ == VAR_INT64)
-            return *(reinterpret_cast<const uint64_t*>(&value_));
+            return static_cast<uint64_t>(value_.int64_);
         else if (type_ == VAR_INT)
             return static_cast<uint64_t>(value_.int_);
         else if (type_ == VAR_FLOAT)
-            return (uint64_t)value_.float_;
+            return static_cast<uint64_t>(value_.float_);
         else if (type_ == VAR_DOUBLE)
-            return (uint64_t)*reinterpret_cast<const double*>(&value_);
+            return static_cast<uint64_t>(value_.double_);
         else
             return 0;
     }
 
     /// Return unsigned int or zero on type mismatch. Floats and doubles are converted.
-    unsigned GetUInt() const
+    uint32_t GetUInt() const
     {
         if (type_ == VAR_INT)
-            return value_.int_;
+            return static_cast<unsigned>(value_.int_);
         else if (type_ == VAR_FLOAT)
-            return (unsigned)value_.float_;
+            return static_cast<unsigned>(value_.float_);
         else if (type_ == VAR_DOUBLE)
-            return (unsigned)*reinterpret_cast<const double*>(&value_);
+            return static_cast<unsigned>(value_.double_);
         else
             return 0;
     }
@@ -788,84 +1003,161 @@ public:
     {
         if (type_ == VAR_FLOAT)
             return value_.float_;
-        else if (type_ == VAR_DOUBLE)
-            return (float)*reinterpret_cast<const double*>(&value_);
-        else if (type_ == VAR_INT)
-            return (float)value_.int_;
-        else
-            return 0.0f;
+        if (type_ == VAR_DOUBLE)
+            return static_cast<float>(value_.double_);
+        if (type_ == VAR_INT)
+            return static_cast<float>(value_.int_);
+        if (type_ == VAR_INT64)
+            return static_cast<float>(value_.int64_);
+        return 0.0f;
     }
     /// Return double or zero on type mismatch. Ints and floats are converted.
     double GetDouble() const
     {
         if (type_ == VAR_DOUBLE)
-            return *reinterpret_cast<const double*>(&value_);
+            return value_.double_;
         else if (type_ == VAR_FLOAT)
-            return (double)value_.float_;
+            return value_.float_;
         else if (type_ == VAR_INT)
-            return (double)value_.int_;
+            return static_cast<double>(value_.int_);
+        else if (type_ == VAR_INT64)
+            return static_cast<double>(value_.int64_);
         else
             return 0.0;
     }
     /// Return Vector2 or zero on type mismatch.
-    const Vector2& GetVector2() const { return type_ == VAR_VECTOR2 ? *reinterpret_cast<const Vector2*>(&value_) : Vector2::ZERO; }
+    const Vector2& GetVector2() const { return type_ == VAR_VECTOR2 ? value_.vector2_ : Vector2::ZERO; }
     /// Return Vector3 or zero on type mismatch.
-    const Vector3& GetVector3() const { return type_ == VAR_VECTOR3 ? *reinterpret_cast<const Vector3*>(&value_) : Vector3::ZERO; }
+    const Vector3& GetVector3() const { return type_ == VAR_VECTOR3 ? value_.vector3_ : Vector3::ZERO; }
     /// Return Vector4 or zero on type mismatch.
-    const Vector4& GetVector4() const { return type_ == VAR_VECTOR4 ? *reinterpret_cast<const Vector4*>(&value_) : Vector4::ZERO; }
+    const Vector4& GetVector4() const { return type_ == VAR_VECTOR4 ? value_.vector4_ : Vector4::ZERO; }
     /// Return quaternion or identity on type mismatch.
-    const Quaternion& GetQuaternion() const { return type_ == VAR_QUATERNION ? *reinterpret_cast<const Quaternion*>(&value_) : Quaternion::IDENTITY; }
+    const Quaternion& GetQuaternion() const
+    {
+        return type_ == VAR_QUATERNION ? value_.quaternion_ : Quaternion::IDENTITY;
+    }
     /// Return color or default on type mismatch. Vector4 is aliased to Color if necessary.
-    const Color& GetColor() const { return (type_ == VAR_COLOR || type_ == VAR_VECTOR4) ? *reinterpret_cast<const Color*>(&value_) : Color::WHITE; }
+    const Color& GetColor() const { return (type_ == VAR_COLOR || type_ == VAR_VECTOR4) ? value_.color_ : Color::WHITE; }
     /// Return string or empty on type mismatch.
-    const QString &GetString() const {
-        return type_ == VAR_STRING ? *reinterpret_cast<const QString*>(&value_) : s_dummy; }
+    QString GetString() const { return type_ == VAR_STRING ? value_.string_ : QString(); }
     /// Return buffer or empty on type mismatch.
-    const std::vector<unsigned char>& GetBuffer() const { return type_ == VAR_BUFFER ? *reinterpret_cast<const std::vector<unsigned char>*>(&value_) : emptyBuffer; }
-
+    const std::vector<uint8_t>& GetBuffer() const
+    {
+        return type_ == VAR_BUFFER ? *(reinterpret_cast<const GenericBuffer*>(&value_)) : emptyBuffer;
+    }
+    /// Return a vector  buffer or empty on type mismatch.
+    const std::vector<unsigned char> &GetVectorBuffer() const
+    {
+        return type_ == VAR_BUFFER ? *reinterpret_cast<const std::vector<unsigned char> *>(&value_) : emptyBuffer;
+    }
     /// Return void pointer or null on type mismatch. RefCounted pointer will be converted.
     void* GetVoidPtr() const
     {
         if (type_ == VAR_VOIDPTR)
-            return value_.ptr_;
+            return value_.voidPtr_;
         else if (type_ == VAR_PTR)
-            return *reinterpret_cast<const WeakPtr<RefCounted>*>(&value_);
+            return value_.weakPtr_;
         else
             return nullptr;
     }
 
     /// Return a resource reference or empty on type mismatch.
-    const ResourceRef& GetResourceRef() const { return type_ == VAR_RESOURCEREF ? *reinterpret_cast<const ResourceRef*>(&value_) : emptyResourceRef; }
-    /// Return a resource reference list or empty on type mismatch.
-    const ResourceRefList& GetResourceRefList() const { return type_ == VAR_RESOURCEREFLIST ? *reinterpret_cast<const ResourceRefList*>(&value_) : emptyResourceRefList; }
-    /// Return a variant vector or empty on type mismatch.
-    const VariantVector& GetVariantVector() const { return type_ == VAR_VARIANTVECTOR ? *reinterpret_cast<const VariantVector*>(&value_) : emptyVariantVector; }
-    /// Return a vector  buffer or empty on type mismatch.
-    const std::vector<unsigned char> &GetVectorBuffer() const { return type_ == VAR_BUFFER ? *reinterpret_cast<const std::vector<unsigned char>*>(&value_) : emptyBuffer; }
+    const ResourceRef& GetResourceRef() const
+    {
+        return type_ == VAR_RESOURCEREF ? value_.resourceRef_ : emptyResourceRef;
+    }
 
+    /// Return a resource reference list or empty on type mismatch.
+    const ResourceRefList& GetResourceRefList() const
+    {
+        return type_ == VAR_RESOURCEREFLIST ? value_.resourceRefList_ : emptyResourceRefList;
+    }
+
+    /// Return a variant vector or empty on type mismatch.
+    const VariantVector& GetVariantVector() const
+    {
+        return type_ == VAR_VARIANTVECTOR ? *value_.variantVector_ : emptyVariantVector;
+    }
     /// Return a string vector or empty on type mismatch.
     const QStringList& GetStringVector() const
     {
-        return type_ == VAR_STRINGVECTOR ? *reinterpret_cast<const QStringList*>(&value_) : emptyStringVector;
+        return type_ == VAR_STRINGVECTOR ? value_.stringVector_ : emptyStringVector;
     }
     /// Return a variant map or empty on type mismatch.
-    const VariantMap& GetVariantMap() const { return type_ == VAR_VARIANTMAP ? *reinterpret_cast<const VariantMap*>(&value_) : emptyVariantMap; }
+    const VariantMap& GetVariantMap() const
+    {
+        return type_ == VAR_VARIANTMAP ? *value_.variantMap_ : emptyVariantMap;
+    }
     /// Return a rect or empty on type mismatch.
-    const Rect& GetRect() const { return type_ == VAR_RECT ? *reinterpret_cast<const Rect*>(&value_) : Rect::ZERO; }
+    const Rect& GetRect() const { return type_ == VAR_RECT ? value_.rect_ : Rect::ZERO; }
     /// Return an integer rect or empty on type mismatch.
-    const IntRect& GetIntRect() const { return type_ == VAR_INTRECT ? *reinterpret_cast<const IntRect*>(&value_) : IntRect::ZERO; }
+    const IntRect& GetIntRect() const { return type_ == VAR_INTRECT ? value_.intRect_ : IntRect::ZERO; }
     /// Return an IntVector2 or empty on type mismatch.
-    const IntVector2& GetIntVector2() const { return type_ == VAR_INTVECTOR2 ? *reinterpret_cast<const IntVector2*>(&value_) : IntVector2::ZERO; }
+    const IntVector2& GetIntVector2() const
+    {
+        return type_ == VAR_INTVECTOR2 ? value_.intVector2_ : IntVector2::ZERO;
+    }
     /// Return an IntVector3 or empty on type mismatch.
-    const IntVector3& GetIntVector3() const    {        return type_ == VAR_INTVECTOR3 ? *reinterpret_cast<const IntVector3*>(&value_) : IntVector3::ZERO;    }
+    const IntVector3& GetIntVector3() const
+    {
+        return type_ == VAR_INTVECTOR3 ? value_.intVector3_ : IntVector3::ZERO;
+    }
     /// Return a RefCounted pointer or null on type mismatch. Will return null if holding a void pointer, as it can not be safely verified that the object is a RefCounted.
-    RefCounted* GetPtr() const { return type_ == VAR_PTR ? *reinterpret_cast<const WeakPtr<RefCounted>*>(&value_) : nullptr; }
+    RefCounted* GetPtr() const
+    {
+        return type_ == VAR_PTR ? value_.weakPtr_ : nullptr;
+    }
     /// Return a Matrix3 or identity on type mismatch.
-    const Matrix3& GetMatrix3() const { return type_ == VAR_MATRIX3 ? *(reinterpret_cast<const Matrix3*>(value_.ptr_)) : Matrix3::IDENTITY; }
+    const Matrix3& GetMatrix3() const
+    {
+        return type_ == VAR_MATRIX3 ? *value_.matrix3_ : Matrix3::IDENTITY;
+    }
     /// Return a Matrix3x4 or identity on type mismatch.
-    const Matrix3x4& GetMatrix3x4() const { return type_ == VAR_MATRIX3X4 ? *(reinterpret_cast<const Matrix3x4*>(value_.ptr_)) : Matrix3x4::IDENTITY; }
+    const Matrix3x4& GetMatrix3x4() const
+    {
+        return type_ == VAR_MATRIX3X4 ? *value_.matrix3x4_ : Matrix3x4::IDENTITY;
+    }
     /// Return a Matrix4 or identity on type mismatch.
-    const Matrix4& GetMatrix4() const { return type_ == VAR_MATRIX4 ? *(reinterpret_cast<const Matrix4*>(value_.ptr_)) : Matrix4::IDENTITY; }
+    const Matrix4& GetMatrix4() const
+    {
+        return type_ == VAR_MATRIX4 ? *value_.matrix4_ : Matrix4::IDENTITY;
+    }
+
+    /// Return pointer to custom variant value.
+    CustomVariantValue* GetCustomVariantValuePtr()
+    {
+        return const_cast<CustomVariantValue*>(const_cast<const Variant*>(this)->GetCustomVariantValuePtr());
+    }
+
+    /// Return const pointer to custom variant value.
+    const CustomVariantValue* GetCustomVariantValuePtr() const
+    {
+        if (type_ == VAR_CUSTOM_HEAP)
+            return value_.customValueHeap_;
+        else if (type_ == VAR_CUSTOM_STACK)
+            return &value_.customValueStack_;
+        else
+            return nullptr;
+    }
+
+    /// Return custom variant value or default-constructed on type mismatch.
+    template <class T> T GetCustom() const
+    {
+        if (const CustomVariantValue* value = GetCustomVariantValuePtr())
+        {
+            if (value->IsType<T>())
+                return *value->GetValuePtr<T>();
+        }
+        return T();
+    }
+
+    /// Return true if specified custom type is stored in the variant.
+    template <class T> bool IsCustomType() const
+    {
+        if (const CustomVariantValue* custom = GetCustomVariantValuePtr())
+            return custom->IsType<T>();
+        return false;
+    }
     /// Return value's type.
     VariantType GetType() const { return type_; }
     /// Return value's type name.
@@ -876,17 +1168,50 @@ public:
     bool IsZero() const;
     /// Return true when the variant is empty (i.e. not initialized yet).
     bool IsEmpty() const { return type_ == VAR_NONE; }
+    /// Return true when the variant stores custom type.
+    bool IsCustom() const { return type_ == VAR_CUSTOM_HEAP || type_ == VAR_CUSTOM_STACK; }
     /// Return the value, template version.
-    template <class T> T Get() const;
+    template <typename T>
+    typename std::enable_if<!std::is_enum<T>::value, T>::type Get() const;
+    template<typename T>
+    typename std::enable_if<std::is_enum<T>::value, T>::type Get() const
+    {
+        return T(Get<typename std::underlying_type<T>::type>());
+    }
 
     /// Return a pointer to a modifiable buffer or null on type mismatch.
-    std::vector<unsigned char>* GetBufferPtr() { return type_ == VAR_BUFFER ? reinterpret_cast<std::vector<unsigned char>*>(&value_) : nullptr; }
+    std::vector<unsigned char>* GetBufferPtr()
+    {
+        return type_ == VAR_BUFFER ? &value_.buffer_ : nullptr;
+    }
     /// Return a pointer to a modifiable variant vector or null on type mismatch.
-    VariantVector* GetVariantVectorPtr() { return type_ == VAR_VARIANTVECTOR ? reinterpret_cast<VariantVector*>(&value_) : nullptr; }
+    VariantVector* GetVariantVectorPtr() { return type_ == VAR_VARIANTVECTOR ? value_.variantVector_ : nullptr; }
     /// Return a pointer to a modifiable string vector or null on type mismatch.
-    QStringList* GetStringVectorPtr() { return type_ == VAR_STRINGVECTOR ? reinterpret_cast<QStringList*>(&value_) : nullptr; }
+    QStringList* GetStringVectorPtr() { return type_ == VAR_STRINGVECTOR ? &value_.stringVector_ : nullptr; }
     /// Return a pointer to a modifiable variant map or null on type mismatch.
-    VariantMap* GetVariantMapPtr() { return type_ == VAR_VARIANTMAP ? reinterpret_cast<VariantMap*>(&value_) : nullptr; }
+    VariantMap* GetVariantMapPtr() { return type_ == VAR_VARIANTMAP ? value_.variantMap_ : nullptr; }
+
+    /// Return a pointer to a modifiable custom variant value or null on type mismatch.
+    template <class T> T* GetCustomPtr()
+    {
+        if (CustomVariantValue* value = GetCustomVariantValuePtr())
+        {
+            if (value->IsType<T>())
+                return value->GetValuePtr<T>();
+        }
+        return nullptr;
+    }
+
+    /// Return a pointer to a modifiable custom variant value or null on type mismatch.
+    template <class T> const T* GetCustomPtr() const
+    {
+        if (const CustomVariantValue* value = GetCustomVariantValuePtr())
+        {
+            if (value->IsType<T>())
+                return value->GetValuePtr<T>();
+        }
+        return nullptr;
+    }
 
     /// Return name for variant type.
     static QString GetTypeName(VariantType type);
@@ -919,42 +1244,180 @@ private:
     /// Variant value.
     VariantValue value_;
 };
-static_assert(sizeof(VariantValue)>=sizeof(VariantMap),"Variant value must be large enough to hold VariantVector");
-static_assert(sizeof(VariantValue)>=sizeof(VariantVector),"Variant value must be large enough to hold VariantVector");
 
 /// Return variant type from type.
-template<typename T> constexpr VariantType GetVariantType();
-
+template <typename T>
+typename std::enable_if<false==std::is_enum<T>::value, VariantType>::type GetVariantType();
+template<typename T>
+typename std::enable_if<std::is_enum<T>::value, VariantType>::type
+GetVariantType()
+{
+    return GetVariantType<typename std::underlying_type<T>::type>();
+}
 // Return variant type from concrete types
-template<> constexpr VariantType GetVariantType<int>() { return VAR_INT; }
-template<> constexpr VariantType GetVariantType<unsigned>() { return VAR_INT; }
-template<> constexpr VariantType GetVariantType<long long>() { return VAR_INT64; }
-template<> constexpr VariantType GetVariantType<uint64_t>() { return VAR_INT64; }
-template<> constexpr VariantType GetVariantType<bool>() { return VAR_BOOL; }
-template<> constexpr VariantType GetVariantType<float>() { return VAR_FLOAT; }
-template<> constexpr VariantType GetVariantType<double>() { return VAR_DOUBLE; }
-template<> constexpr VariantType GetVariantType<Vector2>() { return VAR_VECTOR2; }
-template<> constexpr VariantType GetVariantType<Vector3>() { return VAR_VECTOR3; }
-template<> constexpr VariantType GetVariantType<Vector4>() { return VAR_VECTOR4; }
-template<> constexpr VariantType GetVariantType<Quaternion>() { return VAR_QUATERNION; }
-template<> constexpr VariantType GetVariantType<Color>() { return VAR_COLOR; }
-template<> constexpr VariantType GetVariantType<QString>() { return VAR_STRING; }
-template<> constexpr VariantType GetVariantType<StringHash>() { return VAR_INT; }
-template<> constexpr VariantType GetVariantType<std::vector<unsigned char> >() { return VAR_BUFFER; }
-template<> constexpr VariantType GetVariantType<ResourceRef>() { return VAR_RESOURCEREF; }
-template<> constexpr VariantType GetVariantType<ResourceRefList>() { return VAR_RESOURCEREFLIST; }
-template<> constexpr VariantType GetVariantType<VariantVector>() { return VAR_VARIANTVECTOR; }
-template<> constexpr VariantType GetVariantType<QStringList >() { return VAR_STRINGVECTOR; }
-template<> constexpr VariantType GetVariantType<VariantMap>() { return VAR_VARIANTMAP; }
-template<> constexpr VariantType GetVariantType<Rect>() { return VAR_RECT; }
-template<> constexpr VariantType GetVariantType<IntRect>() { return VAR_INTRECT; }
-template<> constexpr VariantType GetVariantType<IntVector2>() { return VAR_INTVECTOR2; }
-template<> constexpr VariantType GetVariantType<IntVector3>() { return VAR_INTVECTOR3; }
-template<> constexpr VariantType GetVariantType<Matrix3>() { return VAR_MATRIX3; }
-template<> constexpr VariantType GetVariantType<Matrix3x4>() { return VAR_MATRIX3X4; }
-template<> constexpr VariantType GetVariantType<Matrix4>() { return VAR_MATRIX4; }
-//template<> LUTEFISK3D_EXPORT Rect Variant::Get<Rect>() const;
-//template<> LUTEFISK3D_EXPORT IntRect Variant::Get<IntRect>() const;
+template <> inline VariantType GetVariantType<uint8_t>() { return VAR_INT; }
 
-static_assert(sizeof(VariantValue)>=sizeof(QString),"Variant value must be large enough to hold VariantMap");
+template <> inline VariantType GetVariantType<int>() { return VAR_INT; }
+
+template <> inline VariantType GetVariantType<unsigned>() { return VAR_INT; }
+
+template <> inline VariantType GetVariantType<long long>() { return VAR_INT64; }
+
+template <> inline VariantType GetVariantType<unsigned long long>() { return VAR_INT64; }
+
+template <> inline VariantType GetVariantType<bool>() { return VAR_BOOL; }
+
+template <> inline VariantType GetVariantType<float>() { return VAR_FLOAT; }
+
+template <> inline VariantType GetVariantType<double>() { return VAR_DOUBLE; }
+
+template <> inline VariantType GetVariantType<Vector2>() { return VAR_VECTOR2; }
+
+template <> inline VariantType GetVariantType<Vector3>() { return VAR_VECTOR3; }
+
+template <> inline VariantType GetVariantType<Vector4>() { return VAR_VECTOR4; }
+
+template <> inline VariantType GetVariantType<Quaternion>() { return VAR_QUATERNION; }
+
+template <> inline VariantType GetVariantType<Color>() { return VAR_COLOR; }
+
+template <> inline VariantType GetVariantType<QString>() { return VAR_STRING; }
+
+template <> inline VariantType GetVariantType<StringHash>() { return VAR_INT; }
+
+template <> inline VariantType GetVariantType<std::vector<unsigned char> >() { return VAR_BUFFER; }
+
+template <> inline VariantType GetVariantType<ResourceRef>() { return VAR_RESOURCEREF; }
+
+template <> inline VariantType GetVariantType<ResourceRefList>() { return VAR_RESOURCEREFLIST; }
+
+template <> inline VariantType GetVariantType<VariantVector>() { return VAR_VARIANTVECTOR; }
+
+template <> inline VariantType GetVariantType<QStringList>() { return VAR_STRINGVECTOR; }
+
+template <> inline VariantType GetVariantType<VariantMap>() { return VAR_VARIANTMAP; }
+
+template <> inline VariantType GetVariantType<Rect>() { return VAR_RECT; }
+
+template <> inline VariantType GetVariantType<IntRect>() { return VAR_INTRECT; }
+
+template <> inline VariantType GetVariantType<IntVector2>() { return VAR_INTVECTOR2; }
+
+template <> inline VariantType GetVariantType<IntVector3>() { return VAR_INTVECTOR3; }
+
+template <> inline VariantType GetVariantType<Matrix3>() { return VAR_MATRIX3; }
+
+template <> inline VariantType GetVariantType<Matrix3x4>() { return VAR_MATRIX3X4; }
+
+template <> inline VariantType GetVariantType<Matrix4>() { return VAR_MATRIX4; }
+
+// Specializations of Variant::Get<T>
+template <> LUTEFISK3D_EXPORT uint8_t Variant::Get<uint8_t>() const;
+
+template <> LUTEFISK3D_EXPORT int Variant::Get<int>() const;
+
+template <> LUTEFISK3D_EXPORT unsigned Variant::Get<unsigned>() const;
+
+template <> LUTEFISK3D_EXPORT long long Variant::Get<long long>() const;
+
+template <> LUTEFISK3D_EXPORT uint64_t Variant::Get<uint64_t>() const;
+
+template <> LUTEFISK3D_EXPORT StringHash Variant::Get<StringHash>() const;
+
+template <> LUTEFISK3D_EXPORT bool Variant::Get<bool>() const;
+
+template <> LUTEFISK3D_EXPORT float Variant::Get<float>() const;
+
+template <> LUTEFISK3D_EXPORT double Variant::Get<double>() const;
+
+template <> LUTEFISK3D_EXPORT const Vector2& Variant::Get<const Vector2&>() const;
+
+template <> LUTEFISK3D_EXPORT const Vector3& Variant::Get<const Vector3&>() const;
+
+template <> LUTEFISK3D_EXPORT const Vector4& Variant::Get<const Vector4&>() const;
+
+template <> LUTEFISK3D_EXPORT const Quaternion& Variant::Get<const Quaternion&>() const;
+
+template <> LUTEFISK3D_EXPORT const Color& Variant::Get<const Color&>() const;
+
+template <> LUTEFISK3D_EXPORT const QString& Variant::Get<const QString&>() const;
+
+template <> LUTEFISK3D_EXPORT const Rect& Variant::Get<const Rect&>() const;
+
+template <> LUTEFISK3D_EXPORT const IntRect& Variant::Get<const IntRect&>() const;
+
+template <> LUTEFISK3D_EXPORT const IntVector2& Variant::Get<const IntVector2&>() const;
+
+template <> LUTEFISK3D_EXPORT const IntVector3& Variant::Get<const IntVector3&>() const;
+
+template <> LUTEFISK3D_EXPORT const std::vector<unsigned char>& Variant::Get<const std::vector<unsigned char>&>() const;
+
+template <> LUTEFISK3D_EXPORT void* Variant::Get<void*>() const;
+
+template <> LUTEFISK3D_EXPORT RefCounted* Variant::Get<RefCounted*>() const;
+
+template <> LUTEFISK3D_EXPORT const Matrix3& Variant::Get<const Matrix3&>() const;
+
+template <> LUTEFISK3D_EXPORT const Matrix3x4& Variant::Get<const Matrix3x4&>() const;
+
+template <> LUTEFISK3D_EXPORT const Matrix4& Variant::Get<const Matrix4&>() const;
+
+template <> LUTEFISK3D_EXPORT ResourceRef Variant::Get<ResourceRef>() const;
+
+template <> LUTEFISK3D_EXPORT ResourceRefList Variant::Get<ResourceRefList>() const;
+
+template <> LUTEFISK3D_EXPORT VariantVector Variant::Get<VariantVector>() const;
+
+template <> LUTEFISK3D_EXPORT QStringList Variant::Get<QStringList>() const;
+
+template <> LUTEFISK3D_EXPORT VariantMap Variant::Get<VariantMap>() const;
+
+template <> LUTEFISK3D_EXPORT Vector2 Variant::Get<Vector2>() const;
+
+template <> LUTEFISK3D_EXPORT Vector3 Variant::Get<Vector3>() const;
+
+template <> LUTEFISK3D_EXPORT Vector4 Variant::Get<Vector4>() const;
+
+template <> LUTEFISK3D_EXPORT Quaternion Variant::Get<Quaternion>() const;
+
+template <> LUTEFISK3D_EXPORT Color Variant::Get<Color>() const;
+
+template <> LUTEFISK3D_EXPORT QString Variant::Get<QString>() const;
+
+template <> LUTEFISK3D_EXPORT Rect Variant::Get<Rect>() const;
+
+template <> LUTEFISK3D_EXPORT IntRect Variant::Get<IntRect>() const;
+
+template <> LUTEFISK3D_EXPORT IntVector2 Variant::Get<IntVector2>() const;
+
+template <> LUTEFISK3D_EXPORT IntVector3 Variant::Get<IntVector3>() const;
+
+template <> LUTEFISK3D_EXPORT std::vector<unsigned char> Variant::Get<std::vector<unsigned char> >() const;
+
+template <> LUTEFISK3D_EXPORT Matrix3 Variant::Get<Matrix3>() const;
+
+template <> LUTEFISK3D_EXPORT Matrix3x4 Variant::Get<Matrix3x4>() const;
+
+template <> LUTEFISK3D_EXPORT Matrix4 Variant::Get<Matrix4>() const;
+
+// Implementations
+template <class T> T* CustomVariantValue::GetValuePtr()
+{
+    if (IsType<T>())
+    {
+        auto impl = static_cast<CustomVariantValueImpl<T>*>(this);
+        return &impl->GetValue();
+    }
+    return nullptr;
+}
+
+template <class T> const T* CustomVariantValue::GetValuePtr() const
+{
+    if (IsType<T>())
+    {
+        auto impl = static_cast<const CustomVariantValueImpl<T>*>(this);
+        return &impl->GetValue();
+    }
+    return nullptr;
+}
 }

@@ -244,8 +244,8 @@ void FileWatcher::ThreadFunction()
                                   FILE_NOTIFY_CHANGE_FILE_NAME |
                                   FILE_NOTIFY_CHANGE_LAST_WRITE,
                                   &bytesFilled,
-                                  0,
-                                  0))
+                                  nullptr,
+                                  nullptr))
         {
             unsigned offset = 0;
 
@@ -259,7 +259,11 @@ void FileWatcher::ThreadFunction()
                     const wchar_t* src = record->FileName;
                     const wchar_t* end = src + record->FileNameLength / 2;
                     while (src < end)
-                        fileName+= QString::fromWCharArray(src);
+                    {
+                        QString srcname=QString::fromWCharArray(src);
+                        fileName+= srcname;
+                        src+=srcname.length();
+                    }
 
                     fileName = GetInternalPath(fileName);
                     AddChange(fileName);

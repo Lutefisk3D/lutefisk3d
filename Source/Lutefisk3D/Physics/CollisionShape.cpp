@@ -52,8 +52,9 @@
 #include <Bullet/BulletCollision/CollisionShapes/btScaledBvhTriangleMeshShape.h>
 #include <Bullet/BulletCollision/CollisionShapes/btSphereShape.h>
 #include <Bullet/BulletCollision/CollisionShapes/btTriangleIndexVertexArray.h>
-#include <Bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <Bullet/BulletCollision/CollisionShapes/btStaticPlaneShape.h>
+#include <Bullet/BulletCollision/Gimpact/btGImpactShape.h>
+#include <Bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <StanHull/hull.h>
 
 namespace Urho3D
@@ -76,6 +77,7 @@ static const char* typeNames[] =
     "TriangleMesh",
     "ConvexHull",
     "Terrain",
+    "GImpactMesh",
     nullptr
 };
 
@@ -136,7 +138,7 @@ public:
         useQuantize_ = totalTriangles <= QUANTIZE_MAX_TRIANGLES;
     }
 
-    TriangleMeshInterface(CustomGeometry* custom) : btTriangleIndexVertexArray()
+    explicit TriangleMeshInterface(CustomGeometry* custom) : btTriangleIndexVertexArray()
     {
         const std::vector<std::vector<CustomGeometryVertex> >& srcVertices = custom->GetVertices();
         unsigned totalVertexCount = 0;
@@ -205,11 +207,14 @@ TriangleMeshData::TriangleMeshData(CustomGeometry* custom) :
     shape_.reset(new btBvhTriangleMeshShape(meshInterface_.get(), meshInterface_->useQuantize_, true));
     btGenerateInternalEdgeInfo(shape_.get(), infoMap_.get());
 }
-
-TriangleMeshData::~TriangleMeshData()
+GImpactMeshData::GImpactMeshData(Model* model, unsigned lodLevel)
 {
+    meshInterface_.reset(new TriangleMeshInterface(model, lodLevel));
 }
-
+GImpactMeshData::GImpactMeshData(CustomGeometry* custom)
+{
+    meshInterface_.reset(new TriangleMeshInterface(custom));
+}
 ConvexData::ConvexData(Model* model, unsigned lodLevel)
 {
     std::vector<Vector3> vertices;
@@ -300,10 +305,6 @@ void ConvexData::BuildHull(const std::vector<Vector3>& vertices)
     }
 }
 
-ConvexData::~ConvexData()
-{
-}
-
 HeightfieldData::HeightfieldData(Terrain* terrain, unsigned lodLevel) :
     heightData_(terrain->GetHeightData()),
     spacing_(terrain->GetSpacing()),
@@ -346,7 +347,7 @@ HeightfieldData::HeightfieldData(Terrain* terrain, unsigned lodLevel) :
             heightData_ = lodHeightData;
         }
         unsigned points = size_.x_ * size_.y_;
-        float* data = heightData_.Get();
+        float* data = heightData_.get();
 
         minHeight_ = maxHeight_ = data[0];
         for (unsigned i = 1; i < points; ++i)
@@ -355,10 +356,6 @@ HeightfieldData::HeightfieldData(Terrain* terrain, unsigned lodLevel) :
             maxHeight_ = Max(maxHeight_, data[i]);
         }
     }
-}
-
-HeightfieldData::~HeightfieldData()
-{
 }
 
 bool HasDynamicBuffers(Model* model, unsigned lodLevel)
@@ -387,6 +384,64 @@ bool HasDynamicBuffers(Model* model, unsigned lodLevel)
     return false;
 }
 
+CollisionGeometryData* CreateCollisionGeometryData(ShapeType shapeType, Model* model, unsigned lodLevel)
+{
+    switch (shapeType)
+    {
+    case SHAPE_TRIANGLEMESH:
+        return new TriangleMeshData(model, lodLevel);
+    case SHAPE_CONVEXHULL:
+        return new ConvexData(model, lodLevel);
+    case SHAPE_GIMPACTMESH:
+        return new GImpactMeshData(model, lodLevel);
+    default:
+        return nullptr;
+    }
+}
+
+CollisionGeometryData* CreateCollisionGeometryData(ShapeType shapeType, CustomGeometry* custom)
+{
+    switch (shapeType)
+    {
+    case SHAPE_TRIANGLEMESH:
+        return new TriangleMeshData(custom);
+    case SHAPE_CONVEXHULL:
+        return new ConvexData(custom);
+    case SHAPE_GIMPACTMESH:
+        return new GImpactMeshData(custom);
+    default:
+        return nullptr;
+    }
+}
+
+btCollisionShape* CreateCollisionGeometryDataShape(ShapeType shapeType, CollisionGeometryData* geometry, const Vector3& scale)
+{
+    switch (shapeType)
+    {
+    case SHAPE_TRIANGLEMESH:
+        {
+            auto* triMesh = static_cast<TriangleMeshData*>(geometry);
+            return new btScaledBvhTriangleMeshShape(triMesh->shape_.get(), ToBtVector3(scale));
+        }
+    case SHAPE_CONVEXHULL:
+        {
+            auto* convex = static_cast<ConvexData*>(geometry);
+            auto* shape = new btConvexHullShape((btScalar*)convex->vertexData_.get(), convex->vertexCount_, sizeof(Vector3));
+            shape->setLocalScaling(ToBtVector3(scale));
+            return shape;
+        }
+    case SHAPE_GIMPACTMESH:
+        {
+            auto* gimpactMesh = static_cast<GImpactMeshData*>(geometry);
+            auto* shape = new btGImpactMeshShape(gimpactMesh->meshInterface_.get());
+            shape->setLocalScaling(ToBtVector3(scale));
+            shape->updateBound();
+            return shape;
+        }
+    default:
+        return nullptr;
+    }
+}
 CollisionShape::CollisionShape(Context* context) :
     Component(context),
     shapeType_(SHAPE_BOX),
@@ -415,23 +470,14 @@ void CollisionShape::RegisterObject(Context* context)
     context->RegisterFactory<CollisionShape>(PHYSICS_CATEGORY);
 
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    URHO3D_ENUM_ATTRIBUTE("Shape Type", shapeType_, typeNames, SHAPE_BOX, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("Size", Vector3, size_, Vector3::ONE, AM_DEFAULT);
+    URHO3D_ENUM_ATTRIBUTE_EX("Shape Type", shapeType_, MarkShapeDirty, typeNames, SHAPE_BOX, AM_DEFAULT);
+    URHO3D_ATTRIBUTE_EX("Size", Vector3, size_, MarkShapeDirty, Vector3::ONE, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Offset Position", GetPosition, SetPosition, Vector3, Vector3::ZERO, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Offset Rotation", GetRotation, SetRotation, Quaternion, Quaternion::IDENTITY, AM_DEFAULT);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Model", GetModelAttr, SetModelAttr, ResourceRef, {Model::GetTypeStatic()}, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("LOD Level", int, lodLevel_, 0, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("Collision Margin", float, margin_, DEFAULT_COLLISION_MARGIN, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("CustomGeometry ComponentID", unsigned, customGeometryID_, 0, AM_DEFAULT | AM_COMPONENTID);
-}
-
-void CollisionShape::OnSetAttribute(const AttributeInfo& attr, const Variant& src)
-{
-    Serializable::OnSetAttribute(attr, src);
-
-    // Change of any non-accessor attribute requires recreation of the collision shape
-    if (!attr.accessor_)
-        recreateShape_ = true;
+    URHO3D_ATTRIBUTE_EX("LOD Level", int, lodLevel_, MarkShapeDirty, 0, AM_DEFAULT);
+    URHO3D_ATTRIBUTE_EX("Collision Margin", float, margin_, MarkShapeDirty, DEFAULT_COLLISION_MARGIN, AM_DEFAULT);
+    URHO3D_ATTRIBUTE_EX("CustomGeometry ComponentID", unsigned, customGeometryID_, MarkShapeDirty, 0, AM_DEFAULT | AM_COMPONENTID);
 }
 
 void CollisionShape::ApplyAttributes()
@@ -455,7 +501,7 @@ void CollisionShape::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
 
         // Use the rigid body's world transform if possible, as it may be different from the rendering transform
         Matrix3x4 worldTransform;
-        RigidBody* body = GetComponent<RigidBody>();
+        auto* body = GetComponent<RigidBody>();
         bool bodyActive = false;
         if (body)
         {
@@ -468,8 +514,8 @@ void CollisionShape::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
         // Special case code for convex hull: bypass Bullet's own rendering to draw triangles correctly, not just edges
         if (shapeType_ == SHAPE_CONVEXHULL)
         {
-            ConvexData *convexData = static_cast<ConvexData*>(GetGeometryData());
-            RigidBody* body = GetComponent<RigidBody>();
+            auto * convexData = static_cast<ConvexData*>(GetGeometryData());
+            auto * body = GetComponent<RigidBody>();
             Color color = bodyActive ? Color::WHITE : Color::GREEN;
             Matrix3x4 shapeTransform(worldTransform * position_, worldTransform.Rotation() * rotation_, worldTransform.Scale());
 
@@ -1157,7 +1203,7 @@ void CollisionShape::UpdateShape()
                 HeightfieldData* heightfield = static_cast<HeightfieldData*>(geometry_.Get());
 
                 shape_ .reset(new btHeightfieldTerrainShape(heightfield->size_.x_, heightfield->size_.y_,
-                                                            heightfield->heightData_.Get(), 1.0f, heightfield->minHeight_, heightfield->maxHeight_, 1, PHY_FLOAT,
+                                                            heightfield->heightData_.get(), 1.0f, heightfield->minHeight_, heightfield->maxHeight_, 1, PHY_FLOAT,
                                                             false));
                 shape_->setLocalScaling(ToBtVector3(Vector3(heightfield->spacing_.x_, 1.0f, heightfield->spacing_.z_) *
                                                     newWorldScale * size_));

@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Container/FlagSet.h"
 
 namespace Urho3D
 {
@@ -173,7 +174,7 @@ enum VertexElementSemantic
 struct LUTEFISK3D_EXPORT VertexElement
 {
     /// Default-construct.
-    VertexElement() :
+    VertexElement() noexcept :
         type_(TYPE_VECTOR3),
         semantic_(SEM_POSITION),
         index_(0),
@@ -183,7 +184,7 @@ struct LUTEFISK3D_EXPORT VertexElement
     }
 
     /// Construct with type, semantic, index and whether is per-instance data.
-    VertexElement(VertexElementType type, VertexElementSemantic semantic, unsigned char index = 0, bool perInstance = false) :
+    VertexElement(VertexElementType type, VertexElementSemantic semantic, unsigned char index = 0, bool perInstance = false) noexcept :
         type_(type),
         semantic_(semantic),
         index_(index),
@@ -419,34 +420,39 @@ enum eQuality : int {
     QUALITY_HIGH = 2,
     QUALITY_MAX = 15
 };
-enum eClearBF : uint32_t
+enum ClearTarget : unsigned
 {
     CLEAR_COLOR = 0x1,
     CLEAR_DEPTH = 0x2,
     CLEAR_STENCIL = 0x4,
 };
+URHO3D_FLAGSET(ClearTarget, ClearTargetFlags);
 
 // Legacy vertex element bitmasks.
-static const unsigned MASK_NONE = 0x0;
-static const unsigned MASK_POSITION = 0x1;
-static const unsigned MASK_NORMAL = 0x2;
-static const unsigned MASK_COLOR = 0x4;
-static const unsigned MASK_TEXCOORD1 = 0x8;
-static const unsigned MASK_TEXCOORD2 = 0x10;
-static const unsigned MASK_CUBETEXCOORD1 = 0x20;
-static const unsigned MASK_CUBETEXCOORD2 = 0x40;
-static const unsigned MASK_TANGENT = 0x80;
-static const unsigned MASK_BLENDWEIGHTS = 0x100;
-static const unsigned MASK_BLENDINDICES = 0x200;
-static const unsigned MASK_INSTANCEMATRIX1 = 0x400;
-static const unsigned MASK_INSTANCEMATRIX2 = 0x800;
-static const unsigned MASK_INSTANCEMATRIX3 = 0x1000;
-static const unsigned MASK_OBJECTINDEX = 0x2000;
+enum VertexMask : unsigned
+{
+    MASK_NONE = 0x0,
+    MASK_POSITION = 0x1,
+    MASK_NORMAL = 0x2,
+    MASK_COLOR = 0x4,
+    MASK_TEXCOORD1 = 0x8,
+    MASK_TEXCOORD2 = 0x10,
+    MASK_CUBETEXCOORD1 = 0x20,
+    MASK_CUBETEXCOORD2 = 0x40,
+    MASK_TANGENT = 0x80,
+    MASK_BLENDWEIGHTS = 0x100,
+    MASK_BLENDINDICES = 0x200,
+    MASK_INSTANCEMATRIX1 = 0x400,
+    MASK_INSTANCEMATRIX2 = 0x800,
+    MASK_INSTANCEMATRIX3 = 0x1000,
+    MASK_OBJECTINDEX = 0x2000,
+};
+URHO3D_FLAGSET(VertexMask, VertexMaskFlags);
 
-static const unsigned MAX_RENDERTARGETS = 4;
-static const unsigned MAX_VERTEX_STREAMS = 4;
-static const unsigned MAX_CONSTANT_REGISTERS = 256;
+static const int MAX_RENDERTARGETS = 4;
+static const int MAX_VERTEX_STREAMS = 4;
+static const int MAX_CONSTANT_REGISTERS = 256;
 
-static const unsigned BITS_PER_COMPONENT = 8;
+static const int BITS_PER_COMPONENT = 8;
 
 }

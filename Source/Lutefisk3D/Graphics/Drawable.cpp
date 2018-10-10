@@ -39,7 +39,7 @@ namespace Urho3D
 {
 
 const char* GEOMETRY_CATEGORY = "Geometry";
-SourceBatch::SourceBatch() 
+SourceBatch::SourceBatch()
 {
 }
 
@@ -47,7 +47,7 @@ SourceBatch::~SourceBatch()
 {
 }
 
-Drawable::Drawable(Context* context, unsigned char drawableFlags) :
+Drawable::Drawable(Context* context, DrawableFlags drawableFlags) :
     Component(context),
     boundingBox_(0.0f, 0.0f),
     drawableFlags_(drawableFlags),
@@ -76,6 +76,10 @@ Drawable::Drawable(Context* context, unsigned char drawableFlags) :
     maxLights_(0),
     firstLight_(nullptr)
 {
+    if (drawableFlags == DRAWABLE_UNDEFINED)
+    {
+        URHO3D_LOGERROR("Drawable with undefined drawableFlags");
+    }
 }
 
 Drawable::~Drawable()
@@ -577,20 +581,20 @@ bool WriteDrawablesToOBJ(std::vector<Drawable*> drawables, File* outputFile, boo
                 }
 
                 QString output = "f ";
-                if (hasNormals)
+                if (hasNormals && hasUV)
                 {
                     output += QString("%1/%2/%3 %4/%5/%6 %7/%8/%9")
-                            .arg(currentPositionIndex + longIndices[0])
-                            .arg(currentUVIndex + longIndices[0])
-                            .arg(currentNormalIndex + longIndices[0])
-                            .arg(currentPositionIndex + longIndices[1])
-                            .arg(currentUVIndex + longIndices[1])
-                            .arg(currentNormalIndex + longIndices[1])
-                            .arg(currentPositionIndex + longIndices[2])
-                            .arg(currentUVIndex + longIndices[2])
-                            .arg(currentNormalIndex + longIndices[2]);
+                        .arg(currentPositionIndex + longIndices[0])
+                        .arg(currentUVIndex + longIndices[0])
+                        .arg(currentNormalIndex + longIndices[0])
+                        .arg(currentPositionIndex + longIndices[1])
+                        .arg(currentUVIndex + longIndices[1])
+                        .arg(currentNormalIndex + longIndices[1])
+                        .arg(currentPositionIndex + longIndices[2])
+                        .arg(currentUVIndex + longIndices[2])
+                        .arg(currentNormalIndex + longIndices[2]);
                 }
-                else if (hasNormals || hasUV)
+                else if (!hasUV)
                 {
                     unsigned secondTraitIndex = hasNormals ? currentNormalIndex : currentUVIndex;
                     output += QString("%1%2%3 %4%5%6 %7%8%9")

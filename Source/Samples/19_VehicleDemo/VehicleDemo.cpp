@@ -81,9 +81,9 @@ void VehicleDemo::Start()
 
 void VehicleDemo::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
 
     // Create scene subsystem components
     scene_->CreateComponent<Octree>();
@@ -91,10 +91,10 @@ void VehicleDemo::CreateScene()
 
     // Create camera and define viewport. We will be doing load / save, so it's convenient to create the camera outside the scene,
     // so that it won't be destroyed and recreated, and we don't have to redefine the viewport on load
-    cameraNode_ = new Node(m_context);
+    cameraNode_ = new Node(GetContext());
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetFarClip(500.0f);
-    m_context->m_Renderer.get()->SetViewport(0, new Viewport(m_context, scene_, camera));
+    camera->setFarClipDistance(500.0f);
+    GetContext()->m_Renderer.get()->SetViewport(0, new Viewport(GetContext(), scene_, camera));
 
     // Create static scene content. First create a zone for ambient lighting and fog control
     Node* zoneNode = scene_->CreateChild("Zone");
@@ -169,8 +169,8 @@ void VehicleDemo::CreateVehicle()
 
 void VehicleDemo::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -202,11 +202,11 @@ void VehicleDemo::SubscribeToEvents()
 
 void VehicleDemo::HandleUpdate(float timeStep)
 {
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     if (vehicle_)
     {
-        UI* ui = m_context->m_UISystem.get();
+        UI* ui = GetContext()->m_UISystem.get();
 
         // Get movement controls and assign them to the vehicle component. If UI has a focused element, clear controls
         if (!ui->GetFocusElement())
@@ -225,13 +225,13 @@ void VehicleDemo::HandleUpdate(float timeStep)
             // Check for loading / saving the scene
             if (input->GetKeyPress(KEY_F5))
             {
-                File saveFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/VehicleDemo.xml",
+                File saveFile(GetContext(), GetContext()->m_FileSystem->GetProgramDir() + "Data/Scenes/VehicleDemo.xml",
                     FILE_WRITE);
                 scene_->SaveXML(saveFile);
             }
             if (input->GetKeyPress(KEY_F7))
             {
-                File loadFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/VehicleDemo.xml", FILE_READ);
+                File loadFile(GetContext(), GetContext()->m_FileSystem->GetProgramDir() + "Data/Scenes/VehicleDemo.xml", FILE_READ);
                 scene_->LoadXML(loadFile);
                 // After loading we have to reacquire the weak pointer to the Vehicle component, as it has been recreated
                 // Simply find the vehicle's scene node by name as there's only one of them

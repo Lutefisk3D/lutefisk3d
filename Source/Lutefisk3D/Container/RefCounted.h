@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 #pragma once
 #include "Lutefisk3D/Core/Lutefisk3D.h"
+#include <functional>
 
 namespace Urho3D
 {
@@ -64,6 +65,10 @@ public:
     /// Return pointer to the reference count structure.
     RefCount* RefCountPtr() { return refCount_; }
 
+    /// Set a custom deleter function which will be in charge of deallocating object.
+    void SetDeleter(std::function<void(RefCounted*)> deleter);
+    /// Returns custom deleter of this object.
+    std::function<void(RefCounted*)> GetDeleter() const { return deleter_; }
 private:
     /// Prevent copy construction.
     RefCounted(const RefCounted& rhs);
@@ -72,6 +77,20 @@ private:
 
     /// Pointer to the reference count structure.
     RefCount* refCount_;
+    /// Custom deleter which will be deallocating native object.
+    std::function<void (RefCounted*)> deleter_;
 };
-
+} // end of namespace
+#include <vector>
+#include <utility>
+#include <algorithm>
+template<class T>
+void RemovePopBack(std::vector<T> &l,const T &v)
+{
+    auto iter=std::find(l.begin(),l.end(),v);
+    if(iter!=l.end())
+    {
+        std::swap(*iter,l.back());
+        l.pop_back();
+    }
 }

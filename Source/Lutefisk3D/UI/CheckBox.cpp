@@ -40,9 +40,7 @@ CheckBox::CheckBox(Context* context) :
     focusMode_ = FM_FOCUSABLE_DEFOCUSABLE;
 }
 
-CheckBox::~CheckBox()
-{
-}
+CheckBox::~CheckBox() = default;
 
 void CheckBox::RegisterObject(Context* context)
 {
@@ -68,16 +66,16 @@ void CheckBox::GetBatches(std::vector<UIBatch>& batches, std::vector<float>& ver
 
 void CheckBox::OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor)
 {
-    if (button == MouseButton::LEFT && editable_)
+    if (button == MouseButton::MOUSEB_LEFT && editable_)
         SetChecked(!checked_);
 }
 
-void CheckBox::OnKey(int key, int buttons, int qualifiers)
+void CheckBox::OnKey(Key key, MouseButtonFlags buttons, QualifierFlags qualifiers)
 {
     if (HasFocus() && key == KEY_SPACE)
     {
         // Simulate LMB click
-        OnClickBegin(IntVector2(), IntVector2(), MouseButton::LEFT, 0, 0, nullptr);
+        OnClickBegin(IntVector2(), IntVector2(), MOUSEB_LEFT, 0, 0, nullptr);
     }
 }
 

@@ -25,17 +25,19 @@
 #include "Lutefisk3D/Math/BoundingBox.h"
 #include "Lutefisk3D/Scene/Component.h"
 #include "Lutefisk3D/Graphics/Material.h"
-
+#include "Lutefisk3D/Container/FlagSet.h"
 namespace Urho3D
 {
 enum GeometryType : unsigned;
-enum eDrawableFlags : unsigned {
+enum DrawableFlag : unsigned char {
+    DRAWABLE_UNDEFINED = 0x0,
     DRAWABLE_GEOMETRY = 0x1,
     DRAWABLE_LIGHT = 0x2,
     DRAWABLE_ZONE = 0x4,
     DRAWABLE_GEOMETRY2D = 0x8,
     DRAWABLE_ANY = 0xff
 };
+URHO3D_FLAGSET(DrawableFlag, DrawableFlags);
 static const unsigned DEFAULT_VIEWMASK = M_MAX_UNSIGNED;
 static const unsigned DEFAULT_LIGHTMASK = M_MAX_UNSIGNED;
 static const unsigned DEFAULT_SHADOWMASK = M_MAX_UNSIGNED;
@@ -54,7 +56,7 @@ class RayOctreeQuery;
 class Zone;
 struct RayQueryResult;
 struct WorkItem;
-//extern template class SharedPtr<Material>;
+
 /// Geometry update type.
 enum UpdateGeometryType
 {
@@ -101,9 +103,9 @@ class LUTEFISK3D_EXPORT Drawable : public Component
 
 public:
     /// Construct.
-    Drawable(Context* context, unsigned char drawableFlags);
+    Drawable(Context* context, DrawableFlags drawableFlags);
     /// Destruct.
-    virtual ~Drawable();
+    ~Drawable() override;
     /// Register object attributes. Drawable must be registered first.
     static void RegisterObject(Context* context);
 
@@ -157,7 +159,7 @@ public:
     /// Return world-space bounding box.
     const BoundingBox& GetWorldBoundingBox();
     /// Return drawable flags.
-    unsigned char GetDrawableFlags() const { return drawableFlags_; }
+    DrawableFlags GetDrawableFlags() const { return drawableFlags_; }
     /// Return draw distance.
     float GetDrawDistance() const { return drawDistance_; }
     /// Return shadow draw distance.
@@ -274,7 +276,7 @@ protected:
     /// Draw call source data.
     std::vector<SourceBatch> batches_;
     /// Drawable flags.
-    unsigned char drawableFlags_;
+    DrawableFlags drawableFlags_;
     /// Bounding box dirty flag.
     bool worldBoundingBoxDirty_;
     /// Shadowcaster flag.

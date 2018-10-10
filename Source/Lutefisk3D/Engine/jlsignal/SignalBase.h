@@ -1,7 +1,7 @@
 #ifndef _JL_SIGNAL_BASE_H_
 #define _JL_SIGNAL_BASE_H_
 
-#include "Lutefisk3D/lutefisk3d_export.h"
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 
 #include "Utils.h"
 #include "DoublyLinkedList.h"
@@ -12,7 +12,7 @@ namespace jl {
 class SignalBase;
 
 // Derive from this class to receive signals
-class SignalObserver
+class LUTEFISK3D_EXPORT SignalObserver
 {
     // Public interface
 public:
@@ -56,7 +56,7 @@ private:
 
     // Signal list
 public:
-    typedef DoublyLinkedList<SignalBase*> SignalList;
+    using SignalList = DoublyLinkedList<SignalBase*>;
     enum { eAllocationSize = sizeof(SignalList::Node) };
 
 private:
@@ -70,7 +70,7 @@ public:
 
     // Interface for derived signal classes
 protected:
-    // Disallow instances of this class
+    // Disallow instances    of this class
     SignalBase() {}
 
     // Called on any connection to the observer.

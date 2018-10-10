@@ -30,28 +30,17 @@ namespace Urho3D
 extern const char* AUDIO_CATEGORY;
 
 SoundListener::SoundListener(Context* context) :
-    Serializable(context) //Component(context)
+    Component(context)
 {
 }
 
-SoundListener::~SoundListener()
-{
-}
+SoundListener::~SoundListener() = default;
 
 void SoundListener::RegisterObject(Context* context)
 {
     context->RegisterFactory<SoundListener>(AUDIO_CATEGORY);
 
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-}
-bool SoundListener::IsEnabledEffective() const
-{
-    return enabled_ && (attachedNode != nullptr) && attachedNode->IsEnabled();
-}
-
-Scene *SoundListener::GetScene() const
-{
-    return attachedNode ? attachedNode->GetScene() : nullptr;
 }
 
 }

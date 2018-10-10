@@ -49,7 +49,7 @@ class LUTEFISK3D_EXPORT MutexLock
 {
 public:
     /// Construct and acquire the mutex.
-    MutexLock(Mutex& mutex);
+    explicit MutexLock(Mutex& mutex);
     /// Destruct. Release the mutex.
     ~MutexLock();
 

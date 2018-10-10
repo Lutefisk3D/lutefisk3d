@@ -430,7 +430,7 @@ bool Image::BeginLoad(Deserializer& source)
         // If uncompressed DDS, convert the data to 8bit RGBA as the texture classes can not currently use eg. RGB565 format
         if (compressedFormat_ == CF_RGBA)
         {
-            URHO3D_PROFILE_CTX(context_,ConvertDDSToRGBA);
+            URHO3D_PROFILE(ConvertDDSToRGBA);
 
             currentImage = this;
 
@@ -746,7 +746,7 @@ bool Image::BeginLoad(Deserializer& source)
 ///
 bool Image::Save(Serializer& dest) const
 {
-    URHO3D_PROFILE_CTX(context_,SaveImage);
+    URHO3D_PROFILE(SaveImage);
 
     if (IsCompressed())
     {
@@ -1076,7 +1076,7 @@ bool Image::FlipVertical()
 ///
 bool Image::Resize(int width, int height)
 {
-    URHO3D_PROFILE_CTX(context_,ResizeImage);
+    URHO3D_PROFILE(ResizeImage);
 
     if (IsCompressed())
     {
@@ -1138,7 +1138,7 @@ void Image::Clear(const Color& color)
 /// Clear the image with an integer color. R component is in the 8 lowest bits.
 void Image::ClearInt(unsigned uintColor)
 {
-    URHO3D_PROFILE_CTX(context_,ClearImage);
+    URHO3D_PROFILE(ClearImage);
 
     if (!data_)
         return;
@@ -1175,7 +1175,7 @@ bool Image::saveImageCommon(const QString &fileName,const char *format,int quali
 /// Save in BMP format. Return true if successful.
 bool Image::SaveBMP(const QString& fileName) const
 {
-    URHO3D_PROFILE_CTX(context_,SaveImageBMP);
+    URHO3D_PROFILE(SaveImageBMP);
 
     FileSystem* fileSystem = context_->m_FileSystem.get();
     if (fileSystem && !fileSystem->CheckAccess(GetPath(fileName)))
@@ -1194,7 +1194,7 @@ bool Image::SaveBMP(const QString& fileName) const
 /// Save in PNG format. Return true if successful.
 bool Image::SavePNG(const QString& fileName) const
 {
-    URHO3D_PROFILE_CTX(context_,SaveImagePNG);
+    URHO3D_PROFILE(SaveImagePNG);
 
     FileSystem* fileSystem = context_->m_FileSystem.get();
     if (fileSystem && !fileSystem->CheckAccess(GetPath(fileName)))
@@ -1214,7 +1214,7 @@ bool Image::SavePNG(const QString& fileName) const
 /// Save in JPG format with compression quality. Return true if successful.
 bool Image::SaveJPG(const QString & fileName, int quality) const
 {
-    URHO3D_PROFILE_CTX(context_,SaveImageJPG);
+    URHO3D_PROFILE(SaveImageJPG);
 
     FileSystem* fileSystem = context_->m_FileSystem.get();
     if (fileSystem && !fileSystem->CheckAccess(GetPath(fileName)))
@@ -1365,7 +1365,7 @@ SharedPtr<Image> Image::GetNextLevel() const
     if (nextLevel_)
         return nextLevel_;
 
-    URHO3D_PROFILE_CTX(context_,CalculateImageMipLevel);
+    URHO3D_PROFILE(CalculateImageMipLevel);
 
     int widthOut = width_ / 2;
     int heightOut = height_ / 2;
@@ -2014,7 +2014,7 @@ void Image::PrecalculateLevels()
     if (!data_ || IsCompressed())
         return;
 
-    URHO3D_PROFILE_CTX(context_,PrecalculateImageMipLevels);
+    URHO3D_PROFILE(PrecalculateImageMipLevels);
 
     nextLevel_.Reset();
 
@@ -2093,6 +2093,68 @@ uint8_t* Image::GetImageData(Deserializer& source, int& width, int& height, unsi
 void Image::FreeImageData(uint8_t* pixelData)
 {
     delete [] pixelData;
+}
+
+bool Image::HasAlphaChannel() const
+{
+    return components_ > 3;
+}
+bool Image::SetSubimage(const Image* image, const IntRect& rect)
+{
+    if (!data_)
+        return false;
+
+    if (depth_ > 1 || IsCompressed())
+    {
+        URHO3D_LOGERROR("SetSubimage not supported for Compressed or 3D images");
+        return false;
+    }
+
+    if (rect.left_ < 0 || rect.top_ < 0 || rect.right_ > width_ || rect.bottom_ > height_ || !rect.Width() || !rect.Height())
+    {
+        URHO3D_LOGERROR("Can not set subimage in image " + GetName() + " with invalid region");
+        return false;
+    }
+
+    int width = rect.Width();
+    int height = rect.Height();
+    if (width == image->GetWidth() && height == image->GetHeight())
+    {
+        int components = Min((int)components_, (int)image->components_);
+
+        unsigned char* src = image->GetData();
+        unsigned char* dest = data_.get() + (rect.top_ * width_ + rect.left_) * components_;
+        for (int i = 0; i < height; ++i)
+        {
+            memcpy(dest, src, width * components);
+
+            src += width * image->components_;
+            dest += width_ * components_;
+        }
+    }
+    else
+    {
+        unsigned uintColor;
+        unsigned char* dest = data_.get() + (rect.top_ * width_ + rect.left_) * components_;
+        unsigned char* src = (unsigned char*)&uintColor;
+        for (int y = 0; y < height; ++y)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                // Calculate float coordinates between 0 - 1 for resampling
+                float xF = (image->width_ > 1) ? (float)x / (float)(width - 1) : 0.0f;
+                float yF = (image->height_ > 1) ? (float)y / (float)(height - 1) : 0.0f;
+                uintColor = image->GetPixelBilinear(xF, yF).ToUInt();
+
+                memcpy(dest, src, components_);
+
+                dest += components_;
+            }
+            dest += (width_ - width) * components_;
+        }
+    }
+
+    return true;
 }
 
 }

@@ -33,10 +33,8 @@ class NetworkPriority : public Component
     URHO3D_OBJECT(NetworkPriority,Component);
 
 public:
-    /// Construct.
     NetworkPriority(Context* context);
-    /// Destruct.
-    virtual ~NetworkPriority();
+    ~NetworkPriority() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 

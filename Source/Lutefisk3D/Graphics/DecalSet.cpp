@@ -51,8 +51,8 @@ static const unsigned MIN_INDICES = 6;
 static const unsigned MAX_VERTICES = 65536;
 static const unsigned DEFAULT_MAX_VERTICES = 512;
 static const unsigned DEFAULT_MAX_INDICES = 1024;
-static const unsigned STATIC_ELEMENT_MASK = MASK_POSITION | MASK_NORMAL | MASK_TEXCOORD1 | MASK_TANGENT;
-static const unsigned SKINNED_ELEMENT_MASK = MASK_POSITION | MASK_NORMAL | MASK_TEXCOORD1 | MASK_TANGENT | MASK_BLENDWEIGHTS |
+static const VertexMaskFlags STATIC_ELEMENT_MASK = MASK_POSITION | MASK_NORMAL | MASK_TEXCOORD1 | MASK_TANGENT;
+static const VertexMaskFlags SKINNED_ELEMENT_MASK = MASK_POSITION | MASK_NORMAL | MASK_TEXCOORD1 | MASK_TANGENT | MASK_BLENDWEIGHTS |
     MASK_BLENDINDICES;
 
 static DecalVertex ClipEdge(const DecalVertex& v0, const DecalVertex& v1, float d0, float d1, bool skinned)
@@ -345,7 +345,7 @@ bool DecalSet::AddDecal(Drawable* target, const Vector3& worldPosition, const Qu
             if (bone->collisionMask_ & BONECOLLISION_BOX)
             {
                 float size = bone->boundingBox_.HalfSize().Length();
-                if (bone->boundingBox_.IsInside(decalSphere) && size > bestSize)
+                if (bone->boundingBox_.IsInside(decalSphere) != OUTSIDE && size > bestSize)
                 {
                     bestBone = bone;
                     bestSize = size;
@@ -513,7 +513,7 @@ Material* DecalSet::GetMaterial() const
 
 void DecalSet::SetMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     SetMaterial(cache->GetResource<Material>(value.name_));
 }
 
@@ -1004,7 +1004,7 @@ void DecalSet::CalculateBoundingBox()
 
 void DecalSet::UpdateBuffers()
 {
-    unsigned newElementMask = skinned_ ? SKINNED_ELEMENT_MASK : STATIC_ELEMENT_MASK;
+    VertexMaskFlags newElementMask = skinned_ ? SKINNED_ELEMENT_MASK : STATIC_ELEMENT_MASK;
     unsigned newVBSize = optimizeBufferSize_ ? numVertices_ : maxVertices_;
     unsigned newIBSize = optimizeBufferSize_ ? numIndices_ : maxIndices_;
 

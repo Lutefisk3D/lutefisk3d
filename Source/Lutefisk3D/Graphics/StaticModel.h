@@ -45,7 +45,7 @@ class LUTEFISK3D_EXPORT StaticModel : public Drawable
     URHO3D_OBJECT(StaticModel,Drawable)
 
 public:
-    StaticModel(Context* context);
+    explicit StaticModel(Context* context);
     ~StaticModel();
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);

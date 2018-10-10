@@ -46,7 +46,7 @@ CustomGeometry::CustomGeometry(Context* context) :
     vertexBuffer_(new VertexBuffer(context)),
     elementMask_(MASK_POSITION),
     geometryIndex_(0),
-    materialsAttr_{Material::GetTypeStatic()},
+    materialsAttr_{Material::GetTypeStatic(),{}},
     dynamic_(false)
 {
     vertexBuffer_->SetShadowed(true);
@@ -250,16 +250,23 @@ void CustomGeometry::BeginGeometry(unsigned index, PrimitiveType type)
 
 void CustomGeometry::DefineVertex(const Vector3& position)
 {
-    if (vertices_.size() < geometryIndex_)
+    if (geometryIndex_ >= vertices_.size())
+    {
+        URHO3D_LOGERROR("Geometry index out of bounds");
         return;
+    }
 
     vertices_[geometryIndex_].emplace_back(position);
 }
 
 void CustomGeometry::DefineNormal(const Vector3& normal)
 {
-    if (vertices_.size() < geometryIndex_ || vertices_[geometryIndex_].empty())
+    if (geometryIndex_ >= vertices_.size() || vertices_[geometryIndex_].empty())
+    {
+        URHO3D_LOGERROR("Geometry index out of bounds or no vertices at index");
         return;
+    }
+
 
     vertices_[geometryIndex_].back().normal_ = normal;
     elementMask_ |= MASK_NORMAL;
@@ -267,17 +274,22 @@ void CustomGeometry::DefineNormal(const Vector3& normal)
 
 void CustomGeometry::DefineColor(const Color& color)
 {
-    if (vertices_.size() < geometryIndex_ || vertices_[geometryIndex_].empty())
+    if (geometryIndex_ >= vertices_.size() || vertices_[geometryIndex_].empty())
+    {
+        URHO3D_LOGERROR("Geometry index out of bounds or no vertices at index");
         return;
-
+    }
     vertices_[geometryIndex_].back().color_ = color.ToUInt();
     elementMask_ |= MASK_COLOR;
 }
 
 void CustomGeometry::DefineTexCoord(const Vector2& texCoord)
 {
-    if (vertices_.size() < geometryIndex_ || vertices_[geometryIndex_].empty())
+    if (geometryIndex_ >= vertices_.size() || vertices_[geometryIndex_].empty())
+    {
+        URHO3D_LOGERROR("Geometry index out of bounds or no vertices at index");
         return;
+    }
 
     vertices_[geometryIndex_].back().texCoord_ = texCoord;
     elementMask_ |= MASK_TEXCOORD1;
@@ -319,7 +331,7 @@ void CustomGeometry::DefineGeometry(unsigned index, PrimitiveType type, unsigned
 
 void CustomGeometry::Commit()
 {
-    URHO3D_PROFILE_CTX(context_,CommitCustomGeometry);
+    URHO3D_PROFILE(CommitCustomGeometry);
 
     unsigned totalVertices = 0;
     boundingBox_.Clear();
@@ -447,7 +459,7 @@ void CustomGeometry::SetGeometryDataAttr(const std::vector<unsigned char>& value
     MemoryBuffer buffer(value);
 
     SetNumGeometries(buffer.ReadVLE());
-    elementMask_ = buffer.ReadUInt();
+    elementMask_ = (VertexMaskFlags)buffer.ReadUInt();
 
     for (unsigned i = 0; i < geometries_.size(); ++i)
     {
@@ -475,7 +487,7 @@ void CustomGeometry::SetGeometryDataAttr(const std::vector<unsigned char>& value
 
 void CustomGeometry::SetMaterialsAttr(const ResourceRefList& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     for (unsigned i = 0; i < value.names_.size(); ++i)
         SetMaterial(i, cache->GetResource<Material>(value.names_[i]));
 }

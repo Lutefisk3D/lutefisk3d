@@ -24,6 +24,8 @@
 #include "Lutefisk3D/IO/Log.h"
 #include "Lutefisk3D/IO/PackageFile.h"
 #include "Lutefisk3D/Core/Variant.h"
+
+#include <QFileInfo>
 namespace Urho3D
 {
 template class SharedPtr<PackageFile>;
@@ -132,5 +134,36 @@ std::vector<QString> PackageFile::GetEntryNames() const
         res.emplace_back(v.first);
     return res;
 }
+void PackageFile::Scan(QStringList &result, const QString& pathName, const QString& filter, bool recursive) const
+{
+    result.clear();
 
+    QString sanitizedPath = QFileInfo(pathName).filePath();
+    QString filterExtension = filter.mid(filter.lastIndexOf('.'));
+    if (filterExtension.contains('*'))
+        filterExtension.clear();
+
+    auto caseSensitive = Qt::CaseSensitive;
+#ifdef _WIN32
+    // On Windows ignore case in string comparisons
+    caseSensitive = Qt::CaseInsensitive;
+#endif
+
+    const auto & entryNames = GetEntryNames();
+    for (const auto & i : entryNames)
+    {
+        QString entryName = QFileInfo(i).filePath();
+        if ((filterExtension.isEmpty() || entryName.endsWith(filterExtension, caseSensitive)) &&
+            entryName.startsWith(sanitizedPath, Qt::CaseSensitive))
+        {
+            QString fileName = entryName.mid(sanitizedPath.length());
+            if (fileName.startsWith("\\") || fileName.startsWith("/"))
+                fileName = fileName.mid(1, fileName.length() - 1);
+            if (!recursive && (fileName.contains("\\") || fileName.contains("/")))
+                continue;
+
+            result.push_back(fileName);
+        }
+    }
+}
 }

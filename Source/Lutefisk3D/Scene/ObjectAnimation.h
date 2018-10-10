@@ -33,7 +33,6 @@ class ValueAnimation;
 //class ValueAnimationInfo;
 class XMLElement;
 class JSONValue;
-//extern template class SharedPtr<ValueAnimationInfo>;
 /// Object animation class, an object animation includes one or more attribute animations and their wrap mode and speed for an Animatable object.
 class LUTEFISK3D_EXPORT ObjectAnimation : public Resource, public ObjectAnimationSignals
 {

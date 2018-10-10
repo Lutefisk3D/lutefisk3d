@@ -240,7 +240,7 @@ void RenderPathCommand::RemoveShaderParameter(const QString& name)
 
 void RenderPathCommand::SetNumOutputs(unsigned num)
 {
-    num = Clamp(num, 1U, MAX_RENDERTARGETS);
+    num = (unsigned)Clamp<int>(num, 1, MAX_RENDERTARGETS);
     outputs_.resize(num);
 }
 
@@ -358,6 +358,39 @@ void RenderPath::SetEnabled(const QString& tag, bool active)
     }
 }
 
+bool RenderPath::IsEnabled(const QString& tag) const
+{
+    for (unsigned i = 0; i < renderTargets_.size(); ++i)
+    {
+        if (!renderTargets_[i].tag_.compare(tag, Qt::CaseInsensitive) && renderTargets_[i].enabled_)
+            return true;
+    }
+
+    for (unsigned i = 0; i < commands_.size(); ++i)
+    {
+        if (!commands_[i].tag_.compare(tag, Qt::CaseInsensitive) && commands_[i].enabled_)
+            return true;
+    }
+
+    return false;
+}
+
+bool RenderPath::IsAdded(const QString& tag) const
+{
+    for (unsigned i = 0; i < renderTargets_.size(); ++i)
+    {
+        if (!renderTargets_[i].tag_.compare(tag, Qt::CaseInsensitive))
+            return true;
+    }
+
+    for (unsigned i = 0; i < commands_.size(); ++i)
+    {
+        if (!commands_[i].tag_.compare(tag, Qt::CaseInsensitive))
+            return true;
+    }
+
+    return false;
+}
 void RenderPath::ToggleEnabled(const QString& tag)
 {
     for (unsigned i = 0; i < renderTargets_.size(); ++i)
@@ -450,7 +483,7 @@ void RenderPath::SetShaderParameter(const QString& name, const Variant& value)
 
     for (unsigned i = 0; i < commands_.size(); ++i)
     {
-        VariantMap::iterator j = commands_[i].shaderParameters_.find(nameHash);
+        auto j = commands_[i].shaderParameters_.find(nameHash);
         if (j != commands_[i].shaderParameters_.end())
             MAP_VALUE(j) = value;
     }
@@ -462,7 +495,7 @@ const Variant& RenderPath::GetShaderParameter(const QString& name) const
 
     for (unsigned i = 0; i < commands_.size(); ++i)
     {
-        VariantMap::const_iterator j = commands_[i].shaderParameters_.find(nameHash);
+        auto j = commands_[i].shaderParameters_.find(nameHash);
         if (j != commands_[i].shaderParameters_.end())
             return MAP_VALUE(j);
     }

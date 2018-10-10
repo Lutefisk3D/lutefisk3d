@@ -79,9 +79,7 @@ ScrollView::ScrollView(Context* context) :
     SubscribeToEvent(verticalScrollBar_, E_VISIBLECHANGED, URHO3D_HANDLER(ScrollView, HandleScrollBarVisibleChanged));
 }
 
-ScrollView::~ScrollView()
-{
-}
+ScrollView::~ScrollView() = default;
 
 void ScrollView::RegisterObject(Context* context)
 {
@@ -126,7 +124,7 @@ void ScrollView::Update(float timeStep)
             UIElement* dragElement = dragElements[i];
             int dragButtons = dragElement->GetDragButtonCombo();
 
-            if (dragButtons != 1<<int(MouseButton::LEFT))
+            if (dragButtons != MOUSEB_LEFT)
                 continue;
 
             UIElement* dragParent = dragElement->GetParent();
@@ -180,7 +178,7 @@ void ScrollView::ApplyAttributes()
     SetViewPosition(viewPositionAttr_);
 }
 
-void ScrollView::OnWheel(int delta, int buttons, int qualifiers)
+void ScrollView::OnWheel(int delta, MouseButtonFlags buttons, QualifierFlags qualifiers)
 {
     if (delta > 0)
         verticalScrollBar_->StepBack();
@@ -188,7 +186,7 @@ void ScrollView::OnWheel(int delta, int buttons, int qualifiers)
         verticalScrollBar_->StepForward();
 }
 
-void ScrollView::OnKey(int key, int buttons, int qualifiers)
+void ScrollView::OnKey(Key key, MouseButtonFlags buttons, QualifierFlags qualifiers)
 {
     switch (key)
     {
@@ -310,6 +308,17 @@ void ScrollView::SetScrollBarsVisible(bool horizontal, bool vertical)
     verticalScrollBar_->SetVisible(vertical);
 }
 
+void ScrollView::SetHorizontalScrollBarVisible(bool visible)
+{
+    scrollBarsAutoVisible_ = false;
+    horizontalScrollBar_->SetVisible(visible);
+}
+
+void ScrollView::SetVerticalScrollBarVisible(bool visible)
+{
+    scrollBarsAutoVisible_ = false;
+    verticalScrollBar_->SetVisible(visible);
+}
 void ScrollView::SetScrollBarsAutoVisible(bool enable)
 {
     if (enable != scrollBarsAutoVisible_)
@@ -335,6 +344,16 @@ void ScrollView::SetScrollStep(float step)
 void ScrollView::SetPageStep(float step)
 {
     pageStep_ = Max(step, 0.0f);
+}
+
+bool ScrollView::GetHorizontalScrollBarVisible() const
+{
+    return horizontalScrollBar_->IsVisible();
+}
+
+bool ScrollView::GetVerticalScrollBarVisible() const
+{
+    return verticalScrollBar_->IsVisible();
 }
 
 float ScrollView::GetScrollStep() const

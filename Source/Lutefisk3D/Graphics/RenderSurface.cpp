@@ -50,7 +50,12 @@ RenderSurface::RenderSurface(Texture* parentTexture) :
 }
 RenderSurface::~RenderSurface()
 {
-    Release();
+    // only release if parent texture hasn't expired, in that case 
+    // parent texture was deleted and will have called release on render surface
+    if (!parentTexture_.Expired())
+    {
+        Release();
+    }
 }
 
 bool RenderSurface::CreateRenderBuffer(unsigned width, unsigned height, uint32_t format, int multiSample)

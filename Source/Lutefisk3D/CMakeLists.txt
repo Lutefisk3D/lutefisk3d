@@ -91,7 +91,7 @@ endif()
 set_target_properties(Lutefisk3D PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 set_target_properties(Lutefisk3D PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "Core/Lutefisk3D.h")
 # Propagage all enabled warning to all users of Lutefisk3D
-target_compile_options(Lutefisk3D PUBLIC ${LF_CMAKE_CXX_FLAGS})
+target_compile_options(Lutefisk3D PUBLIC "${LF_CMAKE_CXX_FLAGS}")
 target_link_libraries(Lutefisk3D PRIVATE
     Threads::Threads
     ${CMAKE_DL_LIBS}

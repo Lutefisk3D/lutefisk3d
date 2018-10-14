@@ -63,6 +63,10 @@ Editor::Editor(Context* context)
     : Application("Editor",context)
 {
     g_editor_instance = this;
+    connect(this,&Editor::SaveProject,this,&Editor::OnSaveProject);
+    connect(this,&Editor::OpenOrCreateProject,this,&Editor::OnOpenOrCreateProject);
+    connect(this,&Editor::Exit,[this]() { engine_->Exit(); });
+    connect(this,&Editor::CloseProject,this,&Editor::OnCloseProject);
 }
 
 void Editor::Setup()
@@ -171,7 +175,7 @@ void Editor::OnEndFrame()
 }
 void Editor::Stop()
 {
-    CloseProject();
+    OnCloseProject();
     ui::ShutdownDock();
 }
 
@@ -210,47 +214,61 @@ void Editor::OnUpdate(float ts)
     HandleHotkeys();
 }
 
+void Editor::OnSaveProject()
+{
+    for (auto& tab : tabs_)
+        tab->SaveResource();
+    project_->SaveProject();
+}
+
+void Editor::OnOpenOrCreateProject()
+{
+    QString dirPath = QFileDialog::getExistingDirectory(nullptr,"Select a project directory");
+    if (!dirPath.isEmpty())
+    {
+        if (OpenProject(dirPath) == nullptr)
+            URHO3D_LOGERROR("Loading project failed.");
+    }
+}
+struct SimpleMenuItem {
+    const char *name;
+    std::function<bool()> enabled;
+    void (Editor::*sig)();
+};
+struct MenuWithItems {
+    const char *name;
+    std::vector<SimpleMenuItem> items;
+};
+void Editor::renderAndEmitSignals(const MenuWithItems &menu)
+{
+    if (ui::BeginMenu(menu.name))
+    {
+        for(const SimpleMenuItem &item : menu.items)
+        {
+            if(item.name==nullptr)
+                ui::Separator();
+            else if(ui::MenuItem(item.name,"",false,item.enabled()))
+                emit (this->*item.sig)();
+        }
+        ui::EndMenu();
+    }
+}
+
 void Editor::RenderMenuBar()
 {
+    static const MenuWithItems file_menu = {
+        "File",
+        {
+            {"Save Project",[this]()->bool {return !project_.NotNull();},&Editor::SaveProject},
+            {"Open/Create Project",[]()->bool {return true;},&Editor::OpenOrCreateProject},
+            {nullptr,[]()->bool {return true;},nullptr},
+            {"Close Project",[this]()->bool {return !project_.NotNull();},&Editor::CloseProject},
+            {"Exit",[]()->bool {return true;},&Editor::Exit},
+        }
+    };
     if (ui::BeginMainMenuBar())
     {
-        if (ui::BeginMenu("File"))
-        {
-            if (project_.NotNull())
-            {
-                if (ui::MenuItem("Save Project"))
-                {
-                    for (auto& tab : tabs_)
-                        tab->SaveResource();
-                    project_->SaveProject();
-                }
-            }
-
-            if (ui::MenuItem("Open/Create Project"))
-            {
-                QString dirPath = QFileDialog::getExistingDirectory(nullptr,"Select a project directory");
-                if (!dirPath.isEmpty())
-                {
-                    if (OpenProject(dirPath) == nullptr)
-                        URHO3D_LOGERROR("Loading project failed.");
-                }
-            }
-
-            ui::Separator();
-
-            if (project_.NotNull())
-            {
-                if (ui::MenuItem("Close Project"))
-                {
-                    CloseProject();
-                }
-            }
-
-            if (ui::MenuItem("Exit"))
-                engine_->Exit();
-
-            ui::EndMenu();
-        }
+        renderAndEmitSignals(file_menu);
         if (project_.NotNull())
         {
             if (ui::BeginMenu("View"))
@@ -395,15 +413,15 @@ void Editor::LoadDefaultLayout()
 
 Project* Editor::OpenProject(const QString& projectPath)
 {
-    CloseProject();
+    OnCloseProject();
     project_ = new Project(GetContext());
     GetContext()->RegisterSubsystem(project_);
     if (!project_->LoadProject(projectPath))
-        CloseProject();
+        OnCloseProject();
     return project_.Get();
 }
 
-void Editor::CloseProject()
+void Editor::OnCloseProject()
 {
     GetContext()->RemoveSubsystem<Project>();
     project_.Reset();

@@ -139,11 +139,6 @@ private:
 };
 inline unsigned int qHash(const StringHash &key, unsigned int seed)
 {
-    return key.ToHash();
-}
-template<class T>
-inline unsigned int qHash(const Urho3D::StringHash & key, unsigned int seed)
-{
     return key.ToHash()^seed;
 }
 

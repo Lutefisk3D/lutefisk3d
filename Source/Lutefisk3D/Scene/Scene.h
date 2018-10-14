@@ -69,23 +69,23 @@ class LUTEFISK3D_EXPORT Scene : public Node, public SingularSceneSignals
     using Node::SaveJSON;
 
 public:
-    Scene(Context* context);
-    virtual ~Scene();
+    explicit Scene(Context* context);
+     ~Scene() override;
     /// Register object factory. Node must be registered first.
     static void RegisterObject(Context* context);
 
     /// Load from binary data. Removes all existing child nodes and components first. Return true if successful.
-    virtual bool Load(Deserializer& source) override;
+    bool Load(Deserializer& source) override;
     /// Save to binary data. Return true if successful.
-    virtual bool Save(Serializer& dest) const override;
+    bool Save(Serializer& dest) const override;
     /// Load from XML data. Removes all existing child nodes and components first. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source) override;
+    bool LoadXML(const XMLElement& source) override;
     /// Load from JSON data. Removes all existing child nodes and components first. Return true if successful.
-    virtual bool LoadJSON(const JSONValue& source) override;
+    bool LoadJSON(const JSONValue& source) override;
     /// Mark for attribute check on the next network update.
-    virtual void MarkNetworkUpdate() override;
+    void MarkNetworkUpdate() override;
     /// Add a replication state that is tracking this scene.
-    virtual void AddReplicationState(NodeReplicationState* state) override;
+    void AddReplicationState(NodeReplicationState* state) override;
 
     /// Load from an XML file. Return true if successful.
     bool LoadXML(Deserializer& source);

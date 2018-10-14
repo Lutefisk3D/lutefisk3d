@@ -26,16 +26,16 @@
 
 namespace Urho3D
 {
-/// Renders several object instances while culling and receiving light as one unit. Can be used as a CPU-side optimization, but note that also regular StaticModels will use instanced rendering if possible.
+/// Renders several object instances while culling and receiving light as one unit. Can be used as a CPU-side
+/// optimization, but note that also regular StaticModels will use instanced rendering if possible.
 class LUTEFISK3D_EXPORT StaticModelGroup : public StaticModel
 {
     URHO3D_OBJECT(StaticModelGroup,StaticModel)
 
 public:
-    /// Construct.
     explicit StaticModelGroup(Context* context);
-    /// Destruct.
     ~StaticModelGroup() override;
+
     /// Register object factory. StaticModel must be registered first.
     static void RegisterObject(Context* context);
 

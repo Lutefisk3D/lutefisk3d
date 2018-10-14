@@ -116,7 +116,7 @@ public:
 //, ##__VA_ARGS__
 #   define URHO3D_PROFILE(name) static Urho3D::ProfilerDescriptor URHO3D_TOKEN_CONCATENATE(__profiler_desc_, __LINE__) (#name, __FILE__, __LINE__);ProfilerBlock URHO3D_TOKEN_CONCATENATE(__profiler_block_, __LINE__) (URHO3D_TOKEN_CONCATENATE(__profiler_desc_, __LINE__), #name)
 #   define URHO3D_PROFILE_SCOPED(name, ...) static Urho3D::ProfilerDescriptor URHO3D_TOKEN_CONCATENATE(__profiler_desc_, __LINE__) (name, __FILE__, __LINE__, ##__VA_ARGS__);ProfilerBlock URHO3D_TOKEN_CONCATENATE(__profiler_block_, __LINE__) (URHO3D_TOKEN_CONCATENATE(__profiler_desc_, __LINE__), name)
-#   define URHO3D_PROFILE_NONSCOPED(name, ...) Urho3D::Profiler::BeginBlock(#name, __FILE__, __LINE__, ##__VA_ARGS__)
+#   define URHO3D_PROFILE_NONSCOPED(name) Urho3D::Profiler::BeginBlock(#name, __FILE__, __LINE__)
 #   define URHO3D_PROFILE_END() Urho3D::Profiler::EndBlock();
 #   define URHO3D_PROFILE_THREAD(name) Urho3D::Profiler::RegisterCurrentThread(#name)
 #else

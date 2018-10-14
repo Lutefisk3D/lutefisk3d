@@ -39,7 +39,10 @@ private:
 
     void OnSignalConnect( SignalBase* pSignal )
     {
-        const bool bAdded = m_oSignals.Add( pSignal );
+#if defined( JL_ENABLE_ASSERT ) && ! defined ( JL_DISABLE_ASSERT ) && ! defined (NDEBUG)
+        const bool bAdded =
+#endif
+        m_oSignals.Add( pSignal );
         JL_ASSERT( bAdded );
     }
     void OnSignalDisconnect( SignalBase* pSignal )

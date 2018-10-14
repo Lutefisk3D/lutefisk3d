@@ -168,12 +168,7 @@ public:
     }
 
     /// Copy-construct from another vector.
-    Vector3(const Vector3& vector) :
-        x_(vector.x_),
-        y_(vector.y_),
-        z_(vector.z_)
-    {
-    }
+    Vector3(const Vector3& vector) noexcept = default;
 
     /// Construct from a two-dimensional vector and the Z coordinate.
     Vector3(const Vector2& vector, float z) :
@@ -245,7 +240,7 @@ public:
     Vector3 operator / (const Vector3& rhs) const { return Vector3(x_ / rhs.x_, y_ / rhs.y_, z_ / rhs.z_); }
 
     /// Add-assign a vector.
-    Vector3& operator += (const Vector3& rhs)
+    Vector3& operator += (const Vector3& rhs) noexcept
     {
         x_ += rhs.x_;
         y_ += rhs.y_;

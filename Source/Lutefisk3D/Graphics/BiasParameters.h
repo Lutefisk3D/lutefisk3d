@@ -33,32 +33,30 @@ struct LUTEFISK3D_EXPORT BiasParameters
 struct LUTEFISK3D_EXPORT FocusParameters
 {
     /// Construct undefined.
-    FocusParameters()
-    {
-    }
+    FocusParameters() = default;
 
     /// Construct with initial values.
     FocusParameters(bool focus, bool nonUniform, bool autoSize, float quantize, float minView) :
+        quantize_(quantize),
+        minView_(minView),
         focus_(focus),
         nonUniform_(nonUniform),
-        autoSize_(autoSize),
-        quantize_(quantize),
-        minView_(minView)
+        autoSize_(autoSize)
     {
     }
 
     /// Validate parameters.
     void Validate();
 
+    /// Focus quantization.
+    float quantize_;
+    /// Minimum view size.
+    float minView_;
     /// Focus flag.
     bool focus_;
     /// Non-uniform focusing flag.
     bool nonUniform_;
     /// Auto-size (reduce resolution when far away) flag.
     bool autoSize_;
-    /// Focus quantization.
-    float quantize_;
-    /// Minimum view size.
-    float minView_;
 };
 }

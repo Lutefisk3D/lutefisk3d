@@ -47,10 +47,12 @@ static const char* qualityTexts[] =
 
 static const char* shadowQualityTexts[] =
 {
-    "16bit Low",
-    "24bit Low",
-    "16bit High",
-    "24bit High"
+    "16 bit Simple",
+    "24 bit Simple",
+    "16 Bit PCF",
+    "24 Bit PCF",
+    "VSM",
+    "Blurred VSM",
 };
 
 static const unsigned FPS_UPDATE_INTERVAL_MS = 500;

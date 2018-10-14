@@ -30,8 +30,7 @@
 #include <QObject>
 #include <QVector>
 
-using namespace std::placeholders;
-
+struct MenuWithItems;
 namespace Urho3D
 {
 class Scene;
@@ -85,7 +84,7 @@ public:
     /// Opens project or creates new one.
     Project* OpenProject(const QString& projectPath);
     /// Close current project.
-    void CloseProject();
+    void OnCloseProject();
     /// Return path containing data directories of engine.
     const QString& GetCoreResourcePrefixPath() const { return coreResourcePrefixPath_; }
     /// Load default tab layout.
@@ -126,6 +125,10 @@ signals:
 signals:
     void Redo(uint32_t time_val);
     void Undo(uint32_t time_val);
+    void SaveProject();
+    void OpenOrCreateProject();
+    void CloseProject();
+    void Exit();
 protected:
     void OnEndFrame();
     /// Process console commands.
@@ -134,6 +137,7 @@ protected:
     void HandleHotkeys();
     /// Renders a project plugins submenu.
     void RenderProjectPluginsMenu();
+    void renderAndEmitSignals(const MenuWithItems &menu);
 
     /// List of active scene tabs.
     QVector<SharedPtr<Tab>> tabs_;
@@ -143,6 +147,9 @@ protected:
     QString coreResourcePrefixPath_;
     /// Currently loaded project.
     SharedPtr<Project> project_;
+protected slots:
+    void OnSaveProject();
+    void OnOpenOrCreateProject();
 };
 Editor *getEditorInstance();
 }

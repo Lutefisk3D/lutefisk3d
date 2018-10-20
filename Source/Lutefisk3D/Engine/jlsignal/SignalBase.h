@@ -12,14 +12,14 @@ namespace jl {
 class SignalBase;
 
 // Derive from this class to receive signals
-class LUTEFISK3D_EXPORT SignalObserver
+class  SignalObserver
 {
     // Public interface
 public:
-    virtual ~SignalObserver();
+    LUTEFISK3D_EXPORT virtual ~SignalObserver();
 
-    void DisconnectAllSignals();
-    void DisconnectSignal( SignalBase* pSignal );
+    LUTEFISK3D_EXPORT void DisconnectAllSignals();
+    LUTEFISK3D_EXPORT void DisconnectSignal( SignalBase* pSignal );
 
     void SetConnectionAllocator( ScopedAllocator* pAllocator ) { m_oSignals.Init( pAllocator ); }
     unsigned CountSignalConnections() const { return m_oSignals.size(); }
@@ -74,7 +74,7 @@ public:
     // Interface for derived signal classes
 protected:
     // Disallow instances    of this class
-    SignalBase() {}
+    SignalBase() = default;
 
     // Called on any connection to the observer.
     void NotifyObserverConnect( SignalObserver* pObserver ) { pObserver->OnSignalConnect(this); }

@@ -175,7 +175,7 @@ namespace o3dgc
         m_data[2] = rhs.m_data[2];
     }
     template <typename T>
-    inline Vec3<T>::~Vec3(void){};
+    inline Vec3<T>::~Vec3(void){}
 
     template <typename T>
     inline Vec3<T>::Vec3() {}

@@ -885,53 +885,51 @@ void WriteOutput(const QString& outputFileName, bool exportAnimations, bool rota
         }
 
         // Morphs
-        dest.WriteUInt(morphs_.size());
-        for (unsigned i = 0; i < morphs_.size(); ++i)
-            morphs_[i].WriteData(dest);
+        dest.WriteUInt(uint32_t(morphs_.size()));
+        for (const ModelMorph &morph : morphs_)
+            morph.WriteData(dest);
 
         // Skeleton
         dest.WriteUInt(bones_.size());
-        for (unsigned i = 0; i < bones_.size(); ++i)
-        {
-            dest.WriteString(bones_[i].name_);
-            dest.WriteUInt(bones_[i].parentIndex_);
-            dest.WriteVector3(bones_[i].bindPosition_);
-            dest.WriteQuaternion(bones_[i].bindRotation_);
-            dest.WriteVector3(bones_[i].bindScale_);
+        for (const ModelBone &bone : bones_) {
+            dest.WriteString(bone.name_);
+            dest.WriteUInt(bone.parentIndex_);
+            dest.WriteVector3(bone.bindPosition_);
+            dest.WriteQuaternion(bone.bindRotation_);
+            dest.WriteVector3(bone.bindScale_);
 
-            Matrix3x4 offsetMatrix(bones_[i].derivedPosition_, bones_[i].derivedRotation_, bones_[i].derivedScale_);
+            Matrix3x4 offsetMatrix(bone.derivedPosition_, bone.derivedRotation_, bone.derivedScale_);
             offsetMatrix = offsetMatrix.Inverse();
             dest.Write(offsetMatrix.Data(), sizeof(Matrix3x4));
 
-            dest.WriteUByte(bones_[i].collisionMask_);
-            if (bones_[i].collisionMask_ & 1u)
-                dest.WriteFloat(bones_[i].radius_);
-            if (bones_[i].collisionMask_ & 2u)
-                dest.WriteBoundingBox(bones_[i].boundingBox_);
+            dest.WriteUByte(bone.collisionMask_);
+            if (bone.collisionMask_ & 1u)
+                dest.WriteFloat(bone.radius_);
+            if (bone.collisionMask_ & 2u)
+                dest.WriteBoundingBox(bone.boundingBox_);
         }
 
         // Bounding box
         dest.WriteBoundingBox(boundingBox_);
 
         // Geometry centers
-        for (unsigned i = 0; i < subGeometryCenters_.size(); ++i)
-            dest.WriteVector3(subGeometryCenters_[i]);
+        for (Vector3 subGeometryCenter : subGeometryCenters_)
+            dest.WriteVector3(subGeometryCenter);
     }
 
     if (saveMaterialList)
     {
         QString materialListName = ReplaceExtension(outputFileName, ".txt");
         File listFile(context_.get());
-        if (listFile.Open(materialListName, FILE_WRITE))
+        if (!listFile.Open(materialListName, FILE_WRITE))
         {
-            for (unsigned i = 0; i < materialNames_.size(); ++i)
-            {
+            PrintLine("Warning: could not write material list file " + materialListName);
+            return;
+        }
+        for (unsigned i = 0; i < materialNames_.size(); ++i) {
                 // Assume the materials will be located inside the standard Materials subdirectory
                 listFile.WriteLine("Materials/" + ReplaceExtension(SanitateAssetName(materialNames_[i]), ".xml"));
-            }
         }
-        else
-            PrintLine("Warning: could not write material list file " + materialListName);
     }
 
     XMLElement skeletonRoot = skelFile_->GetRoot("skeleton");

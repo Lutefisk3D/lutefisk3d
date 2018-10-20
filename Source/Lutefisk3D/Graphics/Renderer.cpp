@@ -1185,7 +1185,7 @@ Texture *Renderer::GetScreenBuffer(int width, int height, uint32_t format, int m
         newBuffer->ResetUseTimer();
         screenBuffers_[searchKey].push_back(newBuffer);
 
-        URHO3D_LOGDEBUG(QString("Allocated new screen buffer size %1x%2 format %3").arg(width).arg(height).arg((unsigned)format));
+        URHO3D_LOGDEBUG(QString("Allocated new screen buffer size %1x%2 format %3").arg(width).arg(height).arg(format));
         return newBuffer;
     }
     else
@@ -1274,6 +1274,7 @@ View* Renderer::GetActualView(View* view)
 void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, const BatchQueue& queue, bool allowShadows)
 {
     Pass* pass = batch.pass_;
+    assert(pass);
     // Check if need to release/reload all shaders
     if (pass->GetShadersLoadedFrameNumber() != shadersChangedFrameNumber_)
         pass->ReleaseShaders();
@@ -1663,7 +1664,7 @@ void Renderer::RemoveUnusedBuffers()
             if (buffer->GetUseTimer() > MAX_BUFFER_AGE)
             {
                 URHO3D_LOGDEBUG(QString("Removed unused screen buffer size %1x%2 format %3")
-                         .arg(buffer->GetWidth()).arg(buffer->GetHeight()).arg((unsigned)buffer->GetFormat()));
+                         .arg(buffer->GetWidth()).arg(buffer->GetHeight()).arg(buffer->GetFormat()));
                 buffers.erase(buffers.begin()+j);
             }
         }

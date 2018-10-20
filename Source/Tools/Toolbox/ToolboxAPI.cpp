@@ -38,4 +38,4 @@ void RegisterToolboxTypes(Context* context)
     context->RegisterFactory<Undo::Manager>();
 }
 
-};
+}

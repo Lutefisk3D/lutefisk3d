@@ -70,6 +70,10 @@ endif ()
 configure_file (include/ik/export.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/generated/ik/export.h)
 configure_file (include/ik/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/generated/ik/config.h)
 
-add_library (ik STATIC ${SOURCE_FILES})
+add_library (ik STATIC ${SOURCE_FILES} 
+	${CMAKE_CURRENT_BINARY_DIR}/include/generated/ik/export.h
+	${CMAKE_CURRENT_BINARY_DIR}/include/generated/ik/config.h
+)
 target_compile_definitions(ik PUBLIC -DIK_STATIC)
 target_include_directories(ik PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/generated> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(ik PUBLIC $<INSTALL_INTERFACE:include/generated> $<INSTALL_INTERFACE:include>)

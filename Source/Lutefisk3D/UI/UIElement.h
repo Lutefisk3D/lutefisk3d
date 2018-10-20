@@ -123,10 +123,9 @@ class LUTEFISK3D_EXPORT UIElement : public Animatable, public UiElementSignals
     URHO3D_OBJECT(UIElement,Animatable)
 
 public:
-    /// Construct.
     explicit UIElement(Context* context);
-    /// Destruct.
     ~UIElement() override;
+    
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -154,15 +153,25 @@ public:
     /// React to mouse hover.
     virtual void OnHover(const IntVector2& position, const IntVector2& screenPosition, int buttons, int qualifiers, Cursor* cursor);
     /// React to mouse click begin.
-    virtual void OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor) { }
+    virtual void OnClickBegin(const IntVector2 &/*position*/, const IntVector2 &/*screenPosition*/, MouseButton /*button*/, int /*buttons*/,
+                              int /*qualifiers*/, Cursor */*cursor*/)
+    {
+    }
     /// React to mouse click end.
-    virtual void OnClickEnd(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor, UIElement* beginElement) { }
+    virtual void OnClickEnd(const IntVector2 &/*position*/, const IntVector2 &/*screenPosition*/, MouseButton /*button*/, int /*buttons*/,
+                            int /*qualifiers*/, Cursor */*cursor*/, UIElement */*beginElement*/)
+    {
+    }
     /// React to double mouse click.
-    virtual void OnDoubleClick(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor) { }
+    virtual void OnDoubleClick(const IntVector2 &/*position*/, const IntVector2 &/*screenPosition*/, MouseButton /*button*/,
+                               int /*buttons*/, int /*qualifiers*/, Cursor */*cursor*/)
+    {
+    }
     /// React to mouse drag begin.
     virtual void OnDragBegin(const IntVector2& position, const IntVector2& screenPosition, int buttons, int qualifiers, Cursor* cursor);
     /// React to mouse drag motion.
-    virtual void OnDragMove(const IntVector2& position, const IntVector2& screenPosition, const IntVector2& deltaPos, int buttons, int qualifiers, Cursor* cursor);
+    virtual void OnDragMove(const IntVector2 &position, const IntVector2 &screenPosition, const IntVector2 &deltaPos,
+                            int buttons, int qualifiers, Cursor *cursor);
     /// React to mouse drag end.
     virtual void OnDragEnd(const IntVector2& position, const IntVector2& screenPosition, int dragButtons, int releaseButton, Cursor* cursor);
     /// React to a mouse drag cancel event (ie, when an extra button is pressed)
@@ -172,17 +181,17 @@ public:
     /// React to drag and drop finish. Return true to signal that the drop was accepted.
     virtual bool OnDragDropFinish(UIElement* source);
     /// React to mouse wheel.
-    virtual void OnWheel(int delta, MouseButtonFlags buttons, QualifierFlags qualifiers) { }
+    virtual void OnWheel(int /*delta*/, MouseButtonFlags /*buttons*/, QualifierFlags /*qualifiers*/) { }
     /// React to a key press.
-    virtual void OnKey(Key key, MouseButtonFlags buttons, QualifierFlags qualifiers) { }
+    virtual void OnKey(Key /*key*/, MouseButtonFlags /*buttons*/, QualifierFlags /*qualifiers*/) { }
     /// React to text input event.
-    virtual void OnTextInput(const QString& text) { }
+    virtual void OnTextInput(const QString& /*text*/) { }
 
     /// React to resize.
-    virtual void OnResize(const IntVector2& newSize, const IntVector2& delta) { }
+    virtual void OnResize(const IntVector2& /*newSize*/, const IntVector2& /*delta*/) { }
 
     /// React to position change.
-    virtual void OnPositionSet(const IntVector2& newPosition) { }
+    virtual void OnPositionSet(const IntVector2& /*newPosition*/) { }
 
     /// React to editable status change.
     virtual void OnSetEditable() { }

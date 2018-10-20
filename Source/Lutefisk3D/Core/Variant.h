@@ -125,11 +125,11 @@ public:
     template <class T> const T* GetValuePtr() const;
 
     /// Assign value.
-    virtual bool Assign(const CustomVariantValue& rhs) { return false; }
+    virtual bool Assign(const CustomVariantValue& /*rhs*/) { return false; }
     /// Clone.
     virtual CustomVariantValue* Clone() const { return nullptr; }
     /// Placement clone.
-    virtual void Clone(void* dest) const { }
+    virtual void Clone(void* /*dest*/) const { }
     /// Get size.
     virtual unsigned GetSize() const { return sizeof(CustomVariantValue); }
 

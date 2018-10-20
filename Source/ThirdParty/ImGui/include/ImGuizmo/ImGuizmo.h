@@ -170,4 +170,4 @@ namespace ImGuizmo
 	};
 
 	IMGUI_API void Manipulate(const float *view, const float *projection, OPERATION operation, MODE mode, float *matrix, float *deltaMatrix = 0, float *snap = 0, float *localBounds = NULL, float *boundsSnap = NULL);
-};
+} // end of ImGuizmo namespace

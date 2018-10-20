@@ -139,8 +139,9 @@ private:
 };
 inline unsigned int qHash(const StringHash &key, unsigned int seed)
 {
-    return key.ToHash()^seed;
+    return key.ToHash() ^ seed;
 }
+
 
 }
 

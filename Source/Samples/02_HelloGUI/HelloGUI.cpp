@@ -184,9 +184,9 @@ void HelloGUI::HandleDragBegin(UIElement *,int,int,int elemX,int elemY,int,int)
     dragBeginPosition_ = IntVector2(elemX, elemY);
 }
 
-void HelloGUI::HandleDragMove(UIElement *draggedElement,int X,int Y,IntVector2 dlta,int elemX,int elemY,int,int)
+void HelloGUI::HandleDragMove(UIElement *draggedElement,int X,int Y,IntVector2 dlta,int /*elemX*/,int /*elemY*/,int,int)
 {
-    IntVector2 dragCurrentPosition = IntVector2(X, Y);
+    IntVector2 dragCurrentPosition = IntVector2(X+dlta.x_, Y+dlta.y_);
     draggedElement->SetPosition(dragCurrentPosition - dragBeginPosition_);
 }
 

@@ -848,35 +848,36 @@ void SceneTab::OnComponentAdded(Scene *,Node *node,Component *component)
         return;
 
     auto* material = GetCache()->GetResource<Material>("Materials/Editor/DebugIcon" + component->GetTypeName() + ".xml", false);
-    if (material != nullptr)
+    if (material == nullptr) {
+        UpdateCameraPreview();
+        return;
+    }
+    if (node->GetChildrenWithTag("DebugIcon" + component->GetTypeName()).size() > 0)
+        return;
+
+    auto iconTag = "DebugIcon" + component->GetTypeName();
+    if (node->GetChildrenWithTag(iconTag).empty())
     {
-        if (node->GetChildrenWithTag("DebugIcon" + component->GetTypeName()).size() > 0)
-            return;
+        Undo::SetTrackingScoped tracking(undo_, false);
+        int count = node->GetChildrenWithTag("DebugIcon").size();
+        node = node->CreateChild();
+        node->AddTag("DebugIcon");
+        node->AddTag("DebugIcon" + component->GetTypeName());
+        node->AddTag("__EDITOR_OBJECT__");
+        node->SetTemporary(true);
 
-        auto iconTag = "DebugIcon" + component->GetTypeName();
-        if (node->GetChildrenWithTag(iconTag).empty())
+        auto* billboard = node->CreateComponent<BillboardSet>();
+        billboard->SetFaceCameraMode(FaceCameraMode::FC_LOOKAT_XYZ);
+        billboard->SetNumBillboards(1);
+        billboard->SetMaterial(material);
+        billboard->SetViewMask(EDITOR_VIEW_LAYER);
+        if (auto* bb = billboard->GetBillboard(0))
         {
-            Undo::SetTrackingScoped tracking(undo_, false);
-            int count = node->GetChildrenWithTag("DebugIcon").size();
-            node = node->CreateChild();
-            node->AddTag("DebugIcon");
-            node->AddTag("DebugIcon" + component->GetTypeName());
-            node->AddTag("__EDITOR_OBJECT__");
-            node->SetTemporary(true);
-
-            auto* billboard = node->CreateComponent<BillboardSet>();
-            billboard->SetFaceCameraMode(FaceCameraMode::FC_LOOKAT_XYZ);
-            billboard->SetNumBillboards(1);
-            billboard->SetMaterial(material);
-            billboard->SetViewMask(EDITOR_VIEW_LAYER);
-            if (auto* bb = billboard->GetBillboard(0))
-            {
-                bb->size_ = Vector2::ONE * 0.2f;
-                bb->enabled_ = true;
-                bb->position_ = {0, count * 0.4f, 0};
-            }
-            billboard->Commit();
+            bb->size_ = Vector2::ONE * 0.2f;
+            bb->enabled_ = true;
+            bb->position_ = {0, count * 0.4f, 0};
         }
+        billboard->Commit();
     }
 
     UpdateCameraPreview();

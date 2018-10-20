@@ -852,7 +852,7 @@ namespace ImGuizmo
          case SCALE:
             colors[0] = (type == SCALE_XYZ) ? selectionColor : 0xFFFFFFFF;
             for (int i = 0; i < 3; i++)
-               colors[i + 1] = (type == (int)(SCALE_X + i)) ? selectionColor : directionColor[i];
+               colors[i + 1] = (type == (SCALE_X + i)) ? selectionColor : directionColor[i];
             break;
          case BOUNDS:
             break;
@@ -1980,5 +1980,5 @@ namespace ImGuizmo
          gContext.mDrawList->AddLine(worldToPos(makeVect(-gridSize, 0.f, f), res), worldToPos(makeVect(gridSize, 0.f, f), res), 0xFF808080);
       }
    }
-};
+}
 

@@ -148,13 +148,17 @@ public:
     std::unique_ptr<ResourceCache> m_ResourceCache;
     std::unique_ptr<Graphics>      m_Graphics;
     std::unique_ptr<Renderer>      m_Renderer;
+#ifdef LUTEFISK3D_NETWORK
     std::unique_ptr<Network>       m_Network;
+#endif
     std::unique_ptr<Time>          m_TimeSystem;
     std::unique_ptr<Profiler>      m_ProfilerSystem;
     std::unique_ptr<WorkQueue>     m_WorkQueueSystem;
     std::unique_ptr<UI>            m_UISystem;
     std::unique_ptr<Audio>         m_AudioSystem;
+#ifdef LUTEFISK3D_SYSTEMUI
     std::unique_ptr<SystemUI>      m_SystemUI;
+#endif
 private:
 
     void AddEventReceiver(Object* receiver, StringHash eventType);

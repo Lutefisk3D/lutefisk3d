@@ -1487,13 +1487,15 @@ void UI::ProcessMove(const IntVector2& windowCursorPos, const IntVector2& cursor
                 beginSendPos.y_ = dragData->dragBeginSumPos.y_ / dragData->numDragButtons;
 
                 IntVector2 offset = cursorPos - beginSendPos;
-                if (Abs(offset.x_) >= dragBeginDistance_ || Abs(offset.y_) >= dragBeginDistance_)
+                if (std::abs(offset.x_) >= dragBeginDistance_ || std::abs(offset.y_) >= dragBeginDistance_)
                 {
                     dragData->dragBeginPending = false;
                     dragConfirmedCount_ ++;
-                    dragElement->OnDragBegin(dragElement->ScreenToElement(beginSendPos), beginSendPos, buttons, qualifiers, cursor);
-                    dragElement->dragBegin(dragElement, beginSendPos.x_, beginSendPos.y_,
-                                           0, 0,
+                    IntVector2 relativePos = dragElement->ScreenToElement(sendPos);
+                    dragElement->OnDragBegin(relativePos, beginSendPos, buttons, qualifiers, cursor);
+                    dragElement->dragBegin(dragElement, 
+                                           beginSendPos.x_, beginSendPos.y_,
+                                           relativePos.x_, relativePos.y_,
                                            dragData->dragButtons, dragData->numDragButtons);
 
                 }
@@ -1501,9 +1503,10 @@ void UI::ProcessMove(const IntVector2& windowCursorPos, const IntVector2& cursor
 
             if (!dragData->dragBeginPending)
             {
-                dragElement->OnDragMove(dragElement->ScreenToElement(sendPos), sendPos, cursorDeltaPos, buttons, qualifiers, cursor);
-                dragElement->dragMove(dragElement, sendPos.x_, sendPos.y_, cursorDeltaPos, 0, 0, dragData->dragButtons,
-                                      dragData->numDragButtons);
+                IntVector2 relativePos = dragElement->ScreenToElement(sendPos);
+                dragElement->OnDragMove(relativePos, sendPos, cursorDeltaPos, buttons, qualifiers, cursor);
+                dragElement->dragMove(dragElement, sendPos.x_, sendPos.y_, cursorDeltaPos, relativePos.x_, relativePos.y_,
+                                      dragData->dragButtons, dragData->numDragButtons);
             }
         }
         else

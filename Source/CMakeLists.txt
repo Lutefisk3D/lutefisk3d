@@ -16,11 +16,11 @@ if(LUTEFISK3D_SSE AND MINGW)
 endif()
 if(LUTEFISK3D_SSE)
     IF(MSVC)
-        set(LF_CMAKE_C_FLAGS "${LF_CMAKE_C_FLAGS} /arch:SSE2")
-        set(LF_CMAKE_CXX_FLAGS "${LF_CMAKE_CXX_FLAGS} /arch:SSE2")
+        list(APPEND LF_CMAKE_C_FLAGS /arch:SSE2)
+        list(APPEND LF_CMAKE_CXX_FLAGS /arch:SSE2)
     ELSE()
-        set(LF_CMAKE_C_FLAGS "${LF_CMAKE_C_FLAGS} -msse2")
-        set(LF_CMAKE_CXX_FLAGS "${LF_CMAKE_CXX_FLAGS} -msse2")
+        list(APPEND LF_CMAKE_C_FLAGS -msse2)
+        list(APPEND LF_CMAKE_CXX_FLAGS -msse2)
     ENDIF()
 endif()
 if (NOT CMAKE_CROSS_COMPILING AND LUTEFISK3D_TOOLS)
@@ -31,9 +31,9 @@ if (NOT CMAKE_CROSS_COMPILING AND LUTEFISK3D_TOOLS)
 endif ()
 
 add_subdirectory(Lutefisk3D)
-target_include_directories(Lutefisk3D INTERFACE 
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>  
-    $<INSTALL_INTERFACE:include> 
+target_include_directories(Lutefisk3D INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
 )
 if(LUTEFISK3D_SAMPLES)
     add_subdirectory(Samples)

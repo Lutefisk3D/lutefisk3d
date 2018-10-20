@@ -293,7 +293,7 @@ void ConvexData::BuildHull(const std::vector<Vector3>& vertices)
         indexData_.reset(new unsigned[indexCount_]);
 
         // Copy vertex data & index data
-        memcpy(vertexData_.get(), result.mOutputVertices, vertexCount_ * sizeof(Vector3));
+        memcpy((float *)vertexData_.get(), result.mOutputVertices, vertexCount_ * sizeof(Vector3));
         memcpy(indexData_.get(), result.mIndices, indexCount_ * sizeof(unsigned));
 
         lib.ReleaseResult(result);

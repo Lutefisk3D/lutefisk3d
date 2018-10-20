@@ -24,7 +24,7 @@ quat_add_quat(ik_real* IK_RESTRICT q1, const ik_real* IK_RESTRICT q2)
 ik_real
 quat_mag(const ik_real* IK_RESTRICT q)
 {
-    return sqrt(q[3]*q[3] + q[2]*q[2] + q[1]*q[1] + q[0]*q[0]);
+    return sqrtf(q[3]*q[3] + q[2]*q[2] + q[1]*q[1] + q[0]*q[0]);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -53,7 +53,7 @@ quat_normalise(ik_real* IK_RESTRICT q)
 {
     ik_real mag = quat_mag(q);
     if (mag != 0.0)
-        mag = 1.0 / mag;
+        mag = ((ik_real)1) / mag;
     q[0] *= mag;
     q[1] *= mag;
     q[2] *= mag;
@@ -101,7 +101,7 @@ quat_div_scalar(ik_real* IK_RESTRICT q, ik_real scalar)
         quat_set_identity(q);
     else
     {
-        ik_real rec = 1.0 / scalar;
+        ik_real rec = ((ik_real)1) / scalar;
         q[0] *= rec;
         q[1] *= rec;
         q[2] *= rec;

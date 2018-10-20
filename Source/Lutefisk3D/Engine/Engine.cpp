@@ -377,10 +377,10 @@ bool Engine::InitializeResourceCache(const VariantMap &parameters, bool removeOl
     {
         const QStringList &resourceDirs(cache->GetResourceDirs());
         const std::vector<SharedPtr<PackageFile> > &packageFiles(cache->GetPackageFiles());
-        for (unsigned i = 0; i < resourceDirs.size(); ++i)
+        for (int i = 0; i < resourceDirs.size(); ++i)
             cache->RemoveResourceDir(resourceDirs[i]);
-        for (unsigned i = 0; i < packageFiles.size(); ++i)
-            cache->RemovePackageFile(packageFiles[i]);
+        for (const auto &packageFile : packageFiles)
+            cache->RemovePackageFile(packageFile);
     }
 
     // Add resource paths

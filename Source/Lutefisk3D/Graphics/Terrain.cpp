@@ -631,8 +631,8 @@ Vector3 Terrain::HeightMapToWorld(const IntVector2& pixelPosition) const
         return Vector3::ZERO;
 
     IntVector2 pos(pixelPosition.x_, numVertices_.y_ - 1 - pixelPosition.y_);
-    float xPos = (float)(pos.x_ * spacing_.x_ + patchWorldOrigin_.x_);
-    float zPos = (float)(pos.y_ * spacing_.z_ + patchWorldOrigin_.y_);
+    float xPos = pos.x_ * spacing_.x_ + patchWorldOrigin_.x_;
+    float zPos = pos.y_ * spacing_.z_ + patchWorldOrigin_.y_;
     Vector3 lPos(xPos, 0.0f, zPos);
     Vector3 wPos = node_->GetWorldTransform() * lPos;
     wPos.y_ = GetHeight(wPos);

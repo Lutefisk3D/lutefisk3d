@@ -776,4 +776,4 @@ unsigned Model::GetMorphRangeCount(unsigned bufferIndex) const
     return bufferIndex < vertexBuffers_.size() ? morphRangeCounts_[bufferIndex] : 0;
 }
 
-}
+} // end of Urho3D namespace

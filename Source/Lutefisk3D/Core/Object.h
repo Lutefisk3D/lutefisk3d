@@ -231,7 +231,8 @@ protected:
 };
 
 /// Template implementation of the object factory.
-template <class T> class ObjectFactoryImpl : public ObjectFactory
+template <class T> 
+class ObjectFactoryImpl : public ObjectFactory
 {
 public:
     /// Construct.
@@ -251,7 +252,7 @@ public:
     {
         auto* newObject = static_cast<T*>(AllocatorReserve(allocator_));
         new(newObject) T(context_);
-        newObject->SetDeleter([this, newObject](RefCounted* refCounted) {
+        newObject->SetDeleter([this, newObject](RefCounted* /*refCounted*/) {
             newObject->~T();
             AllocatorFree(allocator_, newObject);
         });
@@ -274,7 +275,6 @@ public:
     {
     }
 
-    /// Destruct.
     virtual ~EventHandler() = default;
 
     /// Set sender and event type.
@@ -297,14 +297,10 @@ public:
     void* GetUserData() const { return userData_; }
 
 protected:
-    /// Event receiver.
-    Object* receiver_;
-    /// Event sender.
-    Object* sender_;
-    /// Event type.
-    StringHash eventType_;
-    /// Userdata.
-    void* userData_;
+    Object* receiver_;      //!< Event receiver.
+    Object* sender_;        //!< Event sender.
+    StringHash eventType_;  //!< Event type.
+    void* userData_;        //!< Event user data.
 };
 
 /// Template implementation of the event handler invoke helper (stores a function pointer of specific class.)
@@ -323,7 +319,7 @@ public:
     }
 
     /// Invoke event handler function.
-    virtual void Invoke(VariantMap& eventData) override
+    void Invoke(VariantMap& eventData) override
     {
         T* receiver = static_cast<T*>(receiver_);
         (receiver->*function_)(eventType_, eventData);

@@ -88,7 +88,7 @@ int Application::Run()
     }
     catch (std::bad_alloc& e)
     {
-        ErrorDialog(m_appName, "An out-of-memory error occurred. The application will now exit.");
+        ErrorDialog(m_appName, QString("An out-of-memory error occurred \"%1\".\n The application will now exit").arg(e.what()));
         return EXIT_FAILURE;
     }
 }

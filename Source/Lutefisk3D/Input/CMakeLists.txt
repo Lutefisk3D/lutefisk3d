@@ -1,6 +1,7 @@
 set(INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/Controls.h
     ${CMAKE_CURRENT_SOURCE_DIR}/InputEvents.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/InputConstants.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Input.h
 )
 set(SOURCE

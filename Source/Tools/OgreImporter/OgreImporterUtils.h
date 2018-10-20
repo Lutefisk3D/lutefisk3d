@@ -178,7 +178,7 @@ struct ModelMorph
     QString name_;
     std::vector<ModelMorphBuffer> buffers_;
 
-    void WriteData(Serializer& dest)
+    void WriteData(Serializer& dest) const
     {
         dest.WriteString(name_);
         dest.WriteUInt(buffers_.size());

@@ -1123,7 +1123,7 @@ void BuildAndSaveModel(OutModel& model)
         if (model.bones_.size())
             GetBlendData(model, mesh, model.meshNodes_[i], boneMappings, blendIndices, blendWeights);
 
-        auto* dest = (float*)((unsigned char*)vertexData + startVertexOffset * vb->GetVertexSize());
+        auto* dest = (float*)(vertexData + startVertexOffset * vb->GetVertexSize());
         for (unsigned j = 0; j < mesh->mNumVertices; ++j)
             WriteVertex(dest, mesh, j, isSkinned, box, vertexTransform, normalTransform, blendIndices, blendWeights);
 

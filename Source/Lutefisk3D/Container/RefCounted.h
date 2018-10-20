@@ -30,7 +30,6 @@ namespace Urho3D
 /// Reference count structure.
 struct RefCount
 {
-    /// Destruct.
     ~RefCount()
     {
         // Set reference counts below zero to fire asserts if this object is still accessed
@@ -46,9 +45,13 @@ class LUTEFISK3D_EXPORT RefCounted
 {
 public:
     /// Construct. Allocate the reference count structure and set an initial self weak reference.
-    RefCounted();
+     RefCounted();
     /// Destruct. Mark as expired and also delete the reference count structure if no outside weak references exist.
     virtual ~RefCounted();
+    /// Prevent copy construction.
+    RefCounted(const RefCounted& rhs) = delete;
+    /// Prevent assignment.
+    RefCounted& operator = (const RefCounted& rhs) = delete;
 
     /// Increment reference count. Can also be called outside of a SharedPtr for traditional reference counting.
     void AddRef();
@@ -70,11 +73,6 @@ public:
     /// Returns custom deleter of this object.
     std::function<void(RefCounted*)> GetDeleter() const { return deleter_; }
 private:
-    /// Prevent copy construction.
-    RefCounted(const RefCounted& rhs);
-    /// Prevent assignment.
-    RefCounted& operator = (const RefCounted& rhs);
-
     /// Pointer to the reference count structure.
     RefCount* refCount_;
     /// Custom deleter which will be deallocating native object.

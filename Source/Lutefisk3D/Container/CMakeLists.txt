@@ -20,5 +20,5 @@ set(SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/Str.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sherwood_map.cpp
 )
-install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Math )
+install(FILES ${INCLUDES} DESTINATION include/Lutefisk3D/Container )
 target_sources(Lutefisk3D PRIVATE ${SOURCE} ${INCLUDES})

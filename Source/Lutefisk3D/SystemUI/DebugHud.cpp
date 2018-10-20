@@ -180,7 +180,7 @@ Vector2 DebugHud::WithinExtents(Vector2 pos)
         pos.y_ = extents_.top_;
 
     return pos;
-};
+}
 
 void DebugHud::RenderUi(float ts)
 {

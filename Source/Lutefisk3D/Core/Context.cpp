@@ -38,37 +38,32 @@
 #include "Lutefisk3D/Graphics/Renderer.h"
 #include "Lutefisk3D/Audio/Audio.h"
 #include "Lutefisk3D/Core/WorkQueue.h"
-#include "Lutefisk3D/Network/Network.h"
+#ifdef LUTEFISK3D_PROFILING
+#include "Lutefisk3D/Core//Profiler.h"
+#endif
+
+#ifdef LUTEFISK3D_TASKS
+#include "Lutefisk3D/Core/Tasks.h"
+#endif
 #ifdef LUTEFISK3D_UI
 #include "Lutefisk3D/UI/UI.h"
 #endif
-#if LUTEFISK3D_SYSTEMUI
+#ifdef LUTEFISK3D_SYSTEMUI
 #include "Lutefisk3D/SystemUI/SystemUI.h"
+#endif
+#ifdef LUTEFISK3D_NETWORK
+#include "Lutefisk3D/Network/Network.h"
 #endif
 #ifndef MINI_URHO
 
-#include <GLFW/glfw3.h>
 #ifdef LUTEFISK3D_IK
 #include <ik/log.h>
 #include <ik/memory.h>
 #endif
 #endif
-namespace std
-{
-template class std::unique_ptr<Urho3D::Log>;
-template class std::unique_ptr<Urho3D::FileSystem>;
-template class std::unique_ptr<Urho3D::Input>;
-template class std::unique_ptr<Urho3D::ResourceCache>;
-template class std::unique_ptr<Urho3D::Graphics>;
-template class std::unique_ptr<Urho3D::Renderer>;
-template class std::unique_ptr<Urho3D::Time>;
-template class std::unique_ptr<Urho3D::Profiler>;
-template class std::unique_ptr<Urho3D::WorkQueue>;
-template class std::unique_ptr<Urho3D::UI>;
-}
 namespace Urho3D
 {
-template class SharedPtr<AttributeAccessor>;
+
 /*!
   \class Context
   \brief Urho3D execution context. Provides access to subsystems, object factories and attributes, and event receivers.
@@ -225,6 +220,15 @@ public:
     //!Network replication attribute descriptions per object type.v
     HashMap<StringHash, std::vector<AttributeInfo> > networkAttributes_;
     VariantMap globalVars_;
+    void removeObjectCategoryType(const char *cat_name, StringHash type)
+    {
+        auto &cat = objectCategories_[cat_name];
+        const auto iter = std::find(std::begin(cat), std::end(cat), type);
+        if(iter!=cat.end())
+        {
+            cat.erase(iter);
+        }
+    }
 };
 
 const QString &Context::GetObjectCategory(StringHash objType) const
@@ -344,14 +348,24 @@ Context::~Context()
 
 }
 
+void Context::RemoveFactory(StringHash type)
+{
+    d->factories_.erase(type);
+}
+void Context::RemoveFactory(StringHash type, const char* category)
+{
+    RemoveFactory(type);
+    if (category && strlen(category))
+        d->removeObjectCategoryType(category,type);
+}
 /// Create an object by type hash. Return pointer to it or null if no factory found.
 SharedPtr<Object> Context::CreateObject(StringHash objectType)
 {
     HashMap<StringHash, SharedPtr<ObjectFactory> >::const_iterator i = d->factories_.find(objectType);
     if (i != d->factories_.end())
         return MAP_VALUE(i)->CreateObject();
-    else
-        return SharedPtr<Object>();
+
+    return SharedPtr<Object>();
 }
 /// Register a factory for an object type and specify the object category.
 void Context::RegisterFactory(ObjectFactory* factory, const char* category)
@@ -363,22 +377,6 @@ void Context::RegisterFactory(ObjectFactory* factory, const char* category)
 
     if (category && category[0]!=0)
         d->objectCategories_[category].push_back(factory->GetType());
-}
-void Context::RemoveFactory(StringHash type)
-{
-    d->factories_.erase(type);
-}
-
-void Context::RemoveFactory(StringHash type, const char* category)
-{
-    RemoveFactory(type);
-    if (strlen(category))
-    {
-        auto &caterory_entries(d->objectCategories_[category]);
-        auto iter = std::find(caterory_entries.begin(), caterory_entries.end(),type);
-        if(iter!= caterory_entries.end())
-            caterory_entries.erase(iter);
-    }
 }
 /// Register a subsystem.
 void Context::RegisterSubsystem(Object* object)
@@ -512,15 +510,16 @@ Object* Context::GetSubsystem(StringHash type) const
     HashMap<StringHash, SharedPtr<Object> >::const_iterator i = d->subsystems_.find(type);
     if (i != d->subsystems_.end())
         return MAP_VALUE(i);
-    else
-        return nullptr;
+    return nullptr;
 }
 
-const HashMap<StringHash, SharedPtr<ObjectFactory> > &Context::GetObjectFactories() const {
+const HashMap<StringHash, SharedPtr<ObjectFactory>>& Context::GetObjectFactories() const 
+{
     return d->factories_;
 }
 
-const HashMap<QString, std::vector<StringHash> > &Context::GetObjectCategories() const {
+const HashMap<QString, std::vector<StringHash> >& Context::GetObjectCategories() const
+{
     return d->objectCategories_;
 }
 const Variant& Context::GetGlobalVar(StringHash key) const
@@ -650,4 +649,4 @@ void Context::EndSendEvent()
 {
     eventSenders_.pop_back();
 }
-}
+} // end of Urho3D namespace

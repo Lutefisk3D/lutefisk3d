@@ -431,7 +431,7 @@ View::View(Context *context)
 
 View::~View() = default;
 
-    bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
+bool View::Define(RenderSurface* renderTarget, Viewport* viewport)
 {
     sourceView_ = nullptr;
     renderPath_ = viewport->GetRenderPath();
@@ -1136,7 +1136,7 @@ void View::GetLightBatches(Technique *default_tech)
             {
                 lightQueue.shadowMap_ = renderer_->GetShadowMap(light, cullCamera_, viewSize_.x_, viewSize_.y_);
                 // If did not manage to get a shadow map, convert the light to unshadowed
-                    if (!lightQueue.shadowMap_)
+                if (!lightQueue.shadowMap_)
                     shadowSplits = 0;
             }
 
@@ -1211,9 +1211,9 @@ void View::GetLightBatches(Technique *default_tech)
                     d->maxLightsDrawables_.insert(drawable);
             }
 
-                // In deferred modes, store the light volume batch now. Since light mask 8 lowest bits are output to the stencil,
-                // lights that have all zeroes in the low 8 bits can be skipped; they would not affect geometry anyway
-                if (deferred_ && (light->GetLightMask() & 0xffu) != 0)
+            // In deferred modes, store the light volume batch now. Since light mask 8 lowest bits are output to the stencil,
+            // lights that have all zeroes in the low 8 bits can be skipped; they would not affect geometry anyway
+            if (deferred_ && (light->GetLightMask() & 0xffu) != 0)
             {
                 Batch volumeBatch;
                 volumeBatch.geometry_ = renderer_->GetLightGeometry(light);
@@ -1459,8 +1459,8 @@ void View::GetLitBatches(Drawable* drawable, Zone *zone,LightBatchQueue& lightQu
         {
             ++i;
             Technique* tech = srcBatch.material_ ? GetTechnique(drawable, *srcBatch.material_) : default_tech;
-        if (!srcBatch.geometry_ || !srcBatch.numWorldTransforms_ || !tech)
-            continue;
+            if (!srcBatch.geometry_ || !srcBatch.numWorldTransforms_ || !tech)
+                continue;
 
             // Do not create pixel lit forward passes for materials that render into the G-buffer
             if (hasG_BUFFER_PASS && tech->HasPass(gBufferPassIndex_))
@@ -1526,6 +1526,9 @@ void View::GetLitBatches(Drawable* drawable, Zone *zone,LightBatchQueue& lightQu
                     continue; // no alpha queue, skip it then.
                 dest_pass = tech->GetSupportedPass(litAlphaPassIndex_);
                 queueIndex = 2;
+                // Skip if material does not receive light at all
+                if (!dest_pass)
+                    continue;
             }
             AddBatchToQueue(*availableQueues[queueIndex],
                             Batch(srcBatch,zone,&lightQueue,dest_pass), tech,
@@ -1781,9 +1784,9 @@ void View::ExecuteRenderPathCommands()
             }
                 break;
             case CMD_SENDEVENT:
-                {
-                    g_graphicsSignals.renderPathEvent(command.eventName_);
-                }
+            {
+                g_graphicsSignals.renderPathEvent(command.eventName_);
+            }
                 break;
             default:
                 break;
@@ -1816,7 +1819,7 @@ void View::SetRenderTargets(RenderPathCommand& command)
 
             // Check for depth only rendering (by specifying a depth texture as the sole output)
             if ( 0==index && command.outputs_.size() == 1 && texture && (texture->GetFormat() == Graphics::GetReadableDepthFormat() ||
-                                                                      texture->GetFormat() == Graphics::GetDepthStencilFormat()))
+                                                                         texture->GetFormat() == Graphics::GetDepthStencilFormat()))
             {
                 useColorWrite = false;
                 useCustomDepth = true;
@@ -2102,11 +2105,11 @@ void View::AllocateScreenBuffers()
     int multiSample = renderTarget_ ? renderTarget_->GetMultiSample() : graphics_->GetMultiSample();
     bool autoResolve = renderTarget_ ? renderTarget_->GetAutoResolve() : true;
     substituteRenderTarget_ = needSubstitute ? GetRenderSurfaceFromTexture(renderer_->GetScreenBuffer(viewSize_.x_, viewSize_.y_,
-        format, multiSample, autoResolve, false, true, sRGB)) : nullptr;
+                                                                                                      format, multiSample, autoResolve, false, true, sRGB)) : nullptr;
     for (unsigned i = 0; i < MAX_VIEWPORT_TEXTURES; ++i)
     {
         viewportTextures_[i] = i < numViewportTextures ? renderer_->GetScreenBuffer(viewSize_.x_, viewSize_.y_, format, multiSample,
-            autoResolve, false, true, sRGB) : nullptr;
+                                                                                    autoResolve, false, true, sRGB) : nullptr;
     }
     // If using a substitute render target and pingponging, the substitute can act as the second viewport texture
     if (numViewportTextures == 1 && substituteRenderTarget_)
@@ -2137,8 +2140,8 @@ void View::AllocateScreenBuffers()
 
         // If the rendertarget is persistent, key it with a hash derived from the RT name and the view's pointer
         d->renderTargets_[rtInfo.name_] = renderer_->GetScreenBuffer(
-            intWidth, intHeight, rtInfo.format_, rtInfo.multiSample_, rtInfo.autoResolve_, rtInfo.cubemap_,
-            rtInfo.filtered_, rtInfo.sRGB_, rtInfo.persistent_ ? StringHash(rtInfo.name_).Value() + ptrHash(this) : 0);
+                    intWidth, intHeight, rtInfo.format_, rtInfo.multiSample_, rtInfo.autoResolve_, rtInfo.cubemap_,
+                    rtInfo.filtered_, rtInfo.sRGB_, rtInfo.persistent_ ? StringHash(rtInfo.name_).Value() + ptrHash(this) : 0);
     }
 }
 
@@ -2668,7 +2671,7 @@ void View::SetupDirLightShadowCamera(Camera* shadowCamera, Light* light, float n
         for (Drawable* drawable : geometries_)
         {
             if (drawable->GetMinZ() <= farSplit && drawable->GetMaxZ() >= nearSplit &&
-                ((GetLightMask(drawable) & lightMask) != 0u))
+                    ((GetLightMask(drawable) & lightMask) != 0u))
                 litGeometriesBox.Merge(drawable->GetWorldBoundingBox());
         }
         if (litGeometriesBox.Defined())
@@ -2693,7 +2696,7 @@ void View::SetupDirLightShadowCamera(Camera* shadowCamera, Light* light, float n
 
     shadowCamera->setProjectionType(PT_ORTHOGRAPHIC);
     shadowCamera->SetAspectRatio(1.0f);
-    shadowCamera->setNearClipDistance(0.0f);
+    shadowCamera->setNearClipDistance(M_MIN_NEARCLIP);
     shadowCamera->setFarClipDistance(shadowBox.max_.z_);
 
     // Center shadow camera on the bounding box. Can not snap to texels yet as the shadow map viewport is unknown
@@ -2812,7 +2815,7 @@ void View::FindZone(Drawable* drawable)
     Zone* lastZone = drawable->GetZone();
 
     if (lastZone && (lastZone->GetViewMask() & cullCamera_->GetViewMask()) && lastZone->GetPriority() >= highestZonePriority_ &&
-        (drawable->GetZoneMask() & lastZone->GetZoneMask()) && lastZone->IsInside(center))
+            (drawable->GetZoneMask() & lastZone->GetZoneMask()) && lastZone->IsInside(center))
         newZone = lastZone;
     else
     {
@@ -3068,7 +3071,7 @@ bool View::NeedRenderShadowMap(const LightBatchQueue& queue)
 {
     // Must have a shadow map, and either forward or deferred lit batches
     return queue.shadowMap_ && (!queue.litBatches_.IsEmpty() || !queue.litBaseBatches_.IsEmpty() ||
-        !queue.volumeBatches_.empty());
+                                !queue.volumeBatches_.empty());
 }
 void View::RenderShadowMap(const LightBatchQueue& queue)
 {
@@ -3102,7 +3105,7 @@ void View::RenderShadowMap(const LightBatchQueue& queue)
         for (unsigned i = 1; i < MAX_RENDERTARGETS; ++i)
             graphics_->SetRenderTarget(i, (RenderSurface*) nullptr);
         graphics_->SetDepthStencil(renderer_->GetDepthStencil(shadowMap->GetWidth(), shadowMap->GetHeight(),
-            shadowMap->GetMultiSample(), shadowMap->GetAutoResolve()));
+                                                              shadowMap->GetMultiSample(), shadowMap->GetAutoResolve()));
         graphics_->SetViewport(IntRect(0, 0, shadowMap->GetWidth(), shadowMap->GetHeight()));
         graphics_->Clear(CLEAR_DEPTH | CLEAR_COLOR, Color::WHITE);
 
@@ -3154,7 +3157,7 @@ RenderSurface* View::GetDepthStencil(RenderSurface* renderTarget)
     // Finally get one from Renderer
     if (!depthStencil)
         depthStencil = renderer_->GetDepthStencil(renderTarget->GetWidth(), renderTarget->GetHeight(),
-            renderTarget->GetMultiSample(), renderTarget->GetAutoResolve());
+                                                  renderTarget->GetMultiSample(), renderTarget->GetAutoResolve());
     return depthStencil;
 }
 
@@ -3175,7 +3178,7 @@ void View::SendViewEvent(jl::Signal<View *, Texture *, RenderSurface *, Scene *,
 {
     //    renderer_->SendEvent(eventType, eventData);
     eventType(this, (renderTarget_ != nullptr ? renderTarget_->GetParentTexture() : nullptr),renderTarget_,
-                   scene_, cullCamera_);
+              scene_, cullCamera_);
 }
 Texture *View::FindNamedTexture(const QString &name, bool isRenderTarget, bool isVolumeMap)
 {

@@ -35,7 +35,7 @@ if(NOT LUTEFISK3D_HEADLESS)
     add_subdirectory(Graphics)
     if(LUTEFISK3D_UI)
         add_subdirectory(UI)
-        add_subdirectory(QUI)
+#       add_subdirectory(QUI)
     endif()
 else()
     set(LUTEFISK3D_2D FALSE)
@@ -91,7 +91,7 @@ endif()
 set_target_properties(Lutefisk3D PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 set_target_properties(Lutefisk3D PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "Core/Lutefisk3D.h")
 # Propagage all enabled warning to all users of Lutefisk3D
-target_compile_options(Lutefisk3D PUBLIC "${LF_CMAKE_CXX_FLAGS}")
+target_compile_options(Lutefisk3D PUBLIC ${LF_CMAKE_CXX_FLAGS})
 target_link_libraries(Lutefisk3D PRIVATE
     Threads::Threads
     ${CMAKE_DL_LIBS}
@@ -197,8 +197,8 @@ endforeach()
 #else ()
 #    target_compile_definitions (Lutefisk3D PUBLIC -DLUTEFISK3D_STATIC)
 #endif ()
-#cotire(Lutefisk3D)
-#target_compile_definitions(Lutefisk3D PRIVATE -DLUTEFISK_PRECOMPILED_HEADERS)
+target_compile_definitions(Lutefisk3D PRIVATE -DLUTEFISK_PRECOMPILED_HEADERS)
+cotire(Lutefisk3D)
 
 #######################################################################################################################
 #									install																			  #
@@ -213,6 +213,8 @@ install(TARGETS Lutefisk3D EXPORT lutefis3d-targets
 
 install(EXPORT lutefis3d-targets DESTINATION lib/Lutefisk3D)
 install(FILES ${MinimalHeaders} DESTINATION include/Lutefisk3D )
+# the bin directory might not exist if all 3rd party builds are static?
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/ThirdParty_Builds/bin/)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/ThirdParty_Builds/bin/ DESTINATION bin)
 
 get_target_property(TARGET_SOURCES Lutefisk3D SOURCES)

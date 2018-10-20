@@ -474,7 +474,7 @@ template <class T, class U> WeakPtr<T> DynamicCast(const WeakPtr<U>& ptr)
 template<class T>
 inline unsigned int qHash(const Urho3D::WeakPtr<T> & key, unsigned int seed)
 {
-    return key.ToHash();
+    return key.ToHash() ^ seed;
 }
 
 }

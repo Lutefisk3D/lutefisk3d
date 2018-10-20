@@ -61,7 +61,7 @@ public:
         rhs.vertexCount_ = 0;
         rhs.vertexSize_ = 0;
         rhs.elementHash_ = 0;
-        rhs.elementMask_ = 0;
+        rhs.elementMask_ = MASK_NONE;
         rhs.lockState_ = LOCK_NONE;
         rhs.lockStart_ = 0;
         rhs.lockCount_ = 0;
@@ -89,7 +89,7 @@ public:
             rhs.vertexCount_ = 0;
             rhs.vertexSize_ = 0;
             rhs.elementHash_ = 0;
-            rhs.elementMask_ = 0;
+            rhs.elementMask_ = MASK_NONE;
             rhs.lockState_ = LOCK_NONE;
             rhs.lockStart_ = 0;
             rhs.lockCount_ = 0;
@@ -102,16 +102,16 @@ public:
     }
 
     /// Construct. Optionally force headless (no GPU-side buffer) operation.
-    VertexBuffer(Context* context, bool forceHeadless = false);
+    explicit VertexBuffer(Context* context, bool forceHeadless = false);
     /// Destruct.
-    virtual ~VertexBuffer();
+    ~VertexBuffer() override;
 
     /// Mark the buffer destroyed on graphics context destruction. May be a no-op depending on the API.
-    virtual void OnDeviceLost() override;
+    void OnDeviceLost() override;
     /// Recreate the buffer and restore data if applicable. May be a no-op depending on the API.
-    virtual void OnDeviceReset() override;
+    void OnDeviceReset() override;
     /// Release buffer.
-    virtual void Release() override;
+    void Release() override;
 
     /// Enable shadowing in CPU memory. Shadowing is forced on if the graphics subsystem does not exist.
     void SetShadowed(bool enable);
@@ -168,9 +168,9 @@ public:
     }
 
     /// Return legacy vertex element mask. Note that both semantic and type must match the legacy element for a mask bit to be set.
-    unsigned GetElementMask() const { return elementMask_; }
+    VertexMaskFlags GetElementMask() const { return elementMask_; }
     /// Return CPU memory shadow data.
-    unsigned char* GetShadowData() const { return shadowData_.Get(); }
+    unsigned char* GetShadowData() const { return shadowData_.get(); }
     /// Return shared array pointer to the CPU memory shadow data.
     SharedArrayPtr<unsigned char> GetShadowDataShared() const { return shadowData_; }
 
@@ -219,7 +219,7 @@ private:
     /// Vertex element hash.
     uint64_t elementHash_;
     /// Vertex element legacy bitmask.
-    unsigned elementMask_;
+    VertexMaskFlags elementMask_;
     /// Buffer locking state.
     LockState lockState_;
     /// Lock start vertex.

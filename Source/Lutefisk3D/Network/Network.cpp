@@ -27,7 +27,6 @@
 #include "../Core/StringUtils.h"
 #include "../Engine/EngineEvents.h"
 #include "../IO/FileSystem.h"
-#include "HttpRequest.h"
 #include "../Input/InputEvents.h"
 #include "../IO/IOEvents.h"
 #include "../IO/Log.h"
@@ -57,41 +56,40 @@ Network::Network(Context* context) :
 
     // Register Network library object factories
     RegisterNetworkLibrary(context_);
-
-    SubscribeToEvent(E_BEGINFRAME, URHO3D_HANDLER(Network, HandleBeginFrame));
-    SubscribeToEvent(E_RENDERUPDATE, URHO3D_HANDLER(Network, HandleRenderUpdate));
+    g_coreSignals.beginFrame.Connect(this, &Network::HandleBeginFrame);
+    g_coreSignals.renderUpdate.Connect(this, &Network::HandleRenderUpdate);
 
     // Blacklist remote events which are not to be allowed to be registered in any case
-    blacklistedRemoteEvents_.insert(E_CONSOLECOMMAND);
-    blacklistedRemoteEvents_.insert(E_LOGMESSAGE);
-    blacklistedRemoteEvents_.insert(E_BEGINFRAME);
-    blacklistedRemoteEvents_.insert(E_UPDATE);
-    blacklistedRemoteEvents_.insert(E_POSTUPDATE);
-    blacklistedRemoteEvents_.insert(E_RENDERUPDATE);
-    blacklistedRemoteEvents_.insert(E_ENDFRAME);
-    blacklistedRemoteEvents_.insert(E_MOUSEBUTTONDOWN);
-    blacklistedRemoteEvents_.insert(E_MOUSEBUTTONUP);
-    blacklistedRemoteEvents_.insert(E_MOUSEMOVE);
-    blacklistedRemoteEvents_.insert(E_MOUSEWHEEL);
-    blacklistedRemoteEvents_.insert(E_KEYDOWN);
-    blacklistedRemoteEvents_.insert(E_KEYUP);
-    blacklistedRemoteEvents_.insert(E_TEXTINPUT);
-    blacklistedRemoteEvents_.insert(E_JOYSTICKCONNECTED);
-    blacklistedRemoteEvents_.insert(E_JOYSTICKDISCONNECTED);
-    blacklistedRemoteEvents_.insert(E_JOYSTICKBUTTONDOWN);
-    blacklistedRemoteEvents_.insert(E_JOYSTICKBUTTONUP);
-    blacklistedRemoteEvents_.insert(E_JOYSTICKAXISMOVE);
-    blacklistedRemoteEvents_.insert(E_JOYSTICKHATMOVE);
-    blacklistedRemoteEvents_.insert(E_TOUCHBEGIN);
-    blacklistedRemoteEvents_.insert(E_TOUCHEND);
-    blacklistedRemoteEvents_.insert(E_TOUCHMOVE);
-    blacklistedRemoteEvents_.insert(E_GESTURERECORDED);
-    blacklistedRemoteEvents_.insert(E_GESTUREINPUT);
-    blacklistedRemoteEvents_.insert(E_MULTIGESTURE);
-    blacklistedRemoteEvents_.insert(E_DROPFILE);
-    blacklistedRemoteEvents_.insert(E_INPUTFOCUS);
-    blacklistedRemoteEvents_.insert(E_MOUSEVISIBLECHANGED);
-    blacklistedRemoteEvents_.insert(E_EXITREQUESTED);
+//    blacklistedRemoteEvents_.insert(E_CONSOLECOMMAND);
+//    blacklistedRemoteEvents_.insert(E_LOGMESSAGE);
+//    blacklistedRemoteEvents_.insert(E_BEGINFRAME);
+//    blacklistedRemoteEvents_.insert(E_UPDATE);
+//    blacklistedRemoteEvents_.insert(E_POSTUPDATE);
+//    blacklistedRemoteEvents_.insert(E_RENDERUPDATE);
+//    blacklistedRemoteEvents_.insert(E_ENDFRAME);
+//    blacklistedRemoteEvents_.insert(E_MOUSEBUTTONDOWN);
+//    blacklistedRemoteEvents_.insert(E_MOUSEBUTTONUP);
+//    blacklistedRemoteEvents_.insert(E_MOUSEMOVE);
+//    blacklistedRemoteEvents_.insert(E_MOUSEWHEEL);
+//    blacklistedRemoteEvents_.insert(E_KEYDOWN);
+//    blacklistedRemoteEvents_.insert(E_KEYUP);
+//    blacklistedRemoteEvents_.insert(E_TEXTINPUT);
+//    blacklistedRemoteEvents_.insert(E_JOYSTICKCONNECTED);
+//    blacklistedRemoteEvents_.insert(E_JOYSTICKDISCONNECTED);
+//    blacklistedRemoteEvents_.insert(E_JOYSTICKBUTTONDOWN);
+//    blacklistedRemoteEvents_.insert(E_JOYSTICKBUTTONUP);
+//    blacklistedRemoteEvents_.insert(E_JOYSTICKAXISMOVE);
+//    blacklistedRemoteEvents_.insert(E_JOYSTICKHATMOVE);
+//    blacklistedRemoteEvents_.insert(E_TOUCHBEGIN);
+//    blacklistedRemoteEvents_.insert(E_TOUCHEND);
+//    blacklistedRemoteEvents_.insert(E_TOUCHMOVE);
+//    blacklistedRemoteEvents_.insert(E_GESTURERECORDED);
+//    blacklistedRemoteEvents_.insert(E_GESTUREINPUT);
+//    blacklistedRemoteEvents_.insert(E_MULTIGESTURE);
+//    blacklistedRemoteEvents_.insert(E_DROPFILE);
+//    blacklistedRemoteEvents_.insert(E_INPUTFOCUS);
+//    blacklistedRemoteEvents_.insert(E_MOUSEVISIBLECHANGED);
+//    blacklistedRemoteEvents_.insert(E_EXITREQUESTED);
     blacklistedRemoteEvents_.insert(E_SERVERCONNECTED);
     blacklistedRemoteEvents_.insert(E_SERVERDISCONNECTED);
     blacklistedRemoteEvents_.insert(E_CONNECTFAILED);
@@ -392,17 +390,6 @@ void Network::SendPackageToClients(Scene* scene, PackageFile* package)
     }
 }
 
-SharedPtr<HttpRequest> Network::MakeHttpRequest(const QString& url, const QString& verb, const std::vector<QString>& headers, const QString& postData)
-{
-    URHO3D_PROFILE(MakeHttpRequest);
-    assert(false && "Convert this to use QNetwork classes" );
-    // The initialization of the request will take time, can not know at this point if it has an error or not
-//    SharedPtr<HttpRequest> request(new HttpRequest(url, verb, headers, postData));
-//    return request;
-    SharedPtr<HttpRequest> request(nullptr);
-    return request;
-}
-
 Connection* Network::GetConnection(kNet::MessageConnection* connection) const
 {
     if (serverConnection_ && serverConnection_->GetMessageConnection() == connection)
@@ -528,18 +515,14 @@ void Network::PostUpdate(float timeStep)
     }
 }
 
-void Network::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
+void Network::HandleBeginFrame(unsigned ,float time_step)
 {
-    using namespace BeginFrame;
-
-    Update(eventData[P_TIMESTEP].GetFloat());
+    Update(time_step);
 }
 
-void Network::HandleRenderUpdate(StringHash eventType, VariantMap& eventData)
+void Network::HandleRenderUpdate(float ts)
 {
-    using namespace RenderUpdate;
-
-    PostUpdate(eventData[P_TIMESTEP].GetFloat());
+    PostUpdate(ts);
 }
 
 void Network::OnServerConnected()

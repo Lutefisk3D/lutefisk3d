@@ -32,10 +32,8 @@ class LUTEFISK3D_EXPORT NavArea : public Component
         URHO3D_OBJECT(NavArea,Component);
 
     public:
-        /// Construct.
         NavArea(Context*);
-        /// Destruct.
-        virtual ~NavArea();
+        ~NavArea() override;
         /// Register object factory and attributes.
         static void RegisterObject(Context*);
 

@@ -24,6 +24,7 @@
 
 #include "Lutefisk3D/Container/RefCounted.h"
 #include "Lutefisk3D/Container/Ptr.h"
+#include "Lutefisk3D/Graphics/VertexBuffer.h"
 #include "Lutefisk3D/UI/Cursor.h"
 #include "Lutefisk3D/UI/UIBatch.h"
 #include "Lutefisk3D/Engine/jlsignal/SignalBase.h"
@@ -49,7 +50,6 @@ class ResourceCache;
 class Timer;
 class UIBatch;
 class UIElement;
-class VertexBuffer;
 class XMLElement;
 class XMLFile;
 class RenderSurface;
@@ -59,10 +59,8 @@ class UIComponent;
 class LUTEFISK3D_EXPORT UI : public RefCounted, public jl::SignalObserver
 {
 public:
-    /// Construct.
     UI(Context* context);
-    /// Destruct.
-    virtual ~UI();
+    ~UI() override;
 
     /// Set cursor UI element.
     void SetCursor(Cursor* cursor);
@@ -91,6 +89,8 @@ public:
     void SetClipboardText(const QString& text);
     /// Set UI element double click interval in seconds.
     void SetDoubleClickInterval(float interval);
+    /// Set max screen distance in pixels between double click clicks.
+    void SetMaxDoubleClickDistance(float distPixels);
     /// Set UI drag event start interval in seconds.
     void SetDragBeginInterval(float interval);
     /// Set UI drag event start distance threshold in pixels.
@@ -154,6 +154,8 @@ public:
     const QString& GetClipboardText() const;
     /// Return UI element double click interval in seconds.
     float GetDoubleClickInterval() const { return doubleClickInterval_; }
+    /// Get max screen distance in pixels for double clicks to register.
+    float GetMaxDoubleClickDistance() const { return maxDoubleClickDist_;}
     /// Return UI drag start event interval in seconds.
     float GetDragBeginInterval() const { return dragBeginInterval_; }
     /// Return UI drag start event distance threshold in pixels.
@@ -188,15 +190,17 @@ public:
 
     /// Return root element custom size. Returns 0,0 when custom size is not being used and automatic resizing according to window size is in use instead (default.)
     const IntVector2& GetCustomSize() const { return customSize_; }
-    /// Register UIElement for being rendered into a texture.
-    void SetRenderToTexture(UIComponent* component, bool enable);
+    /// Set texture to which element will be rendered.
+    void SetElementRenderTexture(UIElement* element, Texture2D* texture);
     /// Data structure used to represent the drag data associated to a UIElement.
     struct DragData
     {
         /// Which button combo initiated the drag.
-        int dragButtons;
+        MouseButtonFlags dragButtons;
         /// How many buttons initiated the drag.
         int numDragButtons;
+        /// Sum of all touch locations
+        IntVector2 sumPos;
         /// Flag for a drag start event pending.
         bool dragBeginPending;
         /// Timer used to trigger drag begin event.
@@ -207,6 +211,26 @@ public:
 
 
 private:
+    /// Data structured used to hold data of UI elements that are rendered to texture.
+    struct RenderToTextureData
+    {
+        /// UIElement to be rendered into texture.
+        WeakPtr<UIElement> rootElement_;
+        /// Texture that UIElement will be rendered into.
+        SharedPtr<Texture2D> texture_;
+        /// UI rendering batches.
+        std::vector<UIBatch> batches_;
+        /// UI rendering vertex data.
+        std::vector<float> vertexData_;
+        /// UI vertex buffer.
+        SharedPtr<VertexBuffer> vertexBuffer_;
+        /// UI rendering batches for debug draw.
+        std::vector<UIBatch> debugDrawBatches_;
+        /// UI rendering vertex data for debug draw.
+        std::vector<float> debugVertexData_;
+        /// UI debug geometry vertex buffer.
+        SharedPtr<VertexBuffer> debugVertexBuffer_;
+    };
     /// Initialize when screen mode initially set.
     void Initialize();
     /// Update UI element logic recursively.
@@ -230,13 +254,13 @@ private:
     /// Force release of font faces when global font properties change.
     void ReleaseFontFaces();
     /// Handle button hover.
-    void ProcessHover(const IntVector2& windowCursorPos, int buttons, int qualifiers, Cursor* cursor);
+    void ProcessHover(const IntVector2& windowCursorPos, MouseButtonFlags buttons, QualifierFlags qualifiers, Cursor* cursor);
     /// Handle button begin.
-    void ProcessClickBegin(const IntVector2& windowCursorPos, MouseButton button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
+    void ProcessClickBegin(const IntVector2& windowCursorPos, MouseButton button, MouseButtonFlags buttons, QualifierFlags qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle button end.
-    void ProcessClickEnd(const IntVector2& windowCursorPos, MouseButton button, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
+    void ProcessClickEnd(const IntVector2& windowCursorPos, MouseButton button, MouseButtonFlags buttons, QualifierFlags qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle mouse move.
-    void ProcessMove(const IntVector2& windowCursorPos, const IntVector2& cursorDeltaPos, int buttons, int qualifiers, Cursor* cursor, bool cursorVisible);
+    void ProcessMove(const IntVector2& windowCursorPos, const IntVector2& cursorDeltaPos, MouseButtonFlags buttons, QualifierFlags qualifiers, Cursor* cursor, bool cursorVisible);
     /// Handle screen mode event.
     void HandleScreenMode(int, int, bool, bool, bool, bool, int, int);
     /// Handle mouse button down event.
@@ -302,11 +326,11 @@ private:
     /// Drag begin event distance threshold in pixels.
     int dragBeginDistance_;
     /// Mouse buttons held down.
-    int mouseButtons_;
+    MouseButtonFlags mouseButtons_;
     /// Last mouse button pressed.
-    int lastMouseButtons_;
+    MouseButtonFlags lastMouseButtons_;
     /// Qualifier keys held down.
-    int qualifiers_;
+    QualifierFlags qualifiers_;
     /// Font texture maximum size.
     int maxFontTextureSize_;
     /// Initialized flag.
@@ -335,6 +359,10 @@ private:
     Timer clickTimer_;
     /// UI element last clicked for tracking double clicks.
     WeakPtr<UIElement> doubleClickElement_;
+    /// Screen position of first mouse click for double click distance checking.
+    IntVector2 doubleClickFirstPos_;
+    /// Max screen distance the first click in a double click can be from the second click in a double click.
+    float maxDoubleClickDist_;
     /// Currently hovered elements.
     HashMap<WeakPtr<UIElement>, bool> hoveredElements_;
     /// Currently dragged elements.
@@ -350,9 +378,7 @@ private:
     /// Root element custom size. 0,0 for automatic resizing (default.)
     IntVector2 customSize_;
     /// Elements that should be rendered to textures.
-    SmallMembershipSet<WeakPtr<UIComponent>,4> renderToTexture_;
-
-    friend class UIComponent;
+    HashMap<UIElement*, RenderToTextureData> renderToTexture_;
 };
 
 /// Register UI library objects.

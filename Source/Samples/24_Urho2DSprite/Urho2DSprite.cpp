@@ -75,7 +75,7 @@ void Urho2DSprite::Start()
 
 void Urho2DSprite::CreateScene()
 {
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
     scene_->CreateComponent<Octree>();
 
     // Create camera node
@@ -84,12 +84,12 @@ void Urho2DSprite::CreateScene()
     cameraNode_->SetPosition(Vector3(0.0f, 0.0f, -10.0f));
 
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetOrthographic(true);
+    camera->setProjectionType(PT_ORTHOGRAPHIC);
 
-    Graphics* graphics = m_context->m_Graphics.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
     camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
 
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     // Get sprite
     Sprite2D* sprite = cache->GetResource<Sprite2D>("Urho2D/Aster.png");
     if (!sprite)
@@ -136,8 +136,8 @@ void Urho2DSprite::CreateScene()
 
 void Urho2DSprite::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -152,20 +152,20 @@ void Urho2DSprite::CreateInstructions()
 
 void Urho2DSprite::SetupViewport()
 {
-    Renderer* renderer = m_context->m_Renderer.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void Urho2DSprite::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (m_context->m_UISystem.get()->GetFocusElement())
+    if (GetContext()->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 4.0f;
@@ -207,7 +207,7 @@ void Urho2DSprite::HandleUpdate(float timeStep)
     // Move the camera, scale movement with time step
     MoveCamera(timeStep);
 
-    Graphics* graphics = m_context->m_Graphics.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
     float halfWidth = (float)graphics->GetWidth() * 0.5f * PIXEL_SIZE;
     float halfHeight = (float)graphics->GetHeight() * 0.5f * PIXEL_SIZE;
 

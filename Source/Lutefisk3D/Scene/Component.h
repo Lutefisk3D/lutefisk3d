@@ -52,7 +52,7 @@ class LUTEFISK3D_EXPORT Component : public Animatable
 
 public:
     Component(Context* context) : Animatable(context) {}
-    virtual ~Component() = default;
+    ~Component() override = default;
 
     /// Handle enabled/disabled state change.
     virtual void OnSetEnabled() {}
@@ -106,13 +106,13 @@ protected:
     /// Handle attribute animation removed.
     void OnAttributeAnimationRemoved() override;
     /// Handle scene node being assigned at creation.
-    virtual void OnNodeSet(Node* node) {}
+    virtual void OnNodeSet(Node* ) {}
     /// Handle scene being assigned. This may happen several times during the component's lifetime. Scene-wide subsystems and events are subscribed to here.
-    virtual void OnSceneSet(Scene * scene) {}
+    virtual void OnSceneSet(Scene * ) {}
     /// Handle scene node transform dirtied.
-    virtual void OnMarkedDirty(Node* node) {}
+    virtual void OnMarkedDirty(Node* ) {}
     /// Handle scene node enabled status changing.
-    virtual void OnNodeSetEnabled(Node* node) {}
+    virtual void OnNodeSetEnabled(Node* ) {}
     /// Set ID. Called by Scene.
     void SetID(unsigned id);
     /// Set scene node. Called by Node when creating the component.

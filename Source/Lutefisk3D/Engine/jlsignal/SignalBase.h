@@ -1,7 +1,7 @@
 #ifndef _JL_SIGNAL_BASE_H_
 #define _JL_SIGNAL_BASE_H_
 
-#include "Lutefisk3D/lutefisk3d_export.h"
+#include "Lutefisk3D/Core/Lutefisk3D.h"
 
 #include "Utils.h"
 #include "DoublyLinkedList.h"
@@ -12,14 +12,14 @@ namespace jl {
 class SignalBase;
 
 // Derive from this class to receive signals
-class SignalObserver
+class  SignalObserver
 {
     // Public interface
 public:
-    virtual ~SignalObserver();
+    LUTEFISK3D_EXPORT virtual ~SignalObserver();
 
-    void DisconnectAllSignals();
-    void DisconnectSignal( SignalBase* pSignal );
+    LUTEFISK3D_EXPORT void DisconnectAllSignals();
+    LUTEFISK3D_EXPORT void DisconnectSignal( SignalBase* pSignal );
 
     void SetConnectionAllocator( ScopedAllocator* pAllocator ) { m_oSignals.Init( pAllocator ); }
     unsigned CountSignalConnections() const { return m_oSignals.size(); }
@@ -39,7 +39,10 @@ private:
 
     void OnSignalConnect( SignalBase* pSignal )
     {
-        const bool bAdded = m_oSignals.Add( pSignal );
+#if defined( JL_ENABLE_ASSERT ) && ! defined ( JL_DISABLE_ASSERT ) && ! defined (NDEBUG)
+        const bool bAdded =
+#endif
+        m_oSignals.Add( pSignal );
         JL_ASSERT( bAdded );
     }
     void OnSignalDisconnect( SignalBase* pSignal )
@@ -56,7 +59,7 @@ private:
 
     // Signal list
 public:
-    typedef DoublyLinkedList<SignalBase*> SignalList;
+    using SignalList = DoublyLinkedList<SignalBase*>;
     enum { eAllocationSize = sizeof(SignalList::Node) };
 
 private:
@@ -70,8 +73,8 @@ public:
 
     // Interface for derived signal classes
 protected:
-    // Disallow instances of this class
-    SignalBase() {}
+    // Disallow instances    of this class
+    SignalBase() = default;
 
     // Called on any connection to the observer.
     void NotifyObserverConnect( SignalObserver* pObserver ) { pObserver->OnSignalConnect(this); }

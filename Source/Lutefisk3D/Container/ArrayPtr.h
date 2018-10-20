@@ -48,7 +48,7 @@ public:
     {
         AddRef();
     }
-    SharedArrayPtr(SharedArrayPtr<T>&& rhs) :
+    SharedArrayPtr(SharedArrayPtr<T>&& rhs) noexcept :
         ptr_(std::move(rhs.ptr_)),
         refCount_(std::move(rhs.refCount_))
     {
@@ -83,7 +83,7 @@ public:
 
         return *this;
     }
-    SharedArrayPtr<T>& operator = (SharedArrayPtr<T>&& rhs)
+    SharedArrayPtr<T>& operator = (SharedArrayPtr<T>&& rhs) noexcept
     {
         if (ptr_ == rhs.ptr_)
             return *this;
@@ -113,11 +113,23 @@ public:
     }
 
     /// Point to the array.
-    T* operator -> () const { assert(ptr_); return ptr_; }
+    T* operator ->() const
+    {
+        assert(ptr_);
+        return ptr_;
+    }
     /// Dereference the array.
-    T& operator * () const { assert(ptr_); return *ptr_; }
+    T& operator *() const
+    {
+        assert(ptr_);
+        return *ptr_;
+    }
     /// Subscript the array.
-    T& operator [] (const int index) { assert(ptr_); return ptr_[index]; }
+    T& operator [](int index)
+    {
+        assert(ptr_);
+        return ptr_[index];
+    }
     /// Test for equality with another shared array pointer.
     bool operator == (const SharedArrayPtr<T>& rhs) const { return ptr_ == rhs.ptr_; }
     /// Test for inequality with another shared array pointer.
@@ -134,7 +146,7 @@ public:
     template <class U> void StaticCast(const SharedArrayPtr<U>& rhs)
     {
         ReleaseRef();
-        ptr_ = static_cast<T*>(rhs.Get());
+        ptr_ = static_cast<T*>(rhs.get());
         refCount_ = rhs.RefCountPtr();
         AddRef();
     }
@@ -143,13 +155,13 @@ public:
     template <class U> void ReinterpretCast(const SharedArrayPtr<U>& rhs)
     {
         ReleaseRef();
-        ptr_ = reinterpret_cast<T*>(rhs.Get());
+        ptr_ = reinterpret_cast<T*>(rhs.get());
         refCount_ = rhs.RefCountPtr();
         AddRef();
     }
 
     /// Return the raw pointer.
-    T* Get() const { return ptr_; }
+    T* get() const { return ptr_; }
     /// Return the array's reference count, or 0 if the pointer is null.
     int Refs() const { return refCount_ ? refCount_->refs_ : 0; }
     /// Return the array's weak reference count, or 0 if the pointer is null.
@@ -195,9 +207,9 @@ private:
     }
 
     /// Pointer to the array.
-    T* ptr_;
+    T* ptr_ = nullptr;
     /// Pointer to the RefCount structure.
-    RefCount* refCount_;
+    RefCount* refCount_ = nullptr;
 };
 
 /// Perform a reinterpret cast from one shared array pointer type to another.

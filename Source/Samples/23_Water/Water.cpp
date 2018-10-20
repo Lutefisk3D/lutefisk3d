@@ -77,9 +77,9 @@ void Water::Start()
 
 void Water::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
 
     // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
     scene_->CreateComponent<Octree>();
@@ -166,9 +166,9 @@ void Water::CreateScene()
 
     // Create the camera. Set far clip to match the fog. Note: now we actually create the camera node outside
     // the scene, because we want it to be unaffected by scene load / save
-    cameraNode_ = new Node(m_context);
+    cameraNode_ = new Node(GetContext());
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetFarClip(750.0f);
+    camera->setFarClipDistance(750.0f);
 
     // Set an initial position for the camera scene node above the ground
     cameraNode_->SetPosition(Vector3(0.0f, 7.0f, -20.0f));
@@ -176,8 +176,8 @@ void Water::CreateScene()
 
 void Water::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     //    Text* instructionText = ui->GetRoot()->CreateChild<Text>();
     text = ui->GetRoot()->CreateChild<Text>();
@@ -199,12 +199,12 @@ void Water::CreateInstructions()
 
 void Water::SetupViewport()
 {
-    Graphics* graphics = m_context->m_Graphics.get();
-    Renderer* renderer = m_context->m_Renderer.get();
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 
     // Create a mathematical plane to represent the water in calculations
@@ -218,7 +218,7 @@ void Water::SetupViewport()
     // its position when rendering
     reflectionCameraNode_ = cameraNode_->CreateChild();
     Camera* reflectionCamera = reflectionCameraNode_->CreateComponent<Camera>();
-    reflectionCamera->SetFarClip(750.0);
+    reflectionCamera->setFarClipDistance(750.0);
     reflectionCamera->SetViewMask(0x7fffffff); // Hide objects with only bit 31 in the viewmask (the water plane)
     reflectionCamera->SetAutoAspectRatio(false);
     reflectionCamera->SetUseReflection(true);
@@ -233,11 +233,11 @@ void Water::SetupViewport()
     // Create a texture and setup viewport for water reflection. Assign the reflection texture to the diffuse
     // texture unit of the water material
     int texSize = 1024;
-    SharedPtr<Texture2D> renderTexture(new Texture2D(m_context));
+    SharedPtr<Texture2D> renderTexture(new Texture2D(GetContext()));
     renderTexture->SetSize(texSize, texSize, Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
     renderTexture->SetFilterMode(FILTER_BILINEAR);
     RenderSurface* surface = renderTexture->GetRenderSurface();
-    SharedPtr<Viewport> rttViewport(new Viewport(m_context, scene_, reflectionCamera));
+    SharedPtr<Viewport> rttViewport(new Viewport(GetContext(), scene_, reflectionCamera));
     surface->SetViewport(0, rttViewport);
     Material* waterMat = cache->GetResource<Material>("Materials/Water.xml");
     waterMat->SetTexture(TU_DIFFUSE, renderTexture);
@@ -252,10 +252,10 @@ void Water::SubscribeToEvents()
 void Water::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (m_context->m_UISystem.get()->GetFocusElement())
+    if (GetContext()->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -282,7 +282,7 @@ void Water::MoveCamera(float timeStep)
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 
     // In case resolution has changed, adjust the reflection camera aspect ratio
-    Graphics* graphics = m_context->m_Graphics.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
     Camera* reflectionCamera = reflectionCameraNode_->GetComponent<Camera>();
     reflectionCamera->SetAspectRatio((float)graphics->GetWidth() / (float)graphics->GetHeight());
 }
@@ -290,7 +290,7 @@ void Water::MoveCamera(float timeStep)
 void Water::HandleUpdate(float timeStep)
 {
     if(text) {
-        FrameInfo frameInfo = m_context->m_Renderer.get()->GetFrameInfo();
+        FrameInfo frameInfo = GetContext()->m_Renderer.get()->GetFrameInfo();
         text->SetText(QString("FPS: ") + QString::number(1.0 / frameInfo.timeStep_));
     }
     // Move the camera, scale movement with time step

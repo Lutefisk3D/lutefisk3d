@@ -29,7 +29,7 @@
 namespace Urho3D
 {
 class UIElement;
-enum class  MouseButton : int;
+enum MouseButton : unsigned;
 struct UISignals {
     /// Global mouse click in the UI. Sent by the UI subsystem.
     jl::Signal<UIElement *,int, int, MouseButton, unsigned, int> mouseClickUI; //Element,x,y,Button,Buttons,Qualifiers
@@ -37,7 +37,7 @@ struct UISignals {
     //Element,BeginElement,x,y,Button,Buttons,Qualifiers
     jl::Signal<UIElement *,UIElement *,int, int, MouseButton, unsigned, int> mouseClickEndUI;
     /// Global mouse double click in the UI. Sent by the UI subsystem.
-    jl::Signal<UIElement *,int, int, MouseButton, unsigned, int> mouseDoubleClickUI; //Element,x,y,Button,Buttons,Qualifiers
+    jl::Signal<UIElement *,IntVector2,IntVector2, MouseButton, unsigned, int> mouseDoubleClickUI; //Element,P,P_BEGIN,Button,Buttons,Qualifiers
 
     /// Drag and drop finish.
     jl::Signal<UIElement *,UIElement *,bool> dragDropFinish; // Source,Target,Accept
@@ -90,7 +90,7 @@ struct UiElementSignals  {
     //Element,BeginElement,x,y,Button,Buttons,Qualifiers
     jl::Signal<UIElement *,UIElement *,int, int, MouseButton, unsigned, int> clickEnd;
     /// Mouse double click on a UI element. Parameters are same as in UIMouseDoubleClick event, but is sent by the element.
-    jl::Signal<UIElement *,int, int, MouseButton, unsigned, int> doubleClick; //Element,x,y,Button,Buttons,Qualifiers
+    jl::Signal<UIElement *,IntVector2,IntVector2, MouseButton, unsigned, int> doubleClick; //Element,Loc,Loc_Start,Button,Buttons,Qualifiers
 
     /// UI element layout updated.
     jl::Signal<UIElement *> layoutUpdated;
@@ -135,12 +135,6 @@ struct UiElementSignals  {
     }
 };
 
-struct UIButtonSignals {
-    /// UI button pressed.
-    jl::Signal<UIElement *> pressed;
-    /// UI button was pressed, then released.
-    jl::Signal<UIElement *> released;
-};
 struct UIWindowSignals {
     /// UI modal changed (currently only Window has modal flag).
     jl::Signal<UIElement *,bool> modalChanged; // UIElement *,bool Modal
@@ -173,10 +167,6 @@ URHO3D_EVENT(E_VIEWCHANGED, ViewChanged)
     URHO3D_PARAM(P_Y, Y);                          // int
 }
 
-struct LineEditSignals {
-    /// Text editing finished (enter pressed on a LineEdit)
-    jl::Signal<UIElement *,const QString &,float> textFinished; // Element,Text,Value
-};
 /// Text entry into a LineEdit. The text can be modified in the event data.
 URHO3D_EVENT(E_TEXTENTRY, TextEntry)
 {
@@ -197,56 +187,28 @@ URHO3D_EVENT(E_MENUSELECTED, MenuSelected)
     URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
 }
 
-/// Listview or DropDownList item selected.
-URHO3D_EVENT(E_ITEMSELECTED, ItemSelected)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_SELECTION, Selection);          // int
-}
+///// Listview or DropDownList item selected.
+//URHO3D_EVENT(E_ITEMSELECTED, ItemSelected)
+//{
+//    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
+//    URHO3D_PARAM(P_SELECTION, Selection);          // int
+//}
 
-/// Listview item deselected.
-URHO3D_EVENT(E_ITEMDESELECTED, ItemDeselected)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_SELECTION, Selection);          // int
-}
+///// Listview item deselected.
+//URHO3D_EVENT(E_ITEMDESELECTED, ItemDeselected)
+//{
+//    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
+//    URHO3D_PARAM(P_SELECTION, Selection);          // int
+//}
 
-/// Listview selection change finished.
-URHO3D_EVENT(E_SELECTIONCHANGED, SelectionChanged)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-}
-
-/// Listview item clicked. If this is a left-click, also ItemSelected event will be sent. If this is a right-click, only this event is sent.
-URHO3D_EVENT(E_ITEMCLICKED, ItemClicked)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_ITEM, Item);                    // UIElement pointer
-    URHO3D_PARAM(P_SELECTION, Selection);          // int
-    URHO3D_PARAM(P_BUTTON, Button);                // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_QUALIFIERS, Qualifiers);        // int
-}
-
-/// Listview item double clicked.
-URHO3D_EVENT(E_ITEMDOUBLECLICKED, ItemDoubleClicked)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_ITEM, Item);                    // UIElement pointer
-    URHO3D_PARAM(P_SELECTION, Selection);          // int
-    URHO3D_PARAM(P_BUTTON, Button);                // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_QUALIFIERS, Qualifiers);        // int
-}
-
-/// LineEdit or ListView unhandled key pressed.
-URHO3D_EVENT(E_UNHANDLEDKEY, UnhandledKey)
-{
-    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
-    URHO3D_PARAM(P_KEY, Key);                      // int
-    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
-    URHO3D_PARAM(P_QUALIFIERS, Qualifiers);        // int
-}
+///// LineEdit or ListView unhandled key pressed.
+//URHO3D_EVENT(E_UNHANDLEDKEY, UnhandledKey)
+//{
+//    URHO3D_PARAM(P_ELEMENT, Element);              // UIElement pointer
+//    URHO3D_PARAM(P_KEY, Key);                      // int
+//    URHO3D_PARAM(P_BUTTONS, Buttons);              // int
+//    URHO3D_PARAM(P_QUALIFIERS, Qualifiers);        // int
+//}
 
 /// Fileselector choice.
 URHO3D_EVENT(E_FILESELECTED, FileSelected)

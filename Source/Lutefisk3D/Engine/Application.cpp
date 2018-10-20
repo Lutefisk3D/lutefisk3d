@@ -22,6 +22,7 @@
 
 #include "Application.h"
 #include "Engine.h"
+#include "EngineEvents.h"
 #include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/IO/IOEvents.h"
@@ -38,8 +39,7 @@
 using namespace Urho3D;
 /// Construct. Parse default engine parameters from the command line, and create the engine in an uninitialized state.
 Application::Application(const QString &appName, Context* context) :
-    SignalObserver(context->m_observer_allocator),
-    m_context(context),
+    Object(context),
     m_appName(appName),
     exitCode_(EXIT_SUCCESS)
 {
@@ -47,7 +47,7 @@ Application::Application(const QString &appName, Context* context) :
 
     // Create the Engine, but do not initialize it yet. Subsystems except Graphics & Renderer are registered at this point
     engine_ = new Engine(context);
-    SetConnectionAllocator(context->m_observer_allocator);
+    SetConnectionAllocator(context->observerAllocator());
     // Subscribe to log messages so that can show errors if ErrorExit() is called with empty message
     g_LogSignals.logMessageSignal.Connect(this, &Application::HandleLogMessage);
 
@@ -77,6 +77,8 @@ int Application::Run()
         if (exitCode_)
             return exitCode_;
 
+        g_engineSignals.applicationStarted();
+
         // Platforms other than iOS and Emscripten run a blocking main loop
         while (!engine_->IsExiting())
             engine_->RunFrame();
@@ -86,7 +88,7 @@ int Application::Run()
     }
     catch (std::bad_alloc& e)
     {
-        ErrorDialog(m_appName, "An out-of-memory error occurred. The application will now exit.");
+        ErrorDialog(m_appName, QString("An out-of-memory error occurred \"%1\".\n The application will now exit").arg(e.what()));
         return EXIT_FAILURE;
     }
 }

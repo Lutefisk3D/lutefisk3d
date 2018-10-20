@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "Lutefisk3D/Container/FlagSet.h"
 #include "Lutefisk3D/Math/Frustum.h"
 #include "Lutefisk3D/Scene/Component.h"
 #include "Lutefisk3D/Math/Ray.h"
@@ -31,15 +32,27 @@ namespace Urho3D
 enum FillMode : unsigned;
 enum FaceCameraMode : unsigned;
 
-static const float DEFAULT_NEARCLIP = 0.1f;
-static const float DEFAULT_FARCLIP = 1000.0f;
+static const float DEFAULT_NEARCLIP   = 0.1f;
+static const float DEFAULT_FARCLIP    = 1000.0f;
 static const float DEFAULT_CAMERA_FOV = 45.0f;
-static const float DEFAULT_ORTHOSIZE = 20.0f;
+static const float DEFAULT_ORTHOSIZE  = 20.0f;
 
-static const unsigned VO_NONE = 0x0;
-static const unsigned VO_LOW_MATERIAL_QUALITY = 0x1;
-static const unsigned VO_DISABLE_SHADOWS = 0x2;
-static const unsigned VO_DISABLE_OCCLUSION = 0x4;
+enum ViewOverride : unsigned
+{
+    VO_NONE                 = 0x0,
+    VO_LOW_MATERIAL_QUALITY = 0x1,
+    VO_DISABLE_SHADOWS      = 0x2,
+    VO_DISABLE_OCCLUSION    = 0x4,
+};
+URHO3D_FLAGSET(ViewOverride, ViewOverrideFlags);
+/**	Projection type to use by the camera. */
+enum ProjectionType : uint8_t
+{
+    /** Projection type that emulates human vision. Objects farther away appear smaller. */
+    PT_PERSPECTIVE,
+    /** Projection type where object size remains constant and parallel lines remain parallel. */
+    PT_ORTHOGRAPHIC
+};
 
 /// %Camera component.
 class LUTEFISK3D_EXPORT Camera : public Component
@@ -47,29 +60,20 @@ class LUTEFISK3D_EXPORT Camera : public Component
     URHO3D_OBJECT(Camera,Component)
 
 public:
-    /// Construct.
     Camera(Context* context);
-    /// Destruct.
-    virtual ~Camera() = default;
+    ~Camera() override = default;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Visualize the component as debug geometry.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
+    void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
-    /// Set near clip distance.
-    void SetNearClip(float nearClip);
-    /// Set far clip distance.
-    void SetFarClip(float farClip);
-    /// Set vertical field of view in degrees.
+    void setNearClipDistance(float nearDist);
+    void setFarClipDistance(float farClip);
     void SetFov(float fov);
-    /// Set orthographic mode view uniform size.
     void SetOrthoSize(float orthoSize);
-    /// Set orthographic mode view non-uniform size. Disables the auto aspect ratio -mode.
     void SetOrthoSize(const Vector2& orthoSize);
-    /// Set aspect ratio manually. Disables the auto aspect ratio -mode.
     void SetAspectRatio(float aspectRatio);
-    /// Set polygon fill mode to use when rendering a scene.
     void SetFillMode(FillMode mode);
     /// Set zoom.
     void SetZoom(float zoom);
@@ -80,7 +84,7 @@ public:
     /// Set view override flags.
     void SetViewOverrideFlags(unsigned flags);
     /// Set orthographic mode enabled/disabled.
-    void SetOrthographic(bool enable);
+    void setProjectionType(ProjectionType enable);
     /// Set automatic aspect ratio based on viewport dimensions. Enabled by default.
     void SetAutoAspectRatio(bool enable);
     /// Set projection offset. It needs to be calculated as (offset in pixels) / (viewport dimensions.)
@@ -101,10 +105,10 @@ public:
      */
     void SetProjection(const Matrix4& projection);
 
-    /// Return far clip distance. If a custom projection matrix is in use, is calculated from it instead of the value assigned with SetFarClip().
+    /// Return far clip distance. If a custom projection matrix is in use, is calculated from it instead of the value assigned with setFarClipDistance().
     float GetFarClip() const;
 
-    /// Return near clip distance. If a custom projection matrix is in use, is calculated from it instead of the value assigned with SetNearClip().
+    /// Return near clip distance. If a custom projection matrix is in use, is calculated from it instead of the value assigned with setNearClipDistance().
     float GetNearClip() const;
     /// Return vertical field of view in degrees.
     float GetFov() const { return fov_; }
@@ -123,7 +127,7 @@ public:
     /// Return fill mode.
     FillMode GetFillMode() const { return fillMode_; }
     /// Return orthographic flag.
-    bool IsOrthographic() const { return orthographic_; }
+    ProjectionType getProjectionType() const { return projectionType_; }
     /// Return auto aspect ratio flag.
     bool GetAutoAspectRatio() const { return autoAspectRatio_; }
     /// Return frustum in world space.
@@ -146,12 +150,6 @@ public:
     Frustum GetViewSpaceSplitFrustum(float nearClip, float farClip) const;
     /// Return ray corresponding to normalized screen coordinates (0 - 1), with origin on the near clip plane.
     Ray GetScreenRay(float x, float y) const;
-    /// Convert a world space point to normalized screen coordinates (0 - 1).
-    Vector2 WorldToScreenPoint(const Vector3& worldPos) const;
-    /// Convert normalized screen coordinates (0 - 1) and distance along view Z axis (in Z coordinate) to a world space point. The distance can not be closer than the near clip plane.
-    /** Note that a HitDistance() from the camera screen ray is not the same as distance along the view Z axis, as under a perspective projection the ray is likely to not be Z-aligned.
-     */
-    Vector3 ScreenToWorldPoint(const Vector3& screenPos) const;
     /// Return projection offset.
     const Vector2& GetProjectionOffset() const { return projectionOffset_; }
     /// Return whether is using reflection.
@@ -194,9 +192,9 @@ public:
 
 protected:
     /// Handle node being assigned.
-    virtual void OnNodeSet(Node* node) override;
+    void OnNodeSet(Node* node) override;
     /// Handle node transform being dirtied.
-    virtual void OnMarkedDirty(Node* node) override;
+    void OnMarkedDirty(Node* node) override;
 
 private:
     /// Recalculate projection matrix.
@@ -208,13 +206,11 @@ private:
     /// Cached world space frustum.
     mutable Frustum frustum_;
     /// View matrix dirty flag.
-    mutable bool viewDirty_;
+    mutable bool viewDirty_ : 1;
     /// Projection matrix dirty flag.
-    mutable bool projectionDirty_;
+    mutable bool projectionDirty_ : 1;
     /// Frustum dirty flag.
-    mutable bool frustumDirty_;
-    /// Orthographic mode flag.
-    bool orthographic_;
+    mutable bool frustumDirty_ : 1;
     /// Cached actual near clip distance.
     mutable float projNearClip_;
     /// Cached actual far clip distance.
@@ -247,6 +243,8 @@ private:
     Plane clipPlane_;
     /// Reflection matrix calculated from the plane.
     Matrix3x4 reflectionMatrix_;
+    /// Projection mode for this camera.
+    ProjectionType projectionType_ ;
     /// Auto aspect ratio flag.
     bool autoAspectRatio_;
     /// Flip vertical flag.
@@ -258,5 +256,7 @@ private:
     /// Use custom projection matrix flag. Used internally.
     mutable bool customProjection_;
 };
+LUTEFISK3D_EXPORT Vector2 WorldToScreenPoint(const Camera &cam,const Vector3& worldPos);
+LUTEFISK3D_EXPORT Vector3 ScreenToWorldPoint(const Camera &cam,const Vector3& screenPos);
 
 }

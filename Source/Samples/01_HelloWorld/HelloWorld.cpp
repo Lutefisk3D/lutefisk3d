@@ -58,9 +58,9 @@ void HelloWorld::Start()
 
 void HelloWorld::CreateText()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     // Construct new Text object
-    SharedPtr<Text> helloText(new Text(m_context));
+    SharedPtr<Text> helloText(new Text(GetContext()));
 
     // Set String to display
     helloText->SetText("Hello World from Urho3D!");
@@ -74,7 +74,7 @@ void HelloWorld::CreateText()
     helloText->SetVerticalAlignment(VA_CENTER);
 
     // Add Text instance to the UI root element
-    m_context->m_UISystem->GetRoot()->AddChild(helloText);
+    GetContext()->m_UISystem->GetRoot()->AddChild(helloText);
 }
 
 void HelloWorld::SubscribeToEvents()

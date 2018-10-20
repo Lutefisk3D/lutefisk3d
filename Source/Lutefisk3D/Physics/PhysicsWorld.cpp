@@ -56,12 +56,10 @@ namespace Urho3D
 
 extern const char* SUBSYSTEM_CATEGORY;
 const char* PHYSICS_CATEGORY = "Physics";
-struct PhysicsWorldPrivate final : public btIDebugDraw 
+struct PhysicsWorldPrivate final : public btIDebugDraw
 {
     PhysicsWorldPrivate(PhysicsWorld *o);
     ~PhysicsWorldPrivate();
-    /// Check if an AABB is visible for debug drawing.
-    bool isVisible(const btVector3& aabbMin, const btVector3& aabbMax) override;
     /// Draw a physics debug line.
     void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override;
     /// Log warning from the physics engine.
@@ -171,7 +169,7 @@ PhysicsWorld::PhysicsWorld(Context* context) :
     private_data(new PhysicsWorldPrivate(this))
 {
     gContactAddedCallback = CustomMaterialCombinerCallback;
-    init(context->m_signal_allocator);
+    init(context->signalAllocator());
 }
 
 PhysicsWorld::~PhysicsWorld()
@@ -236,14 +234,6 @@ PhysicsWorldPrivate::~PhysicsWorldPrivate()
     if (!PhysicsWorld::config.collisionConfig_)
         delete collisionConfiguration_;
     collisionConfiguration_ = nullptr;
-}
-
-bool PhysicsWorldPrivate::isVisible(const btVector3& aabbMin, const btVector3& aabbMax)
-{
-    if (debugRenderer_)
-        return debugRenderer_->IsInside(BoundingBox(ToVector3(aabbMin), ToVector3(aabbMax)));
-    else
-        return false;
 }
 
 void PhysicsWorldPrivate::drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
@@ -847,19 +837,13 @@ void PhysicsWorld::PreStep(float timeStep)
 
     // Start profiling block for the actual simulation step
 #ifdef LUTEFISK3D_PROFILING
-    Profiler* profiler = context_->m_ProfilerSystem.get();
-    if (profiler)
-        profiler->BeginBlock("StepSimulation");
+    URHO3D_PROFILE_NONSCOPED(StepSimulation);
 #endif
 }
 
 void PhysicsWorld::PostStep(float timeStep)
 {
-#ifdef LUTEFISK3D_PROFILING
-    Profiler* profiler = context_->m_ProfilerSystem.get();
-    if (profiler)
-        profiler->EndBlock();
-#endif
+    URHO3D_PROFILE_END();
 
     SendCollisionEvents();
 

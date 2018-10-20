@@ -55,12 +55,14 @@ SET(BulletCollision_SRCS
 	CollisionShapes/btCylinderShape.cpp
 	CollisionShapes/btEmptyShape.cpp
 	CollisionShapes/btHeightfieldTerrainShape.cpp
+	CollisionShapes/btMiniSDF.cpp
 	CollisionShapes/btMinkowskiSumShape.cpp
 	CollisionShapes/btMultimaterialTriangleMeshShape.cpp
 	CollisionShapes/btMultiSphereShape.cpp
 	CollisionShapes/btOptimizedBvh.cpp
 	CollisionShapes/btPolyhedralConvexShape.cpp
 	CollisionShapes/btScaledBvhTriangleMeshShape.cpp
+	CollisionShapes/btSdfCollisionShape.cpp
 	CollisionShapes/btShapeHull.cpp
 	CollisionShapes/btSphereShape.cpp
 	CollisionShapes/btStaticPlaneShape.cpp
@@ -102,6 +104,7 @@ SET(Root_HDRS
 	../btBulletCollisionCommon.h
 )
 SET(BroadphaseCollision_HDRS
+    BroadphaseCollision/btAxisSweep3Internal.h
 	BroadphaseCollision/btAxisSweep3.h
 	BroadphaseCollision/btBroadphaseInterface.h
 	BroadphaseCollision/btBroadphaseProxy.h
@@ -189,12 +192,15 @@ SET(CollisionShapes_HDRS
 SET(Gimpact_HDRS
 	Gimpact/btBoxCollision.h
 	Gimpact/btClipPolygon.h
+	Gimpact/btContactProcessingStructs.h
 	Gimpact/btContactProcessing.h
 	Gimpact/btGenericPoolAllocator.h
 	Gimpact/btGeometryOperations.h
+	Gimpact/btGImpactBvhStructs.h
 	Gimpact/btGImpactBvh.h
 	Gimpact/btGImpactCollisionAlgorithm.h
 	Gimpact/btGImpactMassUtil.h
+	Gimpact/btGImpactQuantizedBvhStructs.h
 	Gimpact/btGImpactQuantizedBvh.h
 	Gimpact/btGImpactShape.h
 	Gimpact/btQuantization.h

@@ -35,7 +35,7 @@ endmacro ()
 macro(add_sample NAME MAIN_SOURCE)
     add_executable(${NAME} ${MAIN_SOURCE}.cpp ${MAIN_SOURCE}.h ${COMMON_SAMPLE_H_FILES} ${ARGN})
     target_link_libraries(${NAME} Lutefisk3D )
-	SET_TARGET_PROPERTIES (${NAME} PROPERTIES FOLDER Samples)
+    SET_TARGET_PROPERTIES (${NAME} PROPERTIES FOLDER Samples)
 endmacro()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -51,7 +51,7 @@ add_sample_subdirectory (07_Billboards)
 add_sample_subdirectory (08_Decals)
 add_sample_subdirectory (09_MultipleViewports)
 add_sample_subdirectory (10_RenderToTexture)
-if(NOT LUTEFISK3D_SOUNDLESS)
+if(LUTEFISK3D_SOUND)
     add_sample_subdirectory (14_SoundEffects)
     add_sample_subdirectory (29_SoundSynthesis)
 endif()
@@ -73,28 +73,56 @@ if (NOT LUTEFISK3D_PHYSICSLESS)
     add_sample_subdirectory (18_CharacterDemo)
     add_sample_subdirectory (19_VehicleDemo)
 endif ()
-if (NOT LUTEFISK3D_NAVIGATIONLESS)
+if (LUTEFISK3D_NAVIGATION)
     add_sample_subdirectory (15_Navigation)
-#    add_sample_subdirectory (39_CrowdNavigation)
+    add_sample_subdirectory (39_CrowdNavigation)
 endif ()
-if (NOT LUTEFISK3D_NETLESS)
-    add_sample_subdirectory (16_Chat)
+if (LUTEFISK3D_NETWORK)
+#    add_sample_subdirectory (16_Chat)
 endif ()
-if (NOT LUTEFISK3D_NETLESS AND NOT LUTEFISK3D_PHYSICSLESS)
-    add_sample_subdirectory (17_SceneReplication)
+if (LUTEFISK3D_NETWORK AND LUTEFISK3D_PHYSICS)
+#    add_sample_subdirectory (17_SceneReplication)
 endif ()
-#if (URHO3D_ANGELSCRIPT)
-##    add_sample_subdirectory (21_AngelScriptIntegration)
-#endif ()
-#if (URHO3D_LUA)
-##    add_sample_subdirectory (22_LuaIntegration)
-#endif ()
-if (NOT LUTEFISK3D_2DLESS)
+if (LUTEFISK3D_2D)
+    add_subdirectory(Utilities2D)
     add_sample_subdirectory (24_Urho2DSprite)
     add_sample_subdirectory (25_Urho2DParticle)
     add_sample_subdirectory (27_Urho2DPhysics)
     add_sample_subdirectory (28_Urho2DPhysicsRope)
-    #add_sample_subdirectory (32_Urho2DConstraints)
+    add_sample_subdirectory (32_Urho2DConstraints)
     add_sample_subdirectory (33_Urho2DSpriterAnimation)
     add_sample_subdirectory (36_Urho2DTileMap)
+    add_sample_subdirectory (49_Urho2DIsometricDemo)
+    add_sample_subdirectory (50_Urho2DPlatformer)
+    add_sample_subdirectory (51_Urho2DStretchableSprite)
+
 endif ()
+if(LUTEFISK3D_SYSTEMUI)
+    add_sample_subdirectory (100_HelloSystemUI)
+endif()
+#103_GamePlugin
+#13_Ragdolls
+#14_SoundEffects
+#15_Navigation
+#16_Chat
+#17_SceneReplication
+#18_CharacterDemo
+#19_VehicleDemo
+#20_HugeObjectCount
+#23_Water
+#24_Urho2DSprite
+#25_Urho2DParticle
+#26_ConsoleInput
+#27_Urho2DPhysics
+#28_Urho2DPhysicsRope
+#29_SoundSynthesis
+#30_LightAnimation
+#31_MaterialAnimation
+#32_Urho2DConstraints
+#33_Urho2DSpriterAnimation
+#34_DynamicGeometry
+#35_SignedDistanceFieldText
+#36_Urho2DTileMap
+#45_InverseKinematics
+#46_RaycastVehicle
+#47_Typography

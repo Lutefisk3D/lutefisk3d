@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 
 namespace Urho3D
 {
-class LUTEFISK3D_EXPORT Texture;
+class Texture;
 
 /// %Component that describes global rendering properties.
 class LUTEFISK3D_EXPORT Zone : public Drawable
@@ -35,16 +35,14 @@ class LUTEFISK3D_EXPORT Zone : public Drawable
     URHO3D_OBJECT(Zone,Drawable)
 
 public:
-    Zone(Context* context);
-    virtual ~Zone();
+    explicit Zone(Context* context);
+    ~Zone() override;
 
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);
 
-    /// Handle attribute write access.
-    virtual void OnSetAttribute(const AttributeInfo& attr, const Variant& src) override;
     /// Visualize the component as debug geometry.
-    virtual void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
+    void DrawDebugGeometry(DebugRenderer* debug, bool depthTest) override;
 
     /// Set local-space bounding box. Will be used as an oriented bounding box to test whether objects or the camera are inside.
     void SetBoundingBox(const BoundingBox& box);
@@ -114,6 +112,7 @@ protected:
 
     void UpdateAmbientGradient();
     void ClearDrawablesZone();
+    void MarkNodeDirty() { OnMarkedDirty(node_); }
 
     mutable Matrix3x4  inverseWorld_;         //!< Cached inverse world transform matrix.
     mutable bool       inverseWorldDirty_;    //!< Inverse transform dirty flag.

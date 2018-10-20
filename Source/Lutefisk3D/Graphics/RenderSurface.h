@@ -108,7 +108,7 @@ public:
 private:
     std::unique_ptr<RenderSurfacePrivate> d;
     /// Parent texture.
-    Texture* parentTexture_;
+    WeakPtr<Texture> parentTexture_;
     /// OpenGL renderbuffer name.
     unsigned renderBuffer_=0;
     /// OpenGL target.

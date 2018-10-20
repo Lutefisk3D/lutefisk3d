@@ -23,7 +23,6 @@
 #pragma once
 
 #include "Lutefisk3D/IO/Log.h"
-#include "Lutefisk3D/Core/Variant.h"
 
 #include <cmath>
 
@@ -86,9 +85,9 @@ public:
     /// Return the knots of the spline.
     const std::vector<T>& GetKnots() const { return knots_; }
     /// Return the Knot at the specific index.
-    Variant GetKnot(unsigned index) const { return knots_[index]; }
+    T GetKnot(unsigned index) const { return knots_[index]; }
     /// Return the T of the point of the Spline at f from 0.f - 1.f.
-    Variant GetPoint(float f) const
+    T GetPoint(float f) const
     {
         if (knots_.size() < 2)
             return knots_.size() == 1 ? knots_[0] : T();
@@ -110,22 +109,19 @@ public:
             {
                 /// \todo Do not allocate a new vector each time
                 std::vector<T> fullKnots;
-                if (knots_.size() > 1)
+                // Non-cyclic case: duplicate start and end
+                if (knots_.front() != knots_.back())
                 {
-                    // Non-cyclic case: duplicate start and end
-                    if (knots_.front() != knots_.back())
-                    {
-                        fullKnots.push_back(knots_.front());
-                        fullKnots.insert(fullKnots.end(),knots_.begin(),knots_.end());
-                        fullKnots.push_back(knots_.back());
-                    }
-                    // Cyclic case: smooth the tangents
-                    else
-                    {
-                        fullKnots.push_back(knots_[knots_.size() - 2]);
-                        fullKnots.insert(fullKnots.end(),knots_.begin(),knots_.end());
-                        fullKnots.push_back(knots_[1]);
-                    }
+                    fullKnots.push_back(knots_.front());
+                    fullKnots.insert(fullKnots.end(),knots_.begin(),knots_.end());
+                    fullKnots.push_back(knots_.back());
+                }
+                // Cyclic case: smooth the tangents
+                else
+                {
+                    fullKnots.push_back(knots_[knots_.size() - 2]);
+                    fullKnots.insert(fullKnots.end(),knots_.begin(),knots_.end());
+                    fullKnots.push_back(knots_[1]);
                 }
                 return CatmullRomInterpolation(fullKnots, f);
             }
@@ -137,7 +133,7 @@ public:
     /// Set the InterpolationMode of the Spline.
     void SetInterpolationMode(InterpolationMode interpolationMode) { interpolationMode_ = interpolationMode; }
     /// Set the Knots of the Spline.
-    void SetKnots(const std::vector<Variant>& knots) { knots_ = knots; }
+    void SetKnots(const std::vector<T>& knots) { knots_ = knots; }
     /// Set the Knot value of an existing Knot.
     void SetKnot(const T& knot, unsigned index)
     {

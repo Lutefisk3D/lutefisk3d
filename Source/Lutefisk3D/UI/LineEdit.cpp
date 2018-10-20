@@ -63,9 +63,7 @@ LineEdit::LineEdit(Context* context) :
     layoutUpdated.Connect(this,&LineEdit::HandleLayoutUpdated);
 }
 
-LineEdit::~LineEdit()
-{
-}
+LineEdit::~LineEdit() = default;
 
 void LineEdit::RegisterObject(Context* context)
 {
@@ -113,7 +111,7 @@ void LineEdit::Update(float timeStep)
 
 void LineEdit::OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor)
 {
-    if (button == MouseButton::LEFT && cursorMovable_)
+    if (button == MOUSEB_LEFT && cursorMovable_)
     {
         unsigned pos = GetCharIndex(position);
         if (pos != M_MAX_UNSIGNED)
@@ -126,7 +124,7 @@ void LineEdit::OnClickBegin(const IntVector2& position, const IntVector2& screen
 
 void LineEdit::OnDoubleClick(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor)
 {
-    if (button == MouseButton::LEFT)
+    if (button == MOUSEB_LEFT)
         text_->SetSelection(0);
 }
 
@@ -196,7 +194,7 @@ bool LineEdit::OnDragDropFinish(UIElement* source)
     return false;
 }
 
-void LineEdit::OnKey(int key, int buttons, int qualifiers)
+void LineEdit::OnKey(Key key, MouseButtonFlags buttons, QualifierFlags qualifiers)
 {
     bool changed = false;
     bool cursorMoved = false;
@@ -350,14 +348,7 @@ void LineEdit::OnKey(int key, int buttons, int qualifiers)
     case KEY_PAGE_UP:
     case KEY_PAGE_DOWN:
         {
-            using namespace UnhandledKey;
-
-            VariantMap& eventData = GetEventDataMap();
-            eventData[P_ELEMENT] = this;
-            eventData[P_KEY] = key;
-            eventData[P_BUTTONS] = buttons;
-            eventData[P_QUALIFIERS] = qualifiers;
-            SendEvent(E_UNHANDLEDKEY, eventData);
+            unhandledKey(this,key,buttons,qualifiers);
         }
         return;
 

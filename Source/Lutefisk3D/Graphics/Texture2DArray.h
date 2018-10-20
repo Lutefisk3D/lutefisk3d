@@ -28,10 +28,9 @@
 namespace Urho3D
 {
 
-class LUTEFISK3D_EXPORT Deserializer;
-class LUTEFISK3D_EXPORT Image;
-class LUTEFISK3D_EXPORT RenderSurface;
-extern template class SharedPtr<XMLFile>;
+class Deserializer;
+class Image;
+class RenderSurface;
 
 /// 2D texture array resource.
 class LUTEFISK3D_EXPORT Texture2DArray : public Texture
@@ -42,20 +41,20 @@ public:
     /// Construct.
     Texture2DArray(Context* context);
     /// Destruct.
-    virtual ~Texture2DArray();
+    ~Texture2DArray() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
+    bool BeginLoad(Deserializer& source) override;
     /// Finish resource loading. Always called from the main thread. Return true if successful.
-    virtual bool EndLoad() override;
+    bool EndLoad() override;
     /// Mark the GPU resource destroyed on context destruction.
-    virtual void OnDeviceLost() override;
+    void OnDeviceLost() override;
     /// Recreate the GPU resource and restore data if applicable.
-    virtual void OnDeviceReset() override;
+    void OnDeviceReset() override;
     /// Release the texture.
-    virtual void Release() override;
+    void Release() override;
 
     /// Set the number of layers in the texture. To be used before SetData.
     void SetLayers(unsigned layers);
@@ -77,7 +76,7 @@ public:
 
 protected:
     /// Create the GPU texture.
-    virtual bool Create() override;
+    bool Create() override;
 
 private:
     /// Handle render surface update event.

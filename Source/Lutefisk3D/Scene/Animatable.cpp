@@ -39,7 +39,6 @@ extern const char* wrapModeNames[];
 
 Animatable::Animatable(Context* context) :
     Serializable(context),
-    SignalObserver(context->m_observer_allocator),
     animationEnabled_(true)
 {
 }
@@ -53,9 +52,9 @@ void Animatable::RegisterObject(Context* context)
 }
 
 /// Load from XML data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
-bool Animatable::LoadXML(const XMLElement& source, bool setInstanceDefault)
+bool Animatable::LoadXML(const XMLElement& source)
 {
-    if (!Serializable::LoadXML(source, setInstanceDefault))
+    if (!Serializable::LoadXML(source))
         return false;
 
     SetObjectAnimation(nullptr);
@@ -99,9 +98,9 @@ bool Animatable::LoadXML(const XMLElement& source, bool setInstanceDefault)
     return true;
 }
 /// Load from JSON data. When setInstanceDefault is set to true, after setting the attribute value, store the value as instance's default value. Return true if successful.
-bool Animatable::LoadJSON(const JSONValue& source, bool setInstanceDefault)
+bool Animatable::LoadJSON(const JSONValue& source)
 {
-    if (!Serializable::LoadJSON(source, setInstanceDefault))
+    if (!Serializable::LoadJSON(source))
         return false;
 
     SetObjectAnimation(nullptr);

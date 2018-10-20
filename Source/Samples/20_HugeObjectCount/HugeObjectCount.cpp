@@ -70,10 +70,10 @@ void HugeObjectCount::Start()
 
 void HugeObjectCount::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
     if (!scene_)
-        scene_ = new Scene(m_context);
+        scene_ = new Scene(GetContext());
     else
     {
         scene_->Clear();
@@ -150,17 +150,17 @@ void HugeObjectCount::CreateScene()
     // Create the camera. Create it outside the scene so that we can clear the whole scene without affecting it
     if (!cameraNode_)
     {
-        cameraNode_ = new Node(m_context);
+        cameraNode_ = new Node(GetContext());
         cameraNode_->SetPosition(Vector3(0.0f, 10.0f, -100.0f));
         Camera* camera = cameraNode_->CreateComponent<Camera>();
-        camera->SetFarClip(300.0f);
+        camera->setFarClipDistance(300.0f);
     }
 }
 
 void HugeObjectCount::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -181,10 +181,10 @@ void HugeObjectCount::CreateInstructions()
 
 void HugeObjectCount::SetupViewport()
 {
-    Renderer* renderer = m_context->m_Renderer.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
@@ -198,10 +198,10 @@ void HugeObjectCount::SubscribeToEvents()
 void HugeObjectCount::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (m_context->m_UISystem.get()->GetFocusElement())
+    if (GetContext()->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -230,7 +230,7 @@ void HugeObjectCount::MoveCamera(float timeStep)
 
 void HugeObjectCount::AnimateObjects(float timeStep)
 {
-    URHO3D_PROFILE_CTX(m_context,AnimateObjects);
+    URHO3D_PROFILE(AnimateObjects);
 
     const float ROTATE_SPEED = 15.0f;
     // Rotate about the Z axis (roll)
@@ -244,7 +244,7 @@ void HugeObjectCount::HandleUpdate(float timeStep)
 {
     // Take the frame time step, which is stored as a float
     // Toggle animation with space
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
     if (input->GetKeyPress(KEY_SPACE))
         animate_ = !animate_;
 

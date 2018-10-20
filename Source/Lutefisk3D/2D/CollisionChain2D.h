@@ -63,7 +63,7 @@ public:
 
 private:
     /// Apply node world scale.
-    virtual void ApplyNodeWorldScale() override;
+    void ApplyNodeWorldScale() override;
     /// Recreate fixture.
     void RecreateFixture();
 

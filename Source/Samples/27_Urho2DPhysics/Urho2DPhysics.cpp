@@ -76,7 +76,7 @@ void Urho2DPhysics::Start()
 
 void Urho2DPhysics::CreateScene()
 {
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
     scene_->CreateComponent<Octree>();
     scene_->CreateComponent<DebugRenderer>();
     // Create camera node
@@ -85,16 +85,16 @@ void Urho2DPhysics::CreateScene()
     cameraNode_->SetPosition(Vector3(0.0f, 0.0f, -10.0f));
 
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetOrthographic(true);
+    camera->setProjectionType(PT_ORTHOGRAPHIC);
 
-    Graphics* graphics = m_context->m_Graphics.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
     camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
     camera->SetZoom(1.2f * Min((float)graphics->GetWidth() / 1280.0f, (float)graphics->GetHeight() / 800.0f)); // Set zoom according to user's resolution to ensure full visibility (initial zoom (1.2) is set for full visibility at 1280x800 resolution)
 
     // Create 2D physics world component
     /*PhysicsWorld2D* physicsWorld = */scene_->CreateComponent<PhysicsWorld2D>();
 
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     Sprite2D* boxSprite = cache->GetResource<Sprite2D>("Urho2D/Box.png");
     Sprite2D* ballSprite = cache->GetResource<Sprite2D>("Urho2D/Ball.png");
 
@@ -162,8 +162,8 @@ void Urho2DPhysics::CreateScene()
 
 void Urho2DPhysics::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -178,20 +178,20 @@ void Urho2DPhysics::CreateInstructions()
 
 void Urho2DPhysics::SetupViewport()
 {
-    Renderer* renderer = m_context->m_Renderer.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void Urho2DPhysics::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (m_context->m_UISystem.get()->GetFocusElement())
+    if (GetContext()->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 4.0f;

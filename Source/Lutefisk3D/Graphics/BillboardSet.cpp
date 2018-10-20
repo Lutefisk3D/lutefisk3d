@@ -102,9 +102,7 @@ BillboardSet::BillboardSet(Context* context) :
     batches_[0].worldTransform_ = &transforms_[0];
 }
 
-BillboardSet::~BillboardSet()
-{
-}
+BillboardSet::~BillboardSet() = default;
 
 void BillboardSet::RegisterObject(Context* context)
 {
@@ -124,7 +122,8 @@ void BillboardSet::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Shadow Distance", GetShadowDistance, SetShadowDistance, float, 0.0f, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Animation LOD Bias", GetAnimationLodBias, SetAnimationLodBias, float, 1.0f, AM_DEFAULT);
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
-    URHO3D_MIXED_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE("Billboards", GetBillboardsAttr, SetBillboardsAttr,VariantVector, Variant::emptyVariantVector, billboardsStructureElementNames, AM_FILE);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Billboards", GetBillboardsAttr, SetBillboardsAttr, VariantVector, Variant::emptyVariantVector, AM_FILE)
+        .SetMetadata(AttributeMetadata::P_VECTOR_STRUCT_ELEMENTS, billboardsStructureElementNames);
     URHO3D_ACCESSOR_ATTRIBUTE("Network Billboards", GetNetBillboardsAttr, SetNetBillboardsAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_NET | AM_NOEDIT);
 }
 
@@ -185,14 +184,14 @@ void BillboardSet::UpdateBatches(const FrameInfo& frame)
     Vector3 worldPos = node_->GetWorldPosition();
     Vector3 offset = (worldPos - frame.camera_->GetNode()->GetWorldPosition());
     // Sort if position relative to camera has changed
-    if (offset != previousOffset_ || frame.camera_->IsOrthographic() != hasOrthoCamera_)
+    if (offset != previousOffset_ || frame.camera_->getProjectionType() != hasOrthoCamera_)
     {
         if(sorted_)
             sortThisFrame_ = true;
         if(faceCameraMode_ == FC_DIRECTION)
             bufferDirty_ = true;
 
-        hasOrthoCamera_ = frame.camera_->IsOrthographic();
+        hasOrthoCamera_ = frame.camera_->getProjectionType()==PT_ORTHOGRAPHIC;
     }
 
     // Calculate fixed screen size scale factor for billboards. Will not dirty the buffer unless actually changed
@@ -356,7 +355,7 @@ Billboard* BillboardSet::GetBillboard(unsigned index)
 
 void BillboardSet::SetMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     SetMaterial(cache->GetResource<Material>(value.name_));
 }
 
@@ -771,7 +770,7 @@ void BillboardSet::CalculateFixedScreenSize(const FrameInfo& frame)
     float halfViewWorldSize = frame.camera_->GetHalfViewSize();
     bool scaleFactorChanged = false;
 
-    if (!frame.camera_->IsOrthographic())
+    if (PT_PERSPECTIVE==frame.camera_->getProjectionType())
     {
         Matrix4 viewProj(frame.camera_->GetProjection() * frame.camera_->GetView());
         const Matrix3x4& worldTransform = node_->GetWorldTransform();

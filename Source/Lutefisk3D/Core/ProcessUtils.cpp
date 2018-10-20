@@ -27,6 +27,7 @@
 #include <QtCore/QThread>
 #include <QtCore/QStandardPaths>
 #include <QtWidgets/QMessageBox>
+#include <QtCore/QUuid>
 
 #include <cstdio>
 #include <fcntl.h>
@@ -353,4 +354,9 @@ uint64_t GetTotalMemory()
 #endif
     return 0ull;
 }
+QString GenerateUUID()
+{
+    return QUuid::createUuid().toString();
+}
+
 }

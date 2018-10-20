@@ -3,6 +3,6 @@
 namespace Urho3D
 {
 
-ResourceSignals g_resourceSignals;
+LUTEFISK3D_EXPORT ResourceSignals g_resourceSignals;
 
 }

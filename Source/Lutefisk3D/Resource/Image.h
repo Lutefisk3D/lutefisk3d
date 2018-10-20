@@ -141,6 +141,11 @@ public:
     SDL_Surface *GetSDLSurface(const IntRect &rect = IntRect::ZERO) const;
     std::unique_ptr<GLFWimage> GetGLFWImage(const IntRect& rect = IntRect::ZERO) const;
     void PrecalculateLevels();
+    /// Whether this texture has an alpha channel
+    bool HasAlphaChannel() const;
+    /// Copy contents of the image into the defined rect, scaling if necessary. This image should already be large enough to include the rect. Compressed and 3D images are not supported.
+    bool SetSubimage(const Image* image, const IntRect& rect);
+    /// Clean up the mip levels.
     void CleanupLevels();
     void GetLevels(std::vector<Image *> &levels);
     void GetLevels(std::vector<const Image *> &levels) const;

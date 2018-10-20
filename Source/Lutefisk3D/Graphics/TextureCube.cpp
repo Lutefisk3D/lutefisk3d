@@ -66,8 +66,8 @@ TextureCube::TextureCube(Context* context) :
     addressMode_[COORD_V] = ADDRESS_CLAMP;
     addressMode_[COORD_W] = ADDRESS_CLAMP;
 
-    for (unsigned i = 0; i < MAX_CUBEMAP_FACES; ++i)
-        faceMemoryUse_[i] = 0;
+    for (unsigned& memoryUse : faceMemoryUse_)
+        memoryUse = 0;
 }
 
 TextureCube::~TextureCube()
@@ -82,7 +82,7 @@ void TextureCube::RegisterObject(Context* context)
 
 bool TextureCube::BeginLoad(Deserializer& source)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
 
     // In headless mode, do not actually load the texture, just return success
     if (!graphics_)
@@ -245,7 +245,7 @@ bool TextureCube::EndLoad()
     SetParameters(loadParameters_);
 
     for (unsigned i = 0; i < loadImages_.size() && i < MAX_CUBEMAP_FACES; ++i)
-        SetData((CubeMapFace)i, loadImages_[i]);
+        SetData(CubeMapFace(i), loadImages_[i]);
 
     loadImages_.clear();
     loadParameters_.Reset();
@@ -290,7 +290,7 @@ bool TextureCube::SetSize(int size, uint32_t format, TextureUsage usage, int mul
             renderSurfaces_[i]->target_ = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
         }
 
-        // Nearest filtering and mipmaps disabled by default
+        // Nearest filtering by default
         filterMode_ = FILTER_NEAREST;
     }
 

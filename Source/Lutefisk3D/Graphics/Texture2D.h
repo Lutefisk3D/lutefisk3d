@@ -30,8 +30,7 @@ namespace Urho3D
 
 class Image;
 class XMLFile;
-extern template class SharedPtr<XMLFile>;
-class LUTEFISK3D_EXPORT RenderSurface;
+class RenderSurface;
 /// 2D texture resource.
 class LUTEFISK3D_EXPORT Texture2D : public Texture
 {

@@ -30,8 +30,7 @@ set(INCLUDES
 )
 
 add_library(DetourTileCache STATIC ${SOURCE_FILES} ${INCLUDES})
-#install (FILES ${INCLUDES} DESTINATION include/ThirdParty/DetourTileCache)
-target_include_directories(DetourTileCache PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} )
 set_property(TARGET DetourTileCache PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_include_directories(DetourTileCache PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> )
 
 add_dependencies(DetourTileCache Detour)

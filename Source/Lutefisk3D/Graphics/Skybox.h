@@ -35,8 +35,8 @@ class LUTEFISK3D_EXPORT Skybox : public StaticModel
 public:
     static void RegisterObject(Context* context);
 
-    Skybox(Context* context);
-    virtual ~Skybox();
+    explicit Skybox(Context* context);
+    ~Skybox() override;
 
     void ProcessRayQuery(const RayOctreeQuery& query, std::vector<RayQueryResult>& results) override;
     void UpdateBatches(const FrameInfo& frame) override;

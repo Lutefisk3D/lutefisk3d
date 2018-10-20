@@ -36,10 +36,6 @@
 template class std::vector<Urho3D::AnimationKeyFrame>;
 namespace Urho3D
 {
-extern template class SharedPtr<XMLFile>;
-extern template class WeakPtr<XMLFile>;
-extern template class SharedPtr<JSONFile>;
-
 template class HashMap<StringHash, AnimationTrack>;
 
 inline bool CompareTriggers(AnimationTriggerPoint& lhs, AnimationTriggerPoint& rhs)
@@ -63,6 +59,15 @@ void AnimationTrack::SetKeyFrame(unsigned index, const AnimationKeyFrame& keyFra
         AddKeyFrame(keyFrame);
 }
 
+void AnimationTrack::SetAllKeyFrames(const AnimationKeyFrame* entries, int count) 
+{
+    keyFrames_.clear();
+    if(entries && count)
+    {
+        keyFrames_.assign(entries, entries + count);
+        std::sort(keyFrames_.begin(), keyFrames_.end(), CompareKeyFrames);
+    }
+}
 void AnimationTrack::AddKeyFrame(const AnimationKeyFrame& keyFrame)
 {
     bool needSort = keyFrames_.size() ? keyFrames_.back().time_ > keyFrame.time_ : false;
@@ -125,7 +130,7 @@ bool Animation::BeginLoad(Deserializer& source)
     unsigned memoryUse = sizeof(Animation);
 
     // Check ID
-    if (source.ReadFileID() != "UANI")
+    if (0!=source.ReadFileID().compare("UANI"))
     {
         URHO3D_LOGERROR(source.GetName() + " is not a valid animation file");
         return false;
@@ -145,7 +150,7 @@ bool Animation::BeginLoad(Deserializer& source)
     for (unsigned i = 0; i < tracks; ++i)
     {
         AnimationTrack* newTrack = CreateTrack(source.ReadString());
-        newTrack->channelMask_ = source.ReadUByte();
+        newTrack->channelMask_ = AnimationChannelFlags(source.ReadUByte());
 
         unsigned keyFrames = source.ReadUInt();
         newTrack->keyFrames_.resize(keyFrames);
@@ -166,7 +171,7 @@ bool Animation::BeginLoad(Deserializer& source)
     }
 
     // Optionally read triggers from an XML file
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     QString xmlName = ReplaceExtension(GetName(), ".xml");
 
     SharedPtr<XMLFile> file(cache->GetTempResource<XMLFile>(xmlName, false));
@@ -406,5 +411,13 @@ AnimationTriggerPoint* Animation::GetTrigger(unsigned index)
 {
     return index < triggers_.size() ? &triggers_[index] : nullptr;
 }
+void Animation::SetTracks(const std::vector<AnimationTrack>& tracks)
+{
+    tracks_.clear();
 
+    for (const AnimationTrack &tr : tracks)
+    {
+        tracks_[tr.name_] = tr;
+    }
+}
 }

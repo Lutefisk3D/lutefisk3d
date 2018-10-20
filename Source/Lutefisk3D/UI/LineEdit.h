@@ -31,22 +31,22 @@ class Font;
 class Text;
 
 /// Single-line text editor %UI element.
-class LUTEFISK3D_EXPORT LineEdit : public BorderImage, public LineEditSignals
+class LUTEFISK3D_EXPORT LineEdit : public BorderImage
 {
     URHO3D_OBJECT(LineEdit,BorderImage)
 
 public:
     /// Construct.
-    LineEdit(Context* context);
+    explicit LineEdit(Context* context);
     /// Destruct.
-    virtual ~LineEdit();
+    ~LineEdit() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Apply attribute changes that can not be applied immediately.
-    virtual void ApplyAttributes() override;
+    void ApplyAttributes() override;
     /// Perform UI element update.
-    virtual void Update(float timeStep) override;
+    void Update(float timeStep) override;
     /// React to mouse click begin.
     virtual void OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor) override;
     /// React to mouse doubleclick.
@@ -60,9 +60,9 @@ public:
     /// React to drag and drop finish. Return true to signal that the drop was accepted.
     virtual bool OnDragDropFinish(UIElement* source) override;
     /// React to a key press.
-    virtual void OnKey(int key, int buttons, int qualifiers) override;
+    void OnKey(Key key, MouseButtonFlags buttons, QualifierFlags qualifiers) override;
     /// React to text input event.
-    virtual void OnTextInput(const QString& text) override;
+    void OnTextInput(const QString& text) override;
 
     /// Set text.
     void SetText(const QString& text);
@@ -101,10 +101,17 @@ public:
     Text* GetTextElement() const { return text_; }
     /// Return cursor element.
     BorderImage* GetCursor() const { return cursor_; }
+    ///////////////////////////////////////////////////////////////
+    // SIGNALS
+    ///////////////////////////////////////////////////////////////
+
+    /// Text editing finished (enter pressed on a LineEdit)
+    jl::Signal<UIElement *,const QString &,float> textFinished; // Element,Text,Value
+    jl::Signal<UIElement *,int, unsigned, unsigned> unhandledKey;
 
 protected:
     /// Filter implicit attributes in serialization process.
-    virtual bool FilterImplicitAttributes(XMLElement& dest) const override;
+    bool FilterImplicitAttributes(XMLElement& dest) const override;
     /// Update displayed text.
     void UpdateText();
     /// Update cursor position and restart cursor blinking.

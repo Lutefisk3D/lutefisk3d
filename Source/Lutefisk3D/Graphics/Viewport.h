@@ -29,12 +29,12 @@
 namespace Urho3D
 {
 
-class LUTEFISK3D_EXPORT Camera;
-class LUTEFISK3D_EXPORT RenderPath;
-class LUTEFISK3D_EXPORT Scene;
-class LUTEFISK3D_EXPORT XMLFile;
-class LUTEFISK3D_EXPORT View;
-class LUTEFISK3D_EXPORT Ray;
+class Camera;
+class RenderPath;
+class Scene;
+class XMLFile;
+class View;
+class Ray;
 /// %Viewport definition either for a render surface or the backbuffer.
 class LUTEFISK3D_EXPORT Viewport : public Object
 {
@@ -42,13 +42,12 @@ class LUTEFISK3D_EXPORT Viewport : public Object
 
 public:
     /// Construct with defaults.
-    Viewport(Context* context);
+    explicit Viewport(Context* context);
     /// Construct with a full rectangle.
-    Viewport(Context* context, Scene* scene, Camera* camera, RenderPath* renderPath = 0);
+    Viewport(Context* context, Scene* scene, Camera* camera, RenderPath* renderPath = nullptr);
     /// Construct with a specified rectangle.
     Viewport(Context* context, Scene* scene, Camera* camera, const IntRect& rect, RenderPath* renderPath = nullptr);
-    /// Destruct.
-    ~Viewport();
+    ~Viewport() override;
 
     /// Set scene.
     void SetScene(Scene* scene);
@@ -57,9 +56,9 @@ public:
     /// Set view rectangle. A zero rectangle (0 0 0 0) means to use the rendertarget's full dimensions.
     void SetRect(const IntRect& rect);
     /// Set rendering path.
-    void SetRenderPath(RenderPath* path);
+    void SetRenderPath(RenderPath* renderPath);
     /// Set rendering path from an XML file.
-    void SetRenderPath(XMLFile* file);
+    bool SetRenderPath(XMLFile* file);
     /// Set whether to render debug geometry. Default true.
     void SetDrawDebug(bool enable);
     /// Set separate camera to use for culling. Sharing a culling camera between several viewports allows to prepare the view only once, saving in CPU use. The culling camera's frustum should cover all the viewport cameras' frusta or else objects may be missing from the rendered view.

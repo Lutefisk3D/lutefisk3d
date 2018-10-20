@@ -83,6 +83,15 @@ public:
     /// Return whether the file originates from a package.
     bool IsPackaged() const { return offset_ != 0; }
 
+    /// Reads a text file, ensuring data from file is 0 terminated
+    virtual void ReadText(QString& text);
+
+    /// Reads a text file, ensuring data from file is 0 terminated
+    virtual QString ReadText() { QString retValue; ReadText(retValue); return retValue; }
+
+    /// Copy a file from a source file, must be opened and FILE_WRITE
+    /// Unlike FileSystem.Copy this copy works when the source file is in a package file
+    bool Copy(File* srcFile);
 private:
     /// Open file internally using either C standard IO functions or SDL RWops for Android asset files. Return true if successful.
     bool OpenInternal(const QString& fileName, FileMode mode, bool fromPackage = false);
@@ -98,9 +107,9 @@ private:
     /// File handle.
     void* handle_=nullptr;
     /// Read buffer for Android asset or compressed file loading.
-    std::unique_ptr<uint8_t> readBuffer_;
+    std::unique_ptr<uint8_t[]> readBuffer_;
     /// Decompression input buffer for compressed file loading.
-    std::unique_ptr<uint8_t> inputBuffer_;
+    std::unique_ptr<uint8_t[]> inputBuffer_;
     /// Read buffer position.
     unsigned readBufferOffset_=0;
     /// Bytes in the current read buffer.

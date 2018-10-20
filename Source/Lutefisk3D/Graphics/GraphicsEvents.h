@@ -88,7 +88,7 @@ struct GraphicsSignals {
         deviceReset.SetAllocator(allocator);
     }
 };
-extern GraphicsSignals g_graphicsSignals;
+extern GraphicsSignals LUTEFISK3D_EXPORT g_graphicsSignals;
 
 
 }

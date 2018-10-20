@@ -25,135 +25,25 @@
 #include "Lutefisk3D/Container/Str.h"
 #include "Lutefisk3D/Core/Thread.h"
 #include "Lutefisk3D/Core/Timer.h"
-#include <limits>
-#include <vector>
+
+#ifdef LUTEFISK3D_PROFILING
+
 namespace Urho3D
+    {
+
+static const int PROFILER_DEFAULT_PORT = 28077;
+static const uint32_t PROFILER_COLOR_DEFAULT = 0xffffecb3;
+static const uint32_t PROFILER_COLOR_EVENTS = 0xffff9800;
+static const uint32_t PROFILER_COLOR_RESOURCES = 0xff00bcd4;
+// Copied from easy_profiler
+enum ProfilerBlockStatus
 {
-
-/// Profiling data for one block in the profiling tree.
-class LUTEFISK3D_EXPORT ProfilerBlock
-{
-public:
-    /// Construct with the specified parent block and name.
-    ProfilerBlock(ProfilerBlock* parent, const char* name) :
-        parent_(parent)
-    {
-        if (name)
-        {
-            unsigned nameLength = QLatin1String(name).size();
-            name_ = new char[nameLength + 1];
-            memcpy(name_, name, nameLength + 1);
-        }
-    }
-
-    /// Destruct. Free the child blocks.
-    virtual ~ProfilerBlock()
-    {
-        for (ProfilerBlock*& i : children_)
-        {
-            delete i;
-            i = nullptr;
-        }
-
-        delete [] name_;
-    }
-
-    /// Begin timing.
-    void Begin()
-    {
-        timer_.Reset();
-        ++count_;
-    }
-
-    /// End timing.
-    void End()
-    {
-        int64_t time = timer_.GetUSecS();
-        if (time > maxTime_)
-            maxTime_ = time;
-        time_ += time;
-    }
-
-    /// End profiling frame and update interval and total values.
-    void EndFrame()
-    {
-        frameTime_ = time_;
-        frameMaxTime_ = maxTime_;
-        frameCount_ = count_;
-        intervalTime_ += time_;
-        if (maxTime_ > intervalMaxTime_)
-            intervalMaxTime_ = maxTime_;
-        intervalCount_ += count_;
-        totalTime_ += time_;
-        if (maxTime_ > totalMaxTime_)
-            totalMaxTime_ = maxTime_;
-        totalCount_ += count_;
-        time_ = 0;
-        maxTime_ = 0;
-        count_ = 0;
-
-        for (ProfilerBlock* elem : children_)
-            elem->EndFrame();
-    }
-
-    /// Begin new profiling interval.
-    void BeginInterval()
-    {
-        intervalTime_ = 0;
-        intervalMaxTime_ = 0;
-        intervalCount_ = 0;
-
-        for (ProfilerBlock* elem : children_)
-            elem->BeginInterval();
-    }
-
-    /// Return child block with the specified name.
-    ProfilerBlock* GetChild(const char* name)
-    {
-        for (ProfilerBlock* elem : children_)
-        {
-            if (!QString(elem->name_).compare(name))
-                return elem;
-        }
-
-        ProfilerBlock* newBlock = new ProfilerBlock(this, name);
-        children_.push_back(newBlock);
-
-        return newBlock;
-    }
-
-    /// Block name.
-    char* name_ = nullptr;
-    /// High-resolution timer for measuring the block duration.
-    HiresTimer timer_;
-    /// Time on current frame.
-    int64_t time_=0;
-    /// Maximum time on current frame.
-    int64_t maxTime_=0;
-    /// Calls on current frame.
-    unsigned count_=0;
-    /// Parent block.
-    ProfilerBlock* parent_;
-    /// Child blocks.
-    std::vector<ProfilerBlock*> children_;
-    /// Time on the previous frame.
-    int64_t frameTime_=0;
-    /// Maximum time on the previous frame.
-    int64_t frameMaxTime_=0;
-    /// Calls on the previous frame.
-    unsigned frameCount_=0;
-    /// Time during current profiler interval.
-    int64_t intervalTime_=0;
-    /// Maximum time during current profiler interval.
-    int64_t intervalMaxTime_=0;
-    /// Calls during current profiler interval.
-    unsigned intervalCount_=0;
-    /// Total accumulated time.
-    int64_t totalTime_=0;
-    /// All-time maximum time.
-    int64_t totalMaxTime_=0;
-    /// Total accumulated calls.
-    unsigned totalCount_=0;
+    OFF = 0,
+    ON = 1,
+    FORCE_ON = ON | 2,
+    OFF_RECURSIVE = 4,
+    ON_WITHOUT_CHILDREN = ON | OFF_RECURSIVE,
+    FORCE_ON_WITHOUT_CHILDREN = FORCE_ON | OFF_RECURSIVE,
 };
 
 /// Hierarchical performance profiler subsystem.
@@ -165,83 +55,75 @@ public:
     /// Destruct.
     virtual ~Profiler();
 
-    /// Begin timing a profiling block.
-    void BeginBlock(const char* name)
-    {
-        // Profiler supports only the main thread currently
-        if (!Thread::IsMainThread())
-            return;
-
-        current_ = current_->GetChild(name);
-        current_->Begin();
-    }
-
-    /// End timing the current profiling block.
-    void EndBlock()
-    {
-        if (!Thread::IsMainThread())
-            return;
-
-        current_->End();
-        if (current_->parent_)
-            current_ = current_->parent_;
-        }
-
-    /// Begin the profiling frame. Called by HandleBeginFrame().
-    void BeginFrame();
-    /// End the profiling frame. Called by HandleEndFrame().
-    void EndFrame();
-    /// Begin a new interval.
-    void BeginInterval();
-
-    /// Return profiling data as text output. This method is not thread-safe.
-    QString PrintData(bool showUnused = false, bool showTotal = false, unsigned maxDepth = std::numeric_limits<unsigned>::max()) const;
-    /// Return the current profiling block.
-    const ProfilerBlock* GetCurrentBlock() { return current_; }
-    /// Return the root profiling block.
-    const ProfilerBlock* GetRootBlock() { return root_; }
-
-protected:
-    /// Return profiling data as text output for a specified profiling block.
-    void PrintData(ProfilerBlock* block, QString& output, unsigned depth, unsigned maxDepth, bool showUnused, bool showTotal) const;
-
-    /// Current profiling block.
-    ProfilerBlock* current_;
-    /// Root profiling block.
-    ProfilerBlock* root_;
-    /// Frames in the current interval.
-    unsigned intervalFrames_;
-};
-
-/// Helper class for automatically beginning and ending a profiling block
-class LUTEFISK3D_EXPORT AutoProfileBlock
-{
-public:
-    /// Construct. Begin a profiling block with the specified name and optional call count.
-    AutoProfileBlock(Profiler* profiler, const char* name) :
-        profiler_(profiler)
-    {
-        if (profiler_)
-            profiler_->BeginBlock(name);
-    }
-
-    /// Destruct. End the profiling block.
-    ~AutoProfileBlock()
-    {
-        if (profiler_)
-            profiler_->EndBlock();
-    }
+    /// Enables or disables profiler.
+    void SetEnabled(bool enabled);
+    /// Returns true if profiler is enabled, false otherwise.
+    bool GetEnabled() const;
+    /// Enables or disables event profiling.
+    void SetEventProfilingEnabled(bool enabled);
+    /// Returns true if event profiling is enabled, false otherwise.
+    bool GetEventProfilingEnabled() const;
+    /// Starts listening for incoming profiler tool connections.
+    void StartListen(unsigned short port=PROFILER_DEFAULT_PORT);
+    /// Stops listening for incoming profiler tool connections.
+    void StopListen();
+    /// Returns true if profiler is currently listening for incoming connections.
+    bool GetListening() const;
+    /// Enables or disables event tracing. This is windows-specific, does nothing on other OS.
+    void SetEventTracingEnabled(bool enable);
+    /// Returns true if event tracing is enabled, false otherwise.
+    bool GetEventTracingEnabled();
+    /// Enables or disables low priority event tracing. This is windows-specific, does nothing on other OS.
+    void SetLowPriorityEventTracing(bool isLowPriority);
+    /// Returns true if low priority event tracing is enabled, false otherwise.
+    bool GetLowPriorityEventTracing();
+    /// Save profiler data to a file.
+    void SaveProfilerData(const QString& filePath);
+    /// Begin non-scoped profiled block. Block has to be terminated with call to EndBlock(). This is slow and is for
+    /// integration with scripting languages. Use URHO3D_PROFILE* macros when writing c++ code instead.
+    static void BeginBlock(const char* name, const char* file, int line, unsigned int argb=PROFILER_COLOR_DEFAULT,
+                           unsigned char status=ProfilerBlockStatus::ON);
+    /// End block started with BeginBlock().
+    static void EndBlock();
+    /// Register name of current thread. Threads will be labeled in profiler data.
+    static void RegisterCurrentThread(const char* name);
 
 private:
-    /// Profiler.
-    Profiler* profiler_;
+    /// Flag which enables event profiling.
+    bool enableEventProfiling_ = true;
 };
 
-#ifdef LUTEFISK3D_PROFILING
-#define URHO3D_PROFILE(name) Urho3D::AutoProfileBlock profile_ ## name (context_->m_ProfilerSystem.get(), #name)
-#define URHO3D_PROFILE_CTX(ctx,name) Urho3D::AutoProfileBlock profile_ ## name (ctx->m_ProfilerSystem.get(), #name)
-#else
-#define URHO3D_PROFILE(name)
-#endif
+class LUTEFISK3D_EXPORT ProfilerDescriptor
+    {
+public:
+    ProfilerDescriptor(const char* name, const char* file, int line, unsigned int argb=PROFILER_COLOR_DEFAULT,
+        unsigned char status=ProfilerBlockStatus::ON);
+
+    void* descriptor_;
+};
+
+class LUTEFISK3D_EXPORT ProfilerBlock
+{
+public:
+    ProfilerBlock(ProfilerDescriptor& descriptor, const char* name);
+    ~ProfilerBlock();
+};
 
 }
+
+#   define URHO3D_TOKEN_JOIN(x, y) x ## y
+#   define URHO3D_TOKEN_CONCATENATE(x, y) URHO3D_TOKEN_JOIN(x, y)
+//, ##__VA_ARGS__
+#   define URHO3D_PROFILE(name) static Urho3D::ProfilerDescriptor URHO3D_TOKEN_CONCATENATE(__profiler_desc_, __LINE__) (#name, __FILE__, __LINE__);ProfilerBlock URHO3D_TOKEN_CONCATENATE(__profiler_block_, __LINE__) (URHO3D_TOKEN_CONCATENATE(__profiler_desc_, __LINE__), #name)
+#   define URHO3D_PROFILE_SCOPED(name, ...) static Urho3D::ProfilerDescriptor URHO3D_TOKEN_CONCATENATE(__profiler_desc_, __LINE__) (name, __FILE__, __LINE__, ##__VA_ARGS__);ProfilerBlock URHO3D_TOKEN_CONCATENATE(__profiler_block_, __LINE__) (URHO3D_TOKEN_CONCATENATE(__profiler_desc_, __LINE__), name)
+#   define URHO3D_PROFILE_NONSCOPED(name) Urho3D::Profiler::BeginBlock(#name, __FILE__, __LINE__)
+#   define URHO3D_PROFILE_END() Urho3D::Profiler::EndBlock();
+#   define URHO3D_PROFILE_THREAD(name) Urho3D::Profiler::RegisterCurrentThread(#name)
+#else
+#   define URHO3D_PROFILE(name, ...)
+#   define URHO3D_PROFILE_NONSCOPED(name, ...)
+#   define URHO3D_PROFILE_SCOPED(name, ...)
+#   define URHO3D_PROFILE_END(...)
+#   define URHO3D_PROFILE_THREAD(name)
+#endif
+

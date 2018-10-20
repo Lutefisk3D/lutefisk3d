@@ -36,6 +36,16 @@ struct ConsoleSignals
         consoleCommand.SetAllocator(alloc);
     }
 };
-extern ConsoleSignals g_consoleSignals;
-
+extern LUTEFISK3D_EXPORT ConsoleSignals g_consoleSignals;
+struct EngineSignals
+{
+    /// Engine finished initialization, but Application::Start() was not called yet.
+    jl::Signal<> initialized;
+    jl::Signal<> applicationStarted;
+    void init(jl::ScopedAllocator *alloc) {
+        initialized.SetAllocator(alloc);
+        applicationStarted.SetAllocator(alloc);
+    }
+};
+extern EngineSignals LUTEFISK3D_EXPORT g_engineSignals;
 }

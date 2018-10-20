@@ -49,7 +49,7 @@ struct NavigationSignals {
         navigationTileAdded.SetAllocator(allocator);
     }
 };
-extern NavigationSignals g_navigationSignals;
+extern NavigationSignals LUTEFISK3D_EXPORT g_navigationSignals;
 
 struct CrowdManagerSignals {
 

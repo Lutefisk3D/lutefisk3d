@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -161,7 +161,6 @@ struct Audio::AudioPrivate
 };
 Audio::Audio(Context* context) :
     Object(context),
-    SignalObserver(context->m_observer_allocator),
     d(new AudioPrivate),
     sampleSize_(0),
     playing_(false)

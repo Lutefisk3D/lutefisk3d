@@ -653,7 +653,7 @@ void CrowdAgent::HandleNavigationTileAdded(Node *,NavigationMesh *mesh,IntVector
         return;
 
     const IntVector2 agentTile = mesh->GetTileIndex(node_->GetWorldPosition());
-    const BoundingBox boundingBox = mesh->GetTileBoudningBox(agentTile);
+    const BoundingBox boundingBox = mesh->GetTileBoundingBox(agentTile);
     if (tile == agentTile && IsInCrowd())
     {
         RemoveAgentFromCrowd();

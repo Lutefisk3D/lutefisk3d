@@ -33,7 +33,7 @@ class Scene;
 }
 
 class Character;
-class Touch;
+//class Touch;
 
 /// Moving character example.
 /// This sample demonstrates:
@@ -68,7 +68,7 @@ private:
     void HandlePostUpdate(float ts);
 
     /// Touch utility object.
-    SharedPtr<Touch> touch_;
+    //SharedPtr<Touch> touch_;
     /// The controllable character component.
     WeakPtr<Character> character_;
     /// First person camera flag.

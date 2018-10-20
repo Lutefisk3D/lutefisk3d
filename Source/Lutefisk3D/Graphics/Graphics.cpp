@@ -210,8 +210,26 @@ IntVector2 Graphics::GetDesktopResolution(int monitor) const
 int Graphics::GetMonitorCount() const
 {
     int monitor_count=0;
-    GLFWmonitor** known_monitors = glfwGetMonitors(&monitor_count);
+    (void)glfwGetMonitors(&monitor_count);
     return monitor_count;
+}
+Vector3 Graphics::GetDisplayDPI(int monitor) const
+{
+    int moncount=0;
+    GLFWmonitor **monitors = glfwGetMonitors(&moncount);
+    Vector3 result;
+    if(monitor<moncount)
+    {
+        int widthMM, heightMM;
+        glfwGetMonitorPhysicalSize(monitors[monitor], &widthMM, &heightMM);
+        int diagonalMM = std::sqrt(widthMM * widthMM + heightMM*heightMM);
+        const GLFWvidmode *mode = glfwGetVideoMode(monitors[monitor]);
+        const float hdpi = mode->width / (widthMM / 25.4f);
+        const float vdpi = mode->height / (heightMM / 25.4f);
+        const float ddpi = std::sqrt(mode->width*mode->width + mode->height*mode->height) / (diagonalMM / 25.4f);
+        result = {ddpi,hdpi,vdpi};
+    }
+    return result;
 }
 
 void Graphics::Maximize()
@@ -242,7 +260,7 @@ void Graphics::EndDumpShaders()
 
 void Graphics::PrecacheShaders(Deserializer& source)
 {
-    URHO3D_PROFILE_CTX(m_context,PrecacheShaders);
+    URHO3D_PROFILE(PrecacheShaders);
 
     ShaderPrecache::LoadShaders(this, source);
 }
@@ -391,6 +409,55 @@ void RegisterGraphicsLibrary(Context* context)
     DebugRenderer::RegisterObject(context);
     Octree::RegisterObject(context);
     Zone::RegisterObject(context);
+}
+
+int Graphics::GetCurrentMonitor()
+{
+    GLFWmonitor *mon = glfwGetWindowMonitor(window2_);
+    int moncount=0;
+    GLFWmonitor **monitors = glfwGetMonitors(&moncount);
+    while(--moncount>=0)
+        if(monitors[moncount]==mon)
+            return moncount;
+    return 0;
+}
+
+int Graphics::GetNumMonitors()
+{
+    int moncount=0;
+    glfwGetMonitors(&moncount);
+    return moncount;
+}
+
+bool Graphics::GetMaximized()
+{
+    if (!window2_)
+        return false;
+    return glfwGetWindowAttrib(window2_,GLFW_MAXIMIZED)==GLFW_TRUE;
+}
+
+IntVector2 Graphics::GetMonitorResolution(int monitorId) const
+{
+    IntVector2 res;
+    int moncount=0;
+    GLFWmonitor **monitors = glfwGetMonitors(&moncount);
+    if(monitorId<moncount)
+    {
+        const GLFWvidmode * mode = glfwGetVideoMode(monitors[monitorId]);
+        res = {mode->width,mode->height};
+    }
+    else
+    {
+        const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        res = {mode->width,mode->height};
+    }
+    return res;
+}
+
+void Graphics::RaiseWindow()
+{
+    if (window2_)
+        glfwFocusWindow(window2_);
 }
 
 }

@@ -50,7 +50,7 @@ public:
     /// Construct and open.
     PackageFile(Context* context, const QString& fileName, unsigned startOffset = 0);
     /// Destruct.
-    virtual ~PackageFile();
+     ~PackageFile() override;
 
     /// Open the package file. Return true if successful.
     bool Open(const QString& fileName, unsigned startOffset = 0);
@@ -78,6 +78,21 @@ public:
     bool IsCompressed() const { return compressed_; }
     /// Return list of file names in the package.
     std::vector<QString> GetEntryNames() const;
+    /// Return a file name in the package at the specified index
+    const QString& GetEntryName(unsigned index) const
+    {
+        unsigned nn = 0;
+        for (const auto & entrie : entries_)
+        {
+            if (nn == index)
+                return entrie.first;
+            nn++;
+        }
+        return s_dummy;
+    }
+
+    /// Scan package for specified files.
+    void Scan(QStringList & result, const QString& pathName, const QString& filter, bool recursive) const;
 
 private:
     /// File entries.

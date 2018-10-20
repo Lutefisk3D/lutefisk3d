@@ -21,7 +21,7 @@
 //
 
 #pragma once
-
+#include "Lutefisk3D/Container/FlagSet.h"
 #include "Lutefisk3D/Container/Ptr.h"
 #include "Lutefisk3D/Math/StringHash.h"
 #include "Lutefisk3D/Math/Quaternion.h"
@@ -31,9 +31,28 @@
 namespace Urho3D
 {
 
+enum AnimationChannel : unsigned char
+{
+    CHANNEL_NONE = 0x0,
+    CHANNEL_POSITION = 0x1,
+    CHANNEL_ROTATION = 0x2,
+    CHANNEL_SCALE = 0x4,
+};
+URHO3D_FLAGSET(AnimationChannel, AnimationChannelFlags);
 /// Skeletal animation keyframe.
 struct AnimationKeyFrame
 {
+    /// Instance equality operator.
+    bool operator ==(const AnimationKeyFrame& rhs) const
+    {
+        return this == &rhs;
+    }
+
+    /// Instance inequality operator.
+    bool operator !=(const AnimationKeyFrame& rhs) const
+    {
+        return this != &rhs;
+    }
     /// Keyframe time.
     float time_=0.0f;
     /// Bone position.
@@ -44,9 +63,6 @@ struct AnimationKeyFrame
     Vector3 scale_=Vector3::ONE;
 };
 }
-namespace std {
-extern template class std::vector<Urho3D::AnimationKeyFrame>;
-}
 namespace Urho3D
 {
 /// Skeletal animation track, stores keyframes of a single bone.
@@ -54,6 +70,8 @@ struct LUTEFISK3D_EXPORT AnimationTrack
 {
     /// Assign keyframe at index.
     void SetKeyFrame(unsigned index, const AnimationKeyFrame& command);
+    /// Assign all keyframes
+    void SetAllKeyFrames(const AnimationKeyFrame *entries, int count);
     /// Add a keyframe at the end.
     void AddKeyFrame(const AnimationKeyFrame& keyFrame);
     /// Insert a keyframe at index.
@@ -75,23 +93,39 @@ struct LUTEFISK3D_EXPORT AnimationTrack
     /// Name hash.
     StringHash nameHash_;
     /// Bitmask of included data (position, rotation, scale.)
-    uint8_t channelMask_=0;
+    AnimationChannelFlags channelMask_=CHANNEL_NONE;
     /// Keyframes.
     std::vector<AnimationKeyFrame> keyFrames_;
+    /// Instance equality operator.
+    bool operator ==(const AnimationTrack& rhs) const
+    {
+        return this == &rhs;
+    }
+
+    /// Instance inequality operator.
+    bool operator !=(const AnimationTrack& rhs) const
+    {
+        return this != &rhs;
+    }
 };
-extern template class HashMap<StringHash, AnimationTrack>;
+
 /// %Animation trigger point.
 struct AnimationTriggerPoint
 {
     Variant data_; //!< Trigger data.
     float time_ = 0.0f; //!< Trigger time.
-};
-enum AnimationChannelFlags : uint8_t {
-    CHANNEL_POSITION = 0x1,
-    CHANNEL_ROTATION = 0x2,
-    CHANNEL_SCALE = 0x4
-};
+    /// Instance equality operator.
+    bool operator ==(const AnimationTriggerPoint& rhs) const
+    {
+        return this == &rhs;
+    }
 
+    /// Instance inequality operator.
+    bool operator !=(const AnimationTriggerPoint& rhs) const
+    {
+        return this != &rhs;
+    }
+};
 
 /// Skeletal animation resource.
 class LUTEFISK3D_EXPORT Animation : public ResourceWithMetadata
@@ -100,7 +134,7 @@ class LUTEFISK3D_EXPORT Animation : public ResourceWithMetadata
 
 public:
     /// Construct.
-    Animation(Context* context);
+    explicit Animation(Context* context);
     /// Destruct.
     ~Animation() override = default;
     /// Register object factory.
@@ -158,6 +192,8 @@ public:
     /// Return a trigger point by index.
     AnimationTriggerPoint* GetTrigger(unsigned index);
 
+    /// Set all animation tracks.
+    void SetTracks(const std::vector<AnimationTrack>& tracks);
 private:
     /// Animation name.
     QString animationName_;

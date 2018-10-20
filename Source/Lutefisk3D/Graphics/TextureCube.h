@@ -28,18 +28,16 @@
 namespace Urho3D
 {
 
-class LUTEFISK3D_EXPORT Deserializer;
-class LUTEFISK3D_EXPORT Image;
-class LUTEFISK3D_EXPORT RenderSurface;
-extern template class SharedPtr<XMLFile>;
-
+class Deserializer;
+class Image;
+class RenderSurface;
 /// Cube texture resource.
 class LUTEFISK3D_EXPORT TextureCube : public Texture
 {
     URHO3D_OBJECT(TextureCube,Texture)
 public:
-    TextureCube(Context* context);
-    virtual ~TextureCube();
+    explicit TextureCube(Context* context);
+    ~TextureCube() override;
 
     /// Register object factory.
     static void RegisterObject(Context* context);

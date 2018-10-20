@@ -27,9 +27,9 @@
 namespace Urho3D
 {
 
-class LUTEFISK3D_EXPORT Drawable2D;
-class LUTEFISK3D_EXPORT Renderer2D;
-class LUTEFISK3D_EXPORT Texture2D;
+class Drawable2D;
+class Renderer2D;
+class Texture2D;
 class LUTEFISK3D_EXPORT VertexBuffer;
 
 /// 2D vertex.

@@ -22,11 +22,14 @@
 
 #pragma once
 
+#include "Lutefisk3D/Container/FlagSet.h"
 #include "Lutefisk3D/Scene/Component.h"
 
 namespace Urho3D
 {
-enum SceneEventFlags : uint8_t {
+enum UpdateEvent : uint8_t {
+    /// Bitmask for not using any events.
+    USE_NO_EVENT = 0x0,
     /// Bitmask for using the scene update event.
     USE_UPDATE = 0x1,
     /// Bitmask for using the scene post-update event.
@@ -37,6 +40,7 @@ enum SceneEventFlags : uint8_t {
     USE_FIXEDPOSTUPDATE = 0x8,
 
 };
+URHO3D_FLAGSET(UpdateEvent, UpdateEventFlags);
 
 /// Helper base class for user-defined game logic components that hooks up to update events and forwards them to virtual functions similar to ScriptInstance class.
 class LUTEFISK3D_EXPORT LogicComponent : public Component
@@ -44,7 +48,7 @@ class LUTEFISK3D_EXPORT LogicComponent : public Component
     URHO3D_OBJECT(LogicComponent,Component)
 
     /// Construct.
-    LogicComponent(Context* context);
+    explicit LogicComponent(Context* context);
     /// Destruct.
     ~LogicComponent() override = default;
 
@@ -66,10 +70,10 @@ class LUTEFISK3D_EXPORT LogicComponent : public Component
     virtual void FixedPostUpdate(float timeStep);
 
     /// Set what update events should be subscribed to. Use this for optimization: by default all are in use. Note that this is not an attribute and is not saved or network-serialized, therefore it should always be called eg. in the subclass constructor.
-    void SetUpdateEventMask(unsigned char mask);
+    void SetUpdateEventMask(UpdateEventFlags mask);
 
     /// Return what update events are subscribed to.
-    unsigned char GetUpdateEventMask() const { return updateEventMask_; }
+    UpdateEventFlags GetUpdateEventMask() const { return updateEventMask_; }
     /// Return whether the DelayedStart() function has been called.
     bool IsDelayedStartCalled() const { return delayedStartCalled_; }
 
@@ -93,9 +97,9 @@ private:
     void HandlePhysicsPostStep(Component *c, float timeStep);
 #endif
     /// Requested event subscription mask.
-    unsigned char updateEventMask_;
+    UpdateEventFlags updateEventMask_;
     /// Current event subscription mask.
-    unsigned char currentEventMask_;
+    UpdateEventFlags currentEventMask_;
     /// Flag for delayed start.
     bool delayedStartCalled_;
 };

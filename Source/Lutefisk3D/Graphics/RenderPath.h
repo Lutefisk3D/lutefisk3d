@@ -83,7 +83,7 @@ struct LUTEFISK3D_EXPORT RenderTargetInfo
     bool                 cubemap_     = false;         //!< Cube map flag.
     bool                 filtered_    = false;         //!< Filtering flag.
     bool                 sRGB_        = false;         //!< sRGB sampling/writing mode flag.
-    bool persistent_ = false; //!< Should be persistent and not shared/reused between other buffers of same size.
+    bool                 persistent_ = false; //!< Should be persistent and not shared/reused between other buffers of same size.
 };
 
 /// Rendering path command.
@@ -186,6 +186,10 @@ public:
     bool Append(XMLFile* file);
     /// Enable/disable commands and rendertargets by tag.
     void SetEnabled(const QString& tag, bool active);
+    /// Return true of any of render targets or commands with specified tag are enabled.
+    bool IsEnabled(const QString& tag) const;
+    /// Return true if renderpath or command with given tag exists.
+    bool IsAdded(const QString& tag) const;
     /// Toggle enabled state of commands and rendertargets by tag.
     void ToggleEnabled(const QString& tag);
     /// Assign rendertarget at index.

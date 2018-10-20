@@ -50,6 +50,7 @@
 #include "Sprite2D.h"
 #include "SpriteSheet2D.h"
 #include "StaticSprite2D.h"
+#include "StretchableSprite2D.h"
 #include "TileMap2D.h"
 #include "TileMapLayer2D.h"
 #include "TmxFile2D.h"
@@ -70,8 +71,8 @@ void RegisterUrho2DLibrary(Context* context)
 
     // Must register objects from base to derived order
     Drawable2D::RegisterObject(context);
-    //StaticSprite2D::RegisterObject(context);
-    initializeSprite2D_Manager(context);
+    StaticSprite2D::RegisterObject(context);
+    StretchableSprite2D::RegisterObject(context);
     AnimationSet2D::RegisterObject(context);
     AnimatedSprite2D::RegisterObject(context);
 

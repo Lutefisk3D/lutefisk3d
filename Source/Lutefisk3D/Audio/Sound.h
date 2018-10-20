@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,14 +36,14 @@ class LUTEFISK3D_EXPORT Sound : public ResourceWithMetadata
     URHO3D_OBJECT(Sound,ResourceWithMetadata)
 
 public:
-    Sound(Context* context);
+    explicit Sound(Context* context);
     /// Destruct and free sound data.
     ~Sound() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source) override;
+    bool BeginLoad(Deserializer& source) override;
 
     /// Load raw sound data.
     bool LoadRaw(Deserializer& source);
@@ -67,7 +67,7 @@ public:
     /// Return shared sound data.
     SharedArrayPtr<signed char> GetData() const { return data_; }
     /// Return sound data start.
-    signed char* GetStart() const { return data_.Get(); }
+    signed char* GetStart() const { return data_.get(); }
     /// Return loop start.
     signed char* GetRepeat() const { return repeat_; }
     /// Return sound data end.

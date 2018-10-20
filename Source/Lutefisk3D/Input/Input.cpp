@@ -32,8 +32,9 @@
 #include "Lutefisk3D/Core/ProcessUtils.h"
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Core/StringUtils.h"
+#ifdef LUTEFISK3D_UI
 #include "Lutefisk3D/UI/UI.h"
-
+#endif
 #include <cstring>
 #include <QtCore/QDebug>
 #include <GLFW/glfw3.h>
@@ -76,7 +77,7 @@ void JoystickState::Reset()
 }
 
 Input::Input(Context* context) :
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     m_context(context),
     mouseButtonDown_(0),
     mouseButtonPress_(0),
@@ -88,7 +89,7 @@ Input::Input(Context* context) :
     lastMouseVisible_(false),
     mouseGrabbed_(false),
     lastMouseGrabbed_(false),
-    mouseMode_(MM_ABSOLUTE),
+    mouseMode_(MM_FREE),
     lastMouseMode_(MM_ABSOLUTE),
     inputFocus_(false),
     minimized_(false),
@@ -132,7 +133,7 @@ static void onGlfwMouseButton(GLFWwindow *w,int button,int action,int mods)
     Input *inp = static_cast<Input *>(glfwGetWindowUserPointer(w));
     if(!inp)
         return;
-    inp->SetMouseButton(MouseButton(button),action==GLFW_PRESS);
+    inp->SetMouseButton(MouseButton(1<<button),action==GLFW_PRESS);
 }
 void Input::mouseMovedInWindow(GLFWwindow *w,double x,double y)
 {
@@ -276,7 +277,7 @@ void Input::Update()
 {
     assert(initialized_);
 
-    URHO3D_PROFILE_CTX(m_context,UpdateInput);
+    URHO3D_PROFILE(UpdateInput);
 
     bool mouseMoved = false;
     if (mouseMove_ != mousePosLastUpdate_)
@@ -307,7 +308,7 @@ void Input::Update()
 
     if (suppressNextMouseMove_ && (mouseMove_ != mousePosLastUpdate_ || mouseMoved))
         UnsuppressMouseMove();
-
+    window = graphics_->GetWindow();
     bool flags = window ? glfwGetWindowAttrib(window,GLFW_FOCUSED) : 0;
     if (window)
     {
@@ -396,6 +397,7 @@ void Input::SetMouseVisible(bool enable, bool suppressEvent)
             mouseVisible_ = true;
 
             // Update cursor position
+#ifdef LUTEFISK3D_UI
             Cursor *cursor = m_context->m_UISystem->GetCursor();
             // If the UI Cursor was visible, use that position instead of last visible OS cursor position
             if (cursor && cursor->IsVisible())
@@ -408,6 +410,7 @@ void Input::SetMouseVisible(bool enable, bool suppressEvent)
                 }
             }
             else
+#endif
             {
                 if (lastVisibleMousePosition_ != MOUSE_POSITION_OFFSCREEN)
                 {
@@ -479,9 +482,9 @@ void Input::SetMouseMode(MouseMode mode, bool suppressEvent)
 
             mouseMode_ = mode;
             GLFWwindow* const window = graphics_->GetWindow();
-
+#ifdef LUTEFISK3D_UI
             Cursor* const cursor = m_context->m_UISystem->GetCursor();
-
+#endif
             // Handle changing from previous mode
             if (previousMode == MM_ABSOLUTE)
             {
@@ -520,7 +523,11 @@ void Input::SetMouseMode(MouseMode mode, bool suppressEvent)
                 else
                     glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
             }
+#ifdef LUTEFISK3D_UI
             SetMouseGrabbed(!(mouseVisible_ || (cursor && cursor->IsVisible())), suppressEvent);
+#else
+            SetMouseGrabbed(!mouseVisible_, suppressEvent);
+#endif
         }
         else
         {
@@ -658,17 +665,21 @@ bool Input::GetScancodePress(int scancode) const
     return scancodePress_.contains(scancode);
 }
 
-bool Input::GetMouseButtonDown(MouseButton button) const
+bool Input::GetMouseButtonDown(MouseButtonFlags button) const
 {
-    return (mouseButtonDown_ & 1<<int(button)) != 0;
+    return mouseButtonDown_ & button;
 }
 
-bool Input::GetMouseButtonPress(MouseButton button) const
+bool Input::GetMouseButtonPress(MouseButtonFlags button) const
 {
-    return (mouseButtonPress_ & 1<<int(button)) != 0;
+    return (mouseButtonPress_ & button);
+}
+bool Input::GetMouseButtonClick(MouseButtonFlags button) const
+{
+    return mouseButtonClick_ & button;
 }
 
-bool Input::GetQualifierDown(int qualifier) const
+bool Input::GetQualifierDown(Qualifier qualifier) const
 {
     if (qualifier == QUAL_SHIFT)
         return GetKeyDown(KEY_LEFT_SHIFT) || GetKeyDown(KEY_RIGHT_SHIFT);
@@ -676,11 +687,13 @@ bool Input::GetQualifierDown(int qualifier) const
         return GetKeyDown(KEY_LEFT_CONTROL) || GetKeyDown(KEY_RIGHT_CONTROL);
     if (qualifier == QUAL_ALT)
         return GetKeyDown(KEY_LEFT_ALT) || GetKeyDown(KEY_RIGHT_ALT);
+    if (qualifier == QUAL_SUPER)
+        return GetKeyDown(KEY_LEFT_SUPER) || GetKeyDown(KEY_RIGHT_SUPER);
 
     return false;
 }
 
-bool Input::GetQualifierPress(int qualifier) const
+bool Input::GetQualifierPress(Qualifier qualifier) const
 {
     if (qualifier == QUAL_SHIFT)
         return GetKeyPress(KEY_LEFT_SHIFT) || GetKeyPress(KEY_RIGHT_SHIFT);
@@ -692,9 +705,9 @@ bool Input::GetQualifierPress(int qualifier) const
     return false;
 }
 
-int Input::GetQualifiers() const
+QualifierFlags Input::GetQualifiers() const
 {
-    int ret = 0;
+    QualifierFlags ret = QUAL_NONE;
     if (GetQualifierDown(QUAL_SHIFT))
         ret |= QUAL_SHIFT;
     if (GetQualifierDown(QUAL_CTRL))
@@ -837,7 +850,8 @@ void Input::ResetInputAccumulation()
     // Reset input accumulation for this frame
     keyPress_.clear();
     scancodePress_.clear();
-    mouseButtonPress_ = 0;
+    mouseButtonPress_ = MOUSEB_NONE;
+    mouseButtonClick_ = MOUSEB_NONE;
     ResetMousePos();
     mouseMoveWheel_ = 0;
     for (auto i = joysticks_.begin(); i != joysticks_.end(); ++i)
@@ -910,13 +924,14 @@ void Input::ResetState()
         ELEMENT_VALUE(elem).Reset();
 
     // Use SetMouseButton() to reset the state so that mouse events will be sent properly
-    SetMouseButton(MouseButton::LEFT, false);
-    SetMouseButton(MouseButton::RIGHT, false);
-    SetMouseButton(MouseButton::MIDDLE, false);
+    SetMouseButton(MOUSEB_LEFT, false);
+    SetMouseButton(MOUSEB_RIGHT, false);
+    SetMouseButton(MOUSEB_MIDDLE, false);
 
     ResetMousePos();
     mouseMoveWheel_ = 0;
-    mouseButtonPress_ = 0;
+    mouseButtonPress_ = MOUSEB_NONE;
+    mouseButtonClick_ = MOUSEB_NONE;
 }
 
 void Input::SendInputFocusEvent()
@@ -928,17 +943,21 @@ void Input::SetMouseButton(MouseButton button, bool newState)
 {
     if (newState)
     {
-        if (!(mouseButtonDown_ & 1<<int(button)))
-            mouseButtonPress_ |= 1<<int(button);
+        if (!(mouseButtonDown_ & button))
+            mouseButtonPress_ |= button;
 
-        mouseButtonDown_ |= 1<<int(button);
+        mouseButtonDown_ |= button;
+        mousePressTimer_.Reset();
+        mousePressPosition_ = GetMousePosition();
     }
     else
     {
-        if (!(mouseButtonDown_ & 1<<int(button)))
+        if (mousePressTimer_.GetMSec(false) < 250 && mousePressPosition_ == GetMousePosition())
+            mouseButtonClick_ |= button;
+        if (!(mouseButtonDown_ & button))
             return;
 
-        mouseButtonDown_ &= ~(1<<int(button));
+        mouseButtonDown_ &= ~button;
     }
     if(newState)
         g_inputSignals.mouseButtonDown(button,mouseButtonDown_,GetQualifiers());

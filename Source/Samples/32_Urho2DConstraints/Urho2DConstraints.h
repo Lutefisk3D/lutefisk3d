@@ -75,17 +75,11 @@ private:
     /// Handle the post render update event during which we request debug geometry.
     void HandlePostRenderUpdate(float);
     /// Handle the mouse click event.
-    void HandleMouseButtonDown(StringHash eventType, VariantMap& eventData);
+    void HandleMouseButtonDown(MouseButton, unsigned, int);
     /// Handle the mouse button up event.
-    void HandleMouseButtonUp(StringHash eventType, VariantMap& eventData);
+    void HandleMouseButtonUp(MouseButton, unsigned, int);
     /// Handle the mouse move event.
-    void HandleMouseMove(StringHash eventType, VariantMap& eventData);
-    /// Handle the touch begin event.
-    void HandleTouchBegin3(StringHash eventType, VariantMap& eventData);
-    /// Handle the touch move event.
-    void HandleTouchMove3(StringHash eventType, VariantMap& eventData);
-    /// Handle the touch end event.
-    void HandleTouchEnd3(StringHash eventType, VariantMap& eventData);
+    void HandleMouseMove(int, int, int, int, unsigned, int);
     /// Get mouse position in 2D world coordinates.
     Vector2 GetMousePositionXY();
     /// Flag for drawing debug geometry.

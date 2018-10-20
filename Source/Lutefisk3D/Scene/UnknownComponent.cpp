@@ -89,7 +89,7 @@ void UnknownComponent::RegisterObject(Context* context)
     context->RegisterFactory<UnknownComponent>();
 }
 
-bool UnknownComponent::Load(Deserializer& source, bool setInstanceDefault)
+bool UnknownComponent::Load(Deserializer& source)
 {
     useXML_ = false;
     xmlAttributes_.clear();
@@ -101,7 +101,7 @@ bool UnknownComponent::Load(Deserializer& source, bool setInstanceDefault)
     return dataSize != 0u ? source.Read(&binaryAttributes_[0], dataSize) == dataSize : true;
     }
 
-    bool UnknownComponent::LoadXML(const XMLElement& source, bool setInstanceDefault)
+    bool UnknownComponent::LoadXML(const XMLElement& source)
     {
     useXML_ = true;
     xmlAttributes_.clear();
@@ -134,7 +134,7 @@ bool UnknownComponent::Load(Deserializer& source, bool setInstanceDefault)
     return true;
 }
 
-bool UnknownComponent::LoadJSON(const JSONValue& source, bool setInstanceDefault)
+bool UnknownComponent::LoadJSON(const JSONValue& source)
 {
     useXML_ = true;
     xmlAttributes_.clear();

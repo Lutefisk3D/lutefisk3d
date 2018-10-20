@@ -168,7 +168,7 @@ void Node::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Network Parent Node", GetNetParentAttr, SetNetParentAttr, std::vector<unsigned char>, Variant::emptyBuffer, AM_NET | AM_NOEDIT);
 }
 
-bool Node::Load(Deserializer& source, bool setInstanceDefault)
+bool Node::Load(Deserializer& source)
 {
     SceneResolver resolver;
 
@@ -228,7 +228,7 @@ bool Node::Save(Serializer& dest) const
     return true;
 }
 
-bool Node::LoadXML(const XMLElement& source, bool setInstanceDefault)
+bool Node::LoadXML(const XMLElement& source)
 {
     SceneResolver resolver;
 
@@ -247,7 +247,7 @@ bool Node::LoadXML(const XMLElement& source, bool setInstanceDefault)
     return success;
 }
 
-bool Node::LoadJSON(const JSONValue& source, bool setInstanceDefault)
+bool Node::LoadJSON(const JSONValue& source)
 {
     SceneResolver resolver;
 
@@ -878,6 +878,7 @@ void Node::AddChild(Node* node, unsigned index)
     {
         scene_->nodeAdded(scene_,this,node);
     }
+    g_sceneSignals.nodeAdded(scene_,this,node);
 }
 
 void Node::RemoveChild(Node* node)
@@ -885,7 +886,7 @@ void Node::RemoveChild(Node* node)
     if (node == nullptr)
         return;
 
-    for (std::vector<SharedPtr<Node> >::iterator i = children_.begin(); i != children_.end(); ++i)
+    for (auto i = children_.begin(); i != children_.end(); ++i)
     {
         if (*i == node)
         {
@@ -1109,7 +1110,7 @@ Node* Node::Clone(CreateMode mode)
         return nullptr;
     }
 
-    URHO3D_PROFILE_CTX(context_,CloneNode);
+    URHO3D_PROFILE(CloneNode);
 
     SceneResolver resolver;
     Node* clone = CloneRecursive(parent_, resolver, mode);
@@ -1360,6 +1361,10 @@ bool Node::HasComponent(StringHash type) const
     return false;
 }
 
+bool Node::IsReplicated() const
+{
+    return Scene::IsReplicatedID(id_);
+}
 bool Node::HasTag(const QString & tag) const
 {
     return impl_->tags_.contains(tag);
@@ -1846,6 +1851,7 @@ void Node::AddComponent(Component* component, unsigned id, CreateMode mode)
     {
         scene_->componentAdded(scene_,this,component);
     }
+    g_sceneSignals.componentAdded(scene_,this,component);
 }
 
 unsigned Node::GetNumPersistentChildren() const

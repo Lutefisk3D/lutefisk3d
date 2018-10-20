@@ -27,6 +27,7 @@
 #include "Lutefisk3D/Core/Variant.h"
 #include "Lutefisk3D/Engine/jlsignal/Signal.h"
 
+#include <memory>
 
 namespace Urho3D
 {
@@ -34,11 +35,13 @@ namespace Urho3D
 class Engine;
 enum LogLevels : int32_t;
 
-class LUTEFISK3D_EXPORT Application : public jl::SignalObserver
+/// Base class for creating applications which initialize the Urho3D engine and run a main loop until exited.
+class LUTEFISK3D_EXPORT Application : public Object
 {
+    URHO3D_OBJECT(Application, Object)
 public:
     Application(const QString &appName,Context* context);
-    virtual ~Application();
+    ~Application() override;
     /// Setup before engine initialization. This is a chance to eg. modify the engine parameters. Call ErrorExit() to
     /// terminate without initializing the engine. Called by Application.
     virtual void Setup() {}
@@ -57,7 +60,6 @@ protected:
     /// Handle log message.
     void HandleLogMessage(LogLevels level, const QString &message);
 
-    Context *         m_context;
     QString           m_appName; //!< Application name.
     Engine *          engine_;
     VariantMap        engineParameters_; //!< Engine parameters map.
@@ -73,6 +75,6 @@ int RunApplication() \
     std::unique_ptr<className> application(new className(context.get())); \
     return application->Run(); \
 } \
-URHO3D_DEFINE_MAIN(RunApplication());
+URHO3D_DEFINE_MAIN(RunApplication())
 
 }

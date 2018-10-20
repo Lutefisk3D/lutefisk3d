@@ -63,7 +63,7 @@ const char* navmeshPartitionTypeNames[] =
 {
     "watershed",
     "monotone",
-    0
+    nullptr
 };
 const char* NAVIGATION_CATEGORY = "Navigation";
 
@@ -526,7 +526,7 @@ bool NavigationMesh::HasTile(const IntVector2& tile) const
     return false;
 }
 
-BoundingBox NavigationMesh::GetTileBoudningBox(const IntVector2& tile) const
+BoundingBox NavigationMesh::GetTileBoundingBox(const IntVector2& tile) const
 {
     const float tileEdgeLength = (float)tileSize_ * cellSize_;
     return BoundingBox(
@@ -559,7 +559,7 @@ void NavigationMesh::RemoveTile(const IntVector2& tile)
     if (!tileRef)
         return;
 
-    navMesh_->removeTile(tileRef, 0, 0);
+    navMesh_->removeTile(tileRef, nullptr, nullptr);
 
     // Send event
     navigationTileRebuilt(GetNode(),this,tile);
@@ -1268,7 +1268,7 @@ bool NavigationMesh::BuildTile(std::vector<NavigationGeometryInfo>& geometryList
     // Remove previous tile (if any)
     navMesh_->removeTile(navMesh_->getTileRefAt(x, z, 0), 0, 0);
 
-    const BoundingBox tileBoundingBox = GetTileBoudningBox(IntVector2(x, z));
+    const BoundingBox tileBoundingBox = GetTileBoundingBox(IntVector2(x, z));
 
     SimpleNavBuildData build;
 
@@ -1537,7 +1537,7 @@ void NavigationMesh::SetPartitionType(NavmeshPartitionType ptype)
 }
 void RegisterNavigationLibrary(Context* context)
 {
-    g_navigationSignals.init(context->m_signal_allocator);
+    g_navigationSignals.init(context->signalAllocator());
 
     Navigable::RegisterObject(context);
     NavigationMesh::RegisterObject(context);

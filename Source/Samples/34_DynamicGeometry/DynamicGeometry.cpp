@@ -73,9 +73,9 @@ void DynamicGeometry::Start()
 
 void DynamicGeometry::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
 
     // Create the Octree component to the scene so that drawable objects can be rendered. Use default volume
     // (-1000, -1000, -1000) to (1000, 1000, 1000)
@@ -211,10 +211,10 @@ void DynamicGeometry::CreateScene()
             n1 = n2 = n3 = edge1.CrossProduct(edge2).Normalized();
         }
 
-        SharedPtr<Model> fromScratchModel(new Model(m_context));
-        SharedPtr<VertexBuffer> vb(new VertexBuffer(m_context));
-        SharedPtr<IndexBuffer> ib(new IndexBuffer(m_context));
-        SharedPtr<Geometry> geom(new Geometry(m_context));
+        SharedPtr<Model> fromScratchModel(new Model(GetContext()));
+        SharedPtr<VertexBuffer> vb(new VertexBuffer(GetContext()));
+        SharedPtr<IndexBuffer> ib(new IndexBuffer(GetContext()));
+        SharedPtr<Geometry> geom(new Geometry(GetContext()));
 
         // Shadowed buffer needed for raycasts to work, and so that data can be automatically restored on device loss
         vb->SetShadowed(true);
@@ -240,16 +240,16 @@ void DynamicGeometry::CreateScene()
     }
 
     // Create the camera
-    cameraNode_ = new Node(m_context);
+    cameraNode_ = new Node(GetContext());
     cameraNode_->SetPosition(Vector3(0.0f, 2.0f, -20.0f));
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetFarClip(300.0f);
+    camera->setFarClipDistance(300.0f);
 }
 
 void DynamicGeometry::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -269,10 +269,10 @@ void DynamicGeometry::CreateInstructions()
 
 void DynamicGeometry::SetupViewport()
 {
-    Renderer* renderer = m_context->m_Renderer.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
@@ -285,10 +285,10 @@ void DynamicGeometry::SubscribeToEvents()
 void DynamicGeometry::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (m_context->m_UISystem.get()->GetFocusElement())
+    if (GetContext()->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -317,7 +317,7 @@ void DynamicGeometry::MoveCamera(float timeStep)
 
 void DynamicGeometry::AnimateObjects(float timeStep)
 {
-    URHO3D_PROFILE_CTX(m_context,AnimateObjects);
+    URHO3D_PROFILE(AnimateObjects);
 
     time_ += timeStep * 100.0f;
 
@@ -353,7 +353,7 @@ void DynamicGeometry::AnimateObjects(float timeStep)
 void DynamicGeometry::HandleUpdate(float timeStep)
 {
     // Toggle animation with space
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
     if (input->GetKeyPress(KEY_SPACE))
         animate_ = !animate_;
 

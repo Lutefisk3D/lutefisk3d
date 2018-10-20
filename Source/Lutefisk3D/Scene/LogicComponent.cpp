@@ -62,7 +62,7 @@ void LogicComponent::FixedPostUpdate(float timeStep)
 {
 }
 
-void LogicComponent::SetUpdateEventMask(unsigned char mask)
+void LogicComponent::SetUpdateEventMask(UpdateEventFlags mask)
 {
     if (updateEventMask_ != mask)
     {
@@ -103,7 +103,7 @@ void LogicComponent::OnSceneSet(Scene* scene)
             signal_source->post_step.Disconnect(this);
         }
 #endif
-        currentEventMask_ = 0;
+        currentEventMask_ = USE_NO_EVENT;
     }
 }
 
@@ -115,25 +115,25 @@ void LogicComponent::UpdateEventSubscription()
 
     bool enabled = IsEnabledEffective();
 
-    bool needUpdate = enabled && (((updateEventMask_ & USE_UPDATE) != 0) || !delayedStartCalled_);
-    if (needUpdate && ((currentEventMask_ & USE_UPDATE) == 0))
+    bool needUpdate = enabled && ((updateEventMask_ & USE_UPDATE) || !delayedStartCalled_);
+    if (needUpdate && !(currentEventMask_ & USE_UPDATE))
     {
         g_sceneSignals.sceneUpdate.Connect(this,&LogicComponent::HandleSceneUpdate);
         currentEventMask_ |= USE_UPDATE;
     }
-    else if (!needUpdate && ((currentEventMask_ & USE_UPDATE) != 0))
+    else if (!needUpdate && (currentEventMask_ & USE_UPDATE))
     {
         g_sceneSignals.sceneUpdate.Disconnect(this,&LogicComponent::HandleSceneUpdate);
         currentEventMask_ &= ~USE_UPDATE;
     }
 
-    bool needPostUpdate = enabled && ((updateEventMask_ & USE_POSTUPDATE) != 0);
-    if (needPostUpdate && ((currentEventMask_ & USE_POSTUPDATE) == 0))
+    bool needPostUpdate = enabled && (updateEventMask_ & USE_POSTUPDATE);
+    if (needPostUpdate && !(currentEventMask_ & USE_POSTUPDATE))
     {
         GetScene()->scenePostUpdate.Connect(this,&LogicComponent::HandleScenePostUpdate);
         currentEventMask_ |= USE_POSTUPDATE;
     }
-    else if (!needPostUpdate && ((currentEventMask_ & USE_POSTUPDATE) != 0))
+    else if (!needPostUpdate && (currentEventMask_ & USE_POSTUPDATE))
     {
         GetScene()->scenePostUpdate.Disconnect(this,&LogicComponent::HandleScenePostUpdate);
         currentEventMask_ &= ~USE_POSTUPDATE;
@@ -144,25 +144,25 @@ void LogicComponent::UpdateEventSubscription()
     if (signal_source == nullptr)
         return;
 
-    bool needFixedUpdate = enabled && ((updateEventMask_ & USE_FIXEDUPDATE) != 0);
-    if (needFixedUpdate && ((currentEventMask_ & USE_FIXEDUPDATE) == 0))
+    bool needFixedUpdate = enabled && (updateEventMask_ & USE_FIXEDUPDATE);
+    if (needFixedUpdate && !(currentEventMask_ & USE_FIXEDUPDATE))
     {
         signal_source->pre_step.Connect(this,&LogicComponent::HandlePhysicsPreStep);
         currentEventMask_ |= USE_FIXEDUPDATE;
     }
-    else if (!needFixedUpdate && ((currentEventMask_ & USE_FIXEDUPDATE) != 0))
+    else if (!needFixedUpdate && (currentEventMask_ & USE_FIXEDUPDATE))
     {
         signal_source->pre_step.Disconnect(this);
         currentEventMask_ &= ~USE_FIXEDUPDATE;
     }
 
-    bool needFixedPostUpdate = enabled && ((updateEventMask_ & USE_FIXEDPOSTUPDATE) != 0);
-    if (needFixedPostUpdate && ((currentEventMask_ & USE_FIXEDPOSTUPDATE) == 0))
+    bool needFixedPostUpdate = enabled && (updateEventMask_ & USE_FIXEDPOSTUPDATE);
+    if (needFixedPostUpdate && !(currentEventMask_ & USE_FIXEDPOSTUPDATE))
     {
         signal_source->post_step.Connect(this,&LogicComponent::HandlePhysicsPostStep);
         currentEventMask_ |= USE_FIXEDPOSTUPDATE;
     }
-    else if (!needFixedPostUpdate && ((currentEventMask_ & USE_FIXEDPOSTUPDATE) != 0))
+    else if (!needFixedPostUpdate && (currentEventMask_ & USE_FIXEDPOSTUPDATE))
     {
         signal_source->post_step.Disconnect(this);
         currentEventMask_ &= ~USE_FIXEDPOSTUPDATE;
@@ -179,7 +179,7 @@ void LogicComponent::HandleSceneUpdate(Scene *s,float ts)
         delayedStartCalled_ = true;
 
         // If did not need actual update events, unsubscribe now
-        if ((updateEventMask_ & USE_UPDATE) == 0)
+        if (!(updateEventMask_ & USE_UPDATE))
         {
             g_sceneSignals.sceneUpdate.Disconnect(this,&LogicComponent::HandleSceneUpdate);
             currentEventMask_ &= ~USE_UPDATE;

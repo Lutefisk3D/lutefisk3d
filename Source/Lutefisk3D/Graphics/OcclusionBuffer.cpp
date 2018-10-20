@@ -94,7 +94,7 @@ bool OcclusionBuffer::SetSize(int width, int height, bool threaded)
     // Reserve extra memory in case 3D clipping is not exact
         OcclusionBufferData& buffer = buffers_[i];
         buffer.dataWithSafety_ = new int[width * (height + 2) + 2];
-        buffer.data_ = buffer.dataWithSafety_.Get() + width + 1;
+        buffer.data_ = buffer.dataWithSafety_.get() + width + 1;
         buffer.used_ = false;
     }
     mipBuffers_.clear();
@@ -241,7 +241,7 @@ void OcclusionBuffer::BuildDepthHierarchy()
 {
     if (buffers_.empty() || !depthHierarchyDirty_)
         return;
-    URHO3D_PROFILE_CTX(context_,BuildDepthHierarchy);
+    URHO3D_PROFILE(BuildDepthHierarchy);
 
     // Build the first mip level from the pixel-level data
     int width = (width_ + 1) / 2;
@@ -251,7 +251,7 @@ void OcclusionBuffer::BuildDepthHierarchy()
         for (int y = 0; y < height; ++y)
         {
             int* src = buffers_[0].data_ + (y * 2) * width_;
-            DepthValue* dest = mipBuffers_[0].Get() + y * width;
+            DepthValue* dest = mipBuffers_[0].get() + y * width;
             DepthValue* end = dest + width;
 
             if (y * 2 + 1 < height_)
@@ -295,8 +295,8 @@ void OcclusionBuffer::BuildDepthHierarchy()
 
         for (int y = 0; y < height; ++y)
         {
-            DepthValue* src = mipBuffers_[i - 1].Get() + (y * 2) * prevWidth;
-            DepthValue* dest = mipBuffers_[i].Get() + y * width;
+            DepthValue* src = mipBuffers_[i - 1].get() + (y * 2) * prevWidth;
+            DepthValue* dest = mipBuffers_[i].get() + y * width;
             DepthValue* end = dest + width;
 
             if (y * 2 + 1 < prevHeight)
@@ -419,7 +419,7 @@ bool OcclusionBuffer::IsVisible(const BoundingBox& worldSpaceBox) const
             int left = rect.left_ >> shift;
             int right = rect.right_ >> shift;
 
-            DepthValue* buffer = mipBuffers_[i].Get();
+            DepthValue* buffer = mipBuffers_[i].get();
             DepthValue* row = buffer + (rect.top_ >> shift) * width;
             DepthValue* endRow = buffer + (rect.bottom_ >> shift) * width;
             bool allOccluded = true;
@@ -991,7 +991,7 @@ void OcclusionBuffer::DrawTriangle2D(const Vector3* vertices, bool clockwise, un
 
 void OcclusionBuffer::MergeBuffers()
 {
-    URHO3D_PROFILE_CTX(context_,MergeBuffers);
+    URHO3D_PROFILE(MergeBuffers);
 
     for (unsigned i = 1; i < buffers_.size(); ++i)
     {

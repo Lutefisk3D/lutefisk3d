@@ -28,7 +28,6 @@ namespace Urho3D
 {
 class Graphics;
 
-extern template class WeakPtr<Graphics>;
 /// API-specific GPU object representation.
 union GPUObjectHandle
 {

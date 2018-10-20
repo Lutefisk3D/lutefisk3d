@@ -1691,7 +1691,7 @@ void _glfwPlatformSetWindowIcon(_GLFWwindow* window,
                 *target++ = (images[i].pixels[j * 4 + 0] << 16) |
                             (images[i].pixels[j * 4 + 1] <<  8) |
                             (images[i].pixels[j * 4 + 2] <<  0) |
-                            (images[i].pixels[j * 4 + 3] << 24);
+                            (((unsigned)images[i].pixels[j * 4 + 3]) << 24);
             }
         }
 

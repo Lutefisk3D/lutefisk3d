@@ -146,9 +146,9 @@ public:
     }
 
     /// Return all the keys.
-    PODVector<unsigned> Keys() const
+    std::vector<unsigned> Keys() const
     {
-        PODVector<unsigned> ret;
+        std::vector<unsigned> ret;
 
         for (unsigned i = 0; i < U; ++i)
         {
@@ -164,9 +164,9 @@ public:
     }
 
     /// Return pointers to all values.
-    PODVector<T*> Values() const
+    std::vector<T*> Values() const
     {
-        PODVector<T*> ret;
+        std::vector<T*> ret;
 
         for (unsigned i = 0; i < U; ++i)
         {

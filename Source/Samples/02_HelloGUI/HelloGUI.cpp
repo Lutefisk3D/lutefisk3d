@@ -54,10 +54,10 @@ void HelloGUI::Start()
     Sample::Start();
 
     // Enable OS cursor
-    m_context->m_InputSystem->SetMouseVisible(true);
+    GetContext()->m_InputSystem->SetMouseVisible(true);
 
     // Load XML file containing default UI style sheet
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     XMLFile* style = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
 
     // Set the loaded style as default style
@@ -76,16 +76,16 @@ void HelloGUI::Start()
 void HelloGUI::InitControls()
 {
     // Create a CheckBox
-    CheckBox* checkBox = new CheckBox(m_context);
+    CheckBox* checkBox = new CheckBox(GetContext());
     checkBox->SetName("CheckBox");
 
     // Create a Button
-    Button* button = new Button(m_context);
+    Button* button = new Button(GetContext());
     button->SetName("Button");
     button->SetMinHeight(24);
 
     // Create a LineEdit
-    LineEdit* lineEdit = new LineEdit(m_context);
+    LineEdit* lineEdit = new LineEdit(GetContext());
     lineEdit->SetName("LineEdit");
     lineEdit->SetMinHeight(24);
 
@@ -103,7 +103,7 @@ void HelloGUI::InitControls()
 void HelloGUI::InitWindow()
 {
     // Create the Window and add it to the UI's root node
-    window_ = new Window(m_context);
+    window_ = new Window(GetContext());
     uiRoot_->AddChild(window_);
 
     // Set Window size and layout settings
@@ -113,18 +113,18 @@ void HelloGUI::InitWindow()
     window_->SetName("Window");
 
     // Create Window 'titlebar' container
-    UIElement* titleBar = new UIElement(m_context);
+    UIElement* titleBar = new UIElement(GetContext());
     titleBar->SetMinSize(0, 24);
     titleBar->SetVerticalAlignment(VA_TOP);
     titleBar->SetLayoutMode(LM_HORIZONTAL);
 
     // Create the Window title Text
-    Text* windowTitle = new Text(m_context);
+    Text* windowTitle = new Text(GetContext());
     windowTitle->SetName("WindowTitle");
     windowTitle->SetText("Hello GUI!");
 
     // Create the Window's close button
-    Button* buttonClose = new Button(m_context);
+    Button* buttonClose = new Button(GetContext());
     buttonClose->SetName("CloseButton");
 
     // Add the controls to the title bar
@@ -147,11 +147,11 @@ void HelloGUI::InitWindow()
 
 void HelloGUI::CreateDraggableFish()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    Graphics* graphics = m_context->m_Graphics.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
 
     // Create a draggable Fish button
-    Button* draggableFish = new Button(m_context);
+    Button* draggableFish = new Button(GetContext());
     draggableFish->SetTexture(cache->GetResource<Texture2D>("Textures/UrhoDecal.dds")); // Set texture
     draggableFish->SetBlendMode(BLEND_ADD);
     draggableFish->SetSize(128, 128);
@@ -160,13 +160,13 @@ void HelloGUI::CreateDraggableFish()
     uiRoot_->AddChild(draggableFish);
 
     // Add a tooltip to Fish button
-    ToolTip* toolTip = new ToolTip(m_context);
+    ToolTip* toolTip = new ToolTip(GetContext());
     draggableFish->AddChild(toolTip);
     toolTip->SetPosition(IntVector2(draggableFish->GetWidth() + 5, draggableFish->GetWidth() / 2)); // slightly offset from close button
-    BorderImage* textHolder = new BorderImage(m_context);
+    BorderImage* textHolder = new BorderImage(GetContext());
     toolTip->AddChild(textHolder);
     textHolder->SetStyle("ToolTipBorderImage");
-    Text* toolTipText = new Text(m_context);
+    Text* toolTipText = new Text(GetContext());
     textHolder->AddChild(toolTipText);
     toolTipText->SetStyle("ToolTipText");
     toolTipText->SetText("Please drag me!");
@@ -184,9 +184,9 @@ void HelloGUI::HandleDragBegin(UIElement *,int,int,int elemX,int elemY,int,int)
     dragBeginPosition_ = IntVector2(elemX, elemY);
 }
 
-void HelloGUI::HandleDragMove(UIElement *draggedElement,int X,int Y,IntVector2 dlta,int elemX,int elemY,int,int)
+void HelloGUI::HandleDragMove(UIElement *draggedElement,int X,int Y,IntVector2 dlta,int /*elemX*/,int /*elemY*/,int,int)
 {
-    IntVector2 dragCurrentPosition = IntVector2(X, Y);
+    IntVector2 dragCurrentPosition = IntVector2(X+dlta.x_, Y+dlta.y_);
     draggedElement->SetPosition(dragCurrentPosition - dragBeginPosition_);
 }
 

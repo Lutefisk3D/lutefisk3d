@@ -99,7 +99,7 @@ void VertexBuffer::UpdateOffsets()
 {
     unsigned elementOffset = 0;
     elementHash_ = 0;
-    elementMask_ = 0;
+    elementMask_ = MASK_NONE;
 
     for (VertexElement &elem : elements_)
     {
@@ -112,7 +112,7 @@ void VertexBuffer::UpdateOffsets()
         {
             const VertexElement& legacy = LEGACY_VERTEXELEMENTS[j];
             if (elem.type_ == legacy.type_ && elem.semantic_ == legacy.semantic_ && elem.index_ == legacy.index_)
-                elementMask_ |= (1 << j);
+                elementMask_ |= VertexMaskFlags(1 << j);
         }
     }
 

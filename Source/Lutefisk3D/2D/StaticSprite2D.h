@@ -35,9 +35,9 @@ class LUTEFISK3D_EXPORT StaticSprite2D : public Drawable2D
     friend class StaticSprite2D_Manager;
 public:
     /// Construct.
-    StaticSprite2D(Context* context);
+    explicit StaticSprite2D(Context* context);
     /// Destruct.
-    ~StaticSprite2D();
+    ~StaticSprite2D() override;
     /// Register object factory. Drawable2D must be registered first.
     static void RegisterObject(Context* context);
 
@@ -50,11 +50,13 @@ public:
     /// Set blend mode.
     void SetBlendMode(BlendMode blendMode);
     /// Set flip.
-    void SetFlip(bool flipX, bool flipY);
+    void SetFlip(bool flipX, bool flipY, bool swapXY = false);
     /// Set flip X.
     void SetFlipX(bool flipX);
     /// Set flip Y.
     void SetFlipY(bool flipY);
+    /// Set swap X and Y.
+    void SetSwapXY(bool swapXY);
     /// Set color.
     void SetColor(const Color& color);
     /// Set alpha.
@@ -83,6 +85,8 @@ public:
     bool GetFlipX() const { return flipX_; }
     /// Return flip Y.
     bool GetFlipY() const { return flipY_; }
+    /// Return swap X and Y.
+    bool GetSwapXY() const { return swapXY_; }
     /// Return color.
     const Color& GetColor() const { return color_; }
     /// Return alpha.
@@ -125,6 +129,8 @@ protected:
     bool flipX_;
     /// Flip Y.
     bool flipY_;
+    /// Swap X and Y.
+    bool swapXY_;
     /// Color.
     Color color_;
     /// Use hot spot flag.
@@ -142,19 +148,4 @@ protected:
     /// Custom material.
     SharedPtr<Material> customMaterial_;
 };
-using Sprite2D_Handle = DataHandle<Sprite2D,20,20>;
-class StaticSprite2D_Manager : public RefCounted
-{
-    struct IndexEntry {
-
-    };
-    std::vector<StaticSprite2D> m_elements;
-public:
-    StaticSprite2D_Manager(Context *ctx);
-    void initialize();
-    SharedPtr<StaticSprite2D> allocateData();
-
-    Context *m_context=nullptr;
-};
-void initializeSprite2D_Manager(Context *ctx);
 }

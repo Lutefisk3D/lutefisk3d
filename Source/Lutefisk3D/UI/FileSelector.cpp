@@ -48,7 +48,6 @@ static bool CompareEntries(const FileSelectorEntry& lhs, const FileSelectorEntry
 
 FileSelector::FileSelector(Context* context) :
     Object(context),
-    SignalObserver(context->m_observer_allocator),
     directoryMode_(false),
     ignoreEvents_(false)
 {
@@ -115,12 +114,12 @@ FileSelector::FileSelector(Context* context) :
     ui->SetFocusElement(fileList_);
     window_->SetModal(true);
 
-    SubscribeToEvent(filterList_, E_ITEMSELECTED, URHO3D_HANDLER(FileSelector, HandleFilterChanged));
+    filterList_->itemSelected.Connect(this,&FileSelector::HandleFilterChanged);
     pathEdit_->textFinished.Connect(this,&FileSelector::HandlePathChanged);
     fileNameEdit_->textFinished.Connect(this,&FileSelector::HandleFileNameFinished);
-    SubscribeToEvent(fileList_, E_ITEMSELECTED, URHO3D_HANDLER(FileSelector, HandleFileSelected));
-    SubscribeToEvent(fileList_, E_ITEMDOUBLECLICKED, URHO3D_HANDLER(FileSelector, HandleFileDoubleClicked));
-    SubscribeToEvent(fileList_, E_UNHANDLEDKEY, URHO3D_HANDLER(FileSelector, HandleFileListKey));
+    fileList_->itemSelected.Connect(this,&FileSelector::HandleFileSelected);
+    fileList_->itemDoubleClicked.Connect(this,&FileSelector::HandleFileDoubleClicked);
+    fileList_->unhandledKey.Connect(this,&FileSelector::HandleFileListKey);
     okButton_->released.Connect(this,&FileSelector::HandleOKPressed);
     cancelButton_->released.Connect(this,&FileSelector::HandleCancelPressed);
     closeButton_->released.Connect(this,&FileSelector::HandleCancelPressed);
@@ -387,7 +386,7 @@ bool FileSelector::EnterFile()
     return false;
 }
 
-void FileSelector::HandleFilterChanged(StringHash eventType, VariantMap& eventData)
+void FileSelector::HandleFilterChanged(UIElement *el, int sel)
 {
     if (ignoreEvents_)
         return;
@@ -405,7 +404,7 @@ void FileSelector::HandlePathChanged(UIElement *,const QString &,float)
     SetPath(pathEdit_->GetText());
 }
 
-void FileSelector::HandleFileSelected(StringHash eventType, VariantMap& eventData)
+void FileSelector::HandleFileSelected(UIElement *el, int sel)
 {
     if (ignoreEvents_)
         return;
@@ -418,23 +417,20 @@ void FileSelector::HandleFileSelected(StringHash eventType, VariantMap& eventDat
         SetFileName(fileEntries_[index].name_);
 }
 
-void FileSelector::HandleFileDoubleClicked(StringHash eventType, VariantMap& eventData)
+void FileSelector::HandleFileDoubleClicked(UIElement *, UIElement*, int, int button, unsigned, unsigned)
 {
     if (ignoreEvents_)
         return;
 
-    if (MouseButton(eventData[ItemDoubleClicked::P_BUTTON].GetInt()) == MouseButton::LEFT)
+    if (MouseButton(button) == MOUSEB_LEFT)
         EnterFile();
 }
 
-void FileSelector::HandleFileListKey(StringHash eventType, VariantMap& eventData)
+void FileSelector::HandleFileListKey(UIElement *,int key, unsigned, unsigned)
 {
     if (ignoreEvents_)
         return;
 
-    using namespace UnhandledKey;
-
-    int key = eventData[P_KEY].GetInt();
     if (key == KEY_ENTER || key == KEY_KP_ENTER)
     {
         bool entered = EnterFile();

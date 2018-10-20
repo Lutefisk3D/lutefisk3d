@@ -47,7 +47,7 @@ void Texture3D::OnDeviceReset()
     if (!object_ || dataPending_)
     {
         // If has a resource file, reload through the resource cache. Otherwise just recreate.
-        ResourceCache* cache = context_->m_ResourceCache.get();
+        ResourceCache* cache = context_->resourceCache();
         if (cache->Exists(GetName()))
             dataLost_ = !cache->ReloadResource(this);
 
@@ -82,7 +82,7 @@ void Texture3D::Release()
 
 bool Texture3D::SetData(unsigned level, int x, int y, int z, int width, int height, int depth, const void* data)
 {
-    URHO3D_PROFILE_CTX(context_,SetTextureData);
+    URHO3D_PROFILE(SetTextureData);
 
     if (!object_ || !graphics_)
     {

@@ -25,8 +25,6 @@
 #include "Lutefisk3D/Math/StringHash.h"
 #include "Lutefisk3D/Container/Str.h"
 
-//#include "Lutefisk3D/Core/Variant.h"
-
 #include <QString>
 
 namespace Urho3D
@@ -300,8 +298,4 @@ private:
         JSONObject* objectValue_;
     };
 };
-extern template class HashMap<QString, JSONValue>;
-}
-namespace std {
-extern template class std::vector<Urho3D::JSONValue>;
 }

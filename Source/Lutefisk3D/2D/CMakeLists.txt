@@ -32,6 +32,7 @@ set(INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/SpriterInstance2D.h
     ${CMAKE_CURRENT_SOURCE_DIR}/SpriteSheet2D.h
     ${CMAKE_CURRENT_SOURCE_DIR}/StaticSprite2D.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/StretchableSprite2D.h
     ${CMAKE_CURRENT_SOURCE_DIR}/TileMap2D.h
     ${CMAKE_CURRENT_SOURCE_DIR}/TileMapDefs2D.h
     ${CMAKE_CURRENT_SOURCE_DIR}/TileMapLayer2D.h
@@ -70,6 +71,7 @@ set(SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/SpriterInstance2D.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/SpriteSheet2D.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/StaticSprite2D.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/StretchableSprite2D.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/TileMap2D.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/TileMapDefs2D.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/TileMapLayer2D.cpp

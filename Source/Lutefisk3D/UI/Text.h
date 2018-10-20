@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Lutefisk3D/UI/UIElement.h"
+#include "Lutefisk3D/UI/UISelectable.h"
 
 namespace Urho3D
 {
@@ -59,26 +59,26 @@ struct GlyphLocation
 };
 
 /// %Text %UI element.
-class LUTEFISK3D_EXPORT Text : public UIElement
+class LUTEFISK3D_EXPORT Text : public UISelectable
 {
-    URHO3D_OBJECT(Text,UIElement)
+    URHO3D_OBJECT(Text,UISelectable)
 
     friend class Text3D;
 
 public:
-    Text(Context* context);
+    explicit Text(Context* context);
     ~Text() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Apply attribute changes that can not be applied immediately.
-    virtual void ApplyAttributes() override;
+    void ApplyAttributes() override;
     /// Return UI rendering batches.
-    virtual void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor) override;
+    void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor) override;
     /// React to resize.
-    virtual void OnResize(const IntVector2& newSize, const IntVector2& delta) override;
+    void OnResize(const IntVector2& newSize, const IntVector2& delta) override;
     /// React to indent change.
-    virtual void OnIndentSet() override;
+    void OnIndentSet() override;
 
     /// Set font by looking from resource cache by name and font size. Return true if successful.
     bool SetFont(const QString& fontName, float size = DEFAULT_FONT_SIZE);
@@ -100,10 +100,6 @@ public:
     void SetSelection(unsigned start, unsigned length = M_MAX_UNSIGNED);
     /// Clear selection.
     void ClearSelection();
-    /// Set selection background color. Color with 0 alpha (default) disables.
-    void SetSelectionColor(const Color& color);
-    /// Set hover background color. Color with 0 alpha (default) disables.
-    void SetHoverColor(const Color& color);
     /// Set text effect.
     void SetTextEffect(TextEffect textEffect);
     /// Set shadow offset.
@@ -135,10 +131,6 @@ public:
     unsigned GetSelectionStart() const { return selectionStart_; }
     /// Return selection length.
     unsigned GetSelectionLength() const { return selectionLength_; }
-    /// Return selection background color.
-    const Color& GetSelectionColor() const { return selectionColor_; }
-    /// Return hover background color.
-    const Color& GetHoverColor() const { return hoverColor_; }
     /// Return text effect.
     TextEffect GetTextEffect() const { return textEffect_; }
 
@@ -207,10 +199,7 @@ protected:
     bool charLocationsDirty_;
     unsigned selectionStart_;
     unsigned selectionLength_;
-    /// Selection background color.
-    Color selectionColor_;
-    /// Hover background color.
-    Color hoverColor_;
+    /// Text effect.
     TextEffect textEffect_;
     /// Text effect shadow offset.
     IntVector2 shadowOffset_;

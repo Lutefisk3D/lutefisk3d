@@ -21,11 +21,12 @@
 //
 
 #pragma once
+#if LUTEFISK3D_NETWORK
 
-#include "../Network/Connection.h"
-#include "../Core/Object.h"
-#include "../IO/VectorBuffer.h"
-#include "../Container/HashMap.h"
+#include "Lutefisk3D/Network/Connection.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
+#include "Lutefisk3D/Container/HashMap.h"
 
 #include <kNet/IMessageHandler.h>
 #include <kNet/INetworkServerListener.h>
@@ -53,7 +54,7 @@ public:
     /// Construct.
     Network(Context* context);
     /// Destruct.
-    ~Network();
+    ~Network() override;
 
     /// Handle a kNet message from either a client or the server.
     virtual void HandleMessage(kNet::MessageConnection *source, kNet::packet_id_t packetId, kNet::message_id_t msgId, const char *data, size_t numBytes) override;
@@ -98,9 +99,6 @@ public:
     void SetPackageCacheDir(const QString& path);
     /// Trigger all client connections in the specified scene to download a package file from the server. Can be used to download additional resource packages when clients are already joined in the scene. The package must have been added as a requirement to the scene, or else the eventual download will fail.
     void SendPackageToClients(Scene* scene, PackageFile* package);
-    /// Perform an HTTP request to the specified URL. Empty verb defaults to a GET request. Return a request object which can be used to read the response data.
-    SharedPtr<HttpRequest> MakeHttpRequest(const QString& url, const QString& verb = QString::null, const std::vector<QString> & headers = std::vector<QString>(), const QString& postData = QString::null);
-
     /// Return network update FPS.
     int GetUpdateFps() const { return updateFps_; }
     /// Return simulated latency in milliseconds.
@@ -127,9 +125,9 @@ public:
 
 private:
     /// Handle begin frame event.
-    void HandleBeginFrame(StringHash eventType, VariantMap& eventData);
+    void HandleBeginFrame(unsigned, float time_step);
     /// Handle render update frame event.
-    void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
+    void HandleRenderUpdate(float ts);
     /// Handle server connection.
     void OnServerConnected();
     /// Handle server disconnection.
@@ -165,5 +163,11 @@ private:
 
 /// Register Network library objects.
 void LUTEFISK3D_EXPORT RegisterNetworkLibrary(Context* context);
-
 }
+#else
+namespace Urho3D
+{
+// empty type to ease the compilation with networking disabled ( Context uses unique_ptr to this )
+struct Network {};
+}
+#endif

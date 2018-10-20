@@ -20,125 +20,138 @@
 // THE SOFTWARE.
 //
 
-#include "CoreEvents.h"
 #include "Profiler.h"
+#include "CoreEvents.h"
+#include "Lutefisk3D/Math/StringHash.h"
+#include "Lutefisk3D/Container/HashMap.h"
 
 #include <cstdio>
 #include <cstring>
+#if LUTEFISK3D_PROFILING
+#   include <easy/profiler.h>
 
 namespace Urho3D
 {
 
-static const int LINE_MAX_LENGTH = 256;
-static const int NAME_MAX_LENGTH = 30;
-
-Profiler::Profiler(Context* context) :
-    current_(nullptr),
-    root_(nullptr),
-    intervalFrames_(0)
+Profiler::Profiler(Context* context)
 {
-    root_ = new ProfilerBlock(nullptr, "Root");
-    current_ = root_;
 }
 
 Profiler::~Profiler()
 {
-    delete root_;
-    root_ = nullptr;
 }
 
-void Profiler::BeginFrame()
+void Profiler::SetEnabled(bool enabled)
 {
-    // End the previous frame if any
-    if (root_->count_)
-        EndFrame();
-
-    root_->Begin();
+    ::profiler::setEnabled(enabled);
 }
 
-void Profiler::EndFrame()
+bool Profiler::GetEnabled() const
 {
-    EndBlock();
-    ++intervalFrames_;
-    root_->EndFrame();
-    current_ = root_;
+    return ::profiler::isEnabled();
 }
 
-void Profiler::BeginInterval()
+void Profiler::StartListen(unsigned short port)
 {
-    root_->BeginInterval();
-    intervalFrames_ = 0;
+    ::profiler::startListen(port);
 }
 
-QString Profiler::PrintData(bool showUnused, bool showTotal, unsigned maxDepth) const
+void Profiler::StopListen()
 {
-    QString output;
+    ::profiler::stopListen();
+}
 
-    if (!showTotal)
-        output += "Block                            Cnt     Avg      Max     Frame     Total\n\n";
+bool Profiler::GetListening() const
+{
+    return ::profiler::isListening();
+}
+
+void Profiler::SetEventTracingEnabled(bool enable)
+{
+    ::profiler::setEventTracingEnabled(enable);
+}
+
+bool Profiler::GetEventTracingEnabled()
+{
+    return ::profiler::isEventTracingEnabled();
+}
+
+void Profiler::SetLowPriorityEventTracing(bool isLowPriority)
+{
+    ::profiler::setLowPriorityEventTracing(isLowPriority);
+}
+
+bool Profiler::GetLowPriorityEventTracing()
+{
+    return ::profiler::isLowPriorityEventTracing();
+}
+
+void Profiler::SaveProfilerData(const QString& filePath)
+{
+    ::profiler::dumpBlocksToFile(qPrintable(filePath));
+}
+
+void Profiler::SetEventProfilingEnabled(bool enabled)
+{
+    enableEventProfiling_ = enabled;
+}
+
+bool Profiler::GetEventProfilingEnabled() const
+{
+    return enableEventProfiling_;
+}
+
+static HashMap<unsigned, ::profiler::BaseBlockDescriptor*> blockDescriptorCache_;
+
+void Profiler::BeginBlock(const char* name, const char* file, int line, unsigned int argb, unsigned char status)
+{
+    char str_buf[4096]={0};
+    // Line used as starting hash value for efficiency.
+    // This is likely to not play well with hot code reload.
+    unsigned hash = StringHash::Calculate(file, (unsigned)line);    // TODO: calculate hash at compile time
+    auto it = blockDescriptorCache_.find(hash);
+    const ::profiler::BaseBlockDescriptor* desc = 0;
+    if (it == blockDescriptorCache_.end())
+    {
+        snprintf(str_buf,4095,"%s at %s:%d", name, file, line);
+        desc = ::profiler::registerDescription((::profiler::EasyBlockStatus)status, str_buf, name, file,
+                                               line, ::profiler::BlockType::Block, argb, true);
+    }
     else
-    {
-        output += "Block                                       Last frame                       Whole execution time\n\n";
-        output += "                                 Cnt     Avg      Max      Total      Cnt      Avg       Max        Total\n\n";
-    }
-
-    if (!maxDepth)
-        maxDepth = 1;
-
-    PrintData(root_, output, 0, maxDepth, showUnused, showTotal);
-
-    return output;
+        desc = it->second;
+    ::profiler::beginNonScopedBlock(desc, name);
 }
 
-void Profiler::PrintData(ProfilerBlock* block, QString& output, unsigned depth, unsigned maxDepth, bool showUnused, bool showTotal) const
+void Profiler::EndBlock()
 {
-    static const int LINE_MAX_LENGTH = 256;
-    static const int NAME_MAX_LENGTH = 30;
+    ::profiler::endBlock();
+}
 
-    char line[LINE_MAX_LENGTH];
-    char indentedName[LINE_MAX_LENGTH];
+void Profiler::RegisterCurrentThread(const char* name)
+{
+    static thread_local const char* profilerThreadName = 0;
+    if (profilerThreadName == nullptr)
+        profilerThreadName = ::profiler::registerThread(name);
+}
 
-    if (depth >= maxDepth)
-        return;
+ProfilerDescriptor::ProfilerDescriptor(const char* name, const char* file, int line, unsigned int argb,
+                                       unsigned char status)
+{
+    char buf[16]={0};
+    snprintf(buf,15,"%p",(void*)this);
+    descriptor_ = (void*) ::profiler::registerDescription((::profiler::EasyBlockStatus)status, buf,
+                                                          name, file, line, ::profiler::BlockType::Block, argb, true);
+}
 
-    // Do not print any block that does not collect critical data
-    if (showUnused || block->intervalCount_ || (showTotal && block->totalCount_))
-    {
-        memset(indentedName, ' ', NAME_MAX_LENGTH);
-        indentedName[depth++] = 0;
-        strncat(indentedName, block->name_, NAME_MAX_LENGTH - depth);
-        indentedName[strlen(indentedName)] = ' ';
-        indentedName[NAME_MAX_LENGTH] = 0;
+ProfilerBlock::ProfilerBlock(ProfilerDescriptor& descriptor, const char* name)
+{
+    ::profiler::beginNonScopedBlock(static_cast<const profiler::BaseBlockDescriptor*>(descriptor.descriptor_), name);
+}
 
-        if (!showTotal)
-        {
-            float avg = block->intervalTime_ / block->intervalCount_ / 1000.0f;
-            float max = block->intervalMaxTime_ / 1000.0f;
-            float frame = block->intervalTime_ / (intervalFrames_ ? intervalFrames_ : 1) / 1000.0f;
-            float all = block->intervalTime_ / 1000.0f;
-
-            sprintf(line, "%s %5u %8.3f %8.3f %8.3f %9.3f\n", indentedName, std::min(block->intervalCount_, 99999U),
-                    avg, max, frame, all);
-        }
-        else
-        {
-            float avg = (block->frameCount_ ? block->frameTime_ / block->frameCount_ : 0.0f) / 1000.0f;
-            float max = block->frameMaxTime_ / 1000.0f;
-            float all = block->frameTime_ / 1000.0f;
-
-            float totalAvg = block->totalTime_ / block->totalCount_ / 1000.0f;
-            float totalMax = block->totalMaxTime_ / 1000.0f;
-            float totalAll = block->totalTime_ / 1000.0f;
-
-            sprintf(line, "%s %5u %8.3f %8.3f %9.3f  %7u %9.3f %9.3f %11.3f\n", indentedName, std::min(block->frameCount_, 99999U),
-                    avg, max, all,std::min(block->totalCount_, 99999U), totalAvg, totalMax, totalAll);
-        }
-
-        output += QString(line);
-    }
-
-    for (ProfilerBlock* i : block->children_)
-        PrintData(i, output, depth, maxDepth, showUnused, showTotal);
+ProfilerBlock::~ProfilerBlock()
+{
+    ::profiler::endBlock();
 }
 
 }
+#endif

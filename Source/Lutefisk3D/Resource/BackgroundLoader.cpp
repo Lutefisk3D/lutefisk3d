@@ -254,18 +254,10 @@ void BackgroundLoader::FinishBackgroundLoading(BackgroundLoadItem& item)
     {
 #ifdef LUTEFISK3D_PROFILING
         QString profileBlockName("Finish" + resource->GetTypeName());
-
-        Profiler* profiler = owner_->GetContext()->m_ProfilerSystem.get();
-        if (profiler)
-            profiler->BeginBlock(qPrintable(profileBlockName));
+        URHO3D_PROFILE_SCOPED(qPrintable(profileBlockName));
 #endif
         URHO3D_LOGDEBUG("Finishing background loaded resource " + resource->GetName());
         success = resource->EndLoad();
-
-#ifdef LUTEFISK3D_PROFILING
-        if (profiler)
-            profiler->EndBlock();
-#endif
     }
     resource->SetAsyncLoadState(ASYNC_DONE);
 

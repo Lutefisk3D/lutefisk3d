@@ -34,13 +34,10 @@ class ValueAnimation;
 class AttributeAnimationInfo;
 class ObjectAnimation;
 enum WrapMode : int;
-//extern template class SharedPtr<ObjectAnimation>;
-//extern template class HashSet<const AttributeInfo*>;
-//extern template class HashMap<QString, SharedPtr<AttributeAnimationInfo> >;
 
 /// Base class for animatable object, an animatable object can be set animation on it's attributes, or can be set an
 /// object animation to it.
-class LUTEFISK3D_EXPORT Animatable : public Serializable, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Animatable : public Serializable
 {
     URHO3D_OBJECT(Animatable,Serializable)
 
@@ -50,9 +47,9 @@ public:
     /// Register object factory.
     static void RegisterObject(Context* context);
 
-    bool LoadXML(const XMLElement& source, bool setInstanceDefault = false) override;
+    bool LoadXML(const XMLElement& source) override;
     bool SaveXML(XMLElement& dest) const override;
-    bool LoadJSON(const JSONValue& source, bool setInstanceDefault = false) override;
+    bool LoadJSON(const JSONValue& source) override;
     bool SaveJSON(JSONValue& dest) const override;
 
     void SetAnimationEnabled(bool enable);

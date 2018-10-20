@@ -947,7 +947,7 @@ void RibbonTrail::SetTrailType(TrailType type)
 /// Set material attribute.
 void RibbonTrail::SetMaterialAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     SetMaterial(cache->GetResource<Material>(value.name_));
     Commit();
 }

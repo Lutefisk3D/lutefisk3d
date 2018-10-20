@@ -77,9 +77,9 @@ void Physics::Start()
 
 void Physics::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
 
     // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
     // Create a physics simulation world with default parameters, which will update at 60fps. Like the Octree must
@@ -163,9 +163,9 @@ void Physics::CreateScene()
 
     // Create the camera. Set far clip to match the fog. Note: now we actually create the camera node outside the scene, because
     // we want it to be unaffected by scene load / save
-    cameraNode_ = new Node(m_context);
+    cameraNode_ = new Node(GetContext());
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetFarClip(500.0f);
+    camera->setFarClipDistance(500.0f);
 
     // Set an initial position for the camera scene node above the floor
     cameraNode_->SetPosition(Vector3(0.0f, 5.0f, -20.0f));
@@ -173,8 +173,8 @@ void Physics::CreateScene()
 
 void Physics::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -196,10 +196,10 @@ void Physics::CreateInstructions()
 
 void Physics::SetupViewport()
 {
-    Renderer* renderer = m_context->m_Renderer.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
@@ -216,10 +216,10 @@ void Physics::SubscribeToEvents()
 void Physics::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (m_context->m_UISystem->GetFocusElement())
+    if (GetContext()->m_UISystem->GetFocusElement())
         return;
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -246,19 +246,19 @@ void Physics::MoveCamera(float timeStep)
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 
     // "Shoot" a physics object with left mousebutton
-    if (input->GetMouseButtonPress(MouseButton::LEFT))
+    if (input->GetMouseButtonPress(MOUSEB_LEFT))
         SpawnObject();
 
     // Check for loading/saving the scene. Save the scene to the file Data/Scenes/Physics.xml relative to the executable
     // directory
     if (input->GetKeyPress(KEY_F5))
     {
-        File saveFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/Physics.xml", FILE_WRITE);
+        File saveFile(GetContext(), GetContext()->m_FileSystem->GetProgramDir() + "Data/Scenes/Physics.xml", FILE_WRITE);
         scene_->SaveXML(saveFile);
     }
     if (input->GetKeyPress(KEY_F7))
     {
-        File loadFile(m_context, m_context->m_FileSystem->GetProgramDir() + "Data/Scenes/Physics.xml", FILE_READ);
+        File loadFile(GetContext(), GetContext()->m_FileSystem->GetProgramDir() + "Data/Scenes/Physics.xml", FILE_READ);
         scene_->LoadXML(loadFile);
     }
 
@@ -269,7 +269,7 @@ void Physics::MoveCamera(float timeStep)
 
 void Physics::SpawnObject()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
     // Create a smaller box at camera position
     Node* boxNode = scene_->CreateChild("SmallBox");

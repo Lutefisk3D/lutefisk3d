@@ -36,7 +36,7 @@ class SoundSource;
 extern const char* AUDIO_CATEGORY;
 
 /// %Audio subsystem.
-class LUTEFISK3D_EXPORT Audio : public Object, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Audio : public Object
 {
     struct AudioPrivate;
 
@@ -44,7 +44,7 @@ class LUTEFISK3D_EXPORT Audio : public Object, public jl::SignalObserver
     friend void SDLAudioCallback(void *userdata, uint8_t* stream, int len);
 public:
     /// Construct.
-    Audio(Context* context);
+    explicit Audio(Context* context);
     /// Destruct. Terminate the audio thread and free the audio buffer.
     ~Audio() override;
 

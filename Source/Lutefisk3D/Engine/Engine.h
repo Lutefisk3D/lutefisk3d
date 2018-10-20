@@ -33,15 +33,15 @@ class Console;
 class DebugHud;
 
 /// Urho3D engine. Creates the other subsystems.
-class LUTEFISK3D_EXPORT Engine : public Object, public jl::SignalObserver
+class LUTEFISK3D_EXPORT Engine : public Object
 {
     URHO3D_OBJECT(Engine,Object)
 
 public:
     /// Construct.
-    Engine(Context* context);
+    explicit Engine(Context* context);
     /// Destruct. Free all subsystems.
-    virtual ~Engine() = default;
+    ~Engine() override;
 
     bool Initialize(const VariantMap& parameters);
     bool InitializeResourceCache(const VariantMap& parameters, bool removeOld = true);
@@ -60,8 +60,6 @@ public:
     void SetNextTimeStep(float seconds) {  timeStep_ = std::max(seconds, 0.0f); }
     /// Close the graphics window and set the exit flag. No-op on iOS, as an iOS application can not legally exit.
     void Exit();
-    /// Dump profiling information to the log.
-    void DumpProfiler();
     /// Dump information of all resources to the log.
     void DumpResources(bool dumpFileName = false);
     /// Dump information of all memory allocations to the log. Supported in MSVC debug mode only.

@@ -42,11 +42,24 @@ struct LUTEFISK3D_EXPORT SceneSignals
     jl::Signal<Serializable*,uint8_t,unsigned,const QString &,Variant> interceptNetworkUpdate;
     /// A serializable's temporary state has changed.
     jl::Signal<Serializable*> temporaryChanged;
+    ///// A child node is about to be removed from a parent node. Note that individual component removal events will not be sent.
+    jl::Signal<Scene *,Node *,Node *> nodeRemoved; //scene,parent,node
+
+    ///// A child node has been added to a parent node.
+    jl::Signal<Scene *,Node *,Node *> nodeAdded; //scene,parent,node
+    ///// A component has been created to a node.
+    jl::Signal<Scene *,Node *,Component *> componentAdded;
+    ///// A component is about to be removed from a node.
+    jl::Signal<Scene *,Node *,Component *> componentRemoved;
     void init(jl::ScopedAllocator *allocator)
     {
         sceneUpdate.SetAllocator(allocator);
         interceptNetworkUpdate.SetAllocator(allocator);
         temporaryChanged.SetAllocator(allocator);
+        nodeRemoved.SetAllocator(allocator);
+        nodeAdded.SetAllocator(allocator);
+        componentAdded.SetAllocator(allocator);
+        componentRemoved.SetAllocator(allocator);
     }
 };
 extern LUTEFISK3D_EXPORT SceneSignals g_sceneSignals;

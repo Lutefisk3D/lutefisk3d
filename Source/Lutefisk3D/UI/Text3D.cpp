@@ -90,10 +90,10 @@ void Text3D::RegisterObject(Context* context)
     URHO3D_ENUM_ACCESSOR_ATTRIBUTE("Vert Alignment", GetVerticalAlignment, SetVerticalAlignment, VerticalAlignment, verticalAlignments, VA_TOP, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Opacity", GetOpacity, SetOpacity, float, 1.0f, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Color", GetColorAttr, SetColor, Color, Color::WHITE, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("Top Left Color", Color, text_.color_[0], Color::WHITE, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("Top Right Color", Color, text_.color_[1], Color::WHITE, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("Bottom Left Color", Color, text_.color_[2], Color::WHITE, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("Bottom Right Color", Color, text_.color_[3], Color::WHITE, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Top Left Color", Color, text_.colors_[0], Color::WHITE, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Top Right Color", Color, text_.colors_[1], Color::WHITE, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Bottom Left Color", Color, text_.colors_[2], Color::WHITE, AM_DEFAULT);
+    URHO3D_ATTRIBUTE("Bottom Right Color", Color, text_.colors_[3], Color::WHITE, AM_DEFAULT);
     URHO3D_ENUM_ATTRIBUTE("Text Effect", text_.textEffect_, textEffects, TE_NONE, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Shadow Offset", IntVector2, text_.shadowOffset_, IntVector2(1, 1), AM_DEFAULT);
     URHO3D_ATTRIBUTE("Stroke Thickness", int, text_.strokeThickness_, 1, AM_DEFAULT);
@@ -737,7 +737,7 @@ void Text3D::CalculateFixedScreenSize(const FrameInfo& frame)
         float textScaling = 2.0f / TEXT_SCALING / frame.viewSize_.y_;
         float halfViewWorldSize = frame.camera_->GetHalfViewSize();
 
-        if (!frame.camera_->IsOrthographic())
+        if (frame.camera_->getProjectionType()==PT_PERSPECTIVE)
         {
             Matrix4 viewProj(frame.camera_->GetProjection() * frame.camera_->GetView());
             Vector4 projPos(viewProj * Vector4(worldPosition, 1.0f));

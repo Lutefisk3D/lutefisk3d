@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "../Input/Controls.h"
-#include "../Container/HashMap.h"
-#include "../Core/Object.h"
-#include "../Scene/ReplicationState.h"
-#include "../Core/Timer.h"
-#include "../IO/VectorBuffer.h"
+#include "Lutefisk3D/Input/Controls.h"
+#include "Lutefisk3D/Container/HashMap.h"
+#include "Lutefisk3D/Core/Object.h"
+#include "Lutefisk3D/Scene/ReplicationState.h"
+#include "Lutefisk3D/Core/Timer.h"
+#include "Lutefisk3D/IO/VectorBuffer.h"
 
 #include <kNetFwd.h>
 #include <kNet/SharedPtr.h>
@@ -105,13 +105,13 @@ enum ObserverPositionSendMode
 /// %Connection to a remote network host.
 class LUTEFISK3D_EXPORT Connection : public Object
 {
-    URHO3D_OBJECT(Connection,Object);
+    URHO3D_OBJECT(Connection,Object)
 
 public:
     /// Construct with context and kNet message connection pointers.
-    Connection(Context* context, bool isClient, kNet::SharedPtr<kNet::MessageConnection> connection);
+    Connection(Context* context, bool isClient, const kNet::SharedPtr<kNet::MessageConnection>& connection);
     /// Destruct.
-    ~Connection();
+    ~Connection() override;
 
     /// Send a message.
     void SendMessage(int msgID, bool reliable, bool inOrder, const VectorBuffer& msg, unsigned contentID = 0);
@@ -213,7 +213,7 @@ public:
 
 private:
     /// Handle scene loaded event.
-    void HandleAsyncLoadFinished(StringHash eventType, VariantMap& eventData);
+    void HandleAsyncLoadFinished(Scene *);
     /// Process a LoadScene message from the server. Called by Network.
     void ProcessLoadScene(int msgID, MemoryBuffer& msg);
     /// Process a SceneChecksumError message from the server. Called by Network.

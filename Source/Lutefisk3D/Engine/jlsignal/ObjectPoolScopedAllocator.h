@@ -32,13 +32,13 @@ public:
     }
 
     // Virtual overrides
-    void* Alloc( size_t nBytes )
+    void* Alloc( size_t nBytes ) override
     {
         JL_ASSERT( nBytes <= m_oPool.GetStride() );
         return m_oPool.Alloc();
     }
 
-    void Free( void* pObject )
+    void Free( void* pObject ) override
     {
         m_oPool.Free( pObject );
     }

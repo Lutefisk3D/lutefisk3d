@@ -37,10 +37,10 @@ namespace Urho3D {
 template<typename T,typename U>
 using HashMap = ::QHash<T,U> ;
 #else
-#define MAP_VALUE(i) (i->second)
-#define MAP_KEY(i) (i->first)
-#define ELEMENT_VALUE(e) e.second
-#define ELEMENT_KEY(e) e.first
+#define MAP_VALUE(i) ((i)->second)
+#define MAP_KEY(i) ((i)->first)
+#define ELEMENT_VALUE(e) (e).second
+#define ELEMENT_KEY(e) (e).first
 
 
 template <typename T,int N>
@@ -66,20 +66,17 @@ public:
 template<typename K,typename V>
 class HashMap : public std::unordered_map<K,V>
 {
+    using std::unordered_map<K,V>::unordered_map;
 };
 template<typename K,typename V>
 class FasterHashMap : public sherwood_map<K,V>
 {
 };
-template<class CONTAINER,class VAL>
-constexpr bool hashContains(const CONTAINER &c,const VAL &v) {
-    return c.find(v)!=c.end();
-}
 template <typename T>
 class HashSet : public std::unordered_set<T> {
 public:
-    typedef typename std::unordered_set<T>::iterator iterator;
-    typedef typename std::unordered_set<T>::const_iterator const_iterator;
+    using iterator = typename std::unordered_set<T>::iterator;
+    using const_iterator = typename std::unordered_set<T>::const_iterator;
 
     constexpr bool contains(const T &v) const { return this->find(v)!=this->cend();}
     /// Erase an element if found.
@@ -126,5 +123,10 @@ public:
     typename PODVectorN<T,N>::iterator end() { return members.end(); }
 };
 #endif
+template<class CONTAINER,class VAL>
+constexpr bool hashContains(const CONTAINER &c,const VAL &v) {
+    return c.find(v)!=c.end();
 }
+} // end of namespace
+
 

@@ -38,9 +38,8 @@ DetourProximityGrid.h
 )
 
 add_library(DetourCrowd STATIC ${SOURCE_FILES} ${INCLUDES})
+target_link_libraries(DetourCrowd PUBLIC Detour)
 #install (FILES ${INCLUDES} DESTINATION include/ThirdParty/DetourCrowd)
 add_dependencies(DetourCrowd Detour Recast)
 set_property(TARGET DetourCrowd PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-target_include_directories(DetourCrowd PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} )
-include_directories($<TARGET_PROPERTY:Detour,INTERFACE_INCLUDE_DIRECTORIES>)
+target_include_directories(DetourCrowd PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> )

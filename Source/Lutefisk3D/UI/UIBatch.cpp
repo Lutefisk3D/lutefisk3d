@@ -54,6 +54,8 @@ UIBatch::UIBatch(UIElement* element, BlendMode blendMode, const IntRect& scissor
     vertexStart_(vertexData->size()),
     vertexEnd_(vertexData->size())
 {
+    assert(texture->GetWidth()!=0);
+    assert(texture->GetHeight()!=0);
     SetDefaultColor();
 }
 
@@ -311,7 +313,7 @@ void UIBatch::AddQuad(const Matrix3x4& transform, const IntVector2& a, const Int
     ((unsigned&)dest[9]) = color_;
     dest[10] = uv2.x_;
     dest[11] = uv2.y_;
-    
+
     dest[12] = v3.x_;
     dest[13] = v3.y_;
     dest[14] = 0.0f;
@@ -378,7 +380,7 @@ void UIBatch::AddQuad(const Matrix3x4& transform, const IntVector2& a, const Int
     ((unsigned&)dest[9]) = c2;
     dest[10] = uv2.x_;
     dest[11] = uv2.y_;
-    
+
     dest[12] = v3.x_;
     dest[13] = v3.y_;
     dest[14] = 0.0f;

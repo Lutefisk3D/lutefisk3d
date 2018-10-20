@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 #pragma once
 #include "Lutefisk3D/Core/Lutefisk3D.h"
+#include <functional>
 
 namespace Urho3D
 {
@@ -29,7 +30,6 @@ namespace Urho3D
 /// Reference count structure.
 struct RefCount
 {
-    /// Destruct.
     ~RefCount()
     {
         // Set reference counts below zero to fire asserts if this object is still accessed
@@ -45,9 +45,13 @@ class LUTEFISK3D_EXPORT RefCounted
 {
 public:
     /// Construct. Allocate the reference count structure and set an initial self weak reference.
-    RefCounted();
+     RefCounted();
     /// Destruct. Mark as expired and also delete the reference count structure if no outside weak references exist.
     virtual ~RefCounted();
+    /// Prevent copy construction.
+    RefCounted(const RefCounted& rhs) = delete;
+    /// Prevent assignment.
+    RefCounted& operator = (const RefCounted& rhs) = delete;
 
     /// Increment reference count. Can also be called outside of a SharedPtr for traditional reference counting.
     void AddRef();
@@ -64,14 +68,27 @@ public:
     /// Return pointer to the reference count structure.
     RefCount* RefCountPtr() { return refCount_; }
 
+    /// Set a custom deleter function which will be in charge of deallocating object.
+    void SetDeleter(std::function<void(RefCounted*)> deleter);
+    /// Returns custom deleter of this object.
+    std::function<void(RefCounted*)> GetDeleter() const { return deleter_; }
 private:
-    /// Prevent copy construction.
-    RefCounted(const RefCounted& rhs);
-    /// Prevent assignment.
-    RefCounted& operator = (const RefCounted& rhs);
-
     /// Pointer to the reference count structure.
     RefCount* refCount_;
+    /// Custom deleter which will be deallocating native object.
+    std::function<void (RefCounted*)> deleter_;
 };
-
+} // end of namespace
+#include <vector>
+#include <utility>
+#include <algorithm>
+template<class T>
+void RemovePopBack(std::vector<T> &l,const T &v)
+{
+    auto iter=std::find(l.begin(),l.end(),v);
+    if(iter!=l.end())
+    {
+        std::swap(*iter,l.back());
+        l.pop_back();
+    }
 }

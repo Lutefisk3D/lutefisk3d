@@ -61,7 +61,7 @@ void SplinePath::RegisterObject(Context* context)
     URHO3D_ATTRIBUTE("Traveled", float, traveled_, 0.f, AM_FILE | AM_NOEDIT);
     URHO3D_ATTRIBUTE("Elapsed Time", float, elapsedTime_, 0.f, AM_FILE | AM_NOEDIT);
     URHO3D_ACCESSOR_ATTRIBUTE("Controlled", GetControlledIdAttr, SetControlledIdAttr, unsigned, 0, AM_FILE | AM_NODEID);
-    URHO3D_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE("Control Points", GetControlPointIdsAttr, SetControlPointIdsAttr, VariantVector, Variant::emptyVariantVector, controlPointsStructureElementNames, AM_FILE | AM_NODEIDVECTOR);
+    URHO3D_ACCESSOR_ATTRIBUTE("Control Points", GetControlPointIdsAttr, SetControlPointIdsAttr, VariantVector, Variant::emptyVariantVector, AM_FILE | AM_NODEIDVECTOR).SetMetadata(AttributeMetadata::P_VECTOR_STRUCT_ELEMENTS, controlPointsStructureElementNames);
 }
 
 void SplinePath::ApplyAttributes()
@@ -116,10 +116,10 @@ void SplinePath::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     {
         if (spline_.GetKnots().size() > 1)
         {
-            Vector3 a = spline_.GetPoint(0.f).GetVector3();
+            Vector3 a = spline_.GetPoint(0.f);
             for (float f = 0.01f; f <= 1.0f; f = f + 0.01f)
             {
-                const Vector3 b = spline_.GetPoint(f).GetVector3();
+                const Vector3 b = spline_.GetPoint(f);
                 debug->AddLine(a, b, Color::GREEN);
                 a = b;
             }
@@ -213,7 +213,7 @@ void SplinePath::SetPosition(float factor)
 
 Vector3 SplinePath::GetPoint(float factor) const
 {
-    return spline_.GetPoint(factor).GetVector3();
+    return spline_.GetPoint(factor);
 }
 
 void SplinePath::Move(float timeStep)
@@ -341,10 +341,10 @@ void SplinePath::CalculateLength()
 
     length_ = 0.f;
 
-    Vector3 a = spline_.GetKnot(0).GetVector3();
+    Vector3 a = spline_.GetKnot(0);
     for (float f = 0.000f; f <= 1.000f; f += 0.001f)
     {
-        Vector3 b = spline_.GetPoint(f).GetVector3();
+        Vector3 b = spline_.GetPoint(f);
         length_ += Abs((a - b).Length());
         a = b;
     }

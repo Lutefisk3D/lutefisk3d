@@ -32,7 +32,7 @@ namespace Urho3D
 {
 
 class Component;
-class LUTEFISK3D_EXPORT Node;
+class Node;
 template <class T> class SharedPtr;
 namespace Spriter
 {
@@ -112,7 +112,7 @@ private:
     MainlineKey* mainlineKey_;
     /// Current timeline keys.
     std::vector<SpatialTimelineKey*> timelineKeys_;
-        
+
 };
 
 }

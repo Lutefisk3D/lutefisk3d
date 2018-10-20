@@ -12,13 +12,13 @@ class AttributeAnimationInfo : public ValueAnimationInfo
 public:
     AttributeAnimationInfo(Animatable* animatable, const AttributeInfo& attributeInfo, ValueAnimation* attributeAnimation, WrapMode wrapMode, float speed);
     AttributeAnimationInfo(const AttributeAnimationInfo& other) = default;
-    ~AttributeAnimationInfo() = default;
+    ~AttributeAnimationInfo() override = default;
 
     /// Return attribute information.
     const AttributeInfo& GetAttributeInfo() const { return attributeInfo_; }
 
 protected:
-    virtual void ApplyValue(const Variant& newValue) override;
+    void ApplyValue(const Variant& newValue) override;
 
 private:
     /// Attribute information.

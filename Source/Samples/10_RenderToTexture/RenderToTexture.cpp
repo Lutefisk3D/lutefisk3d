@@ -74,11 +74,11 @@ void RenderToTexture::Start()
 
 void RenderToTexture::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
     {
         // Create the scene which will be rendered to a texture
-        rttScene_ = new Scene(m_context);
+        rttScene_ = new Scene(GetContext());
 
         // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
         rttScene_->CreateComponent<Octree>();
@@ -114,7 +114,7 @@ void RenderToTexture::CreateScene()
         // Create a camera for the render-to-texture scene. Simply leave it at the world origin and let it observe the scene
         rttCameraNode_ = rttScene_->CreateChild("Camera");
         Camera* camera = rttCameraNode_->CreateComponent<Camera>();
-        camera->SetFarClip(100.0f);
+        camera->setFarClipDistance(100.0f);
 
         // Create a point light to the camera scene node
         Light* light = rttCameraNode_->CreateComponent<Light>();
@@ -124,7 +124,7 @@ void RenderToTexture::CreateScene()
 
     {
         // Create the scene in which we move around
-        scene_ = new Scene(m_context);
+        scene_ = new Scene(GetContext());
 
         // Create octree, use also default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
         scene_->CreateComponent<Octree>();
@@ -177,13 +177,13 @@ void RenderToTexture::CreateScene()
             screenObject->SetModel(cache->GetResource<Model>("Models/Plane.mdl"));
 
             // Create a renderable texture (1024x768, RGB format), enable bilinear filtering on it
-            SharedPtr<Texture2D> renderTexture(new Texture2D(m_context));
+            SharedPtr<Texture2D> renderTexture(new Texture2D(GetContext()));
             renderTexture->SetSize(1024, 768, Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
             renderTexture->SetFilterMode(FILTER_BILINEAR);
 
             // Create a new material from scratch, use the diffuse unlit technique, assign the render texture
             // as its diffuse texture, then assign the material to the screen plane object
-            SharedPtr<Material> renderMaterial(new Material(m_context));
+            SharedPtr<Material> renderMaterial(new Material(GetContext()));
             renderMaterial->SetTechnique(0, cache->GetResource<Technique>("Techniques/DiffUnlit.xml"));
             renderMaterial->SetTexture(TU_DIFFUSE, renderTexture);
             // Since the screen material is on top of the box model and may Z-fight, use negative depth bias
@@ -196,14 +196,14 @@ void RenderToTexture::CreateScene()
             // to the Renderer subsystem. By default the texture viewport will be updated when the texture is visible
             // in the main view
             RenderSurface* surface = renderTexture->GetRenderSurface();
-            SharedPtr<Viewport> rttViewport(new Viewport(m_context, rttScene_, rttCameraNode_->GetComponent<Camera>()));
+            SharedPtr<Viewport> rttViewport(new Viewport(GetContext(), rttScene_, rttCameraNode_->GetComponent<Camera>()));
             surface->SetViewport(0, rttViewport);
         }
 
         // Create the camera which we will move around. Limit far clip distance to match the fog
         cameraNode_ = scene_->CreateChild("Camera");
         Camera* camera = cameraNode_->CreateComponent<Camera>();
-        camera->SetFarClip(300.0f);
+        camera->setFarClipDistance(300.0f);
 
         // Set an initial position for the camera scene node above the plane
         cameraNode_->SetPosition(Vector3(0.0f, 7.0f, -30.0f));
@@ -212,8 +212,8 @@ void RenderToTexture::CreateScene()
 
 void RenderToTexture::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -228,20 +228,20 @@ void RenderToTexture::CreateInstructions()
 
 void RenderToTexture::SetupViewport()
 {
-    Renderer* renderer = m_context->m_Renderer.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
 void RenderToTexture::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (m_context->m_UISystem->GetFocusElement())
+    if (GetContext()->m_UISystem->GetFocusElement())
         return;
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;

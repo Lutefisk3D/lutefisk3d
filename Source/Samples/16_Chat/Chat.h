@@ -40,7 +40,7 @@ class UIElement;
 ///     - Implementing simple chat functionality with network messages
 class Chat : public Sample
 {
-    
+
 
 public:
     /// Construct.
@@ -48,19 +48,6 @@ public:
 
     /// Setup after engine initialization and before running the main loop.
     virtual void Start() override;
-
-protected:
-    /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
-    virtual QString GetScreenJoystickPatchString() const override { return
-        "<patch>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Button2']]\">"
-        "        <attribute name=\"Is Visible\" value=\"false\" />"
-        "    </add>"
-        "    <add sel=\"/element/element[./attribute[@name='Name' and @value='Hat0']]\">"
-        "        <attribute name=\"Is Visible\" value=\"false\" />"
-        "    </add>"
-        "</patch>";
-    }
 
 private:
     /// Create the UI.
@@ -76,13 +63,13 @@ private:
     /// Handle log message event; pipe it also to the chat display.
     void HandleLogMessage(StringHash eventType, VariantMap& eventData);
     /// Handle pressing the send button.
-    void HandleSend(StringHash eventType, VariantMap& eventData);
+    void HandleSend(UIElement *, const QString &, float);
     /// Handle pressing the connect button.
-    void HandleConnect(StringHash eventType, VariantMap& eventData);
+    void HandleConnect(UIElement *);
     /// Handle pressing the disconnect button.
-    void HandleDisconnect(StringHash eventType, VariantMap& eventData);
+    void HandleDisconnect(UIElement *);
     /// Handle pressing the start server button.
-    void HandleStartServer(StringHash eventType, VariantMap& eventData);
+    void HandleStartServer(UIElement *);
     /// Handle an incoming network message.
     void HandleNetworkMessage(StringHash eventType, VariantMap& eventData);
     /// Handle connection status change (just update the buttons that should be shown.)

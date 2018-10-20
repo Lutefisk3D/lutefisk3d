@@ -32,40 +32,38 @@ class LUTEFISK3D_EXPORT IntVector2
 {
 public:
     /// Construct a zero vector.
-    IntVector2() :
+    IntVector2() noexcept :
         x_(0),
         y_(0)
     {
     }
 
     /// Construct from coordinates.
-    IntVector2(int x, int y) :
+    IntVector2(int x, int y) noexcept :
         x_(x),
         y_(y)
     {
     }
 
     /// Construct from an int array.
-    explicit IntVector2(const int* data) :
+    explicit IntVector2(const int* data) noexcept :
         x_(data[0]),
         y_(data[1])
     {
     }
 
-    /// Copy-construct from another vector.
-    IntVector2(const IntVector2& rhs) :
-        x_(rhs.x_),
-        y_(rhs.y_)
+    /// Construct from an int array.
+    explicit IntVector2(const float* data) :
+        x_((int)data[0]),
+        y_((int)data[1])
     {
     }
 
+    /// Copy-construct from another vector.
+    IntVector2(const IntVector2& rhs) noexcept = default;
+
     /// Assign from another vector.
-    IntVector2& operator =(const IntVector2& rhs)
-    {
-        x_ = rhs.x_;
-        y_ = rhs.y_;
-        return *this;
-    }
+    IntVector2& operator =(const IntVector2& rhs) noexcept = default;
 
     /// Test for equality with another vector.
     bool operator ==(const IntVector2& rhs) const { return x_ == rhs.x_ && y_ == rhs.y_; }
@@ -112,11 +110,26 @@ public:
         return *this;
     }
 
+    /// Multiply-assign a vector.
+    IntVector2& operator *=(const IntVector2& rhs)
+    {
+        x_ *= rhs.x_;
+        y_ *= rhs.y_;
+        return *this;
+    }
     /// Divide-assign a scalar.
     IntVector2& operator /=(int rhs)
     {
         x_ /= rhs;
         y_ /= rhs;
+        return *this;
+    }
+
+    /// Divide-assign a vector.
+    IntVector2& operator /=(const IntVector2& rhs)
+    {
+        x_ /= rhs.x_;
+        y_ /= rhs.y_;
         return *this;
     }
 
@@ -155,47 +168,38 @@ class LUTEFISK3D_EXPORT Vector2
 {
 public:
     /// Construct a zero vector.
-    Vector2() :
+    Vector2() noexcept :
         x_(0.0f),
         y_(0.0f)
     {
     }
 
     /// Copy-construct from another vector.
-    Vector2(const Vector2& vector) :
-        x_(vector.x_),
-        y_(vector.y_)
-    {
-    }
+    Vector2(const Vector2& vector) noexcept = default;
 
     /// Construct from an IntVector2.
-    explicit Vector2(const IntVector2& vector) :
+    explicit Vector2(const IntVector2& vector) noexcept :
         x_((float)vector.x_),
         y_((float)vector.y_)
     {
     }
 
     /// Construct from coordinates.
-    Vector2(float x, float y) :
+    Vector2(float x, float y) noexcept :
         x_(x),
         y_(y)
     {
     }
 
     /// Construct from a float array.
-    explicit Vector2(const float* data) :
+    explicit Vector2(const float* data) noexcept :
         x_(data[0]),
         y_(data[1])
     {
     }
 
     /// Assign from another vector.
-    Vector2& operator = (const Vector2& rhs)
-    {
-        x_ = rhs.x_;
-        y_ = rhs.y_;
-        return *this;
-    }
+    Vector2& operator =(const Vector2& rhs) noexcept = default;
 
     /// Test for equality with another vector without epsilon.
     bool operator == (const Vector2& rhs) const { return x_ == rhs.x_ && y_ == rhs.y_; }
@@ -296,7 +300,7 @@ public:
     /// Test for equality with another vector with epsilon.
     bool Equals(const Vector2& rhs) const { return Urho3D::Equals(x_, rhs.x_) && Urho3D::Equals(y_, rhs.y_); }
     /// Return whether is NaN.
-    bool IsNaN() const { return Urho3D::IsNaN(x_) || Urho3D::IsNaN(y_); }
+    bool IsNaN() const { return std::isnan(x_) || std::isnan(y_); }
 
     /// Return normalized to unit length.
     Vector2 Normalized() const

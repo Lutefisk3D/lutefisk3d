@@ -44,9 +44,7 @@ SpriteSheet2D::SpriteSheet2D(Context* context) :
 {
 }
 
-SpriteSheet2D::~SpriteSheet2D()
-{
-}
+SpriteSheet2D::~SpriteSheet2D() = default;
 
 void SpriteSheet2D::RegisterObject(Context* context)
 {
@@ -123,11 +121,11 @@ Sprite2D* SpriteSheet2D::GetSprite(const QString& name) const
 }
 bool SpriteSheet2D::BeginLoadFromPListFile(Deserializer& source)
 {
-    loadPListFile_ = new PListFile(context_);
+    loadPListFile_ = std::make_unique<PListFile>(context_);
     if (!loadPListFile_->Load(source))
     {
         URHO3D_LOGERROR("Could not load sprite sheet");
-        loadPListFile_.Reset();
+        loadPListFile_.reset();
         return false;
     }
 
@@ -147,12 +145,12 @@ bool SpriteSheet2D::BeginLoadFromPListFile(Deserializer& source)
 
 bool SpriteSheet2D::EndLoadFromPListFile()
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     texture_ = cache->GetResource<Texture2D>(loadTextureName_);
     if (!texture_)
     {
         URHO3D_LOGERROR("Could not load texture " + loadTextureName_);
-        loadPListFile_.Reset();
+        loadPListFile_.reset();
         loadTextureName_.clear();
         return false;
     }
@@ -189,18 +187,18 @@ bool SpriteSheet2D::EndLoadFromPListFile()
         DefineSprite(name, rectangle, hotSpot, offset);
     }
 
-    loadPListFile_.Reset();
+    loadPListFile_.reset();
     loadTextureName_.clear();
     return true;
 }
 
 bool SpriteSheet2D::BeginLoadFromXMLFile(Deserializer& source)
 {
-    loadXMLFile_ = new XMLFile(context_);
+    loadXMLFile_ = std::make_unique<XMLFile>(context_);
     if (!loadXMLFile_->Load(source))
     {
         URHO3D_LOGERROR("Could not load sprite sheet");
-        loadXMLFile_.Reset();
+        loadXMLFile_.reset();
         return false;
     }
 
@@ -210,7 +208,7 @@ bool SpriteSheet2D::BeginLoadFromXMLFile(Deserializer& source)
     if (!rootElem)
     {
         URHO3D_LOGERROR("Invalid sprite sheet");
-        loadXMLFile_.Reset();
+        loadXMLFile_.reset();
         return false;
     }
 
@@ -224,12 +222,12 @@ bool SpriteSheet2D::BeginLoadFromXMLFile(Deserializer& source)
 
 bool SpriteSheet2D::EndLoadFromXMLFile()
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     texture_ = cache->GetResource<Texture2D>(loadTextureName_);
     if (!texture_)
     {
         URHO3D_LOGERROR("Could not load texture " + loadTextureName_);
-        loadXMLFile_.Reset();
+        loadXMLFile_.reset();
         loadTextureName_.clear();
         return false;
     }
@@ -263,18 +261,18 @@ bool SpriteSheet2D::EndLoadFromXMLFile()
         subTextureElem = subTextureElem.GetNext("SubTexture");
     }
 
-    loadXMLFile_.Reset();
+    loadXMLFile_.reset();
     loadTextureName_.clear();
     return true;
 }
 
 bool SpriteSheet2D::BeginLoadFromJSONFile(Deserializer& source)
 {
-    loadJSONFile_ = new JSONFile(context_);
+    loadJSONFile_ = std::make_unique<JSONFile>(context_);
     if (!loadJSONFile_->Load(source))
     {
         URHO3D_LOGERROR("Could not load sprite sheet");
-        loadJSONFile_.Reset();
+        loadJSONFile_.reset();
         return false;
     }
 
@@ -284,7 +282,7 @@ bool SpriteSheet2D::BeginLoadFromJSONFile(Deserializer& source)
     if (rootElem.IsNull())
     {
         URHO3D_LOGERROR("Invalid sprite sheet");
-        loadJSONFile_.Reset();
+        loadJSONFile_.reset();
         return false;
     }
 
@@ -298,12 +296,12 @@ bool SpriteSheet2D::BeginLoadFromJSONFile(Deserializer& source)
 
 bool SpriteSheet2D::EndLoadFromJSONFile()
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
     texture_ = cache->GetResource<Texture2D>(loadTextureName_);
     if (!texture_)
     {
         URHO3D_LOGERROR("Could not load texture " + loadTextureName_);
-        loadJSONFile_.Reset();
+        loadJSONFile_.reset();
         loadTextureName_.clear();
         return false;
     }
@@ -341,7 +339,7 @@ bool SpriteSheet2D::EndLoadFromJSONFile()
 
     }
 
-    loadJSONFile_.Reset();
+    loadJSONFile_.reset();
     loadTextureName_.clear();
     return true;
 }

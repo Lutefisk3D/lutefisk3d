@@ -64,9 +64,9 @@ void SceneAndUILoad::Start()
 
 void SceneAndUILoad::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
 
     // Load scene content prepared in the editor (XML format). GetFile() returns an open file from the resource system
     // which scene.LoadXML() will read
@@ -83,8 +83,8 @@ void SceneAndUILoad::CreateScene()
 
 void SceneAndUILoad::CreateUI()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Set up global UI style into the root UI element
     XMLFile* style = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
@@ -92,11 +92,11 @@ void SceneAndUILoad::CreateUI()
 
     // Create a Cursor UI element because we want to be able to hide and show it at will. When hidden, the mouse cursor will
     // control the camera, and when visible, it will interact with the UI
-    SharedPtr<Cursor> cursor(new Cursor(m_context));
+    SharedPtr<Cursor> cursor(new Cursor(GetContext()));
     cursor->SetStyleAuto();
     ui->SetCursor(cursor);
     // Set starting position of the cursor at the rendering window center
-    Graphics* graphics = m_context->m_Graphics.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
     cursor->SetPosition(graphics->GetWidth() / 2, graphics->GetHeight() / 2);
 
     // Load UI content prepared in the editor and add to the UI hierarchy
@@ -114,10 +114,10 @@ void SceneAndUILoad::CreateUI()
 
 void SceneAndUILoad::SetupViewport()
 {
-    Renderer* renderer = m_context->m_Renderer.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
@@ -130,9 +130,9 @@ void SceneAndUILoad::SubscribeToEvents()
 void SceneAndUILoad::MoveCamera(float timeStep)
 {
     // Right mouse button controls mouse cursor visibility: hide when pressed
-    UI* ui = m_context->m_UISystem.get();
-    Input* input = m_context->m_InputSystem.get();
-    ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MouseButton::RIGHT));
+    UI* ui = GetContext()->m_UISystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
+    ui->GetCursor()->SetVisible(!input->GetMouseButtonDown(MouseButton::MOUSEB_RIGHT));
 
     // Do not move if the UI has a focused element
     if (ui->GetFocusElement())

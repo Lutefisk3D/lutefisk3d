@@ -146,11 +146,43 @@ Bone* Skeleton::GetRootBone()
 {
     return GetBone(rootBoneIndex_);
 }
+unsigned Skeleton::GetBoneIndex(StringHash boneNameHash) const
+{
+    const unsigned numBones = bones_.size();
+    for (unsigned i = 0; i < numBones; ++i)
+    {
+        if (bones_[i].nameHash_ == boneNameHash)
+            return i;
+    }
+
+    return M_MAX_UNSIGNED;
+}
+
+unsigned Skeleton::GetBoneIndex(const Bone* bone) const
+{
+    if (bones_.empty() || bone < &bones_.front() || bone > &bones_.back())
+        return M_MAX_UNSIGNED;
+
+    return static_cast<unsigned>(bone - &bones_.front());
+}
+
+unsigned Skeleton::GetBoneIndex(const QString& boneName) const
+{
+    return GetBoneIndex(StringHash(boneName));
+}
+Bone* Skeleton::GetBoneParent(const Bone* bone)
+{
+    if (GetBoneIndex(bone) == bone->parentIndex_)
+    return nullptr;
+    else
+        return GetBone(bone->parentIndex_);
+}
 /// Return bone by index.
 Bone* Skeleton::GetBone(unsigned index)
 {
     return index < bones_.size() ? &bones_[index] : nullptr;
 }
+
 /// Return bone by name hash.
 Bone* Skeleton::GetBone(StringHash nameHash)
 {
@@ -159,7 +191,6 @@ Bone* Skeleton::GetBone(StringHash nameHash)
         if (elem.nameHash_ == nameHash)
             return &elem;
     }
-
     return nullptr;
 }
 

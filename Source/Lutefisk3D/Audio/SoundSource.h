@@ -45,7 +45,7 @@ class LUTEFISK3D_EXPORT SoundSource : public Component, public SoundSignals
 
 public:
     /// Construct.
-    SoundSource(Context* context);
+    explicit SoundSource(Context* context);
     /// Destruct. Remove self from the audio subsystem
     ~SoundSource() override;
     /// Register object factory.
@@ -145,7 +145,7 @@ private:
     /// Play a sound without locking the audio mutex. Called internally.
     void PlayLockless(Sound* sound);
     /// Play a sound stream without locking the audio mutex. Called internally.
-    void PlayLockless(SharedPtr<SoundStream> stream);
+    void PlayLockless(const SharedPtr<SoundStream>& stream);
     /// Stop sound without locking the audio mutex. Called internally.
     void StopLockless();
     /// Set new playback position without locking the audio mutex. Called internally.

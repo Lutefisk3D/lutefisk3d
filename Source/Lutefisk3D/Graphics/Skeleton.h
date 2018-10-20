@@ -31,10 +31,10 @@
 #include <QtCore/QString>
 namespace Urho3D
 {
-class LUTEFISK3D_EXPORT Deserializer;
-class LUTEFISK3D_EXPORT ResourceCache;
-class LUTEFISK3D_EXPORT Serializer;
-class LUTEFISK3D_EXPORT Node;
+class Deserializer;
+class ResourceCache;
+class Serializer;
+class Node;
 
 enum eBoneCollision : unsigned {
     BONECOLLISION_NONE = 0,
@@ -77,8 +77,20 @@ public:
     size_t GetNumBones() const { return bones_.size(); }
 
     Bone* GetRootBone();
+    /// Return index of the bone by name. Return M_MAX_UNSIGNED if not found.
+    unsigned GetBoneIndex(const QString& boneName) const;
+    /// Return index of the bone by name hash. Return M_MAX_UNSIGNED if not found.
+    unsigned GetBoneIndex(StringHash boneNameHash) const;
+    /// Return index of the bone by the bone pointer. Return M_MAX_UNSIGNED if not found.
+    unsigned GetBoneIndex(const Bone* bone) const;
+    /// Return parent of the given bone. Return null for root bones.
+    Bone* GetBoneParent(const Bone* bone);
+    /// Return bone by index.
     Bone* GetBone(unsigned index);
     Bone* GetBone(StringHash boneNameHash);
+    /// Return bone by name.
+    Bone* GetBone(const QString& boneName) { return GetBone(StringHash(boneName)); }
+    Bone* GetBone(const char * boneName) { return GetBone(StringHash(boneName)); }
     void ResetSilent();
 
 private:

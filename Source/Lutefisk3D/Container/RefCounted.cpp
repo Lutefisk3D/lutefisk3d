@@ -60,8 +60,18 @@ void RefCounted::ReleaseRef()
     assert(refCount_->refs_ > 0);
     (refCount_->refs_)--;
     if (!refCount_->refs_)
-        delete this;
+    {
+        if (deleter_ != nullptr)
+            deleter_(this);
+        else
+            delete this;
+    }
 }
+void RefCounted::SetDeleter(std::function<void(RefCounted*)> deleter)
+{
+    deleter_ = std::move(deleter);
+}
+
 }
 #include <memory>
 template class std::unique_ptr<uint8_t[]>;

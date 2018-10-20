@@ -26,19 +26,12 @@
 #include "Lutefisk3D/Graphics/DebugRenderer.h"
 #include "Lutefisk3D/Graphics/Drawable.h"
 #include "Lutefisk3D/Scene/Node.h"
+#include "Lutefisk3D/IO/Log.h"
 
 namespace Urho3D
 {
 
 extern const char* SCENE_CATEGORY;
-
-static const char* fillModeNames[] =
-{
-    "Solid",
-    "Wireframe",
-    "Point",
-    nullptr
-};
 
 static const Matrix4 flipMatrix(
         1.0f, 0.0f, 0.0f, 0.0f,
@@ -52,7 +45,7 @@ Camera::Camera(Context* context) :
     viewDirty_(true),
     projectionDirty_(true),
     frustumDirty_(true),
-    orthographic_(false),
+    projectionType_(PT_PERSPECTIVE),
     nearClip_(DEFAULT_NEARCLIP),
     farClip_(DEFAULT_FARCLIP),
     fov_(DEFAULT_CAMERA_FOV),
@@ -82,13 +75,13 @@ void Camera::RegisterObject(Context* context)
     context->RegisterFactory<Camera>(SCENE_CATEGORY);
 
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
-    URHO3D_ACCESSOR_ATTRIBUTE("Near Clip", GetNearClip, SetNearClip, float, DEFAULT_NEARCLIP, AM_DEFAULT);
-    URHO3D_ACCESSOR_ATTRIBUTE("Far Clip", GetFarClip, SetFarClip, float, DEFAULT_FARCLIP, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Near Clip", GetNearClip, setNearClipDistance, float, DEFAULT_NEARCLIP, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Far Clip", GetFarClip, setFarClipDistance, float, DEFAULT_FARCLIP, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("FOV", GetFov, SetFov, float, DEFAULT_CAMERA_FOV, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Aspect Ratio", GetAspectRatio, SetAspectRatioInternal, float, 1.0f, AM_DEFAULT);
     URHO3D_ENUM_ATTRIBUTE("Fill Mode", fillMode_, fillModeNames, FILL_SOLID, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Auto Aspect Ratio", bool, autoAspectRatio_, true, AM_DEFAULT);
-    URHO3D_ACCESSOR_ATTRIBUTE("Orthographic", IsOrthographic, SetOrthographic, bool, false, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Orthographic", getProjectionType, setProjectionType, ProjectionType, false, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Orthographic Size", GetOrthoSize, SetOrthoSizeAttr, float, DEFAULT_ORTHOSIZE, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Zoom", GetZoom, SetZoom, float, 1.0f, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("LOD Bias", GetLodBias, SetLodBias, float, 1.0f, AM_DEFAULT);
@@ -106,15 +99,22 @@ void Camera::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     debug->AddFrustum(GetFrustum(), Color::WHITE, depthTest);
 }
 
-void Camera::SetNearClip(float nearClip)
+/// Set near clip distance.
+void Camera::setNearClipDistance(float nearPlane)
 {
-    nearClip_ = Max(nearClip, M_MIN_NEARCLIP);
+    if (nearPlane <= 0)
+    {
+        URHO3D_LOGERROR("Near clip distance must be greater than zero.");
+        return;
+    }
+    nearClip_ = std::max(nearPlane, M_MIN_NEARCLIP);
     frustumDirty_ = true;
     projectionDirty_ = true;
     MarkNetworkUpdate();
 }
 
-void Camera::SetFarClip(float farClip)
+/// Set far clip distance.
+void Camera::setFarClipDistance(float farClip)
 {
     farClip_ = Max(farClip, M_MIN_NEARCLIP);
     frustumDirty_ = true;
@@ -122,6 +122,7 @@ void Camera::SetFarClip(float farClip)
     MarkNetworkUpdate();
 }
 
+/// Set vertical field of view in degrees.
 void Camera::SetFov(float fov)
 {
     fov_ = Clamp(fov, 0.0f, M_MAX_FOV);
@@ -130,6 +131,7 @@ void Camera::SetFov(float fov)
     MarkNetworkUpdate();
 }
 
+/// Set orthographic mode view uniform size.
 void Camera::SetOrthoSize(float orthoSize)
 {
     orthoSize_ = orthoSize;
@@ -139,6 +141,7 @@ void Camera::SetOrthoSize(float orthoSize)
     MarkNetworkUpdate();
 }
 
+/// Set orthographic mode view non-uniform size. Disables the auto aspect ratio -mode.
 void Camera::SetOrthoSize(const Vector2& orthoSize)
 {
     autoAspectRatio_ = false;
@@ -149,6 +152,7 @@ void Camera::SetOrthoSize(const Vector2& orthoSize)
     MarkNetworkUpdate();
 }
 
+/// Set aspect ratio manually. Disables the auto aspect ratio -mode.
 void Camera::SetAspectRatio(float aspectRatio)
 {
     autoAspectRatio_ = false;
@@ -181,15 +185,16 @@ void Camera::SetViewOverrideFlags(unsigned flags)
     MarkNetworkUpdate();
 }
 
+/// Set polygon fill mode to use when rendering a scene.
 void Camera::SetFillMode(FillMode mode)
 {
     fillMode_ = mode;
     MarkNetworkUpdate();
 }
 
-void Camera::SetOrthographic(bool enable)
+void Camera::setProjectionType(ProjectionType enable)
 {
-    orthographic_ = enable;
+    projectionType_ = enable;
     frustumDirty_ = true;
     projectionDirty_ = true;
     MarkNetworkUpdate();
@@ -293,7 +298,7 @@ const Frustum& Camera::GetFrustum() const
     {
         // If not using a custom projection, prefer calculating frustum from projection parameters instead of matrix
         // for better accuracy
-        if (!orthographic_)
+        if (!projectionType_)
             frustum_.Define(fov_, aspectRatio_, zoom_, GetNearClip(), GetFarClip(), GetEffectiveWorldTransform());
         else
             frustum_.DefineOrtho(orthoSize_, aspectRatio_, zoom_, GetNearClip(), GetFarClip(), GetEffectiveWorldTransform());
@@ -308,8 +313,8 @@ Frustum Camera::GetSplitFrustum(float nearClip, float farClip) const
     if (projectionDirty_)
         UpdateProjection();
 
-    nearClip = Max(nearClip, projNearClip_);
-    farClip = Min(farClip, projFarClip_);
+    nearClip = std::max(nearClip, projNearClip_);
+    farClip = std::min(farClip, projFarClip_);
     if (farClip < nearClip)
         farClip = nearClip;
 
@@ -324,7 +329,7 @@ Frustum Camera::GetSplitFrustum(float nearClip, float farClip) const
     }
     else
     {
-        if (!orthographic_)
+        if (!projectionType_)
             ret.Define(fov_, aspectRatio_, zoom_, nearClip, farClip, GetEffectiveWorldTransform());
         else
             ret.DefineOrtho(orthoSize_, aspectRatio_, zoom_, nearClip, farClip, GetEffectiveWorldTransform());
@@ -343,7 +348,7 @@ Frustum Camera::GetViewSpaceFrustum() const
         ret.Define(projection_);
     else
     {
-        if (!orthographic_)
+        if (!projectionType_)
             ret.Define(fov_, aspectRatio_, zoom_, GetNearClip(), GetFarClip());
         else
             ret.DefineOrtho(orthoSize_, aspectRatio_, zoom_, GetNearClip(), GetFarClip());
@@ -368,7 +373,7 @@ Frustum Camera::GetViewSpaceSplitFrustum(float nearClip, float farClip) const
         ret.DefineSplit(projection_, nearClip, farClip);
     else
     {
-        if (!orthographic_)
+        if (!projectionType_)
             ret.Define(fov_, aspectRatio_, zoom_, nearClip, farClip);
         else
             ret.DefineOrtho(orthoSize_, aspectRatio_, zoom_, nearClip, farClip);
@@ -402,14 +407,15 @@ Ray Camera::GetScreenRay(float x, float y) const
     return ret;
 }
 
-Vector2 Camera::WorldToScreenPoint(const Vector3& worldPos) const
+/// Convert a world space point to normalized screen coordinates (0 - 1).
+Vector2 WorldToScreenPoint(const Camera &cam,const Vector3& worldPos)
 {
-    Vector3 eyeSpacePos = GetView() * worldPos;
+    Vector3 eyeSpacePos = cam.GetView() * worldPos;
     Vector2 ret;
 
     if(eyeSpacePos.z_ > 0.0f)
     {
-        Vector3 screenSpacePos = GetProjection() * eyeSpacePos;
+        Vector3 screenSpacePos = cam.GetProjection() * eyeSpacePos;
         ret.x_ = screenSpacePos.x_;
         ret.y_ = screenSpacePos.y_;
     }
@@ -423,12 +429,16 @@ Vector2 Camera::WorldToScreenPoint(const Vector3& worldPos) const
     ret.y_ = 1.0f - ((ret.y_ / 2.0f) + 0.5f);
     return ret;
 }
-
-Vector3 Camera::ScreenToWorldPoint(const Vector3& screenPos) const
+/** Convert normalized screen coordinates (0 - 1) and distance along view Z axis (in Z coordinate) to a world space
+ * point. The distance can not be closer than the near clip plane.
+ * @note HitDistance() from the camera screen ray is not the same as distance along the view Z axis, as under a
+ * perspective projection the ray is likely to not be Z-aligned.
+ */
+Vector3 ScreenToWorldPoint(const Camera &cam,const Vector3& screenPos)
 {
-    Ray ray = GetScreenRay(screenPos.x_, screenPos.y_);
-    Vector3 viewSpaceDir = (GetView() * Vector4(ray.direction_, 0.0f));
-    float rayDistance = (Max(screenPos.z_ - GetNearClip(), 0.0f) / viewSpaceDir.z_);
+    Ray ray = cam.GetScreenRay(screenPos.x_, screenPos.y_);
+    Vector3 viewSpaceDir = (cam.GetView() * Vector4(ray.direction_, 0.0f));
+    float rayDistance = (std::max(screenPos.z_ - cam.GetNearClip(), 0.0f) / viewSpaceDir.z_);
     return ray.origin_ + ray.direction_ * rayDistance;
 }
 
@@ -470,15 +480,15 @@ void Camera::GetFrustumSize(Vector3& near, Vector3& far) const
 
 float Camera::GetHalfViewSize() const
 {
-    if (!orthographic_)
-        return tanf(fov_ * M_DEGTORAD * 0.5f) / zoom_;
-    else
-        return orthoSize_ * 0.5f / zoom_;
+    if (projectionType_==PT_PERSPECTIVE)
+        return std::tan(fov_ * M_DEGTORAD * 0.5f) / zoom_;
+    
+    return orthoSize_ * 0.5f / zoom_;
 }
 
 float Camera::GetDistance(const Vector3& worldPos) const
 {
-    if (!orthographic_)
+    if (projectionType_==PT_PERSPECTIVE)
     {
         const Vector3& cameraPos = node_ ? node_->GetWorldPosition() : Vector3::ZERO;
         return (worldPos - cameraPos).Length();
@@ -489,7 +499,7 @@ float Camera::GetDistance(const Vector3& worldPos) const
 
 float Camera::GetDistanceSquared(const Vector3& worldPos) const
 {
-    if (!orthographic_)
+    if (projectionType_==PT_PERSPECTIVE)
     {
         const Vector3& cameraPos = node_ ? node_->GetWorldPosition() : Vector3::ZERO;
         return (worldPos - cameraPos).LengthSquared();
@@ -503,11 +513,11 @@ float Camera::GetDistanceSquared(const Vector3& worldPos) const
 
 float Camera::GetLodDistance(float distance, float scale, float bias) const
 {
-    float d = Max(lodBias_ * bias * scale * zoom_, M_EPSILON);
-    if (!orthographic_)
+    float d = std::max(lodBias_ * bias * scale * GetZoom(), M_EPSILON);
+    if (getProjectionType()==PT_PERSPECTIVE)
         return distance / d;
 
-    return orthoSize_ / d;
+    return GetOrthoSize() / d;
 }
 
 Quaternion Camera::GetFaceCameraRotation(const Vector3& position, const Quaternion& rotation, FaceCameraMode mode, float minAngle)
@@ -642,7 +652,7 @@ void Camera::UpdateProjection() const
     // Start from a zero matrix in case it was custom previously
     projection_ = Matrix4::ZERO;
 
-    if (!orthographic_)
+    if (!projectionType_)
     {
         float h = (1.0f / tanf(fov_ * M_DEGTORAD * 0.5f)) * zoom_;
         float w = h / aspectRatio_;

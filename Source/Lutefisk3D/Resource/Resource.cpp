@@ -27,6 +27,7 @@
 #include "Lutefisk3D/Core/Context.h"
 #include "Lutefisk3D/Core/Profiler.h"
 #include "Lutefisk3D/Core/Thread.h"
+#include "Lutefisk3D/IO/File.h"
 
 namespace Urho3D
 {
@@ -54,11 +55,8 @@ bool Resource::Load(Deserializer& source)
     // Because BeginLoad() / EndLoad() can be called from worker threads, where profiling would be a no-op,
     // create a type name -based profile block here
 #ifdef LUTEFISK3D_PROFILING
-    QString profileBlockName("Load" + GetTypeName());
-
-    Profiler* profiler = context_->m_ProfilerSystem.get();
-    if (profiler)
-        profiler->BeginBlock(qPrintable(profileBlockName));
+    QString profileBlockName("Load " + GetTypeName());
+    URHO3D_PROFILE_SCOPED(qPrintable(profileBlockName));
 #endif
 
     // If we are loading synchronously in a non-main thread, behave as if async loading (for example use
@@ -69,12 +67,6 @@ bool Resource::Load(Deserializer& source)
     if (success)
         success &= EndLoad();
     SetAsyncLoadState(ASYNC_DONE);
-
-#ifdef LUTEFISK3D_PROFILING
-    if (profiler)
-        profiler->EndBlock();
-#endif
-
     return success;
 }
 /// Finish resource loading. Always called from the main thread. Return true if successful.
@@ -88,6 +80,17 @@ bool Resource::Save(Serializer& dest) const
 {
     URHO3D_LOGERROR("Save not supported" + GetTypeName());
     return false;
+}
+bool Resource::LoadFile(const QString& fileName)
+{
+    File file(context_);
+    return file.Open(fileName, FILE_READ) && Load(file);
+}
+
+bool Resource::SaveFile(const QString& fileName) const
+{
+    File file(context_);
+    return file.Open(fileName, FILE_WRITE) && Save(file);
 }
 /// Set name.
 void Resource::SetName(const QString& name)

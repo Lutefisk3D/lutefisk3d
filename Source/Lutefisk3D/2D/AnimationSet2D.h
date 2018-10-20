@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,11 @@
 #include "Lutefisk3D/Resource/Resource.h"
 #include "Lutefisk3D/Container/HashMap.h"
 
+#ifdef LUTEFISK3D_SPINE
+struct spAtlas;
+struct spSkeletonData;
+struct spAnimationStateData;
+#endif
 namespace Urho3D
 {
 
@@ -41,8 +46,8 @@ class LUTEFISK3D_EXPORT AnimationSet2D : public Resource
     URHO3D_OBJECT(AnimationSet2D,Resource)
 
 public:
-    AnimationSet2D(Context* context);
-    virtual ~AnimationSet2D();
+    explicit AnimationSet2D(Context* context);
+    ~AnimationSet2D() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -56,10 +61,14 @@ public:
     /// Return animation name.
     QString GetAnimation(unsigned index) const;
     /// Check has animation.
-    bool HasAnimation(const QString& animation) const;
+    bool HasAnimation(const QString& animationName) const;
 
     /// Return sprite.
     Sprite2D* GetSprite() const;
+#ifdef LUTEFISK3D_SPINE
+    /// Return spine skeleton data.
+    spSkeletonData* GetSkeletonData() const { return skeletonData_; }
+#endif
 
     /// Return spriter data.
     Spriter::SpriterData* GetSpriterData() const { return spriterData_.get(); }
@@ -69,6 +78,12 @@ public:
 private:
     /// Return sprite by hash.
     Sprite2D* GetSpriterFileSprite(const StringHash& hash) const;
+#ifdef LUTEFISK3D_SPINE
+    /// Begin load spine.
+    bool BeginLoadSpine(Deserializer& source);
+    /// Finish load spine.
+    bool EndLoadSpine();
+#endif
     /// Begin load scml.
     bool BeginLoadSpriter(Deserializer &source);
     /// Finish load scml.
@@ -78,6 +93,14 @@ private:
 
     /// Spine sprite.
     SharedPtr<Sprite2D> sprite_;
+#ifdef LUTEFISK3D_SPINE
+    /// Spine json data.
+    SharedArrayPtr<char> jsonData_;
+    /// Spine skeleton data.
+    spSkeletonData* skeletonData_;
+    /// Spine atlas.
+    spAtlas* atlas_;
+#endif
     /// Spriter data.
     std::unique_ptr<Spriter::SpriterData> spriterData_;
     /// Has sprite sheet.

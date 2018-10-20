@@ -36,32 +36,34 @@
 #include "Lutefisk3D/Resource/ResourceCache.h"
 #include "Lutefisk3D/Graphics/Graphics.h"
 #include "Lutefisk3D/Graphics/Renderer.h"
+#include "Lutefisk3D/Audio/Audio.h"
 #include "Lutefisk3D/Core/WorkQueue.h"
-#ifndef LUTEFISK3D_UILESS
+#ifdef LUTEFISK3D_PROFILING
+#include "Lutefisk3D/Core//Profiler.h"
+#endif
+
+#ifdef LUTEFISK3D_TASKS
+#include "Lutefisk3D/Core/Tasks.h"
+#endif
+#ifdef LUTEFISK3D_UI
 #include "Lutefisk3D/UI/UI.h"
+#endif
+#ifdef LUTEFISK3D_SYSTEMUI
+#include "Lutefisk3D/SystemUI/SystemUI.h"
+#endif
+#ifdef LUTEFISK3D_NETWORK
+#include "Lutefisk3D/Network/Network.h"
 #endif
 #ifndef MINI_URHO
 
-#include <GLFW/glfw3.h>
-
+#ifdef LUTEFISK3D_IK
+#include <ik/log.h>
+#include <ik/memory.h>
 #endif
-namespace std
-{
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Log>;
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::FileSystem>;
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Input>;
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::ResourceCache>;
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Graphics>;
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Renderer>;
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Time>;
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::Profiler>;
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::EventProfiler>;
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::WorkQueue>;
-template class LUTEFISK3D_EXPORT std::unique_ptr<Urho3D::UI>;
-}
+#endif
 namespace Urho3D
 {
-template class LUTEFISK3D_EXPORT SharedPtr<AttributeAccessor>;
+
 /*!
   \class Context
   \brief Urho3D execution context. Provides access to subsystems, object factories and attributes, and event receivers.
@@ -185,6 +187,13 @@ template class LUTEFISK3D_EXPORT SharedPtr<AttributeAccessor>;
   \var bool EventReceiverGroup::dirty_
   \brief Cleanup required flag.
  */
+// Keeps track of how many times IK was initialised
+static int ikInitCounter = 0;
+// Reroute all messages from the ik library to the Urho3D log
+static void HandleIKLog(const char* msg)
+{
+    URHO3D_LOGINFO(QString::asprintf("[IK] %s", msg));
+}
 class ContextPrivate
 {
 public:
@@ -210,6 +219,16 @@ public:
     HashMap<StringHash, std::vector<AttributeInfo> > attributes_; //!<Attribute descriptions per object type.
     //!Network replication attribute descriptions per object type.v
     HashMap<StringHash, std::vector<AttributeInfo> > networkAttributes_;
+    VariantMap globalVars_;
+    void removeObjectCategoryType(const char *cat_name, StringHash type)
+    {
+        auto &cat = objectCategories_[cat_name];
+        const auto iter = std::find(std::begin(cat), std::end(cat), type);
+        if(iter!=cat.end())
+        {
+            cat.erase(iter);
+        }
+    }
 };
 
 const QString &Context::GetObjectCategory(StringHash objType) const
@@ -222,8 +241,6 @@ const QString &Context::GetObjectCategory(StringHash objType) const
     }
     return s_dummy;
 }
-// Keeps track of how many times SDL was initialised so we know when to call SDL_Quit().
-static int sdlInitCounter = 0;
 
 void EventReceiverGroup::BeginSendEvent()
 {
@@ -305,12 +322,41 @@ Context::~Context()
     /// \todo Context should not need to know about subsystems
     m_ResourceCache.reset();
     RemoveSubsystem("Audio");
-#ifndef LUTEFISK3D_UILESS
+#ifdef LUTEFISK3D_UI
     m_UISystem.reset();
 #endif
     m_InputSystem.reset();
     m_Renderer.reset();
     m_Graphics.reset();
+#ifdef LUTEFISK3D_SYSTEMUI
+    m_SystemUI.reset();
+#endif
+    m_AudioSystem.reset();
+#if LUTEFISK3D_NETWORK
+    m_Network.reset();
+#endif
+    m_LogSystem.reset();
+    m_FileSystem.reset();
+    m_InputSystem.reset();
+    m_ResourceCache.reset();
+    m_Graphics.reset();
+    m_Renderer.reset();
+    m_TimeSystem.reset();
+
+    m_ProfilerSystem.reset();
+    m_WorkQueueSystem.reset();
+
+}
+
+void Context::RemoveFactory(StringHash type)
+{
+    d->factories_.erase(type);
+}
+void Context::RemoveFactory(StringHash type, const char* category)
+{
+    RemoveFactory(type);
+    if (category && strlen(category))
+        d->removeObjectCategoryType(category,type);
 }
 /// Create an object by type hash. Return pointer to it or null if no factory found.
 SharedPtr<Object> Context::CreateObject(StringHash objectType)
@@ -318,8 +364,8 @@ SharedPtr<Object> Context::CreateObject(StringHash objectType)
     HashMap<StringHash, SharedPtr<ObjectFactory> >::const_iterator i = d->factories_.find(objectType);
     if (i != d->factories_.end())
         return MAP_VALUE(i)->CreateObject();
-    else
-        return SharedPtr<Object>();
+
+    return SharedPtr<Object>();
 }
 /// Register a factory for an object type and specify the object category.
 void Context::RegisterFactory(ObjectFactory* factory, const char* category)
@@ -333,12 +379,12 @@ void Context::RegisterFactory(ObjectFactory* factory, const char* category)
         d->objectCategories_[category].push_back(factory->GetType());
 }
 /// Register a subsystem.
-void Context::RegisterSubsystem(StringHash typeHash,Object* object)
+void Context::RegisterSubsystem(Object* object)
 {
     if (!object)
         return;
 
-    d->subsystems_[typeHash] = object;
+    d->subsystems_[object->GetType()] = object;
 }
 /// Remove a subsystem.
 void Context::RemoveSubsystem(StringHash objectType)
@@ -348,25 +394,39 @@ void Context::RemoveSubsystem(StringHash objectType)
         d->subsystems_.erase(i);
 }
 /// Register object attribute.
-void Context::RegisterAttribute(StringHash objectType, const AttributeInfo& attr)
+AttributeHandle Context::RegisterAttribute(StringHash objectType, const AttributeInfo& attr)
 {
     // None or pointer types can not be supported
-    if (attr.type_ == VAR_NONE || attr.type_ == VAR_VOIDPTR || attr.type_ == VAR_PTR)
+    if (attr.type_ == VAR_NONE || attr.type_ == VAR_VOIDPTR || attr.type_ == VAR_PTR || attr.type_ == VAR_CUSTOM_HEAP || attr.type_ == VAR_CUSTOM_STACK)
     {
         URHO3D_LOGWARNING("Attempt to register unsupported attribute type " + Variant::GetTypeName(attr.type_) + " to class " +
                           GetTypeName(objectType));
-        return;
+        return AttributeHandle();
     }
-    d->attributes_[objectType].push_back(attr);
+    AttributeHandle handle;
+
+    std::vector<AttributeInfo>& objectAttributes = d->attributes_[objectType];
+    objectAttributes.push_back(attr);
+    handle.attributeInfo_ = &objectAttributes.back();
 
     if (attr.mode_ & AM_NET)
-        d->networkAttributes_[objectType].push_back(attr);
+    {
+        std::vector<AttributeInfo>& objectNetworkAttributes = d->networkAttributes_[objectType];
+        objectNetworkAttributes.push_back(attr);
+        handle.networkAttributeInfo_ = &objectNetworkAttributes.back();
+    }
+    return handle;
 }
 /// Remove object attribute.
 void Context::RemoveAttribute(StringHash objectType, const char* name)
 {
     RemoveNamedAttribute(d->attributes_, objectType, name);
     RemoveNamedAttribute(d->networkAttributes_, objectType, name);
+}
+void Context::RemoveAllAttributes(StringHash objectType)
+{
+    d->attributes_.erase(objectType);
+    d->networkAttributes_.erase(objectType);
 }
 
 /// Update object attribute's default value.
@@ -390,6 +450,38 @@ HashMap<StringHash, Variant> & Context::GetEventDataMap()
     ret.clear();
     return ret;
 }
+#ifdef LUTEFISK3D_IK
+void Context::RequireIK()
+{
+    // Always increment, the caller must match with ReleaseSDL(), regardless of
+    // what happens.
+    ++ikInitCounter;
+
+    if (ikInitCounter == 1)
+    {
+        URHO3D_LOGDEBUG("Initialising Inverse Kinematics library");
+        ik_memory_init();
+        ik_log_init(IK_LOG_NONE);
+        ik_log_register_listener(HandleIKLog);
+    }
+}
+
+void Context::ReleaseIK()
+{
+    --ikInitCounter;
+
+    if (ikInitCounter == 0)
+    {
+        URHO3D_LOGDEBUG("De-initialising Inverse Kinematics library");
+        ik_log_unregister_listener(HandleIKLog);
+        ik_log_deinit();
+        ik_memory_deinit();
+    }
+
+    if (ikInitCounter < 0)
+        URHO3D_LOGERROR("Too many calls to Context::ReleaseIK()");
+}
+#endif // ifdef LUTEFISK3D_IK
 
 /// Copy base class attributes to derived class.
 void Context::CopyBaseAttributes(StringHash baseType, StringHash derivedType)
@@ -418,10 +510,30 @@ Object* Context::GetSubsystem(StringHash type) const
     HashMap<StringHash, SharedPtr<Object> >::const_iterator i = d->subsystems_.find(type);
     if (i != d->subsystems_.end())
         return MAP_VALUE(i);
-    else
-        return nullptr;
+    return nullptr;
 }
 
+const HashMap<StringHash, SharedPtr<ObjectFactory>>& Context::GetObjectFactories() const 
+{
+    return d->factories_;
+}
+
+const HashMap<QString, std::vector<StringHash> >& Context::GetObjectCategories() const
+{
+    return d->objectCategories_;
+}
+const Variant& Context::GetGlobalVar(StringHash key) const
+{
+    auto i = d->globalVars_.find(key);
+    return i != d->globalVars_.end() ? i->second : Variant::EMPTY;
+}
+void Context::SetGlobalVar(StringHash key, const Variant& value)
+{
+    d->globalVars_[key] = value;
+}
+const VariantMap &Context::GetGlobalVars() const {
+    return d->globalVars_;
+}
 /// Return active event sender. Null outside event handling.
 Object* Context::GetEventSender() const
 {
@@ -530,28 +642,11 @@ void Context::RemoveEventReceiver(Object* receiver, Object* sender, StringHash e
 /// Begin event send.
 void Context::BeginSendEvent(Object* sender, StringHash eventType)
 {
-#ifdef LUTEFISK3D_PROFILING
-    if (EventProfiler::IsActive())
-    {
-        if (m_EventProfilerSystem)
-            m_EventProfilerSystem->BeginBlock(eventType);
-    }
-#endif
-
     eventSenders_.push_back(sender);
 }
 /// End event send. Clean up event receivers removed in the meanwhile.
 void Context::EndSendEvent()
 {
     eventSenders_.pop_back();
-
-#ifdef LUTEFISK3D_PROFILING
-    if (EventProfiler::IsActive())
-    {
-        if (m_EventProfilerSystem)
-            m_EventProfilerSystem->EndBlock();
-    }
-#endif
 }
-
-}
+} // end of Urho3D namespace

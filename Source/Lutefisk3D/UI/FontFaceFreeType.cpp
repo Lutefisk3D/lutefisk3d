@@ -96,7 +96,7 @@ bool FontFaceFreeType::Load(const unsigned char* fontData, unsigned fontDataSize
     FreeTypeLibrary* freeType = font_->GetSubsystem<FreeTypeLibrary>();
     if (!freeType) {
         freeType = new FreeTypeLibrary(context);
-        context->RegisterSubsystem("FreeTypeLibrary",freeType);
+        context->RegisterSubsystem(freeType);
     }
     // Ensure the FreeType library is kept alive as long as TTF font resources exist
     freeType_ = freeType;
@@ -443,7 +443,7 @@ bool FontFaceFreeType::LoadCharGlyph(unsigned charCode, Image* image)
             fontGlyph.advanceX_ = slot->linearHoriAdvance / 65536.0;
         }
         else
-            {
+        {
             // Round to nearest pixel (only necessary when hinting is disabled)
             fontGlyph.advanceX_ = floorf(FixedToFloat(slot->metrics.horiAdvance) + 0.5f);
         }
@@ -462,76 +462,76 @@ bool FontFaceFreeType::LoadCharGlyph(unsigned charCode, Image* image)
             {
                 // We're rendering into a fixed image and we ran out of room.
                 return false;
-                }
+            }
 
             int w = allocator_.GetWidth();
             int h = allocator_.GetHeight();
             if (!SetupNextTexture(w, h))
             {
                 URHO3D_LOGWARNING(QString("FontFaceFreeType::LoadCharGlyph: failed to allocate new %1x%1 texture").arg(w).arg(h));
-                    return false;
+                return false;
             }
 
             if (!allocator_.Allocate(fontGlyph.texWidth_ + 1, fontGlyph.texHeight_ + 1, x, y))
             {
                 URHO3D_LOGWARNING(QString("FontFaceFreeType::LoadCharGlyph: failed to position char code %1 in blank page").arg(charCode));
-                    return false;
+                return false;
             }
-            }
+        }
 
         fontGlyph.x_ = (short)x;
         fontGlyph.y_ = (short)y;
 
-            unsigned char* dest = nullptr;
-            unsigned pitch = 0;
-            if (image)
-            {
-                fontGlyph.page_ = 0;
-                dest = image->GetData() + fontGlyph.y_ * image->GetWidth() + fontGlyph.x_;
+        unsigned char* dest = nullptr;
+        unsigned pitch = 0;
+        if (image)
+        {
+            fontGlyph.page_ = 0;
+            dest = image->GetData() + fontGlyph.y_ * image->GetWidth() + fontGlyph.x_;
             pitch = (unsigned)image->GetWidth();
-            }
-            else
-            {
-                fontGlyph.page_ = textures_.size() - 1;
+        }
+        else
+        {
+            fontGlyph.page_ = textures_.size() - 1;
             dest = new unsigned char[fontGlyph.texWidth_ * fontGlyph.texHeight_];
             pitch = (unsigned)fontGlyph.texWidth_;
-            }
+        }
 
-            if (slot->bitmap.pixel_mode == FT_PIXEL_MODE_MONO)
-            {
+        if (slot->bitmap.pixel_mode == FT_PIXEL_MODE_MONO)
+        {
             for (unsigned y = 0; y < (unsigned)slot->bitmap.rows; ++y)
-                {
-                    unsigned char* src = slot->bitmap.buffer + slot->bitmap.pitch * y;
+            {
+                unsigned char* src = slot->bitmap.buffer + slot->bitmap.pitch * y;
                 unsigned char* rowDest = dest + (oversampling_ - 1)/2 + y * pitch;
 
                 // Don't do any oversampling, just unpack the bits directly.
                 for (unsigned x = 0; x < (unsigned)slot->bitmap.width; ++x)
                     rowDest[x] = (unsigned char)((src[x >> 3] & (0x80 >> (x & 7))) ? 255 : 0);
-                }
-            }
-            else
-            {
-            for (unsigned y = 0; y < (unsigned)slot->bitmap.rows; ++y)
-                {
-                    unsigned char* src = slot->bitmap.buffer + slot->bitmap.pitch * y;
-                    unsigned char* rowDest = dest + y * pitch;
-
-                BoxFilter(rowDest, fontGlyph.texWidth_, src, slot->bitmap.width);
-                }
-            }
-
-            if (!image)
-            {
-            textures_.back()->SetData(0, fontGlyph.x_, fontGlyph.y_, fontGlyph.texWidth_, fontGlyph.texHeight_, dest);
-                delete [] dest;
             }
         }
         else
         {
-            fontGlyph.x_ = 0;
-            fontGlyph.y_ = 0;
-            fontGlyph.page_ = 0;
+            for (unsigned y = 0; y < (unsigned)slot->bitmap.rows; ++y)
+            {
+                unsigned char* src = slot->bitmap.buffer + slot->bitmap.pitch * y;
+                unsigned char* rowDest = dest + y * pitch;
+
+                BoxFilter(rowDest, fontGlyph.texWidth_, src, slot->bitmap.width);
+            }
         }
+
+        if (!image)
+        {
+            textures_.back()->SetData(0, fontGlyph.x_, fontGlyph.y_, fontGlyph.texWidth_, fontGlyph.texHeight_, dest);
+            delete [] dest;
+        }
+    }
+    else
+    {
+        fontGlyph.x_ = 0;
+        fontGlyph.y_ = 0;
+        fontGlyph.page_ = 0;
+    }
 
     glyphMapping_[charCode] = fontGlyph;
 

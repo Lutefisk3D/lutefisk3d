@@ -235,5 +235,17 @@ bool JSONFile::FromString(const QString & source)
     MemoryBuffer buffer(ba.data(), source.length());
     return Load(buffer);
 }
+bool JSONFile::ParseJSON(const QString& json, JSONValue& value, bool reportError)
+{
+    rapidjson::Document document;
+    if (document.Parse<0>(qPrintable(json)).HasParseError())
+    {
+        if (reportError)
+            URHO3D_LOGERROR("Could not parse JSON data from string with error: "+document.GetParseError());
 
+        return false;
+    }
+    ToJSONValue(value, document);
+    return true;
+}
 }

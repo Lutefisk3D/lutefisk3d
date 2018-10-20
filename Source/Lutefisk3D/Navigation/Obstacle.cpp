@@ -36,8 +36,8 @@ extern const char* NAVIGATION_CATEGORY;
 
 Obstacle::Obstacle(Context* context) :
     Component(context),
-    height_(5.0f),
     radius_(5.0f),
+    height_(5.0f),
     obstacleId_(0)
 {
 }

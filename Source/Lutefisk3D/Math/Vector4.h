@@ -40,16 +40,10 @@ public:
     }
 
     /// Copy-construct from another vector.
-    Vector4(const Vector4& vector) :
-        x_(vector.x_),
-        y_(vector.y_),
-        z_(vector.z_),
-        w_(vector.w_)
-    {
-    }
+    Vector4(const Vector4& vector) noexcept = default;
 
     /// Construct from a 3-dimensional vector and the W coordinate.
-    Vector4(const Vector3& vector, float w) :
+    Vector4(const Vector3& vector, float w) noexcept :
         x_(vector.x_),
         y_(vector.y_),
         z_(vector.z_),
@@ -58,7 +52,7 @@ public:
     }
 
     /// Construct from coordinates.
-    Vector4(float x, float y, float z, float w) :
+    Vector4(float x, float y, float z, float w) noexcept :
         x_(x),
         y_(y),
         z_(z),
@@ -67,7 +61,7 @@ public:
     }
 
     /// Construct from a float array.
-    explicit Vector4(const float* data) :
+    explicit Vector4(const float* data) noexcept :
         x_(data[0]),
         y_(data[1]),
         z_(data[2]),
@@ -76,14 +70,7 @@ public:
     }
 
     /// Assign from another vector.
-    Vector4& operator = (const Vector4& rhs)
-    {
-        x_ = rhs.x_;
-        y_ = rhs.y_;
-        z_ = rhs.z_;
-        w_ = rhs.w_;
-        return *this;
-    }
+    Vector4& operator =(const Vector4& rhs) noexcept = default;
 
     /// Test for equality with another vector without epsilon.
     bool operator == (const Vector4& rhs) const { return x_ == rhs.x_ && y_ == rhs.y_ && z_ == rhs.z_ && w_ == rhs.w_; }
@@ -165,6 +152,11 @@ public:
         return *this;
     }
 
+    /// Return const value by index.
+    float operator[](unsigned index) const { return (&x_)[index]; }
+
+    /// Return mutable value by index.
+    float& operator[](unsigned index) { return (&x_)[index]; }
     /// Calculate dot product.
     float DotProduct(const Vector4& rhs) const { return x_ * rhs.x_ + y_ * rhs.y_ + z_ * rhs.z_ + w_ * rhs.w_; }
     /// Calculate absolute dot product.
@@ -184,7 +176,7 @@ public:
         return Urho3D::Equals(x_, rhs.x_) && Urho3D::Equals(y_, rhs.y_) && Urho3D::Equals(z_, rhs.z_) && Urho3D::Equals(w_, rhs.w_);
     }
     /// Return whether is NaN.
-    bool IsNaN() const { return Urho3D::IsNaN(x_) || Urho3D::IsNaN(y_) || Urho3D::IsNaN(z_) || Urho3D::IsNaN(w_); }
+    bool IsNaN() const { return std::isnan(x_) || std::isnan(y_) || std::isnan(z_) || std::isnan(w_); }
 
     /// Return float data.
     const float* Data() const { return &x_; }

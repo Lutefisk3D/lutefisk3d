@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -67,5 +67,8 @@ LUTEFISK3D_EXPORT void SetMiniDumpDir(const QString& pathName);
 LUTEFISK3D_EXPORT QString GetMiniDumpDir();
 /// Return the total amount of useable memory.
 LUTEFISK3D_EXPORT uint64_t GetTotalMemory();
+/// Return a random UUID.
+LUTEFISK3D_EXPORT QString GenerateUUID();
+
 
 }

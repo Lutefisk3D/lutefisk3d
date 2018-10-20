@@ -181,9 +181,9 @@ void Scene::RegisterObject(Context* context)
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Variable Names", GetVarNamesAttr, SetVarNamesAttr, QString, QString(), AM_FILE | AM_NOEDIT);
 }
 
-bool Scene::Load(Deserializer& source, bool setInstanceDefault)
+bool Scene::Load(Deserializer& source)
 {
-    URHO3D_PROFILE_CTX(context_,LoadScene);
+    URHO3D_PROFILE(LoadScene);
 
     StopAsyncLoading();
 
@@ -199,7 +199,7 @@ bool Scene::Load(Deserializer& source, bool setInstanceDefault)
     Clear();
 
     // Load the whole scene, then perform post-load if successfully loaded
-    if (Node::Load(source, setInstanceDefault))
+    if (Node::Load(source))
     {
         FinishLoading(&source);
         return true;
@@ -210,7 +210,7 @@ bool Scene::Load(Deserializer& source, bool setInstanceDefault)
 
 bool Scene::Save(Serializer& dest) const
 {
-    URHO3D_PROFILE_CTX(context_,SaveScene);
+    URHO3D_PROFILE(SaveScene);
 
     // Write ID first
     if (!dest.WriteFileID("USCN"))
@@ -232,15 +232,15 @@ bool Scene::Save(Serializer& dest) const
     return false;
 }
 
-bool Scene::LoadXML(const XMLElement& source, bool setInstanceDefault)
+bool Scene::LoadXML(const XMLElement& source)
 {
-    URHO3D_PROFILE_CTX(context_,LoadSceneXML);
+    URHO3D_PROFILE(LoadSceneXML);
 
     StopAsyncLoading();
 
     // Load the whole scene, then perform post-load if successfully loaded
     // Note: the scene filename and checksum can not be set, as we only used an XML element
-    if (Node::LoadXML(source, setInstanceDefault))
+    if (Node::LoadXML(source))
     {
         FinishLoading(nullptr);
         return true;
@@ -249,7 +249,7 @@ bool Scene::LoadXML(const XMLElement& source, bool setInstanceDefault)
     return false;
 }
 
-bool Scene::LoadJSON(const JSONValue& source, bool setInstanceDefault)
+bool Scene::LoadJSON(const JSONValue& source)
 {
     URHO3D_PROFILE(LoadSceneJSON);
 
@@ -257,7 +257,7 @@ bool Scene::LoadJSON(const JSONValue& source, bool setInstanceDefault)
 
     // Load the whole scene, then perform post-load if successfully loaded
     // Note: the scene filename and checksum can not be set, as we only used an XML element
-    if (Node::LoadJSON(source, setInstanceDefault))
+    if (Node::LoadJSON(source))
     {
         FinishLoading(nullptr);
         return true;
@@ -1330,7 +1330,7 @@ void Scene::FinishSaving(Serializer* dest) const
 
 void Scene::PreloadResources(File* file, bool isSceneFile)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
 
     // Read node ID (not needed)
     /*unsigned nodeID = */file->ReadUInt();
@@ -1402,7 +1402,7 @@ void Scene::PreloadResources(File* file, bool isSceneFile)
 
 void Scene::PreloadResourcesXML(const XMLElement& element)
 {
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
 
     // Node or Scene attributes do not include any resources; therefore skip to the components
     XMLElement compElem = element.GetChild("component");
@@ -1480,7 +1480,7 @@ void Scene::PreloadResourcesXML(const XMLElement& element)
 void Scene::PreloadResourcesJSON(const JSONValue& value)
 {
     // If not threaded, can not background load resources, so rather load synchronously later when needed
-    ResourceCache* cache = context_->m_ResourceCache.get();
+    ResourceCache* cache = context_->resourceCache();
 
     // Node or Scene attributes do not include any resources; therefore skip to the components
     JSONArray componentArray = value.Get("components").GetArray();

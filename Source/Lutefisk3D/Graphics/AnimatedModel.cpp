@@ -114,32 +114,33 @@ void AnimatedModel::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Animation LOD Bias", GetAnimationLodBias, SetAnimationLodBias, float, 1.0f, AM_DEFAULT);
     URHO3D_COPY_BASE_ATTRIBUTES(Drawable);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Bone Animation Enabled", GetBonesEnabledAttr, SetBonesEnabledAttr, VariantVector, Variant::emptyVariantVector, AM_FILE | AM_NOEDIT);
-    URHO3D_MIXED_ACCESSOR_VARIANT_VECTOR_STRUCTURE_ATTRIBUTE("Animation States", GetAnimationStatesAttr, SetAnimationStatesAttr,                                                            VariantVector, Variant::emptyVariantVector,                                                            animationStatesStructureElementNames, AM_FILE);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Animation States", GetAnimationStatesAttr, SetAnimationStatesAttr, VariantVector, Variant::emptyVariantVector, AM_FILE)
+        .SetMetadata(AttributeMetadata::P_VECTOR_STRUCT_ELEMENTS, animationStatesStructureElementNames);
     URHO3D_ACCESSOR_ATTRIBUTE("Morphs", GetMorphsAttr, SetMorphsAttr, std::vector<uint8_t>, Variant::emptyBuffer, AM_DEFAULT | AM_NOEDIT);
 }
 
-bool AnimatedModel::Load(Deserializer& source, bool setInstanceDefault)
+bool AnimatedModel::Load(Deserializer& source)
 {
     loading_ = true;
-    bool success = Component::Load(source, setInstanceDefault);
+    bool success = Component::Load(source);
     loading_ = false;
 
     return success;
 }
 
-bool AnimatedModel::LoadXML(const XMLElement& source, bool setInstanceDefault)
+bool AnimatedModel::LoadXML(const XMLElement& source)
 {
     loading_ = true;
-    bool success = Component::LoadXML(source, setInstanceDefault);
+    bool success = Component::LoadXML(source);
     loading_ = false;
 
     return success;
 }
 
-bool AnimatedModel::LoadJSON(const JSONValue& source, bool setInstanceDefault)
+bool AnimatedModel::LoadJSON(const JSONValue& source)
 {
     loading_ = true;
-    bool success = Component::LoadJSON(source, setInstanceDefault);
+    bool success = Component::LoadJSON(source);
     loading_ = false;
 
     return success;
@@ -154,6 +155,7 @@ void AnimatedModel::ProcessRayQuery(const RayOctreeQuery& query, std::vector<Ray
 {
     // If no bones or no bone-level testing, use the StaticModel test
     RayQueryLevel level = query.level_;
+    //BUG: the code here should transform the query ray by the inverse of the bone matrix, and then query the static model 
     if (level < RAY_TRIANGLE || !skeleton_.GetNumBones())
     {
         StaticModel::ProcessRayQuery(query, results);
@@ -307,10 +309,9 @@ UpdateGeometryType AnimatedModel::GetUpdateGeometryType()
 {
     if (morphsDirty_ || forceAnimationUpdate_)
         return UPDATE_MAIN_THREAD;
-    else if (skinningDirty_)
+    if (skinningDirty_)
         return UPDATE_WORKER_THREAD;
-    else
-        return UPDATE_NONE;
+    return UPDATE_NONE;
 }
 
 void AnimatedModel::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
@@ -322,7 +323,7 @@ void AnimatedModel::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     }
 }
 
-void AnimatedModel::SetModelWithBones(Model* model, bool createBones)
+void AnimatedModel::SetModel(Model* model, bool createBones)
 {
     if (model == model_)
         return;
@@ -364,7 +365,7 @@ void AnimatedModel::SetModelWithBones(Model* model, bool createBones)
         morphs_.clear();
         const std::vector<ModelMorph>& morphs = model->GetMorphs();
         morphs_.reserve(morphs.size());
-        morphElementMask_ = 0;
+        morphElementMask_ = MASK_NONE;
         for (unsigned i = 0; i < morphs.size(); ++i)
         {
             ModelMorph newMorph;
@@ -422,7 +423,7 @@ void AnimatedModel::SetModelWithBones(Model* model, bool createBones)
         geometryBoneMappings_.clear();
         morphVertexBuffers_.clear();
         morphs_.clear();
-        morphElementMask_ = 0;
+        morphElementMask_ = MASK_NONE;
         SetBoundingBox(BoundingBox());
         SetSkeleton(Skeleton(), false);
     }
@@ -455,18 +456,18 @@ AnimationState* AnimatedModel::AddAnimationState(Animation* animation)
 void AnimatedModel::RemoveAnimationState(Animation* animation)
 {
     if (animation)
-        RemoveAnimationState(animation->GetNameHash());
-    else
     {
-        for (std::vector<SharedPtr<AnimationState> >::iterator i = animationStates_.begin(); i != animationStates_.end(); ++i)
+        RemoveAnimationState(animation->GetNameHash());
+        return;
+    }
+    for (auto i = animationStates_.begin(); i != animationStates_.end(); ++i)
+    {
+        AnimationState* state = *i;
+        if (!state->GetAnimation())
         {
-            AnimationState* state = *i;
-            if (!state->GetAnimation())
-            {
-                animationStates_.erase(i);
-                MarkAnimationDirty();
-                return;
-            }
+            animationStates_.erase(i);
+            MarkAnimationDirty();
+            return;
         }
     }
 }
@@ -478,26 +479,25 @@ void AnimatedModel::RemoveAnimationState(const QString& animationName)
 
 void AnimatedModel::RemoveAnimationState(StringHash animationNameHash)
 {
-    for (std::vector<SharedPtr<AnimationState> >::iterator i = animationStates_.begin(); i != animationStates_.end(); ++i)
+    for (auto i = animationStates_.begin(); i != animationStates_.end(); ++i)
     {
         AnimationState* state = *i;
         Animation* animation = state->GetAnimation();
-        if (animation)
+        if (nullptr==animation)
+            continue;
+        // Check both the animation and the resource name
+        if (animation->GetNameHash() == animationNameHash || animation->GetAnimationNameHash() == animationNameHash)
         {
-            // Check both the animation and the resource name
-            if (animation->GetNameHash() == animationNameHash || animation->GetAnimationNameHash() == animationNameHash)
-            {
-                animationStates_.erase(i);
-                MarkAnimationDirty();
-                return;
-            }
+            animationStates_.erase(i);
+            MarkAnimationDirty();
+            return;
         }
     }
 }
 
 void AnimatedModel::RemoveAnimationState(AnimationState* state)
 {
-    for (std::vector<SharedPtr<AnimationState> >::iterator i = animationStates_.begin(); i != animationStates_.end(); ++i)
+    for (auto i = animationStates_.begin(); i != animationStates_.end(); ++i)
     {
         if (*i == state)
         {
@@ -548,27 +548,27 @@ void AnimatedModel::SetMorphWeight(unsigned index, float weight)
     if (weight != 0.0f && morphVertexBuffers_.empty())
         CloneGeometries();
 
-    if (weight != morphs_[index].weight_)
+    if (weight == morphs_[index].weight_)
+        return;
+
+    morphs_[index].weight_ = weight;
+
+    // For a master model, set the same morph weight on non-master models
+    if (isMaster_)
     {
-        morphs_[index].weight_ = weight;
+        std::vector<AnimatedModel*> models;
+        GetComponents<AnimatedModel>(models);
 
-        // For a master model, set the same morph weight on non-master models
-        if (isMaster_)
+        // Indexing might not be the same, so use the name hash instead
+        for (unsigned i = 1; i < models.size(); ++i)
         {
-            std::vector<AnimatedModel*> models;
-            GetComponents<AnimatedModel>(models);
-
-            // Indexing might not be the same, so use the name hash instead
-            for (unsigned i = 1; i < models.size(); ++i)
-            {
-                if (!models[i]->isMaster_)
-                    models[i]->SetMorphWeight(morphs_[index].nameHash_, weight);
-            }
+            if (!models[i]->isMaster_)
+                models[i]->SetMorphWeight(morphs_[index].nameHash_, weight);
         }
-
-        MarkMorphsDirty();
-        MarkNetworkUpdate();
     }
+
+    MarkMorphsDirty();
+    MarkNetworkUpdate();
 }
 
 void AnimatedModel::SetMorphWeight(const QString& name, float weight)
@@ -783,9 +783,9 @@ void AnimatedModel::SetSkeleton(const Skeleton& skeleton, bool createBones)
 
 void AnimatedModel::SetModelAttr(const ResourceRef& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     // When loading a scene, set model without creating the bone nodes (will be assigned later during post-load)
-    SetModelWithBones(cache->GetResource<Model>(value.name_), !loading_);
+    SetModel(cache->GetResource<Model>(value.name_), !loading_);
 }
 
 void AnimatedModel::SetBonesEnabledAttr(const VariantVector& value)
@@ -797,7 +797,7 @@ void AnimatedModel::SetBonesEnabledAttr(const VariantVector& value)
 
 void AnimatedModel::SetAnimationStatesAttr(const VariantVector& value)
 {
-    ResourceCache* cache =context_->m_ResourceCache.get();
+    ResourceCache* cache =context_->resourceCache();
     RemoveAllAnimationStates();
     unsigned index = 0;
     unsigned numStates = index < value.size() ? value[index++].GetUInt() : 0;
@@ -1374,7 +1374,7 @@ void AnimatedModel::ApplyMorph(VertexBuffer* buffer, void* destVertexData, unsig
     unsigned tangentOffset = buffer->GetElementOffset(SEM_TANGENT);
     unsigned vertexSize = buffer->GetVertexSize();
 
-    const uint8_t* srcData = morph.morphData_;
+    const uint8_t* srcData = morph.morphData_.get();
     uint8_t* destData = (uint8_t*)destVertexData;
 
     while (vertexCount--)

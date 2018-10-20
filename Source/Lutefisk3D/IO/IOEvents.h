@@ -39,7 +39,7 @@ struct IOSignals {
         asyncExecFinished.SetAllocator(allocator);
     }
 };
-extern IOSignals g_ioSignals;
+extern IOSignals LUTEFISK3D_EXPORT g_ioSignals;
 
 struct LogSignals {
     jl::Signal<LogLevels,const QString &> logMessageSignal;
@@ -48,5 +48,5 @@ struct LogSignals {
         logMessageSignal.SetAllocator(allocator);
     }
 };
-extern LogSignals g_LogSignals;
+extern LogSignals LUTEFISK3D_EXPORT g_LogSignals;
 }

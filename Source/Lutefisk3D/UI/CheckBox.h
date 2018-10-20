@@ -30,13 +30,13 @@ namespace Urho3D
 /// %UI element that can be toggled between unchecked and checked state.
 class LUTEFISK3D_EXPORT CheckBox : public BorderImage
 {
-    URHO3D_OBJECT(CheckBox,BorderImage);
+    URHO3D_OBJECT(CheckBox,BorderImage)
 
 public:
     /// Construct.
-    CheckBox(Context* context);
+    explicit CheckBox(Context* context);
     /// Destruct.
-    virtual ~CheckBox();
+    ~CheckBox() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
@@ -45,12 +45,12 @@ public:
     /// React to mouse click begin.
     virtual void OnClickBegin(const IntVector2& position, const IntVector2& screenPosition, MouseButton button, int buttons, int qualifiers, Cursor* cursor) override;
     /// React to a key press.
-    virtual void OnKey(int key, int buttons, int qualifiers) override;
+    void OnKey(Key key, MouseButtonFlags buttons, QualifierFlags qualifiers) override;
 
     /// Set checked state.
     void SetChecked(bool enable);
     /// Set checked image offset.
-    void SetCheckedOffset(const IntVector2& rect);
+    void SetCheckedOffset(const IntVector2& offset);
     /// Set checked image offset.
     void SetCheckedOffset(int x, int y);
 

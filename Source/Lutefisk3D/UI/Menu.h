@@ -35,22 +35,20 @@ class LUTEFISK3D_EXPORT Menu : public Button
     using UIElement::LoadXML;
 
 public:
-    /// Construct.
     Menu(Context* context);
-    /// Destruct.
-    virtual ~Menu();
+    ~Menu() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Load from XML data with style. Return true if successful.
-    virtual bool LoadXML(const XMLElement& source, XMLFile* styleFile, bool setInstanceDefault = false) override;
+    bool LoadXML(const XMLElement& source, XMLFile* styleFile) override;
     /// Save as XML data. Return true if successful.
-    virtual bool SaveXML(XMLElement& dest) const override;
+    bool SaveXML(XMLElement& dest) const override;
 
     /// Perform UI element update.
-    virtual void Update(float timeStep) override;
+    void Update(float timeStep) override;
     /// React to mouse hover.
-    virtual void OnHover(const IntVector2& position, const IntVector2& screenPosition, int buttons, int qualifiers, Cursor* cursor) override;
+    void OnHover(const IntVector2& position, const IntVector2& screenPosition, int buttons, int qualifiers, Cursor* cursor) override;
     /// React to the popup being shown.
     virtual void OnShowPopup();
     /// React to the popup being hidden.

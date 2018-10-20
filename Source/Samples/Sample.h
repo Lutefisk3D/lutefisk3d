@@ -57,11 +57,11 @@ public:
     Sample(const QString& sampleName,Urho3D::Context* context);
 
     /// Setup before engine initialization. Modifies the engine parameters.
-    virtual void Setup() override;
+    void Setup() override;
     /// Setup after engine initialization. Creates the logo, console & debug HUD.
-    virtual void Start() override;
+    void Start() override;
     /// Cleanup after the main loop. Called by Application.
-    virtual void Stop() override;
+    void Stop() override;
 
 protected:
     /// Initialize mouse mode on non-web platform.
@@ -89,7 +89,7 @@ private:
     /// Create console and debug HUD.
     void CreateConsoleAndDebugHud();
     /// Handle key down event to process key controls common to all samples.
-    void HandleKeyDown(int key,int scancode,unsigned buttons,int qualifiers, bool repeat);
+    virtual void HandleKeyDown(int key,int scancode,unsigned buttons,int qualifiers, bool repeat);
     /// Handle key up event to process key controls common to all samples.
     void HandleKeyUp(int key,int scancode,unsigned buttons,int qualifiers);
     /// Handle scene update event to control camera's pitch and yaw for all samples.

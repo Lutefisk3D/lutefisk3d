@@ -55,7 +55,7 @@ void Urho2DParticle::Start()
     Sample::Start();
 
     // Set mouse visibile
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
     input->SetMouseVisible(true);
 
     // Create the scene content
@@ -73,7 +73,7 @@ void Urho2DParticle::Start()
 
 void Urho2DParticle::CreateScene()
 {
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
     scene_->CreateComponent<Octree>();
 
     // Create camera node
@@ -82,13 +82,13 @@ void Urho2DParticle::CreateScene()
     cameraNode_->SetPosition(Vector3(0.0f, 0.0f, -10.0f));
 
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetOrthographic(true);
+    camera->setProjectionType(PT_ORTHOGRAPHIC);
 
-    Graphics* graphics = m_context->m_Graphics.get();
+    Graphics* graphics = GetContext()->m_Graphics.get();
     camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
     camera->SetZoom(1.2f * Min((float)graphics->GetWidth() / 1280.0f, (float)graphics->GetHeight() / 800.0f)); // Set zoom according to user's resolution to ensure full visibility (initial zoom (1.2) is set for full visibility at 1280x800 resolution)
 
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
     ParticleEffect2D* particleEffect = cache->GetResource<ParticleEffect2D>("Urho2D/sun.pex");
     if (!particleEffect)
         return;
@@ -108,8 +108,8 @@ void Urho2DParticle::CreateScene()
 
 void Urho2DParticle::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -124,10 +124,10 @@ void Urho2DParticle::CreateInstructions()
 
 void Urho2DParticle::SetupViewport()
 {
-    Renderer* renderer = m_context->m_Renderer.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
@@ -139,10 +139,9 @@ void Urho2DParticle::SubscribeToEvents()
 }
 void Urho2DParticle::HandleMouseMove(int x, int y, int, int, unsigned, int)
 {
-    if (particleNode_)
-    {
-        Graphics* graphics = m_context->m_Graphics.get();
-        Camera* camera = cameraNode_->GetComponent<Camera>();
-        particleNode_->SetPosition(camera->ScreenToWorldPoint(Vector3(float(x) / graphics->GetWidth(), float(y) / graphics->GetHeight(), 10.0f)));
-    }
+    if (!particleNode_)
+        return;
+    Graphics* graphics = GetContext()->m_Graphics.get();
+    Camera* camera = cameraNode_->GetComponent<Camera>();
+    particleNode_->SetPosition(ScreenToWorldPoint(*camera,Vector3(float(x) / graphics->GetWidth(), float(y) / graphics->GetHeight(), 10.0f)));
 }

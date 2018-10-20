@@ -391,7 +391,7 @@ inline std::vector<VertexElement> CreateInstancingBufferElements(unsigned numExt
 }
 
 Renderer::Renderer(Context* context) :
-    SignalObserver(context->m_observer_allocator),
+    SignalObserver(context->observerAllocator()),
     m_context(context),
     defaultZone_(new Zone(context))
 {
@@ -760,7 +760,7 @@ unsigned Renderer::GetNumOccluders(bool allViews) const
 /// Update for rendering. Used as a signal handler.
 void Renderer::Update(float timeStep)
 {
-    URHO3D_PROFILE_CTX(m_context,UpdateViews);
+    URHO3D_PROFILE(UpdateViews);
 
     views_.clear();
     preparedViews_.clear();
@@ -809,7 +809,7 @@ void Renderer::Render()
     // Engine does not render when window is closed or device is lost
     assert(graphics_ && graphics_->IsInitialized() && !graphics_->IsDeviceLost());
 
-    URHO3D_PROFILE_CTX(m_context,RenderViews);
+    URHO3D_PROFILE(RenderViews);
 
     // If the indirection textures have lost content (OpenGL mode only), restore them now
     if (faceSelectCubeMap_ && faceSelectCubeMap_->IsDataLost())
@@ -865,7 +865,7 @@ void Renderer::Render()
 /// Add debug geometry to the debug renderer.
 void Renderer::DrawDebugGeometry(bool depthTest)
 {
-    URHO3D_PROFILE_CTX(m_context,RendererDrawDebug);
+    URHO3D_PROFILE(RendererDrawDebug);
 
     /// \todo Because debug geometry is per-scene, if two cameras show views of the same area, occlusion is not shown correctly
     HashSet<Drawable*> processedGeometries;
@@ -1185,7 +1185,7 @@ Texture *Renderer::GetScreenBuffer(int width, int height, uint32_t format, int m
         newBuffer->ResetUseTimer();
         screenBuffers_[searchKey].push_back(newBuffer);
 
-        URHO3D_LOGDEBUG(QString("Allocated new screen buffer size %1x%2 format %3").arg(width).arg(height).arg((unsigned)format));
+        URHO3D_LOGDEBUG(QString("Allocated new screen buffer size %1x%2 format %3").arg(width).arg(height).arg(format));
         return newBuffer;
     }
     else
@@ -1242,7 +1242,7 @@ Camera* Renderer::GetShadowCamera()
     }
 
     Camera* camera = shadowCameraNodes_[numShadowCameras_++]->GetComponent<Camera>();
-    camera->SetOrthographic(false);
+    camera->setProjectionType(PT_PERSPECTIVE);
     camera->SetZoom(1.0f);
 
     return camera;
@@ -1274,6 +1274,7 @@ View* Renderer::GetActualView(View* view)
 void Renderer::SetBatchShaders(Batch& batch, const Technique* tech, const BatchQueue& queue, bool allowShadows)
 {
     Pass* pass = batch.pass_;
+    assert(pass);
     // Check if need to release/reload all shaders
     if (pass->GetShadersLoadedFrameNumber() != shadersChangedFrameNumber_)
         pass->ReleaseShaders();
@@ -1421,7 +1422,7 @@ void Renderer::SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const QS
     if (specularLighting_ && light->GetSpecularIntensity() > 0.0f)
         psi += DLPS_SPEC;
 
-    if (camera->IsOrthographic())
+    if (camera->getProjectionType()==PT_ORTHOGRAPHIC)
     {
         vsi += DLVS_ORTHO;
         psi += DLPS_ORTHO;
@@ -1663,7 +1664,7 @@ void Renderer::RemoveUnusedBuffers()
             if (buffer->GetUseTimer() > MAX_BUFFER_AGE)
             {
                 URHO3D_LOGDEBUG(QString("Removed unused screen buffer size %1x%2 format %3")
-                         .arg(buffer->GetWidth()).arg(buffer->GetHeight()).arg((unsigned)buffer->GetFormat()));
+                         .arg(buffer->GetWidth()).arg(buffer->GetHeight()).arg(buffer->GetFormat()));
                 buffers.erase(buffers.begin()+j);
             }
         }
@@ -1700,7 +1701,7 @@ void Renderer::Initialize()
     if (!graphics || !graphics->IsInitialized() || !cache)
         return;
 
-    URHO3D_PROFILE_CTX(m_context,InitRenderer);
+    URHO3D_PROFILE(InitRenderer);
 
     graphics_ = graphics;
 
@@ -1759,7 +1760,7 @@ void Renderer::LoadShaders()
 void Renderer::LoadPassShaders(Pass* pass, std::vector<SharedPtr<ShaderVariation> >& vertexShaders, std::vector<SharedPtr<ShaderVariation> >& pixelShaders, const BatchQueue& queue)
 {
 
-    URHO3D_PROFILE_CTX(m_context,LoadPassShaders);
+    URHO3D_PROFILE(LoadPassShaders);
 
     // Forget all the old shaders
     vertexShaders.clear();

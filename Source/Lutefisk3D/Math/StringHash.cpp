@@ -26,26 +26,54 @@
 
 #include <QtCore/QString>
 #include <cstdio>
-
+#ifdef LUTEFISK3D_HASH_DEBUG
+#include "Lutefisk3D/Core/StringHashRegister.h"
+#endif
 namespace Urho3D
 {
+#ifdef LUTEFISK3D_HASH_DEBUG
+
+// Expose map to let Visual Studio debugger access it if Urho3D is linked statically.
+const StringMap* hashReverseMap = nullptr;
+
+// Hide static global variables in functions to ensure initialization order.
+static StringHashRegister& GetGlobalStringHashRegister()
+{
+    static StringHashRegister stringHashRegister(true /*thread safe*/ );
+    hashReverseMap = &stringHashRegister.GetInternalMap();
+    return stringHashRegister;
+}
+
+#endif
 
 const StringHash StringHash::ZERO;
 
-StringHash::StringHash(const char* str) :
-    value_(Calculate(str))
+#ifdef LUTEFISK3D_HASH_DEBUG
+unsigned StringHash::Calculate(const char* str, unsigned hash)
 {
-}
+    if (!str)
+        return hash;
 
+    while (*str)
+        hash = SDBMHash(hash, (char)tolower(*str++));
+
+    return hash;
+}
+#endif
 StringHash::StringHash(const QString& str) :
     value_(Calculate(qPrintable(str)))
 {
+#ifdef LUTEFISK3D_HASH_DEBUG
+    Urho3D::GetGlobalStringHashRegister().RegisterString(*this, qPrintable(str));
+#endif
 }
 StringHash::StringHash(const QLatin1String& str) :
     value_(Calculate(str.data()))
 {
+#ifdef LUTEFISK3D_HASH_DEBUG
+    Urho3D::GetGlobalStringHashRegister().RegisterString(*this, qPrintable(str));
+#endif
 }
-
 StringHash::StringHash(const QStringRef& str)
 {
     value_ = 0;
@@ -59,27 +87,51 @@ StringHash::StringHash(const QStringRef& str)
         }
     }
 }
-unsigned StringHash::Calculate(const char* str)
-{
-    unsigned hash = 0;
 
-    if (!str)
+unsigned int StringHash::Calculate(void* data, unsigned int length, unsigned int hash)
+{
+    if (!data)
         return hash;
 
-    while (*str)
+    auto* bytes = static_cast<unsigned char*>(data);
+    auto* end = bytes + length;
+    while (bytes < end)
     {
-        // Perform the actual hashing as case-insensitive
-        char c = *str;
-        hash = SDBMHash(hash, tolower(c));
-        ++str;
+        hash = SDBMHash(hash, *bytes);
+        ++bytes;
     }
 
     return hash;
 }
+/// Construct from a C string case-insensitively.
+#ifdef LUTEFISK3D_HASH_DEBUG
+StringHash::StringHash(const char* str) noexcept :      // NOLINT(google-explicit-constructor)
+    value_(Calculate(str))
+{
+    GetGlobalStringHashRegister()->RegisterString(*this, str);
+}
+#endif
 
+StringHashRegister* StringHash::GetGlobalStringHashRegister()
+{
+#ifdef LUTEFISK3D_HASH_DEBUG
+    return &Urho3D::GetGlobalStringHashRegister();
+#else
+    return nullptr;
+#endif
+}
 QString StringHash::ToString() const
 {
     return QString("%1").arg(value_,8,16,QChar('0'));
+}
+
+QString StringHash::Reverse() const
+{
+#ifdef LUTEFISK3D_HASH_DEBUG
+    return Urho3D::GetGlobalStringHashRegister().GetStringCopy(*this);
+#else
+    return QString();
+#endif
 }
 
 }

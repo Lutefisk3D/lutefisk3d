@@ -80,7 +80,7 @@ bool IndexBuffer::SetSize(size_t indexCount, bool largeIndices, bool dynamic)
     indexSize_ = (unsigned)(largeIndices ? sizeof(unsigned) : sizeof(unsigned short));
     dynamic_ = dynamic;
 
-    if (shadowed_ && indexCount_ && indexSize_)
+    if (shadowed_ && 0 != indexCount_ * indexSize_)
         shadowData_ = new unsigned char[indexCount_ * indexSize_];
     else
         shadowData_.Reset();
@@ -107,7 +107,7 @@ bool IndexBuffer::GetUsedVertexRange(unsigned start, unsigned count, unsigned& m
 
     if (indexSize_ == sizeof(unsigned))
     {
-        unsigned* indices = ((unsigned*)shadowData_.Get()) + start;
+        unsigned* indices = ((unsigned*)shadowData_.get()) + start;
 
         for (unsigned i = 0; i < count; ++i)
         {
@@ -119,7 +119,7 @@ bool IndexBuffer::GetUsedVertexRange(unsigned start, unsigned count, unsigned& m
     }
     else
     {
-        unsigned short* indices = ((unsigned short*)shadowData_.Get()) + start;
+        unsigned short* indices = ((unsigned short*)shadowData_.get()) + start;
 
         for (unsigned i = 0; i < count; ++i)
         {

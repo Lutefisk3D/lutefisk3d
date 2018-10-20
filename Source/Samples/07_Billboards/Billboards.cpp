@@ -73,9 +73,9 @@ void Billboards::Start()
 
 void Billboards::CreateScene()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
 
-    scene_ = new Scene(m_context);
+    scene_ = new Scene(GetContext());
 
     // Create octree, use default volume (-1000, -1000, -1000) to (1000, 1000, 1000)
     // Also create a DebugRenderer component so that we can draw debug geometry
@@ -201,7 +201,7 @@ void Billboards::CreateScene()
     // Create the camera. Limit far clip distance to match the fog
     cameraNode_ = scene_->CreateChild("Camera");
     Camera* camera = cameraNode_->CreateComponent<Camera>();
-    camera->SetFarClip(300.0f);
+    camera->setFarClipDistance(300.0f);
 
     // Set an initial position for the camera scene node above the plane
     cameraNode_->SetPosition(Vector3(0.0f, 5.0f, 0.0f));
@@ -209,8 +209,8 @@ void Billboards::CreateScene()
 
 void Billboards::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     Text* instructionText = ui->GetRoot()->CreateChild<Text>();
@@ -230,10 +230,10 @@ void Billboards::CreateInstructions()
 
 void Billboards::SetupViewport()
 {
-    Renderer* renderer = m_context->m_Renderer.get();
+    Renderer* renderer = GetContext()->m_Renderer.get();
 
     // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-    SharedPtr<Viewport> viewport(new Viewport(m_context, scene_, cameraNode_->GetComponent<Camera>()));
+    SharedPtr<Viewport> viewport(new Viewport(GetContext(), scene_, cameraNode_->GetComponent<Camera>()));
     renderer->SetViewport(0, viewport);
 }
 
@@ -249,10 +249,10 @@ void Billboards::SubscribeToEvents()
 void Billboards::MoveCamera(float timeStep)
 {
     // Do not move if the UI has a focused element (the console)
-    if (m_context->m_UISystem.get()->GetFocusElement())
+    if (GetContext()->m_UISystem.get()->GetFocusElement())
         return;
 
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
 
     // Movement speed as world units per second
     const float MOVE_SPEED = 20.0f;
@@ -326,5 +326,5 @@ void Billboards::HandlePostRenderUpdate(float ts)
     // If draw debug mode is enabled, draw viewport debug geometry. This time use depth test, as otherwise the result becomes
     // hard to interpret due to large object count
     if (drawDebug_)
-        m_context->m_Renderer.get()->DrawDebugGeometry(true);
+        GetContext()->m_Renderer.get()->DrawDebugGeometry(true);
 }

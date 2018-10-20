@@ -92,8 +92,8 @@ class LUTEFISK3D_EXPORT View : public RefCounted
     friend void ProcessLightWork(const WorkItem* item, unsigned threadIndex);
 public:
 
-    View(Context* context);
-    virtual ~View();
+    explicit View(Context* context);
+    ~View() override;
 
     /// Define with rendertarget and viewport. Return true if successful.
     bool Define(RenderSurface* renderTarget, Viewport* viewport);
@@ -144,8 +144,6 @@ public:
     void SetGlobalShaderParameters();
     /// Set camera-specific shader parameters. Called by Batch and internally by View.
     void SetCameraShaderParameters(const Urho3D::Camera &camera);
-    /// Set command's shader parameters if any. Called internally by View.
-    void SetCommandShaderParameters(const RenderPathCommand& command);
     /// Set G-buffer offset and inverse size shader parameters. Called by Batch and internally by View.
     void SetGBufferShaderParameters(const IntVector2& texSize, const IntRect& viewRect);
 
@@ -212,7 +210,7 @@ private:
     /// Find and set a new zone for a drawable when it has moved.
     void FindZone(Drawable* drawable);
     /// Return material technique, considering the drawable's LOD distance.
-    Technique* GetTechnique(Drawable* drawable, Material* material);
+    Technique* GetTechnique(Drawable* drawable, const Material & material);
     /// Check if material should render an auxiliary view (if it has a camera attached.)
     void CheckMaterialForAuxView(Material* material);
     /// Set shader defines for a batch queue if used.

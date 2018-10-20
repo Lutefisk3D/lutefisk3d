@@ -71,7 +71,7 @@ void SoundSynthesis::Start()
 void SoundSynthesis::CreateSound()
 {
     // Sound source needs a node so that it is considered enabled
-    node_ = new Node(m_context);
+    node_ = new Node(GetContext());
     SoundSource* source = node_->CreateComponent<SoundSource>();
 
     soundStream_ = new BufferedSoundStream();
@@ -114,8 +114,8 @@ void SoundSynthesis::UpdateSound()
 
 void SoundSynthesis::CreateInstructions()
 {
-    ResourceCache* cache = m_context->m_ResourceCache.get();
-    UI* ui = m_context->m_UISystem.get();
+    ResourceCache* cache = GetContext()->m_ResourceCache.get();
+    UI* ui = GetContext()->m_UISystem.get();
 
     // Construct new Text object, set string to display and font to use
     instructionText_ = ui->GetRoot()->CreateChild<Text>();
@@ -138,7 +138,7 @@ void SoundSynthesis::SubscribeToEvents()
 void SoundSynthesis::HandleUpdate(float timeStep)
 {
     // Use keys to control the filter constant
-    Input* input = m_context->m_InputSystem.get();
+    Input* input = GetContext()->m_InputSystem.get();
     if (input->GetKeyDown(KEY_UP))
         filter_ += timeStep * 0.5f;
     if (input->GetKeyDown(KEY_DOWN))

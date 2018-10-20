@@ -51,7 +51,7 @@ extern const char* horizontalAlignments[];
 extern const char* UI_CATEGORY;
 
 Text::Text(Context* context) :
-    UIElement(context),
+    UISelectable(context),
     fontSize_(DEFAULT_FONT_SIZE),
     textAlignment_(HA_LEFT),
     rowSpacing_(1.0f),
@@ -60,8 +60,6 @@ Text::Text(Context* context) :
     charLocationsDirty_(true),
     selectionStart_(0),
     selectionLength_(0),
-    selectionColor_(Color::TRANSPARENT),
-    hoverColor_(Color::TRANSPARENT),
     textEffect_(TE_NONE),
     shadowOffset_(IntVector2(1, 1)),
     strokeThickness_(1),
@@ -74,25 +72,21 @@ Text::Text(Context* context) :
     useDerivedOpacity_ = false;
 }
 
-Text::~Text()
-{
-}
+Text::~Text() = default;
 
 void Text::RegisterObject(Context* context)
 {
     context->RegisterFactory<Text>(UI_CATEGORY);
 
-    URHO3D_COPY_BASE_ATTRIBUTES(UIElement);
+    URHO3D_COPY_BASE_ATTRIBUTES(UISelectable);
     URHO3D_UPDATE_ATTRIBUTE_DEFAULT_VALUE("Use Derived Opacity", false);
     URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Font", GetFontAttr, SetFontAttr, ResourceRef, {Font::GetTypeStatic()}, AM_FILE);
     URHO3D_ATTRIBUTE("Font Size", float, fontSize_, DEFAULT_FONT_SIZE, AM_FILE);
-    URHO3D_ATTRIBUTE("Text", QString, text_, QString(), AM_FILE);
+    URHO3D_MIXED_ACCESSOR_ATTRIBUTE("Text", GetTextAttr, SetTextAttr, QString, QString(), AM_FILE);
     URHO3D_ENUM_ATTRIBUTE("Text Alignment", textAlignment_, horizontalAlignments, HA_LEFT, AM_FILE);
     URHO3D_ATTRIBUTE("Row Spacing", float, rowSpacing_, 1.0f, AM_FILE);
     URHO3D_ATTRIBUTE("Word Wrap", bool, wordWrap_, false, AM_FILE);
     URHO3D_ACCESSOR_ATTRIBUTE("Auto Localizable", GetAutoLocalizable, SetAutoLocalizable, bool, false, AM_FILE);
-    URHO3D_ACCESSOR_ATTRIBUTE("Selection Color", GetSelectionColor, SetSelectionColor, Color, Color::TRANSPARENT, AM_FILE);
-    URHO3D_ACCESSOR_ATTRIBUTE("Hover Color", GetHoverColor, SetHoverColor, Color, Color::TRANSPARENT, AM_FILE);
     URHO3D_ENUM_ATTRIBUTE("Text Effect", textEffect_, textEffects, TE_NONE, AM_FILE);
     URHO3D_ATTRIBUTE("Shadow Offset", IntVector2, shadowOffset_, IntVector2(1, 1), AM_FILE);
     URHO3D_ATTRIBUTE("Stroke Thickness", int, strokeThickness_, 1, AM_FILE);
@@ -394,16 +388,6 @@ void Text::ClearSelection()
 {
     selectionStart_ = 0;
     selectionLength_ = 0;
-}
-
-void Text::SetSelectionColor(const Color& color)
-{
-    selectionColor_ = color;
-}
-
-void Text::SetHoverColor(const Color& color)
-{
-    hoverColor_ = color;
 }
 
 void Text::SetTextEffect(TextEffect textEffect)

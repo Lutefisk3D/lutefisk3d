@@ -4,6 +4,7 @@
 #include "Utils.h"
 #include "SignalBase.h"
 #include <utility>
+#include <functional>
 
 #ifdef JL_SIGNAL_ENABLE_LOGSPAM
 #include <stdio.h>
@@ -49,7 +50,7 @@ public:
     Signal() { SetAllocator( defaultAllocator() ); }
     Signal( ScopedAllocator* pAllocator ) { SetAllocator( pAllocator ); }
 
-    virtual ~Signal()
+    ~Signal() override
     {
         JL_SIGNAL_LOG( "Destroying Signal %p\n", this );
         DisconnectAll();
@@ -66,7 +67,14 @@ public:
         Connection c = { Delegate(fpFunction), nullptr };
         JL_CHECKED_CALL( m_oConnections.Add( c ) );
     }
+    void ConnectL( std::function<void(Types...)> fpFunction )
+    {
+        JL_SIGNAL_DOUBLE_CONNECTED_FUNCTION_ASSERT( fpFunction );
+        JL_SIGNAL_LOG( "Signal %p connection to non-instance function %p", this, BruteForceCast<void*>(fpFunction) );
 
+        Connection c = { Delegate(fpFunction), nullptr };
+        JL_CHECKED_CALL( m_oConnections.Add( c ) );
+    }
     // Connects instance methods. Class X should be equal to Y, or an ancestor type.
     template< class X, class Y >
     void Connect( Y* pObject, void (X::*const fpMethod)(Types...) )
@@ -126,7 +134,25 @@ public:
             conn.d( std::forward<Types>(p1)... );
         }
     }
+    void DisconnectL( std::function<void(Types...)> fpFunction )
+    {
+        JL_SIGNAL_LOG( "Signal %p removing connections to non-instance method %p\n", this, BruteForceCast<void*>(fpFunction) );
+        const Delegate d(fpFunction);
 
+        for ( ConnectionIter i = m_oConnections.begin(); i.isValid(); )
+        {
+            if ( (*i).d == d )
+            {
+                JL_ASSERT( (*i).pObserver == NULL );
+                JL_SIGNAL_LOG( "\tRemoving connection...\n" );
+                m_oConnections.erase( i );
+            }
+            else
+            {
+                ++i;
+            }
+        }
+    }
     // Disconnects a non-instance method.
     void Disconnect( void (*fpFunction)(Types...) )
     {
@@ -221,7 +247,18 @@ public:
 
         m_oConnections.clear();
     }
-
+    void OnAllObservers(std::function<bool(SignalObserver*)> to_call)
+    {
+        for ( ConnectionIter i = m_oConnections.begin(); i.isValid(); ++i )
+        {
+            SignalObserver* pObserver = (*i).pObserver;
+            if ( pObserver )
+            {
+                if(to_call( pObserver ))
+                    break;
+            }
+        }
+    }
 private:
     bool isConnected( const Delegate& d ) const
     {
@@ -285,5 +322,7 @@ private:
         }
     }
 };
-
+#define L_CONNECT(source,signal,target,handler)\
+    source->signal.Connect(target,handler)
+#define L_EMIT
 } // namespace jl

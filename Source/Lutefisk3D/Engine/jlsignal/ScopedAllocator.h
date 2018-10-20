@@ -14,11 +14,11 @@ namespace jl {
 class ScopedAllocator
 {
 public:
-    virtual ~ScopedAllocator() {};
-    virtual void* Alloc( size_t nBytes ) = 0;
+    virtual ~ScopedAllocator() = default;
+    virtual void *Alloc( size_t nBytes ) = 0;
     virtual void Free( void* pObject ) = 0;
 };
-    
+
 } // namespace jl
 
 #endif // ! defined( _JL_SCOPED_ALLOCATOR_H_ )

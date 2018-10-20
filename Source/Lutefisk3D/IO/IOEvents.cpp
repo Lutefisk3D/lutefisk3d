@@ -1,6 +1,6 @@
 #include "IOEvents.h"
 namespace Urho3D {
 
-IOSignals g_ioSignals;
-LogSignals g_LogSignals;
+IOSignals LUTEFISK3D_EXPORT g_ioSignals;
+LogSignals LUTEFISK3D_EXPORT g_LogSignals;
 }

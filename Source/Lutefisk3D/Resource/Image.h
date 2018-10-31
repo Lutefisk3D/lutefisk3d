@@ -82,8 +82,8 @@ public:
 
     static void RegisterObject(Context* context);
 
-    virtual bool BeginLoad(Deserializer& source) override;
-    virtual bool Save(Serializer& dest) const override;
+    bool BeginLoad(Deserializer& source) override;
+    bool Save(Serializer& dest) const override;
 
     bool SetSize(int width, int height, unsigned components);
     bool SetSize(int width, int height, int depth, unsigned components);
@@ -138,7 +138,6 @@ public:
     CompressedLevel GetCompressedLevel(unsigned index) const;
     Image* GetSubimage(const IntRect& rect) const;
 
-    SDL_Surface *GetSDLSurface(const IntRect &rect = IntRect::ZERO) const;
     std::unique_ptr<GLFWimage> GetGLFWImage(const IntRect& rect = IntRect::ZERO) const;
     void PrecalculateLevels();
     /// Whether this texture has an alpha channel

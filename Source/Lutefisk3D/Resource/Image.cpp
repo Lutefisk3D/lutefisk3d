@@ -2067,7 +2067,7 @@ uint8_t* Image::GetImageData(Deserializer& source, int& width, int& height, unsi
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[dataSize]);
     source.Read(buffer.get(), dataSize);
     QString srcname = QFileInfo(source.GetName()).suffix();
-    QImage img(QImage::fromData(buffer.get(),dataSize,qPrintable(srcname.toUpper())));
+    QImage img(QImage::fromData(buffer.get(),dataSize,qPrintable(srcname.toLower())));
     assert(img.width()>0 && img.height()>0);
     if(((img.depth()+7)/8)==4) {
         if(!img.hasAlphaChannel()) {

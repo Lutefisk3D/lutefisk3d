@@ -12,14 +12,14 @@ namespace jl {
 class SignalBase;
 
 // Derive from this class to receive signals
-class  SignalObserver
+class LUTEFISK3D_EXPORT SignalObserver
 {
     // Public interface
 public:
-    LUTEFISK3D_EXPORT virtual ~SignalObserver();
+    virtual ~SignalObserver();
 
-    LUTEFISK3D_EXPORT void DisconnectAllSignals();
-    LUTEFISK3D_EXPORT void DisconnectSignal( SignalBase* pSignal );
+    void DisconnectAllSignals();
+    void DisconnectSignal( SignalBase* pSignal );
 
     void SetConnectionAllocator( ScopedAllocator* pAllocator ) { m_oSignals.Init( pAllocator ); }
     unsigned CountSignalConnections() const { return m_oSignals.size(); }

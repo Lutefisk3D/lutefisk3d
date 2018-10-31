@@ -89,21 +89,20 @@ class LUTEFISK3D_EXPORT Cursor : public BorderImage
     URHO3D_OBJECT(Cursor,BorderImage)
 
 public:
-    /// Construct.
     Cursor(Context* context);
-    /// Destruct.
     virtual ~Cursor();
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Return UI rendering batches.
-    virtual void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor) override;
+    void GetBatches(std::vector<UIBatch>& batches, std::vector<float>& vertexData, const IntRect& currentScissor) override;
 
     /// Define a shape.
     void DefineShape(const QString& shape, Image* image, const IntRect& imageRect, const IntVector2& hotSpot);
     /// Define a shape.
     void DefineShape(CursorShape shape, Image* image, const IntRect& imageRect, const IntVector2& hotSpot);
     /// Set current shape.
+    /// @note  UI::HandleBeginFrame will reset the cursor shape to CS_NORMAL each frame.
     void SetShape(const QString& shape);
     /// Set current shape.
     void SetShape(CursorShape shape);

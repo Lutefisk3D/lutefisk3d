@@ -54,8 +54,11 @@ UIBatch::UIBatch(UIElement* element, BlendMode blendMode, const IntRect& scissor
     vertexStart_(vertexData->size()),
     vertexEnd_(vertexData->size())
 {
-    assert(texture->GetWidth()!=0);
-    assert(texture->GetHeight()!=0);
+    if(texture)
+    {
+        assert(texture->GetWidth()!=0);
+        assert(texture->GetHeight()!=0);
+    }
     SetDefaultColor();
 }
 

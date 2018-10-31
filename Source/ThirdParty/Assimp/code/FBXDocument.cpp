@@ -557,7 +557,7 @@ std::vector<const Connection*> Document::GetConnectionsSequenced(uint64_t id, co
         temp.push_back((*it).second);
     }
 
-    std::sort(temp.begin(), temp.end(), std::mem_fun(&Connection::Compare));
+    std::sort(temp.begin(), temp.end(), [](const Connection *a,const Connection *b)->bool { return a->Compare(b);  });
 
     return temp; // NRVO should handle this
 }
@@ -608,7 +608,7 @@ std::vector<const Connection*> Document::GetConnectionsSequenced(uint64_t id, bo
         temp.push_back((*it).second);
     }
 
-    std::sort(temp.begin(), temp.end(), std::mem_fun(&Connection::Compare));
+    std::sort(temp.begin(), temp.end(), [](const Connection *a, const Connection *b)->bool { return a->Compare(b);  });
     return temp; // NRVO should handle this
 }
 

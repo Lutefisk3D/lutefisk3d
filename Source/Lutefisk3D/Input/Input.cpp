@@ -89,7 +89,7 @@ Input::Input(Context* context) :
     lastMouseVisible_(false),
     mouseGrabbed_(false),
     lastMouseGrabbed_(false),
-    mouseMode_(MM_FREE),
+    mouseMode_(MM_ABSOLUTE),
     lastMouseMode_(MM_ABSOLUTE),
     inputFocus_(false),
     minimized_(false),

@@ -190,14 +190,13 @@ void* VertexBuffer::Lock(unsigned start, unsigned count, bool discard)
         lockState_ = LOCK_SHADOW;
         return shadowData_.get() + start * vertexSize_;
     }
-    else if (graphics_)
+    if (graphics_)
     {
         lockState_ = LOCK_SCRATCH;
         lockScratchData_ = graphics_->ReserveScratchBuffer(count * vertexSize_);
         return lockScratchData_;
     }
-    else
-        return nullptr;
+    return nullptr;
 }
 
 void VertexBuffer::Unlock()

@@ -200,6 +200,18 @@ void Sprite::SetImageRect(const IntRect &rect)
         imageRect_ = rect;
 }
 
+void Sprite::SetImageRectRatio(const Rect &rect)
+{
+    if (rect != Rect::ZERO)
+    {
+        SetFullImageRect();
+        imageRect_.left_ *= rect.Left();
+        imageRect_.top_ *= rect.Top();
+        imageRect_.right_ *= rect.Right();
+        imageRect_.bottom_ *= rect.Bottom();
+    }
+}
+
 void Sprite::SetFullImageRect()
 {
     if (texture_)

@@ -53,15 +53,15 @@ public:
     virtual ~File();
 
     /// Read bytes from the file. Return number of bytes actually read.
-    virtual unsigned Read(void* dest, unsigned size) override;
+    unsigned Read(void* dest, unsigned size) override;
     /// Set position from the beginning of the file.
-    virtual unsigned Seek(unsigned position) override;
+    unsigned Seek(unsigned position) override;
     /// Write bytes to the file. Return number of bytes actually written.
-    virtual unsigned Write(const void* data, unsigned size) override;
+    unsigned Write(const void* data, unsigned size) override;
     /// Return the file name.
-    virtual const QString& GetName() const override { return fileName_; }
+    const QString& GetName() const override { return fileName_; }
     /// Return a checksum of the file contents using the SDBM hash algorithm.
-    virtual unsigned GetChecksum() override;
+    unsigned GetChecksum() override;
 
     /// Open a filesystem file. Return true if successful.
     bool Open(const QString& fileName, FileMode mode = FILE_READ);

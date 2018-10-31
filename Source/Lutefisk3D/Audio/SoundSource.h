@@ -44,7 +44,6 @@ class LUTEFISK3D_EXPORT SoundSource : public Component, public SoundSignals
     URHO3D_OBJECT(SoundSource,Component)
 
 public:
-    /// Construct.
     explicit SoundSource(Context* context);
     /// Destruct. Remove self from the audio subsystem
     ~SoundSource() override;
@@ -87,7 +86,7 @@ public:
     /// Return sound type, determines the master gain group.
     QString GetSoundType() const { return soundType_; }
     /// Return playback time position.
-    float GetTimePosition() const { return timePosition_; }
+    float GetTimePosition() const;
     /// Return frequency.
     float GetFrequency() const { return frequency_; }
     /// Return gain.

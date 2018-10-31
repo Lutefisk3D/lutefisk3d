@@ -75,6 +75,8 @@ public:
     void SetTexture(Texture* texture);
     /// Set part of texture to use as the image.
     void SetImageRect(const IntRect& rect);
+    /// Set part of texture to use as the image, given fractions.
+    void SetImageRectRatio(const Rect& rect);
     /// Use whole texture as the image.
     void SetFullImageRect();
     /// Set blend mode.

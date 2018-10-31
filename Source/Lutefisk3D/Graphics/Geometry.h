@@ -47,7 +47,6 @@ class LUTEFISK3D_EXPORT Geometry : public RefCounted
 public:
     /// Construct with one empty vertex buffer.
     Geometry(Context* context);
-    /// Destruct.
     virtual ~Geometry();
 
     /// Set number of vertex buffers.

@@ -81,7 +81,7 @@ public:
     void SetLooped(bool looped);
     /// Set blending weight.
     void SetWeight(float weight);
-    /// Set blending mode.
+    /// Set blending mode. Note that blend mode can only be set on AnimatedModels
     void SetBlendMode(AnimationBlendMode mode);
     /// Set time position. Does not fire animation triggers.
     void SetTime(float time);

@@ -20,21 +20,14 @@
 // THE SOFTWARE.
 //
 
-#include "../AnimatedModel.h"
-#include "../Animation.h"
-#include "../AnimationController.h"
-#include "../BillboardSet.h"
-#include "../Camera.h"
-#include "../ConstantBuffer.h"
-#include "Lutefisk3D/Core/Context.h"
-#include "Lutefisk3D/Core/StringUtils.h"
-#include "../CustomGeometry.h"
-#include "../DebugRenderer.h"
-#include "../DecalSet.h"
-#include "Lutefisk3D/IO/File.h"
 #include "../Graphics.h"
 #include "../GraphicsEvents.h"
 #include "../GraphicsImpl.h"
+#include "../Animation.h"
+#include "../BillboardSet.h"
+#include "../ConstantBuffer.h"
+#include "Lutefisk3D/Core/Context.h"
+#include "Lutefisk3D/IO/File.h"
 #include "../IndexBuffer.h"
 #include "Lutefisk3D/IO/Log.h"
 #include "../Material.h"
@@ -51,11 +44,6 @@
 #include "../ShaderPrecache.h"
 #include "../ShaderProgram.h"
 #include "../ShaderVariation.h"
-#include "../Skybox.h"
-#include "../StaticModelGroup.h"
-#include "../Technique.h"
-#include "../Terrain.h"
-#include "../TerrainPatch.h"
 #include "../VertexBuffer.h"
 #include "../Zone.h"
 #include "Lutefisk3D/Graphics/Texture2D.h"
@@ -989,67 +977,67 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
 
 void Graphics::SetShaderParameter(StringHash param, const float* data, unsigned count)
 {
-    if (impl_->shaderProgram_)
+    if (!impl_->shaderProgram_)
+        return;
+
+    const ShaderParameter*info = impl_->shaderProgram_->GetParameter(param);
+    if (info)
     {
-        const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
-        if (info)
+        if (info->bufferPtr_)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, (unsigned)(count * sizeof(float)), data);
-                return;
-            }
-            switch (info->glType_)
-            {
-            case GL_FLOAT:
-                glUniform1fv(info->location_, count, data);
-                break;
+            ConstantBuffer*buffer = info->bufferPtr_;
+            if (!buffer->IsDirty())
+                impl_->dirtyConstantBuffers_.push_back(buffer);
+            buffer->SetParameter(info->offset_, (unsigned)(count * sizeof(float)), data);
+            return;
+        }
+        switch (info->glType_)
+        {
+        case GL_FLOAT:
+            glUniform1fv(info->location_, count, data);
+            break;
 
-            case GL_FLOAT_VEC2:
-                glUniform2fv(info->location_, count / 2, data);
-                break;
+        case GL_FLOAT_VEC2:
+            glUniform2fv(info->location_, count / 2, data);
+            break;
 
-            case GL_FLOAT_VEC3:
-                glUniform3fv(info->location_, count / 3, data);
-                break;
+        case GL_FLOAT_VEC3:
+            glUniform3fv(info->location_, count / 3, data);
+            break;
 
-            case GL_FLOAT_VEC4:
-                glUniform4fv(info->location_, count / 4, data);
-                break;
+        case GL_FLOAT_VEC4:
+            glUniform4fv(info->location_, count / 4, data);
+            break;
 
-            case GL_FLOAT_MAT3:
-                glUniformMatrix3fv(info->location_, count / 9, GL_FALSE, data);
-                break;
+        case GL_FLOAT_MAT3:
+            glUniformMatrix3fv(info->location_, count / 9, GL_FALSE, data);
+            break;
 
-            case GL_FLOAT_MAT4:
-                glUniformMatrix4fv(info->location_, count / 16, GL_FALSE, data);
-                break;
-            default: break;
-            }
+        case GL_FLOAT_MAT4:
+            glUniformMatrix4fv(info->location_, count / 16, GL_FALSE, data);
+            break;
+        default: break;
         }
     }
 }
 
 void Graphics::SetShaderParameter(StringHash param, float value)
 {
-    if (impl_->shaderProgram_)
+    if (!impl_->shaderProgram_)
+        return;
+
+    const ShaderParameter*info = impl_->shaderProgram_->GetParameter(param);
+    if (info)
     {
-        const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
-        if (info)
+        if (info->bufferPtr_)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(float), &value);
-                return;
-            }
-            glUniform1fv(info->location_, 1, &value);
+            ConstantBuffer*buffer = info->bufferPtr_;
+            if (!buffer->IsDirty())
+                impl_->dirtyConstantBuffers_.push_back(buffer);
+            buffer->SetParameter(info->offset_, sizeof(float), &value);
+            return;
         }
+        glUniform1fv(info->location_, 1, &value);
     }
 }
 
@@ -1077,22 +1065,22 @@ void Graphics::SetShaderParameter(StringHash param, int value)
 void Graphics::SetShaderParameter(StringHash param, bool value)
 {
     // \todo Not tested
-    if (impl_->shaderProgram_)
-    {
-        const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
-        if (info)
-        {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(bool), &value);
-                return;
-            }
+    if (!impl_->shaderProgram_)
+        return;
 
-            glUniform1i(info->location_, (int)value);
+    const ShaderParameter*info = impl_->shaderProgram_->GetParameter(param);
+    if (info)
+    {
+        if (info->bufferPtr_)
+        {
+            ConstantBuffer*buffer = info->bufferPtr_;
+            if (!buffer->IsDirty())
+                impl_->dirtyConstantBuffers_.push_back(buffer);
+            buffer->SetParameter(info->offset_, sizeof(bool), &value);
+            return;
         }
+
+        glUniform1i(info->location_, (int)value);
     }
 }
 void Graphics::SetShaderParameter(StringHash param, const Color& color)
@@ -1102,53 +1090,53 @@ void Graphics::SetShaderParameter(StringHash param, const Color& color)
 
 void Graphics::SetShaderParameter(StringHash param, const Vector2& vector)
 {
-    if (impl_->shaderProgram_)
-    {
-        const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
-        if (info)
-        {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(Vector2), &vector);
-                return;
-            }
-            // Check the uniform type to avoid mismatch
-            switch (info->glType_)
-            {
-            case GL_FLOAT:
-                glUniform1fv(info->location_, 1, vector.Data());
-                break;
+    if (!impl_->shaderProgram_)
+        return;
 
-            case GL_FLOAT_VEC2:
-                glUniform2fv(info->location_, 1, vector.Data());
-                break;
-            default: break;
-            }
+    const ShaderParameter*info = impl_->shaderProgram_->GetParameter(param);
+    if (info)
+    {
+        if (info->bufferPtr_)
+        {
+            ConstantBuffer*buffer = info->bufferPtr_;
+            if (!buffer->IsDirty())
+                impl_->dirtyConstantBuffers_.push_back(buffer);
+            buffer->SetParameter(info->offset_, sizeof(Vector2), &vector);
+            return;
+        }
+        // Check the uniform type to avoid mismatch
+        switch (info->glType_)
+        {
+        case GL_FLOAT:
+            glUniform1fv(info->location_, 1, vector.Data());
+            break;
+
+        case GL_FLOAT_VEC2:
+            glUniform2fv(info->location_, 1, vector.Data());
+            break;
+        default: break;
         }
     }
 }
 
 void Graphics::SetShaderParameter(StringHash param, const Matrix3& matrix)
 {
-    if (impl_->shaderProgram_)
-    {
-        const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
-        if (info)
-        {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetVector3ArrayParameter(info->offset_, 3, &matrix);
-                return;
-            }
+    if (!impl_->shaderProgram_)
+        return;
 
-            glUniformMatrix3fv(info->location_, 1, GL_FALSE, matrix.Data());
+    const ShaderParameter*info = impl_->shaderProgram_->GetParameter(param);
+    if (info)
+    {
+        if (info->bufferPtr_)
+        {
+            ConstantBuffer*buffer = info->bufferPtr_;
+            if (!buffer->IsDirty())
+                impl_->dirtyConstantBuffers_.push_back(buffer);
+            buffer->SetVector3ArrayParameter(info->offset_, 3, &matrix);
+            return;
         }
+
+        glUniformMatrix3fv(info->location_, 1, GL_FALSE, matrix.Data());
     }
 }
 
@@ -1210,39 +1198,39 @@ void Graphics::SetShaderParameter(StringHash param, const Matrix4& matrix)
 
 void Graphics::SetShaderParameter(StringHash param, const Vector4& vector)
 {
-    if (impl_->shaderProgram_)
+    if (!impl_->shaderProgram_)
+        return;
+
+    const ShaderParameter*info = impl_->shaderProgram_->GetParameter(param);
+    if (info)
     {
-        const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
-        if (info)
+        if (info->bufferPtr_)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(Vector4), &vector);
-                return;
-            }
-            // Check the uniform type to avoid mismatch
-            switch (info->glType_)
-            {
-            case GL_FLOAT:
-                glUniform1fv(info->location_, 1, vector.Data());
-                break;
+            ConstantBuffer*buffer = info->bufferPtr_;
+            if (!buffer->IsDirty())
+                impl_->dirtyConstantBuffers_.push_back(buffer);
+            buffer->SetParameter(info->offset_, sizeof(Vector4), &vector);
+            return;
+        }
+        // Check the uniform type to avoid mismatch
+        switch (info->glType_)
+        {
+        case GL_FLOAT:
+            glUniform1fv(info->location_, 1, vector.Data());
+            break;
 
-            case GL_FLOAT_VEC2:
-                glUniform2fv(info->location_, 1, vector.Data());
-                break;
+        case GL_FLOAT_VEC2:
+            glUniform2fv(info->location_, 1, vector.Data());
+            break;
 
-            case GL_FLOAT_VEC3:
-                glUniform3fv(info->location_, 1, vector.Data());
-                break;
+        case GL_FLOAT_VEC3:
+            glUniform3fv(info->location_, 1, vector.Data());
+            break;
 
-            case GL_FLOAT_VEC4:
-                glUniform4fv(info->location_, 1, vector.Data());
-                break;
-            default: break;
-            }
+        case GL_FLOAT_VEC4:
+            glUniform4fv(info->location_, 1, vector.Data());
+            break;
+        default: break;
         }
     }
 }

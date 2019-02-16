@@ -33,14 +33,15 @@ class ValueAnimation;
 //class ValueAnimationInfo;
 class XMLElement;
 class JSONValue;
-/// Object animation class, an object animation includes one or more attribute animations and their wrap mode and speed for an Animatable object.
+/// Object animation class, an object animation includes one or more attribute animations and their wrap mode and speed
+/// for an Animatable object.
 class LUTEFISK3D_EXPORT ObjectAnimation : public Resource, public ObjectAnimationSignals
 {
     URHO3D_OBJECT(ObjectAnimation,Resource )
 
 public:
     ObjectAnimation(Context* context);
-    virtual ~ObjectAnimation() = default;
+    ~ObjectAnimation() override = default;
 
     static void RegisterObject(Context* context);
 

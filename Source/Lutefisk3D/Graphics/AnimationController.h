@@ -86,10 +86,8 @@ class LUTEFISK3D_EXPORT AnimationController : public Component
     URHO3D_OBJECT(AnimationController,Component);
 
 public:
-    /// Construct.
     AnimationController(Context* context);
-    /// Destruct.
-    virtual ~AnimationController() = default;
+    ~AnimationController() override = default;
 
     /// Register object factory.
     static void RegisterObject(Context* context);

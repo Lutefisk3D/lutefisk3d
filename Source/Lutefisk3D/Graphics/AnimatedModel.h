@@ -41,9 +41,7 @@ class LUTEFISK3D_EXPORT AnimatedModel : public StaticModel
     friend class AnimationState;
 
 public:
-    /// Construct.
     explicit AnimatedModel(Context* context);
-    /// Destruct.
     ~AnimatedModel() override;
     /// Register object factory. Drawable must be registered first.
     static void RegisterObject(Context* context);

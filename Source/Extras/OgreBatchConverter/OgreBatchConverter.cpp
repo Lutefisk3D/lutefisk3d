@@ -26,7 +26,7 @@ int main(int argc, char** argv)
     qDebug() <<"Searching Ogre file in Xml format in"<<currentDir;
     fileSystem->ScanDir(files, currentDir, "*.xml", SCAN_FILES, true);
     printf("\nFound %d files\n", files.size());
-    #ifdef WIN32
+    #ifdef _WIN32
     if (!files.empty())
         fileSystem->SystemCommand("pause");
     #endif
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
     }
 
     printf("\nExit\n");
-    #ifdef WIN32
+    #ifdef _WIN32
     fileSystem->SystemCommand("pause");
     #endif
 

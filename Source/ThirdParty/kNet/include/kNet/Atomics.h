@@ -13,7 +13,7 @@
    limitations under the License. */
 #pragma once
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #endif
 
@@ -25,7 +25,7 @@
 // Returns true if the assignment succeeded.
 // Do NOT call this macro with any side expressions on dst, newVal or cmp.
 
-#ifdef WIN32
+#ifdef _WIN32
 // See http://msdn.microsoft.com/en-us/library/ms683568(VS.85).aspx
 #define CmpXChgPointer(dst, newVal, cmp) (InterlockedCompareExchangePointer((dst), (newVal), (cmp)) == (cmp))
 #else

@@ -22,7 +22,7 @@
 #include <boost/thread.hpp>
 #else
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include <pthread.h>
@@ -46,7 +46,7 @@ namespace kNet
 
 #if defined(KNET_USE_BOOST) && defined(KNET_ENABLE_WINXP_SUPPORT)
 typedef boost::thread::id ThreadId;
-#elif defined(WIN32)
+#elif defined(_WIN32)
 typedef DWORD ThreadId; // Don't use boost::thread::id on Windows even if KNET_USE_BOOST is #defined, since it has issues identifying threads across dll boundaries.
 #elif defined(KNET_USE_BOOST)
 typedef boost::thread::id ThreadId;
@@ -198,7 +198,7 @@ private:
 
 #ifdef KNET_USE_BOOST
 	boost::thread thread;
-#elif defined(WIN32)
+#elif defined(_WIN32)
 	HANDLE threadHandle;
 	ThreadId threadId;
 

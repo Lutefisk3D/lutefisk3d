@@ -48,7 +48,7 @@ template <class T> unsigned MakeHash(kNet::MessageConnection* value)
 /// %Network subsystem. Manages client-server communications using the UDP protocol.
 class LUTEFISK3D_EXPORT Network : public Object, public kNet::IMessageHandler, public kNet::INetworkServerListener
 {
-    URHO3D_OBJECT(Network,Object);
+    URHO3D_OBJECT(Network,Object)
 
 public:
     /// Construct.

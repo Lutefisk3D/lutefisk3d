@@ -30,7 +30,7 @@
 
 #include "OgreImporterUtils.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #endif
 
@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 {
     QStringList arguments;
 
-    #ifdef WIN32
+    #ifdef _WIN32
     arguments = ParseArguments(GetCommandLine());
     #else
     arguments = ParseArguments(argc, argv);

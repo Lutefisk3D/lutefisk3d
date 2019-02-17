@@ -105,7 +105,7 @@ LogStream* LogStream::createDefaultStream(aiDefaultLogStream    streams,
     {
         // This is a platform-specific feature
     case aiDefaultLogStream_DEBUGGER:
-#ifdef WIN32
+#ifdef _WIN32
         return new Win32DebugLogStream();
 #else
         return NULL;
